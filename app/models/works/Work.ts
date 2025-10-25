@@ -8,7 +8,7 @@ export default class Work extends BaseModel {
   public id: number
 
   @column()
-  public business_id: number
+  public businessId: number
 
   @column()
   public code: string  // Changed to snake_case
@@ -25,17 +25,17 @@ export default class Work extends BaseModel {
   @column()
   public enabled: boolean
 
-  @column()
-  public created_by: number  // Changed to snake_case
+  @column({ columnName: 'created_by_id' })
+  public createdById: number  // Changed to snake_case
 
-  @column()
-  public updated_by: number  // Changed to snake_case
+  @column({ columnName: 'updated_by_id' })
+  public updatedById: number  // Changed to snake_case
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime  // Changed to snake_case
+  public createdAt: DateTime  // Changed to snake_case
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime  // Changed to snake_case
+  public updatedAt: DateTime  // Changed to snake_case
 
   @beforeCreate()
   public static async setEnabled(model: Work) {
@@ -43,7 +43,7 @@ export default class Work extends BaseModel {
   }
 
   @belongsTo(() => User, {
-    foreignKey: 'created_by',
+    foreignKey: 'createdBy',
   })
   public createdBy: BelongsTo<typeof User>
 

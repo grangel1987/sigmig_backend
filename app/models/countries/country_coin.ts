@@ -9,16 +9,16 @@ export default class CountryCoin extends BaseModel {
   public id: number
 
   @column()
-  public country_id: number
+  public countryId: number
 
   @column()
-  public coin_id: number
+  public coinId: number
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @belongsTo(() => Country)
   public country: BelongsTo<typeof Country>

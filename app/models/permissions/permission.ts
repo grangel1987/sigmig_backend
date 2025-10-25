@@ -15,10 +15,10 @@ export default class Permission extends BaseModel {
   public type: string
 
   @column.dateTime({ serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   public serialize() {
     const serialized = super.serialize()

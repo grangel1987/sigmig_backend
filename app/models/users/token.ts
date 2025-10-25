@@ -14,10 +14,10 @@ export default class Token extends BaseModel {
   public token: string
 
   @column()
-  public is_revoked: boolean
+  public isRevoked: boolean
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>

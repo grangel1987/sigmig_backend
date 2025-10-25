@@ -10,16 +10,16 @@ export default class BusinessUser extends BaseModel {
   public id: number
 
   @column()
-  public user_id: number
+  public userId: number
 
   @column()
-  public business_id: number
+  public businessId: number
 
   @column.dateTime({ serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @belongsTo(() => Business)
   public business: BelongsTo<typeof Business>

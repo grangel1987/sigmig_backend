@@ -12,31 +12,31 @@ export default class PersonalData extends BaseModel {
   public names: string
 
   @column()
-  public last_name_p: string
+  public lastNameP: string
 
   @column()
-  public last_name_m: string
+  public lastNameM: string
 
   @column()
-  public type_identify_id: number
+  public typeIdentifyId: number
 
   @column()
   public identify: string
 
   @column()
-  public created_by: number | null
+  public createdBy: number | null
 
   @column()
-  public updated_by: number | null
+  public updatedBy: number | null
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @belongsTo(() => Setting, {
-    foreignKey: 'type_identify_id',
+    foreignKey: 'typeIdentifyId',
   })
   public typeIdentify: BelongsTo<typeof Setting>
 }

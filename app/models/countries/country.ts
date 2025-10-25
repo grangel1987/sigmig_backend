@@ -17,7 +17,7 @@ export default class Country extends BaseModel {
   public nationality: string
 
   @column()
-  public phone_code: string
+  public phoneCode: string
 
   @column()
   public flag: string
@@ -25,17 +25,17 @@ export default class Country extends BaseModel {
   @column()
   public enabled: boolean
 
-  @column()
-  public created_by: number | null
+  @column({ columnName: 'created_by' })
+  public createdById: number | null
 
-  @column()
-  public updated_by: number | null
+  @column({ columnName: 'updated_by' })
+  public updatedById: number | null
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime | null
+  public createdAt: DateTime | null
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime | null
+  public updatedAt: DateTime | null
 
   @beforeCreate()
   public static async setEnabled(model: Country) {
@@ -43,12 +43,12 @@ export default class Country extends BaseModel {
   }
 
   @belongsTo(() => User, {
-    foreignKey: 'created_by',
+    foreignKey: 'createdById',
   })
   public createdBy: BelongsTo<typeof User>
 
   @belongsTo(() => User, {
-    foreignKey: 'updated_by',
+    foreignKey: 'updatedById',
   })
   public updatedBy: BelongsTo<typeof User>
 

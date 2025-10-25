@@ -1,10 +1,13 @@
 import env from '#start/env'
 import { defineConfig } from '@adonisjs/lucid'
+import { BaseModel, SnakeCaseNamingStrategy, } from '@adonisjs/lucid/orm'
 
+
+
+BaseModel.namingStrategy = new SnakeCaseNamingStrategy()
 const dbConfig = defineConfig({
   connection: 'mysql',
   connections: {
-
     mysql: {
       client: 'mysql2',
       connection: {

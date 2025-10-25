@@ -41,7 +41,7 @@ export default class SettingRepository {
 
       const createdBy = setting.createdBy
       let full_name = createdBy.personalData ?
-        `${createdBy.personalData.names} ${createdBy.personalData.last_name_p} ${createdBy.personalData.last_name_m}` :
+        `${createdBy.personalData.names} ${createdBy.personalData.lastNameP} ${createdBy.personalData.lastNameM}` :
         'Sin Nombre';
       const serialized = setting.serialize() as SettingResponse
       return {

@@ -6,10 +6,10 @@ import { DateTime } from 'luxon'
 
 export default class BusinessDelegate extends BaseModel {
   @column({ isPrimary: true })
-  public business_id: number
+  public businessId: number
 
   @column()
-  public type_identify_id: number
+  public typeIdentifyId: number
 
   @column()
   public identify: string
@@ -24,16 +24,16 @@ export default class BusinessDelegate extends BaseModel {
   public email: string
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @column()
-  public created_by: number
+  public createdBy: number
 
   @column()
-  public updated_by: number
+  public updatedBy: number
 
   @belongsTo(() => Business, {
     foreignKey: 'business_id',

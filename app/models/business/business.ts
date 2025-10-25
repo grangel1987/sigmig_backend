@@ -13,13 +13,13 @@ export default class Business extends BaseModel {
   public id: number
 
   @column()
-  public country_id: number
+  public countryId: number
 
   @column()
-  public city_id: number
+  public cityId: number
 
   @column()
-  public type_identify_id: number
+  public typeIdentifyId: number
 
   @column()
   public identify: string
@@ -28,13 +28,13 @@ export default class Business extends BaseModel {
   public url: string | null
 
   @column()
-  public url_short: string | null
+  public urlShort: string | null
 
   @column()
-  public url_thumb: string | null
+  public urlThumb: string | null
 
   @column()
-  public url_thumb_short: string | null
+  public urlThumbShort: string | null
 
   @column()
   public name: string
@@ -49,16 +49,16 @@ export default class Business extends BaseModel {
   public email: string
 
   @column()
-  public days_expire_buget: number
+  public daysExpireBuget: number
 
   @column()
-  public is_utility: boolean
+  public isUtility: boolean
 
   @column()
   public utility: number
 
   @column()
-  public is_discount: boolean
+  public isDiscount: boolean
 
   @column()
   public discount: number
@@ -70,25 +70,25 @@ export default class Business extends BaseModel {
   public footer: string | null
 
   @column()
-  public authorization_minor: boolean | null
+  public authorizationMinor: boolean | null
 
   @column()
-  public email_confirm_inactive_employee: boolean | null
+  public emailConfirmInactiveEmployee: boolean | null
 
   @column()
   public enabled: boolean
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column()
-  public created_by: number
+  public createdBy: number
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @column()
-  public updated_by: number
+  public updatedBy: number
 
   @belongsTo(() => Country)
   public country: BelongsTo<typeof Country>

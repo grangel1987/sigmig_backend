@@ -1,0 +1,25 @@
+TZ=UTC
+PORT=3333
+HOST=localhost
+LOG_LEVEL=info
+APP_KEY=uacibV5ldqNEg4zqU0krCLXeiiDorb3i
+NODE_ENV=development
+#cambiar credenciales db por correctos
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=root
+DB_DATABASE=app
+DRIVE_DISK=gcs
+GCS_KEY=./google_cloud_storage.json  #reemplazar con la ruta correcta si es necesario
+GCS_BUCKET=genesis-4986254
+SESSION_DRIVER=cookie
+HASH_DRIVER=bcrypt
+MAIL_CONNECTION=smtp
+SMTP_PORT=465
+SMTP_HOST=smtp.gmail.com
+MAIL_USERNAME=contacto@serviciosgenessis.com
+MAIL_PASSWORD=Evelyn82x
+
+GOOGLE_MAPS_PATH=https://maps.googleapis.com/maps/api/geocode/json?latlng
+GOOGLE_MAPS_KEY=AIzaSyDA8DTAuOUDHmtUK2O9wDxAV0CyRDHIjQo

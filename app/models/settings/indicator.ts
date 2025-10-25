@@ -28,8 +28,8 @@ export default class Indicator extends BaseModel {
 
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 }

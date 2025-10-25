@@ -8,16 +8,16 @@ export default class BusinessCoin extends BaseModel {
   public id: number
 
   @column()
-  public business_id: number
+  public businessId: number
 
   @column()
-  public coin_id: number
+  public coinId: number
 
   @column.dateTime({ serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @belongsTo(() => Coin)
   public coins: BelongsTo<typeof Coin>

@@ -47,7 +47,7 @@ export default class UserRepository {
     await User.query()
       .where('id', userId)
       .update({
-        last_login_at: dateTime,
+        last_login_at: dateTime.toSQL({ includeOffset: false }),
         last_login_tz: tz || 'America/Santiago',
       })
   }

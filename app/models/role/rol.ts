@@ -18,22 +18,22 @@ export default class Rol extends BaseModel {
   public description: string
 
   @column({ serializeAs: null })
-  public is_system: boolean
+  public isSystem: boolean
 
   @column({ serializeAs: null })
   public enabled: boolean
 
-  @column()
-  public created_by: number | null
+  @column({ columnName: 'createdById' })
+  public createdById: number | null
 
-  @column()
-  public updated_by: number | null
+  @column({ columnName: 'updatedById' })
+  public updatedById: number | null
 
   @column.dateTime({ serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @hasMany(() => BusinessUserRol)
   public businessUserRol: HasMany<typeof BusinessUserRol>
@@ -48,10 +48,10 @@ export default class Rol extends BaseModel {
   })
   public permissions: ManyToMany<typeof Permission>
 
-  @belongsTo(() => User, { foreignKey: 'created_by' })
+  @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
 
-  @belongsTo(() => User, { foreignKey: 'updated_by' })
+  @belongsTo(() => User, { foreignKey: 'updatedById' })
   public updatedBy: BelongsTo<typeof User>
 
   @beforeCreate()

@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strictPropertyInitialization":false,
     "rootDir": "./",
-    "outDir": "./build"
-  }
+    "outDir": "./build",
+  },
+  
 }

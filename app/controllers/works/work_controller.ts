@@ -19,7 +19,7 @@ export default class WorkController {
         .where('selected', 1)
         .where('user_id', userId)
         .firstOrFail()
-      const businessId = business.business_id
+      const businessId = business.businessId
 
       const works = await Work.query()
         .where('business_id', businessId)
@@ -52,9 +52,9 @@ export default class WorkController {
         code,
         lat,
         log,
-        created_at: dateTime,
+        createdAt: dateTime,
         updated_at: dateTime,
-        created_by: auth.user!.id,
+        createdBy: auth.user!.id,
         updated_by: auth.user!.id,
       }
 
@@ -95,8 +95,8 @@ export default class WorkController {
         code,
         lat,
         log,
-        updated_at: dateTime,
-        updated_by: auth.user!.id,
+        updatedAt: dateTime,
+        updatedById: auth.user!.id,
       })
       await work.save()
 
@@ -131,8 +131,8 @@ export default class WorkController {
       const status = !work.enabled
       work.merge({
         enabled: status,
-        updated_by: auth.user!.id,
-        updated_at: dateTime,
+        updatedById: auth.user!.id,
+        updatedAt: dateTime,
       })
       await work.save()
 
@@ -176,7 +176,7 @@ export default class WorkController {
         .where('selected', 1)
         .where('user_id', userId)
         .firstOrFail()
-      const businessId = business.business_id
+      const businessId = business.businessId
 
       const works = await WorksRepository.select(businessId)
       return works

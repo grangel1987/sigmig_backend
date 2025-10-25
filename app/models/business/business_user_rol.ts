@@ -1,6 +1,6 @@
 import Rol from '#models/role/rol'
-import { BaseModel, column, hasOne } from '@adonisjs/lucid/orm'
-import type { HasOne } from '@adonisjs/lucid/types/relations'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class BusinessUserRol extends BaseModel {
@@ -8,17 +8,17 @@ export default class BusinessUserRol extends BaseModel {
   public id: number
 
   @column()
-  public business_user_id: number
+  public businessUserId: number
 
   @column()
-  public rol_id: number
+  public rolId: number
 
   @column.dateTime({ serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
-  @hasOne(() => Rol)
-  public rols: HasOne<typeof Rol>
+  @belongsTo(() => Rol)
+  public rols: BelongsTo<typeof Rol>
 }

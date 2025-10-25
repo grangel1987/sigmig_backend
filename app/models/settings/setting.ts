@@ -12,33 +12,33 @@ export default class Setting extends BaseModel {
   public text: string
 
   @column()
-  public key_id: number | null
+  public keyId: number | null
 
-  @column()
-  public created_by: number | null
+  @column({ columnName: 'created_by' })
+  public createdById: number | null
 
-  @column()
-  public updated_by: number | null
+  @column({ columnName: 'updated_by_id' })
+  public updatedById: number | null
 
   @column()
   public enabled: boolean
 
   @column.dateTime({ serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
   @column.dateTime({ serializeAs: null })
-  public last_login_at: DateTime | null
+  public lastLoginAt: DateTime | null
 
   @column.dateTime({ serializeAs: null })
-  public reset_password_at: DateTime | null
+  public resetPasswordAt: DateTime | null
 
   @belongsTo(() => SettingKey, { foreignKey: 'key_id' })
   public key: BelongsTo<typeof SettingKey>
 
-  @belongsTo(() => User, { foreignKey: 'created_by' })
+  @belongsTo(() => User, { foreignKey: 'createdBy' })
   public createdBy: BelongsTo<typeof User>
 
   @belongsTo(() => User, { foreignKey: 'updated_by' })

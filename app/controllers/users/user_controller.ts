@@ -1,10 +1,14 @@
 import BusinessUser from '#models/business/business_user'
+import PersonalData from '#models/users/personal_data'
 import User from '#models/users/user'
+import env from '#start/env'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { HttpContext, Response } from '@adonisjs/core/http'
+import hash from '@adonisjs/core/services/hash'
 import db from '@adonisjs/lucid/services/db'
+import vine from '@vinejs/vine'
 import UserRepository from '../../repositories/users/user_repository.js'
 
 interface BusinessPayload {
@@ -23,11 +27,21 @@ interface PersonalDataPayload {
 
 export default class UserController {
   public async login({ request, response, auth, i18n }: HttpContext) {
-    const { username, password } = request.only(['username', 'password'])
+    const { email, password } = await request.validateUsing(
+      vine.compile(
+        vine.object(
+          {
+            email: vine.string(),
+            password: vine.string()
+          })))
+
+
     const dateTime = await Util.getDateTimes(request.ip())
 
     try {
-      const user = await UserRepository.findByEmail(username)
+      const user = await UserRepository.findByEmail(email)
+
+      // log(user)
       if (!user) {
         return response.status(500).json({
           ...MessageFrontEnd(
@@ -46,8 +60,17 @@ export default class UserController {
         })
       }
 
+      const pass = user.password
+      let passVerify = false
+      const isBcrypt = pass.startsWith('$2a$10$')
+      if (isBcrypt) {
+        passVerify = await hash.use('bcrypt').verify(pass, password)
 
-      if (!(await user.verifyPassword(password))) {
+      } else passVerify = await user.verifyPassword(password)
+
+      console.log({ passVerify, isBcrypt });
+
+      if (!(passVerify)) {
         return response.status(500).json({
           ...MessageFrontEnd(
             i18n.formatMessage('messages.error_login'),
@@ -64,13 +87,14 @@ export default class UserController {
       await UserRepository.addInfoLocation(dateTime, request.ip(), user.id)
 
 
+      const sqlDate = dateTime.toSQL({ includeOffset: false })
       await db.table('tokens').insert({
         user_id: user.id,
         token: accessToken.token,
         type: 'bearer',
         is_revoked: 0,
-        created_at: dateTime.toSQL(),
-        updated_at: dateTime.toSQL(),
+        created_at: sqlDate,
+        updated_at: sqlDate,
         refreshToken: refreshToken.toJSON().token,
       })
 
@@ -87,12 +111,14 @@ export default class UserController {
       })
     } catch (error) {
       console.error(error)
-      return response.status(500).json({
-        ...MessageFrontEnd(
-          i18n.formatMessage('messages.error_login'),
-          i18n.formatMessage('messages.error_title')
-        ),
-      })
+      if (env.get('NODE_ENV') == 'development') return response.internalServerError({ error })
+      else
+        return response.status(500).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.error_login'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
     }
   }
 
@@ -125,7 +151,7 @@ export default class UserController {
     if (await user.verifyPassword(current_password)) {
       try {
         user.password = new_password
-        user.updated_at = dateTime
+        user.updatedAt = dateTime
         await user.save()
 
         return response.status(201).json({
@@ -169,7 +195,7 @@ export default class UserController {
     if (businessUser?.businessUserRols.length) {
       const targetUser = await User.findOrFail(user_id)
       targetUser.password = '12345678'
-      targetUser.updated_at = dateTime
+      targetUser.updatedAt = dateTime
       await targetUser.save()
       return response.status(201).json({
         ...MessageFrontEnd(
@@ -203,7 +229,7 @@ export default class UserController {
 
       if (user) {
         user.code = Util.getCode().toString()
-        user.code_date_time = Util.getDateTimesAddHours(dateTime, 1)
+        user.codeDateTime = Util.getDateTimesAddHours(dateTime, 1)
         await user.save()
 
         /*         const full_name = user.personalData
@@ -213,7 +239,7 @@ export default class UserController {
                 const userNotification = {
                   title: 'Recuperación de contraseña',
                   body: 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Utiliza el siguiente código de verificación para completar el proceso:',
-                  time: user.code_date_time,
+                  time: user.codeDateTime,
                   email: user.email,
                   full_name,
                   code: user.code,
@@ -262,12 +288,12 @@ export default class UserController {
       .first()
 
     if (user) {
-      if (Util.parseToMoment(user.code_date_time!) >= dateTime.toISO()!) {
+      if (Util.parseToMoment(user.codeDateTime!) >= dateTime.toISO()!) {
         try {
           user.password = new_password
           user.code = null
-          user.code_date_time = null
-          user.updated_at = dateTime
+          user.codeDateTime = null
+          user.updatedAt = dateTime
           await user.save()
 
           return response.status(201).json({
@@ -303,7 +329,7 @@ export default class UserController {
   }
 
   public async assignUserToEmployee({ request, response, i18n }: HttpContext) {
-    const { personal_data_id, email } = request.all()
+    const { personalDataId, email } = request.all()
     const dateTime = await Util.getDateTimes(request.ip())
     const password = '12345678'
 
@@ -318,7 +344,7 @@ export default class UserController {
         })
       }
 
-      const existingPersonalData = await User.findBy('personal_data_id', personal_data_id)
+      const existingPersonalData = await User.findBy('personalDataId', personalDataId)
       if (existingPersonalData) {
         return response.status(400).json({
           ...MessageFrontEnd(
@@ -331,9 +357,9 @@ export default class UserController {
       const user = await User.create({
         email,
         password,
-        personal_data_id,
-        created_at: dateTime,
-        updated_at: dateTime,
+        personalDataId,
+        createdAt: dateTime,
+        updatedAt: dateTime,
         enabled: true,
       })
 
@@ -349,7 +375,7 @@ export default class UserController {
             emitter.emit('new::userAssignedToEmployee', {
               title: 'Asignacion de usuario a empleado',
               body: 'Se ha realizado la asignacion de usuario a empleado, a continuacion usa el siguiente codigo para verificar tu usuario.',
-              time: user.code_date_time,
+              time: user.codeDateTime,
               email,
               code: user.code,
               full_name,
@@ -412,10 +438,10 @@ export default class UserController {
     const dateTime = await Util.getDateTimes(request.ip())
 
     try {
-      const { email, business, personal_data_id, personal_data } = request.all() as {
+      const { email, business, personalDataId, personal_data: personalData } = request.all() as {
         email: string
         business: string | BusinessPayload[]
-        personal_data_id?: number
+        personalDataId?: number
         personal_data?: string | PersonalDataPayload
       }
       const signature = request.file('signature')
@@ -436,8 +462,8 @@ export default class UserController {
         {
           email,
           password: '12345678',
-          created_at: dateTime,
-          updated_at: dateTime,
+          createdAt: dateTime,
+          updatedAt: dateTime,
           enabled: true,
         },
         { client: trx }
@@ -446,47 +472,47 @@ export default class UserController {
       if (signature) {
         const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
         user.signature = resultUpload.url
-        user.signature_short = resultUpload.url_short
-        user.signature_thumb = resultUpload.url_thumb
-        user.signature_thumb_short = resultUpload.url_thumb_short
+        user.signatureShort = resultUpload.url_short
+        user.signatureThumb = resultUpload.url_thumb
+        user.signatureThumbShort = resultUpload.url_thumb_short
         await user.useTransaction(trx).save()
       }
 
       for (const bus of businessArray) {
         const payloadBusinessUser = {
-          user_id: user.id,
-          business_id: bus.business_id,
+          userId: user.id,
+          businessId: bus.business_id,
         }
 
         const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
 
         const businessUserRol = {
-          business_user_id: businessUser.id,
-          rol_id: bus.rol_id,
+          businessUserId: businessUser.id,
+          rolId: bus.rol_id,
         }
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
         const payloadPermission = bus.permissions.map((permId) => ({
-          business_user_id: businessUser.id,
-          permission_id: permId,
+          businessUserId: businessUser.id,
+          permissionId: permId,
         }))
 
         await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
       }
 
-      if (personal_data_id) {
-        user.personal_data_id = personal_data_id
+      if (personalDataId) {
+        user.personalDataId = personalDataId
       } else {
         const parsedPersonalData =
-          typeof personal_data === 'string' ? JSON.parse(personal_data) : personal_data
-        parsedPersonalData.created_at = dateTime
-        parsedPersonalData.updated_at = dateTime
-        parsedPersonalData.created_by = auth.user!.id
-        parsedPersonalData.updated_by = auth.user!.id
+          typeof personalData === 'string' ? JSON.parse(personalData) : personalData
+        parsedPersonalData.createdAt = dateTime
+        parsedPersonalData.updatedAt = dateTime
+        parsedPersonalData.createdBy = auth.user!.id
+        parsedPersonalData.updatedBy = auth.user!.id
 
-        const personalData = await user.related('personalData').create(parsedPersonalData, { client: trx })
-        user.personal_data_id = personalData.id
+        const resPersonalData = await PersonalData.create(parsedPersonalData, { client: trx })
+        user.personalDataId = resPersonalData.id
         await user.useTransaction(trx).save()
       }
 
@@ -499,7 +525,7 @@ export default class UserController {
            emitter.emit('new::userAssignedToEmployee', {
              title: 'Registro de usuario',
              body: 'Se ha realizado el registro de usuario exitosamente, a continuacion usa el siguiente codigo para verificar tu usuario.',
-             time: user.code_date_time,
+             time: user.codeDateTime,
              email,
              code: user.code,
              full_name,
@@ -547,7 +573,7 @@ export default class UserController {
       })
     }
 
-    if (user.code === code && Util.parseToMoment(user.code_date_time!) >= dateTime.toISO()!) {
+    if (user.code === code && Util.parseToMoment(user.codeDateTime!) >= dateTime.toISO()!) {
       user.verified = true
       await user.save()
       return response.status(201).json({
@@ -595,8 +621,8 @@ export default class UserController {
 
       const payload = {
         email,
-        created_at: dateTime,
-        updated_at: dateTime,
+        createdAt: dateTime,
+        updatedAt: dateTime,
         client_id: -1,
         is_admin: false,
         in_app: false,
@@ -633,9 +659,9 @@ export default class UserController {
     const user = await User.findBy('email', email)
 
     if (user) {
-      if (user.code === code && Util.parseToMoment(user.code_date_time!) >= dateTime.toISO()!) {
+      if (user.code === code && Util.parseToMoment(user.codeDateTime!) >= dateTime.toISO()!) {
         user.verified = true
-        user.verified_at = dateTime
+        user.verifiedAt = dateTime
         await user.save()
 
         return response.status(201).json({
@@ -670,7 +696,7 @@ export default class UserController {
     if (user) {
       try {
         user.password = password
-        user.updated_at = dateTime
+        user.updatedAt = dateTime
         await user.save()
 
         return response.status(201).json({
@@ -714,7 +740,7 @@ export default class UserController {
         })
       }
 
-      if (user.client_id <= 0 && user.client_id !== -1) {
+      if (user.clientId <= 0 && user.clientId !== -1) {
         return response.status(500).json({
           ...MessageFrontEnd(
             i18n.formatMessage('messages.user_error'),
@@ -733,8 +759,8 @@ export default class UserController {
       }
 
       const token = await auth.use('jwt').generate(user)
-      user.last_login_at = dateTime
-      user.last_login_tz = await Util.getTimeZone(request.ip())
+      user.lastLoginAt = dateTime
+      user.lastLoginTz = await Util.getTimeZone(request.ip())
       await user.save()
 
       return response.status(200).json({

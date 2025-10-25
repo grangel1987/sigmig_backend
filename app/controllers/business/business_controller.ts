@@ -18,8 +18,8 @@ interface BusinessPayload {
   email: string
   authorization_minor: boolean
   days_expire_buget: number
-  created_at: DateTime
-  created_by: number
+  createdAt: DateTime
+  createdBy: number
   updated_at: DateTime
   updated_by: number
   email_confirm_inactive_employee: boolean
@@ -64,8 +64,8 @@ export default class BusinessController {
           email,
           authorization_minor: authorization_minor === 'true',
           days_expire_buget: parseInt(days_expire_buget, 10),
-          created_at: dateTime,
-          created_by: auth.user!.id,
+          createdAt: dateTime,
+          createdBy: auth.user!.id,
           updated_at: dateTime,
           updated_by: auth.user!.id,
           email_confirm_inactive_employee: email_confirm_inactive_employee === 'true',
@@ -207,12 +207,12 @@ export default class BusinessController {
    *  ----------------------------------------------------------------- */
   public async deletePhoto({ params, response, i18n }: HttpContext) {
     const business = await Business.findOrFail(params.id)
-    const { url_short, url_thumb_short } = business
+    const { urlShort, urlThumbShort } = business
 
-    if (url_short) {
+    if (urlShort) {
       try {
-        await Google.deleteFile(url_short)
-        await Google.deleteFile(url_thumb_short!)
+        await Google.deleteFile(urlShort)
+        await Google.deleteFile(urlThumbShort!)
 
       } catch (e) {
         console.error(e)
@@ -226,9 +226,9 @@ export default class BusinessController {
     }
 
     business.url = ''
-    business.url_short = ''
-    business.url_thumb = ''
-    business.url_thumb_short = ''
+    business.urlShort = ''
+    business.urlThumb = ''
+    business.urlThumbShort = ''
     await business.save()
 
     await business.load('country', (b) => b.select('name as country'))
@@ -261,21 +261,21 @@ export default class BusinessController {
 
     const {
       name,
-      country_id,
-      type_identify_id,
+      country_id: countryId,
+      type_identify_id: typeIdentifyId,
       identify,
       address,
       phone,
       email,
-      days_expire_buget,
+      days_expire_buget: daysExpireBuget,
       coins: rawCoins,
-      del_name,
-      del_type_identify_id,
-      del_identify,
-      del_phone,
-      del_email,
-      authorization_minor,
-      email_confirm_inactive_employee,
+      del_name: delName,
+      del_type_identify_id: delTypeIdentifyId,
+      del_identify: delIdentify,
+      del_phone: delPhone,
+      del_email: delEmail,
+      authorization_minor: authorizationMinor,
+      email_confirm_inactive_employee: emailConfirmInactiveEmployee,
     } = request.all()
 
     const photo = request.file('photo')
@@ -288,16 +288,16 @@ export default class BusinessController {
       // ------------------- BASIC FIELDS -------------------
       business.merge({
         name,
-        country_id,
-        type_identify_id,
+        countryId,
+        typeIdentifyId,
         address,
         phone, identify,
         email,
-        authorization_minor,
-        email_confirm_inactive_employee,
-        days_expire_buget,
-        updated_at: dateTime,
-        updated_by: userId,
+        authorizationMinor,
+        emailConfirmInactiveEmployee,
+        daysExpireBuget,
+        updatedAt: dateTime,
+        updatedBy: userId,
       })
 
       // ------------------- DELEGATE -------------------
@@ -307,15 +307,15 @@ export default class BusinessController {
 
       await business.related('delegate').create(
         {
-          name: del_name,
-          type_identify_id: del_type_identify_id,
-          identify: del_identify,
-          phone: del_phone,
-          email: del_email,
-          created_at: dateTime,
-          created_by: userId,
-          updated_at: dateTime,
-          updated_by: userId,
+          name: delName,
+          typeIdentifyId: delTypeIdentifyId,
+          identify: delIdentify,
+          phone: delPhone,
+          email: delEmail,
+          createdAt: dateTime,
+          createdBy: userId,
+          updatedAt: dateTime,
+          updatedBy: userId,
         },
         { client: trx }
       )
@@ -323,9 +323,9 @@ export default class BusinessController {
       // ------------------- PHOTO -------------------
       if (photo) {
         // delete old
-        if (business.url_short) {
-          await Google.deleteFile(business.url_short)
-          await Google.deleteFile(business.url_thumb_short!)
+        if (business.urlShort) {
+          await Google.deleteFile(business.urlShort)
+          await Google.deleteFile(business.urlThumbShort!)
         }
 
         const res = await Google.uploadFile(photo, 'business', 'image')
@@ -343,9 +343,9 @@ export default class BusinessController {
           .delete()
 
         const payload = coins.map((coinId, idx) => ({
-          business_id: business.id,
-          coin_id: coinId,
-          is_default: idx === 0 ? 1 : 0,
+          businessId: business.id,
+          coinId: coinId,
+          isDefault: idx === 0 ? 1 : 0,
         }))
 
         await business.related('coins').createMany(payload, { client: trx })

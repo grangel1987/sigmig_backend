@@ -8,8 +8,8 @@ import Hash from '@adonisjs/core/services/hash'
 import BusinessUser from '#models/business/business_user'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, beforeCreate, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
-import type { HasMany, HasOne } from '@adonisjs/lucid/types/relations'
+import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 import PersonalData from './personal_data.js'
 
@@ -20,6 +20,7 @@ const AuthFinder = withAuthFinder(() => Hash.use('scrypt'), {
 
 
 export default class User extends compose(BaseModel, AuthFinder) {
+
   @column({ isPrimary: true })
   public id: number
 
@@ -30,73 +31,73 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public password: string
 
   @column({ serializeAs: null })
-  public reset_password: string | null
+  public resetPassword: string | null
 
   @column.dateTime({ serializeAs: null })
-  public reset_password_at: DateTime | null
+  public resetPasswordAt: DateTime | null
 
   @column({ serializeAs: null })
   public code: string | null
 
   @column.dateTime({ serializeAs: null })
-  public code_date_time: DateTime | null
-
-  @column({ serializeAs: null })
-  public code_confirm: string | null
-
-  @column.dateTime({ serializeAs: null })
-  public code_confirm_date_time: DateTime | null
+  public codeDateTime: DateTime | null
 
   @column()
-  public personal_data_id: number | null
+  declare personalDataId: number
+
+  @column({ serializeAs: null })
+  public codeConfirm: string | null
+
+  @column.dateTime({ serializeAs: null })
+  public codeConfirmDateTime: DateTime | null
 
   @column({ serializeAs: null })
   public enabled: boolean
 
   @column({ serializeAs: null })
-  public is_admin: boolean
+  public isAdmin: boolean
 
   @column({ serializeAs: null })
-  public in_app: boolean
+  public inApp: boolean
 
   @column()
-  public client_id: number
+  public clientId: number
 
   @column()
-  public employee_id: number
+  public employeeId: number
 
   @column({ serializeAs: null })
-  public last_login_at: DateTime | null
+  public lastLoginAt: DateTime | null
 
   @column({ serializeAs: null })
-  public last_login_tz: string | null
+  public lastLoginTz: string | null
 
   @column({ serializeAs: null })
   public verified: boolean
 
   @column.dateTime({ serializeAs: null })
-  public verified_at: DateTime | null
+  public verifiedAt: DateTime | null
 
   @column({ serializeAs: null })
-  public updated_by: number | null
+  public updatedBy: number | null
 
   @column.dateTime({ autoCreate: true, serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
-  @hasOne(() => PersonalData)
-  public personalData: HasOne<typeof PersonalData>
+  @belongsTo(() => PersonalData)
+  public personalData: BelongsTo<typeof PersonalData>
 
   @column()
   public signature: string | null
   @column()
-  public signature_short: string | null
+  public signatureShort: string | null
   @column()
-  public signature_thumb: string | null
+  public signatureThumb: string | null
   @column()
-  public signature_thumb_short: string | null
+  public signatureThumbShort: string | null
 
   @hasMany(() => BusinessUser)
   public businessUser: HasMany<typeof BusinessUser>
@@ -115,9 +116,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public static async setDefaults(user: User) {
     user.enabled = true
     user.code = Util.getCode().toString()
-    user.code_date_time = Util.getDateTimesAddHours(DateTime.now(), 1)
-    user.code_confirm = Util.getCode().toString()
-    user.code_confirm_date_time = Util.getDateTimesAddHours(DateTime.now(), 1)
+    user.codeDateTime = Util.getDateTimesAddHours(DateTime.now(), 1)
+    user.codeConfirm = Util.getCode().toString()
+    user.codeConfirmDateTime = Util.getDateTimesAddHours(DateTime.now(), 1)
   }
 
   public serialize() {

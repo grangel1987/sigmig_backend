@@ -13,22 +13,22 @@ export default class City extends BaseModel {
   public name: string
 
   @column()
-  public country_id: number
+  public countryId: number
 
   @column()
   public enabled: boolean
 
-  @column()
-  public created_by: number  // Changed to snake_case
+  @column({ columnName: 'created_by' })
+  public createdById: number | null
 
-  @column()
-  public updated_by: number  // Changed to snake_case
+  @column({ columnName: 'updated_by' })
+  public updatedById: number | null
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime  // Changed to snake_case
+  public createdAt: DateTime  // Changed to snake_case
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime  // Changed to snake_case
+  public updatedAt: DateTime  // Changed to snake_case
 
   @beforeCreate()
   public static async setEnabled(model: City) {
@@ -36,17 +36,17 @@ export default class City extends BaseModel {
   }
 
   @belongsTo(() => Country, {
-    foreignKey: 'country_id',
+    foreignKey: 'countryIdId',
   })
   public country: BelongsTo<typeof Country>
 
   @belongsTo(() => User, {
-    foreignKey: 'created_by',
+    foreignKey: 'createdById',
   })
   public createdBy: BelongsTo<typeof User>
 
   @belongsTo(() => User, {
-    foreignKey: 'updated_by',
+    foreignKey: 'updatedById',
   })
   public updatedBy: BelongsTo<typeof User>
 

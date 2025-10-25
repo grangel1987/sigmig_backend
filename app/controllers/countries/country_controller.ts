@@ -42,10 +42,10 @@ export default class CountryController {
 
       country.merge({
         name,
-        phone_code: prefix,
+        phoneCode: prefix,
         nationality,
-        updated_by: auth.user!.id,
-        updated_at: dateTime,
+        updatedById: auth.user!.id,
+        updatedAt: dateTime,
       })
       await country.save()
 

@@ -8,7 +8,7 @@ export default class CostCenter extends BaseModel {
   public id: number
 
   @column()
-  public business_id: number
+  public businessId: number
 
   @column()
   public code: string  // Changed to snake_case
@@ -19,17 +19,17 @@ export default class CostCenter extends BaseModel {
   @column()
   public enabled: boolean
 
-  @column()
-  public created_by: number  // Changed to snake_case
+  @column({ columnName: 'created_by' })
+  public createdById: number | null
 
-  @column()
-  public updated_by: number  // Changed to snake_case
+  @column({ columnName: 'updated_by' })
+  public updatedById: number | null
 
   @column.dateTime({ autoCreate: true })
-  public created_at: DateTime  // Changed to snake_case
+  public createdAt: DateTime  // Changed to snake_case
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updated_at: DateTime  // Changed to snake_case
+  public updatedAt: DateTime  // Changed to snake_case
 
   @beforeCreate()
   public static async setEnabled(model: CostCenter) {
@@ -37,12 +37,12 @@ export default class CostCenter extends BaseModel {
   }
 
   @belongsTo(() => User, {
-    foreignKey: 'created_by',
+    foreignKey: 'createdBy',
   })
   public createdBy: BelongsTo<typeof User>
 
   @belongsTo(() => User, {
-    foreignKey: 'updated_by',
+    foreignKey: 'updatedBy',
   })
   public updatedBy: BelongsTo<typeof User>
 

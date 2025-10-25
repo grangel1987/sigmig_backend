@@ -10,25 +10,25 @@ export default class Coin extends BaseModel {
   @column()
   public name: string
 
-  @column()
-  public created_by: number | null
+  @column({ columnName: 'created_by' })
+  public createdById: number | null
 
-  @column()
-  public updated_by: number | null
+  @column({ columnName: 'updated_by' })
+  public updatedById: number | null
 
   @column()
   public enabled: boolean
 
   @column.dateTime({ serializeAs: null })
-  public created_at: DateTime
+  public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updated_at: DateTime
+  public updatedAt: DateTime
 
-  @belongsTo(() => User, { foreignKey: 'created_by' })
+  @belongsTo(() => User, { foreignKey: 'createdBy' })
   public createdBy: BelongsTo<typeof User>
 
-  @belongsTo(() => User, { foreignKey: 'updated_by' })
+  @belongsTo(() => User, { foreignKey: 'updatedBy' })
   public updatedBy: BelongsTo<typeof User>
 
   @beforeCreate()
