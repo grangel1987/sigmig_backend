@@ -32,12 +32,12 @@ router.group(() => {
     router.delete("/delete/photo/:id", "#controllers/business/business_controller.deletePhoto");
     router.put("/update/:id", "#controllers/business/business_controller.update");
   })
-    .prefix(`v2/business`).middleware(middleware.auth())
+    .prefix(`/business`).middleware(middleware.auth())
 
   router.group(() => {
     router.get("/web/find/id/:id", "#controllers/business/business_controller.show");
   })
-    .prefix(`v2/business`)
+    .prefix(`business`)
 
 
 }).prefix('api/v2')
