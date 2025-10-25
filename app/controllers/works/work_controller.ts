@@ -2,6 +2,7 @@ import Work from '#models/works/Work'
 import WorksRepository from '#repositories/works/works_repository'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 type MessageFrontEnd = {
@@ -11,7 +12,13 @@ type MessageFrontEnd = {
 
 export default class WorkController {
 
-  public async index({ auth, response, i18n }: HttpContext) {
+  public async index({ request, auth, response, i18n }: HttpContext) {
+
+    const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
+      page: vine.number().positive().optional(),
+      perPage: vine.number().positive().optional()
+    })))
+
     try {
       const userId = auth.user!.id
       const business = await Work.query()
@@ -21,7 +28,7 @@ export default class WorkController {
         .firstOrFail()
       const businessId = business.businessId
 
-      const works = await Work.query()
+      const workQuery = Work.query()
         .where('business_id', businessId)
         .preload('createdBy', (builder) => {
           builder.select(['id', 'full_name', 'email'])
@@ -29,6 +36,7 @@ export default class WorkController {
         .preload('updatedBy', (builder) => {
           builder.select(['id', 'full_name', 'email'])
         })
+      const works = await (page ? workQuery.paginate(page, perPage || 10) : workQuery)
 
       return works
     } catch (error) {
@@ -47,15 +55,15 @@ export default class WorkController {
 
     try {
       const data = {
-        business_id,
+        businessId: business_id,
         name,
         code,
         lat,
         log,
         createdAt: dateTime,
         updated_at: dateTime,
-        createdBy: auth.user!.id,
-        updated_by: auth.user!.id,
+        createdById: auth.user!.id,
+        updatedById: auth.user!.id,
       }
 
       const work = await Work.create(data)

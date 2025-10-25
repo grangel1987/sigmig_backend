@@ -3,26 +3,28 @@ import BusinessRepository from '#repositories/business/business_repository'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import { businessValidator } from '#validators/business'
 import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import db from '@adonisjs/lucid/services/db'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 interface BusinessPayload {
-  country_id: number
-  type_identify_id: number
+  countryId: number
+  typeIdentifyId: number
   identify: string
   name: string
   address: string
   phone: string
   email: string
-  authorization_minor: boolean
-  days_expire_buget: number
+  authorizationMinor: boolean
+  daysExpireBuget: number
   createdAt: DateTime
-  createdBy: number
-  updated_at: DateTime
-  updated_by: number
-  email_confirm_inactive_employee: boolean
+  createdById: number
+  updatedAt: DateTime
+  updatedById: number
+  emailConfirmInactiveEmployee: boolean
 }
 
 export default class BusinessController {
@@ -47,7 +49,7 @@ export default class BusinessController {
       del_email,
       authorization_minor,
       email_confirm_inactive_employee,
-    } = request.all()
+    } = await request.validateUsing(businessValidator)
 
     const photo = request.file('photo', { size: '2mb', extnames: ['jpg', 'png', 'jpeg', 'webp',] })
 
@@ -55,20 +57,20 @@ export default class BusinessController {
 
       try {
         const payload: BusinessPayload = {
-          country_id: parseInt(country_id, 10),
-          type_identify_id: parseInt(type_identify_id, 10),
+          countryId: country_id,
+          typeIdentifyId: type_identify_id,
           identify,
           name,
           address,
           phone,
           email,
-          authorization_minor: authorization_minor === 'true',
-          days_expire_buget: parseInt(days_expire_buget, 10),
+          authorizationMinor: authorization_minor === 'true',
+          daysExpireBuget: days_expire_buget,
           createdAt: dateTime,
-          createdBy: auth.user!.id,
-          updated_at: dateTime,
-          updated_by: auth.user!.id,
-          email_confirm_inactive_employee: email_confirm_inactive_employee === 'true',
+          createdById: auth.user!.id,
+          updatedAt: dateTime,
+          updatedById: auth.user!.id,
+          emailConfirmInactiveEmployee: email_confirm_inactive_employee === 'true',
         }
 
         const delegatePayload = {
@@ -135,13 +137,17 @@ export default class BusinessController {
   /** -----------------------------------------------------------------
    *  FIND ALL BUSINESSES FOR LOGGED USER + COINS + TAXES
    *  ----------------------------------------------------------------- */
-  public async findBusinessByUser({ auth }: HttpContext) {
+  public async findBusinessByUser({ request, auth }: HttpContext) {
     const userId = auth.user!.id
 
-    const businesses = await BusinessRepository.findBusinessByUser(userId)
+    const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
+      page: vine.number().positive().optional(),
+      perPage: vine.number().positive().optional()
+    })))
+
+    const businesses = await BusinessRepository.findBusinessByUser(userId, page, perPage)
     const businessCoins = await BusinessRepository.findBusinessCoins(userId)
     const businessTaxes = await BusinessRepository.findBusinessTaxes(userId)
-
     for (const business of businesses) {
       const bid = business.id
       business.coins = businessCoins.filter((c) => c.business_id === bid)

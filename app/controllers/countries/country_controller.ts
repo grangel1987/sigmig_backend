@@ -2,13 +2,19 @@ import Country from '#models/countries/country'
 import CountryRepository from '#repositories/countries/country_repository'
 import messageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 
 export default class CountryController {
 
   public async index({ request }: HttpContext) {
-    const { params, page, perPage } = request.all()
+
+    const { page, perPage, params } = await request.validateUsing(vine.compile(vine.object({
+      page: vine.number().positive().optional(),
+      perPage: vine.number().positive().optional(),
+      params: vine.string().optional()
+    })))
     let query = Country.query()
 
     if (params) {
