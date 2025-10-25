@@ -1,0 +1,192 @@
+import Work from '#models/works/Work'
+import WorksRepository from '#repositories/works/works_repository'
+import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { HttpContext } from '@adonisjs/core/http'
+import { DateTime } from 'luxon'
+
+type MessageFrontEnd = {
+  message: string
+  title: string
+}
+
+export default class WorkController {
+
+  public async index({ auth, response, i18n }: HttpContext) {
+    try {
+      const userId = auth.user!.id
+      const business = await Work.query()
+        .from('business_users')
+        .where('selected', 1)
+        .where('user_id', userId)
+        .firstOrFail()
+      const businessId = business.business_id
+
+      const works = await Work.query()
+        .where('business_id', businessId)
+        .preload('createdBy', (builder) => {
+          builder.select(['id', 'full_name', 'email'])
+        })
+        .preload('updatedBy', (builder) => {
+          builder.select(['id', 'full_name', 'email'])
+        })
+
+      return works
+    } catch (error) {
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      })
+    }
+  }
+
+  public async store({ auth, request, response, i18n }: HttpContext) {
+    const { business_id, name, code, lat, log } = request.all()
+    const dateTime = DateTime.local()
+
+    try {
+      const data = {
+        business_id,
+        name,
+        code,
+        lat,
+        log,
+        created_at: dateTime,
+        updated_at: dateTime,
+        created_by: auth.user!.id,
+        updated_by: auth.user!.id,
+      }
+
+      const work = await Work.create(data)
+
+      await work.load('createdBy', (builder) => {
+        builder.select(['id', 'full_name', 'email'])
+      })
+      await work.load('updatedBy', (builder) => {
+        builder.select(['id', 'full_name', 'email'])
+      })
+
+      return response.status(201).json({
+        work,
+        message: i18n.formatMessage('messages.store_ok'),
+        title: i18n.formatMessage('messages.ok_title'),
+      } as MessageFrontEnd)
+    } catch (error) {
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      })
+    }
+  }
+
+  public async update({ params, request, response, auth, i18n }: HttpContext) {
+    const workId = params.id
+    const { name, code, lat, log } = request.all()
+    const dateTime = DateTime.local()
+
+    try {
+      const work = await Work.findOrFail(workId)
+
+      work.merge({
+        name,
+        code,
+        lat,
+        log,
+        updated_at: dateTime,
+        updated_by: auth.user!.id,
+      })
+      await work.save()
+
+      await work.load('createdBy', (builder) => {
+        builder.select(['id', 'full_name', 'email'])
+      })
+      await work.load('updatedBy', (builder) => {
+        builder.select(['id', 'full_name', 'email'])
+      })
+
+      return response.status(201).json({
+        work,
+        message: i18n.formatMessage('messages.update_ok'),
+        title: i18n.formatMessage('messages.ok_title'),
+      } as MessageFrontEnd)
+    } catch (error) {
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      })
+    }
+  }
+
+  public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    const workId = params.id
+    const dateTime = DateTime.local()
+
+    try {
+      const work = await Work.findOrFail(workId)
+      const status = !work.enabled
+      work.merge({
+        enabled: status,
+        updated_by: auth.user!.id,
+        updated_at: dateTime,
+      })
+      await work.save()
+
+      await work.load('createdBy', (builder) => {
+        builder.select(['id', 'full_name', 'email'])
+      })
+      await work.load('updatedBy', (builder) => {
+        builder.select(['id', 'full_name', 'email'])
+      })
+
+      return response.status(201).json({
+        work,
+        message: i18n.formatMessage(work.enabled ? 'messages.ok_enabled' : 'messages.ok_disabled'),
+        title: i18n.formatMessage('messages.ok_title'),
+      } as MessageFrontEnd)
+    } catch (error) {
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      })
+    }
+  }
+
+  public async findAll({ params }: HttpContext) {
+    const business_id = params.business_id
+    const works = await Work.query()
+      .select(['id', 'code', 'name'])
+      .where('enabled', true)
+      .where('business_id', business_id)
+
+    return works
+  }
+
+  public async select({ auth, response, i18n }: HttpContext) {
+    try {
+      const userId = auth.user!.id
+      const business = await Work.query()
+        .from('business_users')
+        .where('selected', 1)
+        .where('user_id', userId)
+        .firstOrFail()
+      const businessId = business.business_id
+
+      const works = await WorksRepository.select(businessId)
+      return works
+    } catch (error) {
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      })
+    }
+  }
+}
