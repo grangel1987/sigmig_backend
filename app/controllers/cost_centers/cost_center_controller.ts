@@ -12,28 +12,34 @@ type MessageFrontEnd = {
 
 export default class CostCenterController {
 
-  public async index({ auth }: HttpContext) {
+  public async index({ request, response, auth }: HttpContext) {
+
+    const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
+      page: vine.number().positive().optional(),
+      perPage: vine.number().positive().optional()
+    })))
+
     try {
       const userId = auth.user!.id
-      const costCenter = await CostCenter.query()
+      const userBusiness = await CostCenter.query()
         .from('business_users')
         .where('selected', 1)
         .where('user_id', userId)
         .firstOrFail()
-      const businessId = costCenter.businessId
+      const businessId = userBusiness.businessId
 
       const costCenters = await CostCenter.query()
         .where('business_id', businessId)
         .preload('createdBy', (builder) => {
-          builder.select(['id', 'full_name', 'email'])
+          builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
         })
         .preload('updatedBy', (builder) => {
-          builder.select(['id', 'full_name', 'email'])
-        })
+          builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+        }).paginate(page || 1, perPage || 10)
 
-      return costCenters
+      response.ok(costCenters)
     } catch (error) {
-      throw new Exception('Failed to fetch cost centers')
+      throw error
     }
   }
 
@@ -55,10 +61,10 @@ export default class CostCenterController {
       const costCenter = await CostCenter.create(data)
 
       await costCenter.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await costCenter.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({
@@ -88,10 +94,10 @@ export default class CostCenterController {
       await costCenter.save()
 
       await costCenter.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await costCenter.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({
@@ -119,10 +125,10 @@ export default class CostCenterController {
       await costCenter.save()
 
       await costCenter.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await costCenter.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({

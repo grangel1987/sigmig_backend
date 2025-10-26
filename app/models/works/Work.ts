@@ -25,10 +25,10 @@ export default class Work extends BaseModel {
   @column()
   public enabled: boolean
 
-  @column({ columnName: 'created_by_id' })
+  @column({ columnName: 'created_by' })
   public createdById: number  // Changed to snake_case
 
-  @column({ columnName: 'updated_by_id' })
+  @column({ columnName: 'updated_by' })
   public updatedById: number  // Changed to snake_case
 
   @column.dateTime({ autoCreate: true })
@@ -42,14 +42,10 @@ export default class Work extends BaseModel {
     model.enabled = true
   }
 
-  @belongsTo(() => User, {
-    foreignKey: 'createdBy',
-  })
+  @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
 
-  @belongsTo(() => User, {
-    foreignKey: 'updated_by',
-  })
+  @belongsTo(() => User, { foreignKey: 'updatedById' })
   public updatedBy: BelongsTo<typeof User>
 
   public static castDates(_field: string, value: DateTime): string {

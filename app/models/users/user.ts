@@ -8,8 +8,8 @@ import Hash from '@adonisjs/core/services/hash'
 import BusinessUser from '#models/business/business_user'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
-import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 import PersonalData from './personal_data.js'
 
@@ -104,6 +104,15 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => Token)
   public tokens: HasMany<typeof Token>
+
+  @hasOne(() => BusinessUser, { onQuery: (bQ) => bQ.where('selected', 1) })
+  declare selectedBusiness: HasOne<typeof BusinessUser>
+
+  @computed()
+  public get full_name() {
+    const pData = this.personalData
+    return pData ? `${pData.names || ''} ${pData.lastNameM || ''} ${pData.lastNameP || ''}` : undefined
+  }
 
   static refreshTokens = DbAccessTokensProvider.forModel(User, {
     prefix: 'rt_',

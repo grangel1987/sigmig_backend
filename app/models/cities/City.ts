@@ -35,9 +35,7 @@ export default class City extends BaseModel {
     model.enabled = true
   }
 
-  @belongsTo(() => Country, {
-    foreignKey: 'countryIdId',
-  })
+  @belongsTo(() => Country)
   public country: BelongsTo<typeof Country>
 
   @belongsTo(() => User, {

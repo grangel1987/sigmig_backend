@@ -1,4 +1,5 @@
-import Work from '#models/works/Work'
+import BusinessUser from '#models/business/business_user'
+import Work from '#models/works/work'
 import WorksRepository from '#repositories/works/works_repository'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
@@ -21,7 +22,10 @@ export default class WorkController {
 
     try {
       const userId = auth.user!.id
-      const business = await Work.query()
+
+      console.log({ userId });
+
+      const business = await BusinessUser.query()
         .from('business_users')
         .where('selected', 1)
         .where('user_id', userId)
@@ -31,15 +35,17 @@ export default class WorkController {
       const workQuery = Work.query()
         .where('business_id', businessId)
         .preload('createdBy', (builder) => {
-          builder.select(['id', 'full_name', 'email'])
+          builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
         })
         .preload('updatedBy', (builder) => {
-          builder.select(['id', 'full_name', 'email'])
+          builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
         })
       const works = await (page ? workQuery.paginate(page, perPage || 10) : workQuery)
 
       return works
     } catch (error) {
+      console.log(error);
+
       return response.status(500).json({
         ...MessageFrontEnd(
           i18n.formatMessage('messages.update_error'),
@@ -69,10 +75,10 @@ export default class WorkController {
       const work = await Work.create(data)
 
       await work.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await work.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({
@@ -109,10 +115,10 @@ export default class WorkController {
       await work.save()
 
       await work.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await work.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({
@@ -145,10 +151,10 @@ export default class WorkController {
       await work.save()
 
       await work.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await work.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({

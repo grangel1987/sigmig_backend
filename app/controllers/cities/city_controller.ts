@@ -24,10 +24,10 @@ export default class CityController {
         builder.select(['id', 'name'])
       })
       .preload('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       .preload('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       }).paginate(page || 1, perPage || 10)
 
     return response.ok(cities)
@@ -52,10 +52,10 @@ export default class CityController {
         builder.select(['id', 'name'])
       })
       await city.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await city.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({
@@ -82,16 +82,19 @@ export default class CityController {
         updatedById: auth.user!.id,
         updatedAt: dateTime,
       })
+
+      console.log(city.serialize());
+
       await city.save()
 
       await city.load('country', (builder) => {
         builder.select(['id', 'name'])
       })
       await city.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await city.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({
@@ -100,7 +103,7 @@ export default class CityController {
         title: i18n.formatMessage('messages.ok_title'),
       } as MessageFrontEnd)
     } catch (error) {
-      throw new Exception(i18n.formatMessage('messages.update_error'))
+      throw error
     }
   }
 
@@ -122,10 +125,10 @@ export default class CityController {
         builder.select(['id', 'name'])
       })
       await city.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await city.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({

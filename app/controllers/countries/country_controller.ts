@@ -23,10 +23,10 @@ export default class CountryController {
 
     const countries = await query
       .preload('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       .preload('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       .paginate(page || 1, perPage || 10)
 
@@ -56,10 +56,10 @@ export default class CountryController {
       await country.save()
 
       await country.load('createdBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       await country.load('updatedBy', (builder) => {
-        builder.select(['id', 'full_name', 'email'])
+        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({

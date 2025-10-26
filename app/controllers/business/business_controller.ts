@@ -311,20 +311,21 @@ export default class BusinessController {
         .where('business_id', business.id)
         .delete()
 
-      await business.related('delegate').create(
-        {
-          name: delName,
-          typeIdentifyId: delTypeIdentifyId,
-          identify: delIdentify,
-          phone: delPhone,
-          email: delEmail,
-          createdAt: dateTime,
-          createdBy: userId,
-          updatedAt: dateTime,
-          updatedBy: userId,
-        },
-        { client: trx }
-      )
+      if (delName || delEmail)
+        await business.related('delegate').create(
+          {
+            name: delName,
+            typeIdentifyId: delTypeIdentifyId,
+            identify: delIdentify,
+            phone: delPhone,
+            email: delEmail,
+            createdAt: dateTime,
+            createdBy: userId,
+            updatedAt: dateTime,
+            updatedBy: userId,
+          },
+          { client: trx }
+        )
 
       // ------------------- PHOTO -------------------
       if (photo) {

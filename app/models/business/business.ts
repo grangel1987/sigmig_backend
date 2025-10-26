@@ -7,6 +7,7 @@ import TypeIdentify from '#models/settings/setting'
 import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+import { serialize } from 'v8'
 
 export default class Business extends BaseModel {
   @column({ isPrimary: true })
@@ -93,7 +94,7 @@ export default class Business extends BaseModel {
   @belongsTo(() => Country)
   public country: BelongsTo<typeof Country>
 
-  @belongsTo(() => TypeIdentify)
+  @belongsTo(() => TypeIdentify, { foreignKey: 'typeIdentifyId' })
   public typeIdentify: BelongsTo<typeof TypeIdentify>
 
   @hasMany(() => BusinessCoin)

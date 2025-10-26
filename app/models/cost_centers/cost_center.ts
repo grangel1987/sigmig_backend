@@ -37,12 +37,12 @@ export default class CostCenter extends BaseModel {
   }
 
   @belongsTo(() => User, {
-    foreignKey: 'createdBy',
+    foreignKey: 'createdById',
   })
   public createdBy: BelongsTo<typeof User>
 
   @belongsTo(() => User, {
-    foreignKey: 'updatedBy',
+    foreignKey: 'updatedById',
   })
   public updatedBy: BelongsTo<typeof User>
 
