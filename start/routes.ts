@@ -11,6 +11,8 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.js'
 
 
+const auth = middleware.auth()
+
 router.group(() => {
   router.group(() => {
     router.get("find-user-by-token", "#controllers/users/user_controller.findByToken")
@@ -32,7 +34,7 @@ router.group(() => {
     router.delete("/delete/photo/:id", "#controllers/business/business_controller.deletePhoto");
     router.put("/update/:id", "#controllers/business/business_controller.update");
   })
-    .prefix(`/business`).middleware(middleware.auth())
+    .prefix(`/business`).middleware(auth)
 
   router.group(() => {
     router.get("/web/find/id/:id", "#controllers/business/business_controller.show");
@@ -60,12 +62,12 @@ router.group(() => {
     router.put("/change-status/:id", "#controllers/cities/city_controller.changeStatus");
   })
     .prefix(`city`)
-    .middleware(middleware.auth());
+    .middleware(auth);
   router.group(() => {
     router.get("/web/select/:country_id", "#controllers/cities/city_controller.select");
   })
     .prefix(`city`)
-    .middleware(middleware.auth())
+    .middleware(auth)
   //work
 
   router.group(() => {
@@ -77,7 +79,7 @@ router.group(() => {
     router.get("/select", "#controllers/works/work_controller.select");
   })
     .prefix("work")
-    .middleware(middleware.auth())
+    .middleware(auth)
 
   router.group(() => {
     router.get("/", "#controllers/cost_centers/cost_center_controller.index");
@@ -90,7 +92,7 @@ router.group(() => {
     router.get("/select/:business_id", "#controllers/cost_centers/cost_center_controller.select");
   })
     .prefix("cost-center")
-    .middleware(middleware.auth())
+    .middleware(auth)
 
   router.group(() => {
     router.get("/", "#controllers/positions/position_controller.index");
@@ -100,7 +102,7 @@ router.group(() => {
     router.get("/select", "#controllers/positions/position_controller.select");
   })
     .prefix("position")
-    .middleware(middleware.auth())
+    .middleware(auth)
 
   //settings items booking
   router.group(() => {
@@ -111,7 +113,7 @@ router.group(() => {
     router.get("/select", "#controllers/booking/setting_booking_item_controller.select");
   })
     .prefix("setting-booking-item")
-    .middleware(middleware.auth());
+    .middleware(auth);
 
 
   router.group(() => {
@@ -126,7 +128,7 @@ router.group(() => {
     router.get("/select", "#controllers/booking/setting_booking_property_controller.select");
   })
     .prefix("setting-booking-propertie")
-    .middleware(middleware.auth());
+    .middleware(auth);
 
 
   router.group(() => {
@@ -137,7 +139,61 @@ router.group(() => {
     router.get("/select", "#controllers/booking/setting_booking_note_controller.select");
   })
     .prefix("setting-booking-notes")
-    .middleware(middleware.auth());
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/isapres/isapres_controller.index");
+
+    router.post("/store", "#controllers/isapres/isapres_controller.store")
+
+    router.put("/update/:id", "#controllers/isapres/isapres_controller.update");
+
+    router.put("/change-status/:id", "#controllers/isapres/isapres_controller.changeStatus");
+
+    router.get("/select", "#controllers/isapres/isapres_controller.select");
+  })
+    .prefix(`setting-isapres`)
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/discount/setting_discount_controller.index");
+    router.post("/store", "#controllers/discount/setting_discount_controller.store")
+    router.put("/update/:id", "#controllers/discount/setting_discount_controller.update");
+    router.put("/change-status/:id", "#controllers/discount/setting_discount_controller.changeStatus");
+  })
+    .prefix(`setting-discounts`)
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/asset/setting_asset_controller.index");
+    router.post("/store", "#controllers/asset/setting_asset_controller.store")
+    router.put("/update/:id", "#controllers/asset/setting_asset_controller.update");
+    router.put("/change-status/:id", "#controllers/asset/setting_asset_controller.changeStatus");
+  })
+    .prefix(`setting-assets`)
+    .middleware(auth);
+
+  router.group(() => {
+    router.get("/", "#controllers/afp/afps_controller.index");
+
+    router.post("/store", "#controllers/afp/afps_controller.store")
+
+    router.put("/update/:id", "#controllers/afp/afps_controller.update");
+
+    router.put("/change-status/:id", "#controllers/afp/afps_controller.changeStatus");
+
+    router.get("/select", "#controllers/afp/afps_controller.select");
+  })
+    .prefix(`setting-afp`)
+    .middleware(auth);
+
+
+
+
+
 
 
 
