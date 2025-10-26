@@ -146,21 +146,23 @@ export default class UserRepository {
       .first()
   }
 
-  public static async updateToken(token: string, userId: number): Promise<void> {
-    await db.from('tokens')
+  public static async updateToken(_token: string, _userId: number): Promise<void> {
+    return true
+    /* await db.from('tokens')
       .where('user_id', userId)
       .where('is_revoked', false)
       .orderBy('id', 'desc')
       .limit(1)
-      .update({ token })
+      .update({ token }) */
   }
 
-  public static async revokeOtherTokensOwner(token: string, userId: number): Promise<void> {
-    await db.from('tokens')
+  public static async revokeOtherTokensOwner(_token: string, _userId: number): Promise<void> {
+    return true
+    /* await db.from('tokens')
       .where('user_id', userId)
       .where('token', '!=', token)
       .where('is_revoked', false)
-      .update({ is_revoked: true })
+      .update({ is_revoked: true }) */
   }
 
   public static async findByArgs(args: string): Promise<any[]> {

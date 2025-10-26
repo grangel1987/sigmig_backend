@@ -86,21 +86,21 @@ export default class UserController {
 
       await UserRepository.addInfoLocation(dateTime, request.ip(), user.id)
 
-
-      const sqlDate = dateTime.toSQL({ includeOffset: false })
-      await db.table('tokens').insert({
-        user_id: user.id,
-        token: accessToken.token,
-        type: 'bearer',
-        is_revoked: 0,
-        created_at: sqlDate,
-        updated_at: sqlDate,
-        refreshToken: refreshToken.toJSON().token,
-      })
-
+      /* 
+            const sqlDate = dateTime.toSQL({ includeOffset: false })
+            await db.table('tokens').insert({
+              user_id: user.id,
+              token: accessToken.token,
+              type: 'bearer',
+              is_revoked: 0,
+              created_at: sqlDate,
+              updated_at: sqlDate,
+              refreshToken: refreshToken.toJSON().token,
+            })
+            await UserRepository.updateToken(accessToken.token, user.id)
+            await UserRepository.revokeOtherTokensOwner(accessToken.token, user.id)
+       */
       await UserRepository.addInfoLocation(dateTime, request.ip(), user.id)
-      await UserRepository.updateToken(accessToken.token, user.id)
-      await UserRepository.revokeOtherTokensOwner(accessToken.token, user.id)
       const userData = await UserRepository.findDataCompleteUserByUserId(user.id)
 
 
