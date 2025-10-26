@@ -146,7 +146,7 @@ export default class UserRepository {
       .first()
   }
 
-  public static async updateToken(_token: string, _userId: number): Promise<void> {
+  public static async updateToken(_token: string, _userId: number) {
     return true
     /* await db.from('tokens')
       .where('user_id', userId)
@@ -156,7 +156,7 @@ export default class UserRepository {
       .update({ token }) */
   }
 
-  public static async revokeOtherTokensOwner(_token: string, _userId: number): Promise<void> {
+  public static async revokeOtherTokensOwner(_token: string, _userId: number) {
     return true
     /* await db.from('tokens')
       .where('user_id', userId)
