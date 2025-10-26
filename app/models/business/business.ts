@@ -7,7 +7,6 @@ import TypeIdentify from '#models/settings/setting'
 import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
-import { serialize } from 'v8'
 
 export default class Business extends BaseModel {
   @column({ isPrimary: true })
