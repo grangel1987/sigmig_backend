@@ -4,6 +4,7 @@ import BusinessRate from '#models/business/business_rate'
 import BusinessUser from '#models/business/business_user'
 import Country from '#models/countries/country'
 import TypeIdentify from '#models/settings/setting'
+import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
@@ -81,14 +82,20 @@ export default class Business extends BaseModel {
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
-  @column()
-  public createdBy: number
+  @column({ columnName: 'created_by' })
+  public createdById: number
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
 
-  @column()
-  public updatedBy: number
+  @column({ columnName: 'updated_by' })
+  public updatedById: number
+
+  @belongsTo(() => User)
+  declare createdBy: BelongsTo<typeof User>
+
+  @belongsTo(() => User)
+  declare updatedBy: BelongsTo<typeof User>
 
   @belongsTo(() => Country)
   public country: BelongsTo<typeof Country>

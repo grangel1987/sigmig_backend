@@ -303,7 +303,7 @@ export default class BusinessController {
         emailConfirmInactiveEmployee,
         daysExpireBuget,
         updatedAt: dateTime,
-        updatedBy: userId,
+        updatedById: userId,
       })
 
       // ------------------- DELEGATE -------------------
