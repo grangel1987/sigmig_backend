@@ -236,6 +236,44 @@ router.group(() => {
     .middleware(auth);
 
 
+  router.group(() => {
+    router.get("/", "#controllers/exregime/setting_ex_regime_controller.index");
+    router.post("/store", "#controllers/exregime/setting_ex_regime_controller.store");
+    router.put("/update/:id", "#controllers/exregime/setting_ex_regime_controller.update");
+    router.put("/change-status/:id", "#controllers/exregime/setting_ex_regime_controller.changeStatus");
+    router.get("/select", "#controllers/exregime/setting_ex_regime_controller.select");
+  })
+    .prefix(`/exregime`)
+    .middleware(auth);
+
+
+
+  router.group(() => {
+    router.get("/", "#controllers/certificate_health_item/setting_certificate_health_item_controller.index");
+    router.put("/update/:id", "#controllers/certificate_health_item/setting_certificate_health_item_controller.update");
+    router.put(
+      "/change-status/:id",
+      "#controllers/certificate_health_item/setting_certificate_health_item_controller.changeStatus"
+    );
+    router.post("/store", "#controllers/certificate_health_item/setting_certificate_health_item_controller.store");
+    router.get("/select", "#controllers/certificate_health_item/setting_certificate_health_item_controller.select");
+  })
+    .prefix('certificate-health-item')
+    .middleware(auth);
+
+
+
+  router.group(() => {
+    router.get("/", "#controllers/business/business_salary_controller.index");
+    router.post("/store", "#controllers/business/business_salary_controller.store");
+    router.put("/update/:id", "#controllers/business/business_salary_controller.update");
+    router.put("/change-status/:id", "#controllers/business/business_salary_controller.changeStatus");
+    router.get("/select", "#controllers/business/business_salary_controller.select");
+  })
+    .prefix('setting-business-salary')
+    .middleware(auth);
+
+
 
 
 
