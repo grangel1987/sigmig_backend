@@ -34,12 +34,12 @@ router.group(() => {
     router.delete("/delete/photo/:id", "#controllers/business/business_controller.deletePhoto");
     router.put("/update/:id", "#controllers/business/business_controller.update");
   })
-    .prefix(`/business`).middleware(auth)
+    .prefix('/business').middleware(auth)
 
   router.group(() => {
     router.get("/web/find/id/:id", "#controllers/business/business_controller.show");
   })
-    .prefix(`business`)
+    .prefix('business')
 
 
 
@@ -61,12 +61,12 @@ router.group(() => {
     router.get("/select/:country_id", "#controllers/cities/city_controller.select");
     router.put("/change-status/:id", "#controllers/cities/city_controller.changeStatus");
   })
-    .prefix(`city`)
+    .prefix('city')
     .middleware(auth);
   router.group(() => {
     router.get("/web/select/:country_id", "#controllers/cities/city_controller.select");
   })
-    .prefix(`city`)
+    .prefix('city')
     .middleware(auth)
   //work
 
@@ -153,7 +153,7 @@ router.group(() => {
 
     router.get("/select", "#controllers/isapres/isapres_controller.select");
   })
-    .prefix(`setting-isapres`)
+    .prefix('setting-isapres')
     .middleware(auth);
 
 
@@ -163,7 +163,7 @@ router.group(() => {
     router.put("/update/:id", "#controllers/discount/setting_discount_controller.update");
     router.put("/change-status/:id", "#controllers/discount/setting_discount_controller.changeStatus");
   })
-    .prefix(`setting-discounts`)
+    .prefix('setting-discounts')
     .middleware(auth);
 
 
@@ -173,24 +173,67 @@ router.group(() => {
     router.put("/update/:id", "#controllers/asset/setting_asset_controller.update");
     router.put("/change-status/:id", "#controllers/asset/setting_asset_controller.changeStatus");
   })
-    .prefix(`setting-assets`)
+    .prefix('setting-assets')
     .middleware(auth);
+
 
   router.group(() => {
     router.get("/", "#controllers/afp/afps_controller.index");
-
     router.post("/store", "#controllers/afp/afps_controller.store")
-
     router.put("/update/:id", "#controllers/afp/afps_controller.update");
-
     router.put("/change-status/:id", "#controllers/afp/afps_controller.changeStatus");
-
     router.get("/select", "#controllers/afp/afps_controller.select");
   })
-    .prefix(`setting-afp`)
+    .prefix('setting-afp')
     .middleware(auth);
 
 
+
+  router.group(() => {
+    router.get("/", "#controllers/type_contract/setting_type_contract_controller.index");
+    router.post("/store", "#controllers/type_contract/setting_type_contract_controller.store");
+    router.put("/update/:type_id", "#controllers/type_contract/setting_type_contract_controller.update");
+    router.put(
+      "/change-status/:type_id",
+      "#controllers/type_contract/setting_type_contract_controller.changeStatus"
+    );
+    router.get("/select", "#controllers/type_contract/setting_type_contract_controller.select");
+  })
+    .prefix('/type-contract')
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/affiliation/setting_affiliation_controller.index");
+    router.post("/store", "#controllers/affiliation/setting_affiliation_controller.store");
+    router.put("/update/:id", "#controllers/affiliation/setting_affiliation_controller.update");
+    router.put("/change-status/:id", "#controllers/affiliation/setting_affiliation_controller.changeStatus");
+    router.get("/select", "#controllers/affiliation/setting_affiliation_controller.select");
+  })
+    .prefix(`setting-affiliation`)
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/load_family/setting_load_family_controller.index");
+    router.post("/store", "#controllers/load_family/setting_load_family_controller.store");
+    router.put("/update/:id", "#controllers/load_family/setting_load_family_controller.update");
+    router.put("/change-status/:id", "#controllers/load_family/setting_load_family_controller.changeStatus");
+    router.get("/select", "#controllers/load_family/setting_load_family_controller.select");
+  })
+    .prefix(`setting-load-family`)
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/layoff/setting_layoff_controller.index");
+    router.post("/store", "#controllers/layoff/setting_layoff_controller.store")
+    router.put("/update/:id", "#controllers/layoff/setting_layoff_controller.update");
+    router.put("/change-status/:id", "#controllers/layoff/setting_layoff_controller.changeStatus");
+    router.get("/select", "#controllers/layoff/setting_layoff_controller.select");
+  })
+    .prefix(`/setting-layoff`)
+    .middleware(auth);
 
 
 
