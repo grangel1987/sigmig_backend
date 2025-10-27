@@ -255,7 +255,7 @@ export default class UserController {
           ...MessageFrontEnd(
             i18n.formatMessage('messages.codeSend_ok'),
             i18n.formatMessage('messages.ok_title')
-          ),
+          ), code: user.code
         })
       } else {
         return response.status(500).json({
