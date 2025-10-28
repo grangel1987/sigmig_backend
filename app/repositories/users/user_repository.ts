@@ -52,13 +52,13 @@ export default class UserRepository {
       })
   }
 
-  public static async findDataCompleteUserByUserId(userId: number): Promise<BusinessItem[]> {
+  public static async findDataCompleteUserByUserId(userId: number) {
     const user = await User.query()
       .select(['id', 'email', 'verified', 'personal_data_id'])
       .where('id', userId)
       .where('enabled', true)
       .preload('personalData', (builder) => {
-        builder.select(['id', 'names', 'last_name_p', 'last_name_m', 'type_identify_id', 'identify'])
+        builder.select(['id', 'names', 'phone', 'last_name_p', 'last_name_m', 'type_identify_id', 'identify'])
         builder.preload('typeIdentify', (builder) => {
           builder.select(['id', 'text'])
         })
@@ -135,7 +135,7 @@ export default class UserRepository {
       isSuperAdmin = false
     })
 
-    return result
+    return { ...data, business: result }
   }
 
   public static async findById(userId: number): Promise<User | null> {
