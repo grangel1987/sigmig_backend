@@ -35,7 +35,7 @@ export default class Setting extends BaseModel {
   @column.dateTime({ serializeAs: null })
   public resetPasswordAt: DateTime | null
 
-  @belongsTo(() => SettingKey, { foreignKey: 'key_id' })
+  @belongsTo(() => SettingKey, { foreignKey: 'keyId' })
   public key: BelongsTo<typeof SettingKey>
 
   @belongsTo(() => User, { foreignKey: 'createdBy' })

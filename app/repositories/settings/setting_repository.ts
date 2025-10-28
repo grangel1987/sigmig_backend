@@ -27,10 +27,10 @@ export default class SettingRepository {
       .where('enabled', true)
       .preload('key')
       .preload('createdBy', (builder) => {
-        builder.select('id', 'full_name', 'email')
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       .preload('updatedBy', (builder) => {
-        builder.select('id', 'full_name', 'email')
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
       .exec()
 
