@@ -17,7 +17,7 @@ export default class Setting extends BaseModel {
   @column({ columnName: 'created_by' })
   public createdById: number | null
 
-  @column({ columnName: 'updated_by_id' })
+  @column({ columnName: 'updated_by' })
   public updatedById: number | null
 
   @column()
@@ -38,10 +38,10 @@ export default class Setting extends BaseModel {
   @belongsTo(() => SettingKey, { foreignKey: 'keyId' })
   public key: BelongsTo<typeof SettingKey>
 
-  @belongsTo(() => User, { foreignKey: 'createdBy' })
+  @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
 
-  @belongsTo(() => User, { foreignKey: 'updated_by' })
+  @belongsTo(() => User, { foreignKey: 'updatedById' })
   public updatedBy: BelongsTo<typeof User>
 
   @beforeCreate()
