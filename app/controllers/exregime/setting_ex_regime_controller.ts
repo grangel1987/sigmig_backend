@@ -128,7 +128,7 @@ export default class SettingExRegimeController {
         }
     }
 
-    public async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
         const exregimeId = params.id
         const dateTime = DateTime.local()
 

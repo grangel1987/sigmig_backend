@@ -128,7 +128,7 @@ export default class SettingTypeContractController {
         }
     }
 
-    public async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
         const typeId = params.type_id
         const dateTime = DateTime.local()
 

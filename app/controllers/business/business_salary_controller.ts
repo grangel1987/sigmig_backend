@@ -128,7 +128,7 @@ export default class SettingBusinessSalaryController {
         }
     }
 
-    public async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
         const salariesId = params.id
         const dateTime = DateTime.local()
 
