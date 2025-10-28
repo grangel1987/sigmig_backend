@@ -3,6 +3,7 @@ import CountryRepository from '#repositories/countries/country_repository'
 import messageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
+import { log } from 'console'
 import { DateTime } from 'luxon'
 
 
@@ -10,15 +11,17 @@ export default class CountryController {
 
   public async index({ request }: HttpContext) {
 
-    const { page, perPage, params } = await request.validateUsing(vine.compile(vine.object({
+    const { page, perPage, text } = await request.validateUsing(vine.compile(vine.object({
       page: vine.number().positive().optional(),
       perPage: vine.number().positive().optional(),
-      params: vine.string().optional()
+      text: vine.string().trim().optional()
     })))
     let query = Country.query()
 
-    if (params) {
-      query.where('name', 'LIKE', `${params}%`)
+    log(text)
+
+    if (text) {
+      query.where('name', 'LIKE', `${text}%`)
     }
 
     const countries = await query
