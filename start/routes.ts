@@ -21,6 +21,7 @@ router.group(() => {
     router.post("/change-password-forgot", "#controllers/users/user_controller.changePasswordForgot");
 
 
+
     router.group(() => {
       router.get("find-user-by-token", "#controllers/users/user_controller.findByToken")
       router.post("/reset-password", "#controllers/users/user_controller.resetPassword");
@@ -30,6 +31,7 @@ router.group(() => {
   router.group(() => {
     router.get("country/:id", "#controllers/settings/setting_controller.findSettingsByCountry")
   }).prefix('setting')
+
 
   router.group(() => {
     router.post("/store", "#controllers/business/business_controller.store");
@@ -56,6 +58,19 @@ router.group(() => {
   |--------------------------------------------------------------------------
   */
 
+  router.group(() => {
+    router.post("/", "#controllers/countries/country_controller.index");
+    router.post("/find-by-params", "#controllers/countries/country_controller.index");
+    router.get("/select", "#controllers/countries/country_controller.select");
+    router.put("/update/:id", "#controllers/countries/country_controller.update");
+  })
+    .prefix(`country`)
+    .middleware(auth);
+
+  router.group(() => {
+    router.get("/web", "#controllers/countries/country_controller.index");
+  })
+    .prefix(`country`)
 
 
   router.group(() => {
