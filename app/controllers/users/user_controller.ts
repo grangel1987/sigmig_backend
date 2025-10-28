@@ -215,7 +215,7 @@ export default class UserController {
 
   public async forgotPassword({ request, response, i18n }: HttpContext) {
     const { email, /* methodSendCode */ } = request.all()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = (await Util.getDateTimes(request.ip()))
 
     try {
       const user = await User.query()
@@ -231,6 +231,7 @@ export default class UserController {
         user.code = Util.getCode().toString()
         user.codeDateTime = Util.getDateTimesAddHours(dateTime, 1)
         await user.save()
+        console.log(user.codeDateTime);
 
         /*         const full_name = user.personalData
                   ? `${user.personalData.names} ${user.personalData.last_name_p} ${user.personalData.last_name_m}`
@@ -289,7 +290,7 @@ export default class UserController {
       .first()
 
     if (user) {
-      if (Util.parseToMoment(user.codeDateTime!) >= dateTime.toISO()!) {
+      if (user.codeDateTime?.toISO()! >= dateTime.toISO()!) {
         try {
           user.password = new_password
           user.code = null
