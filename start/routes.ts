@@ -70,8 +70,8 @@ router.group(() => {
 
 
   router.group(() => {
-    router.post("/", "#controllers/countries/country_controller.index");
-    router.post("/find-by-params", "#controllers/countries/country_controller.index");
+    router.get("/", "#controllers/countries/country_controller.index");
+    router.get("/find-by-params", "#controllers/countries/country_controller.index");
     router.get("/select", "#controllers/countries/country_controller.select");
     router.put("/update/:id", "#controllers/countries/country_controller.update");
   })
