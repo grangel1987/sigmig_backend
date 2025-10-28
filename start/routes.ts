@@ -50,28 +50,6 @@ router.group(() => {
 
 
 
-  "use strict";
-
-  /*
-  |--------------------------------------------------------------------------
-  | City Routes
-  |--------------------------------------------------------------------------
-  */
-
-  router.group(() => {
-    router.post("/", "#controllers/countries/country_controller.index");
-    router.post("/find-by-params", "#controllers/countries/country_controller.index");
-    router.get("/select", "#controllers/countries/country_controller.select");
-    router.put("/update/:id", "#controllers/countries/country_controller.update");
-  })
-    .prefix(`country`)
-    .middleware(auth);
-
-  router.group(() => {
-    router.get("/web", "#controllers/countries/country_controller.index");
-  })
-    .prefix(`country`)
-
 
   router.group(() => {
     router.get("/", "#controllers/cities/city_controller.index");
@@ -88,6 +66,23 @@ router.group(() => {
   })
     .prefix('city')
     .middleware(auth)
+
+
+
+  router.group(() => {
+    router.post("/", "#controllers/countries/country_controller.index");
+    router.post("/find-by-params", "#controllers/countries/country_controller.index");
+    router.get("/select", "#controllers/countries/country_controller.select");
+    router.put("/update/:id", "#controllers/countries/country_controller.update");
+  })
+    .prefix(`country`)
+    .middleware(auth);
+
+  router.group(() => {
+    router.get("/web", "#controllers/countries/country_controller.index");
+  })
+    .prefix(`country`)
+
   //work
 
   router.group(() => {
