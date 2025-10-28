@@ -15,12 +15,16 @@ const auth = middleware.auth()
 
 router.group(() => {
   router.group(() => {
-    router.get("find-user-by-token", "#controllers/users/user_controller.findByToken")
     router.post("login", "#controllers/users/user_controller.login")
-    router.post("/forgot-password", "#controllers/users/user_controller.forgotPassword");
-    router.post("/reset-password", "#controllers/users/user_controller.resetPassword");
-    router.post("/change-password-forgot", "#controllers/users/user_controller.changePasswordForgot");
     router.post("/client/login", "#controllers/users/user_controller.loginClient");
+    router.post("/forgot-password", "#controllers/users/user_controller.forgotPassword");
+    router.post("/change-password-forgot", "#controllers/users/user_controller.changePasswordForgot");
+
+
+    router.group(() => {
+      router.get("find-user-by-token", "#controllers/users/user_controller.findByToken")
+      router.post("/reset-password", "#controllers/users/user_controller.resetPassword");
+    }).middleware(auth)
   }).prefix('account')
 
   router.group(() => {
