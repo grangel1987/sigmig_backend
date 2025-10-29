@@ -44,7 +44,11 @@ export default class CountryController {
   public async update({ params, request, response, auth, i18n }: HttpContext) {
     const countryId = params.id
     const dateTime = DateTime.local()
-    const { name, prefix, nationality } = request.all()
+    const { name, prefix, nationality } = await request.validateUsing(vine.compile(vine.object({
+      name: vine.string().trim().minLength(1).optional(),
+      prefix: vine.string().trim().minLength(1).optional(),
+      nationality: vine.string().trim().minLength(1).optional()
+    })))
 
     try {
       const country = await Country.findOrFail(countryId)

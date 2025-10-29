@@ -70,7 +70,10 @@ export default class CityController {
 
   public async update({ params, request, response, auth, i18n }: HttpContext) {
     const cityId = params.id
-    const { country_id, name } = request.all()
+    const { countryId, name } = await request.validateUsing(vine.compile(vine.object({
+      countryId: vine.number().positive().optional(),
+      name: vine.string().trim().minLength(1).optional()
+    })))
     const dateTime = DateTime.local()
 
     try {
@@ -78,7 +81,7 @@ export default class CityController {
 
       city.merge({
         name,
-        countryId: country_id,
+        countryId,
         updatedById: auth.user!.id,
         updatedAt: dateTime,
       })
