@@ -16,7 +16,7 @@ export default class CountryRepository {
       'countries.name as text',
       'countries.nationality as nat',
       'countries.phone_code as prefix'
-    ).where('enabled', true).first()
+    ).where('enabled', true)
 
     return result // MySQL driver returns results in an array
   }

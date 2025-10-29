@@ -288,8 +288,35 @@ router.group(() => {
     .prefix('setting-business-salary')
     .middleware(auth);
 
+  router.group(() => {
+    router.get("/", "#controllers/products/product_controller.index");
+    router.post("/store", "#controllers/products/product_controller.store");
+    router.put("/update/:id", "#controllers/products/product_controller.update");
+    router.put("/change-status/:id", "#controllers/products/product_controller.changeStatus");
+    router.post("/findAutoComplete", "#controllers/products/product_controller.findAutoComplete");
+    router.get("/show/:id", "#controllers/products/product_controller.show");
+    router.delete("/delete/photo/:id", "#controllers/products/product_controller.deletePhoto");
+  })
+    .prefix(`product`)
+    .middleware(auth)
 
-
+  router.group(() => {
+    router.get("/", "#controllers/provider/provider_controller.index");
+    router.post("/store", "#controllers/provider/provider_controller.store");
+    router.put("/update/:id", "#controllers/provider/provider_controller.update");
+    router.put("/change-status/:id", "#controllers/provider/provider_controller.changeStatus");
+    router.post("/select", "#controllers/provider/provider_controller.select");
+    router.get("/show/:id", "#controllers/provider/provider_controller.show");
+    router.get("/find/products/:provider_id", "#controllers/provider/provider_controller.findProductsByProvider");
+    router.post("/product/store", "#controllers/provider/provider_controller.storeProduct");
+    router.put("/product/update/:product_id", "#controllers/provider/provider_controller.updateProduct");
+    router.put("/product/change-status/:product_id", "#controllers/provider/provider_controller.changeStatusProduct");
+    router.post("/find/autocomplete", "#controllers/provider/provider_controller.findAutoComplete");
+    router.post("/product/find/autocomplete", "#controllers/provider/provider_controller.findProductAutoComplete");
+    router.get("/product/show/:product_id", "#controllers/provider/provider_controller.showProduct");
+  })
+    .prefix(`provider`)
+    .middleware(auth)
 
 
 
