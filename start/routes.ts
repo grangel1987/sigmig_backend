@@ -145,6 +145,38 @@ router.group(() => {
     .prefix("setting-booking-propertie")
     .middleware(auth);
 
+  // Budget categories (adapted controller)
+  router.group(() => {
+    router.get("/", "#controllers/buget/setting_buget_category_controller.index");
+    router.post("/store", "#controllers/buget/setting_buget_category_controller.store");
+    router.put("/update/:id", "#controllers/buget/setting_buget_category_controller.update");
+    router.put(
+      "/change-status/:id",
+      "#controllers/buget/setting_buget_category_controller.changeStatus"
+    );
+    router.get("/select", "#controllers/buget/setting_buget_category_controller.select");
+  })
+    .prefix("setting-buget-categories")
+    .middleware(auth)
+
+  // Budget items (adapted controller)
+  router.group(() => {
+    router.get("/", "#controllers/buget/setting_buget_item_controller.index");
+    router.post("/store", "#controllers/buget/setting_buget_item_controller.store");
+    router.put("/update/:id", "#controllers/buget/setting_buget_item_controller.update");
+    router.put(
+      "/change-status/:id",
+      "#controllers/buget/setting_buget_item_controller.changeStatus"
+    );
+    // Convenience endpoints provided by this controller
+    router.get("/find-by-type/:id", "#controllers/buget/setting_buget_item_controller.findByType");
+    router.get("/find-all", "#controllers/buget/setting_buget_item_controller.findAll");
+    // Keep legacy-style select using findAll
+    router.get("/select", "#controllers/buget/setting_buget_item_controller.findAll");
+  })
+    .prefix("setting-buget-item")
+    .middleware(auth)
+
 
   router.group(() => {
     router.get("/", "#controllers/booking/setting_booking_note_controller.index");
@@ -155,6 +187,7 @@ router.group(() => {
   })
     .prefix("setting-booking-notes")
     .middleware(auth);
+
 
 
   router.group(() => {
