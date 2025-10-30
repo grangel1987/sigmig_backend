@@ -17,9 +17,9 @@ export default class SettingBugetItemController {
 
         try {
             const query = SettingBugetItem.query()
-                .preload('type', (builder) => {
-                    builder.select(['id', 'text'])
-                })
+                /*                 .preload('type', (builder) => {
+                                    builder.select(['id', 'text'])
+                                }) */
                 .preload('createdBy', (builder) => {
                     builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
@@ -69,7 +69,7 @@ export default class SettingBugetItemController {
                 updatedAt: dateTime,
             })
 
-            await item.load('type', (builder) => builder.select(['id', 'text']))
+            // await item.load('type', (builder) => builder.select(['id', 'text']))
             await item.load('createdBy', (builder) => {
                 builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })
@@ -125,7 +125,7 @@ export default class SettingBugetItemController {
             })
             await item.save()
 
-            await item.load('type', (builder) => builder.select(['id', 'text']))
+            // await item.load('type', (builder) => builder.select(['id', 'text']))
             await item.load('createdBy', (builder) => {
                 builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })
@@ -141,6 +141,9 @@ export default class SettingBugetItemController {
                 )
             })
         } catch (error) {
+
+            console.log(error);
+
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),
@@ -160,7 +163,7 @@ export default class SettingBugetItemController {
             item.merge({ enabled: status, updatedById: auth.user!.id, updatedAt: dateTime })
             await item.save()
 
-            await item.load('type', (builder) => builder.select(['id', 'text']))
+            // await item.load('type', (builder) => builder.select(['id', 'text']))
             await item.load('createdBy', (builder) => {
                 builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })

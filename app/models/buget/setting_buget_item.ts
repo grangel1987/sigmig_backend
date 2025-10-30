@@ -1,4 +1,3 @@
-import Setting from '#models/settings/setting'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -44,8 +43,8 @@ export default class SettingBugetItem extends BaseModel {
         model.enabled = true
     }
 
-    @belongsTo(() => Setting, { foreignKey: 'typeId' })
-    public type: BelongsTo<typeof Setting>
+    /*     @belongsTo(() => Setting, { foreignKey: 'typeId' })
+        public type: BelongsTo<typeof Setting> */
 
     @belongsTo(() => User, { foreignKey: 'createdById' })
     public createdBy: BelongsTo<typeof User>
