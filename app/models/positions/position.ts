@@ -1,4 +1,4 @@
-import User from '#models/users/user'; // Adjust path based on your project structure
+import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
@@ -6,6 +6,12 @@ import { DateTime } from 'luxon'
 export default class Position extends BaseModel {
     @column({ isPrimary: true })
     public id: number
+
+    @column()
+    public businessId: number
+
+    @column()
+    public name: string
 
     @column({ columnName: 'created_by' })
     public createdById: number

@@ -1,17 +1,15 @@
 import BusinessUser from '#models/business/business_user'
-import Work from '#models/works/work'
+import Position from '#models/positions/position'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { positionStoreValidator, positionUpdateValidator } from '#validators/position'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
-type MessageFrontEndType = {
-    message: string
-    title: string
-}
+type Message = { message: string; title: string }
 
-export default class WorkController {
-    public async index({ request, auth, response, i18n }: HttpContext) {
+export default class PositionController {
+    public async index({ auth, response, i18n, request }: HttpContext) {
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -23,25 +21,28 @@ export default class WorkController {
 
         try {
             const userId = auth.user!.id
-
             const business = await BusinessUser.query()
+                .from('business_users')
                 .where('selected', 1)
                 .where('user_id', userId)
                 .firstOrFail()
             const businessId = business.businessId
 
-            const workQuery = Work.query()
+            const baseQuery = Position.query()
                 .where('business_id', businessId)
                 .preload('createdBy', (builder) => {
-                    builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+                    builder
+                        .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                        .select(['id', 'personal_data_id', 'email'])
                 })
                 .preload('updatedBy', (builder) => {
-                    builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+                    builder
+                        .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                        .select(['id', 'personal_data_id', 'email'])
                 })
 
-            const works = await (page ? workQuery.paginate(page, perPage || 10) : workQuery)
-
-            return works
+            const positions = await (page ? baseQuery.paginate(page, perPage || 10) : baseQuery)
+            return positions
         } catch (error) {
             console.log(error)
             return response.status(500).json({
@@ -53,49 +54,37 @@ export default class WorkController {
         }
     }
 
-    public async store({ auth, request, response, i18n }: HttpContext) {
-        const { businessId, name, code, lat, log } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    businessId: vine.number().positive(),
-                    name: vine.string().trim(),
-                    code: vine.string().trim(),
-                    lat: vine.number().optional(),
-                    log: vine.number().optional(),
-                })
-            )
-        )
+    public async store({ request, response, auth, i18n }: HttpContext) {
+        const { businessId, name } = await request.validateUsing(positionStoreValidator)
         const dateTime = DateTime.local()
 
         try {
-            const data = {
+            const position = await Position.create({
                 businessId,
                 name,
-                code,
-                lat,
-                log,
-                createdAt: dateTime,
-                updatedAt: dateTime,
                 createdById: auth.user!.id,
                 updatedById: auth.user!.id,
-            }
-
-            const work = await Work.create(data)
-
-            await work.load('createdBy', (builder) => {
-                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+                createdAt: dateTime,
+                updatedAt: dateTime,
             })
-            await work.load('updatedBy', (builder) => {
-                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+
+            await position.load('createdBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            await position.load('updatedBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
             })
 
             return response.status(201).json({
-                work,
+                position,
                 message: i18n.formatMessage('messages.store_ok'),
                 title: i18n.formatMessage('messages.ok_title'),
-            } as MessageFrontEndType)
+            } as Message)
         } catch (error) {
-            console.log(error)
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.store_error'),
@@ -105,47 +94,38 @@ export default class WorkController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
-        const workId = params.id
-        const { name, code, lat, log } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim().optional(),
-                    code: vine.string().trim().optional(),
-                    lat: vine.number().optional(),
-                    log: vine.number().optional(),
-                })
-            )
-        )
+    public async update({ request, params, response, auth, i18n }: HttpContext) {
+        const positionId = params.id
+        const { name } = await request.validateUsing(positionUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
-            const work = await Work.findOrFail(workId)
+            const position = await Position.findOrFail(positionId)
 
-            work.merge({
+            position.merge({
                 name,
-                code,
-                lat,
-                log,
-                updatedAt: dateTime,
                 updatedById: auth.user!.id,
+                updatedAt: dateTime,
             })
-            await work.save()
+            await position.save()
 
-            await work.load('createdBy', (builder) => {
-                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            await position.load('createdBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
             })
-            await work.load('updatedBy', (builder) => {
-                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            await position.load('updatedBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
             })
 
             return response.status(201).json({
-                work,
+                position,
                 message: i18n.formatMessage('messages.update_ok'),
                 title: i18n.formatMessage('messages.ok_title'),
-            } as MessageFrontEndType)
+            } as Message)
         } catch (error) {
-            console.log(error)
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),
@@ -156,33 +136,36 @@ export default class WorkController {
     }
 
     public async changeStatus({ params, response, auth, i18n }: HttpContext) {
-        const workId = params.id
+        const positionId = params.id
         const dateTime = DateTime.local()
 
         try {
-            const work = await Work.findOrFail(workId)
-            const status = !work.enabled
-            work.merge({
+            const position = await Position.findOrFail(positionId)
+            const status = !position.enabled
+            position.merge({
                 enabled: status,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })
-            await work.save()
+            await position.save()
 
-            await work.load('createdBy', (builder) => {
-                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            await position.load('createdBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
             })
-            await work.load('updatedBy', (builder) => {
-                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            await position.load('updatedBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
             })
 
             return response.status(201).json({
-                work,
-                message: i18n.formatMessage(work.enabled ? 'messages.ok_enabled' : 'messages.ok_disabled'),
+                position,
+                message: i18n.formatMessage(position.enabled ? 'messages.ok_enabled' : 'messages.ok_disabled'),
                 title: i18n.formatMessage('messages.ok_title'),
-            } as MessageFrontEndType)
+            } as Message)
         } catch (error) {
-            console.log(error)
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),
@@ -192,33 +175,23 @@ export default class WorkController {
         }
     }
 
-    public async findAll({ params }: HttpContext) {
-        const businessId = params.business_id
-        const works = await Work.query()
-            .select(['id', 'code', 'name'])
-            .where('enabled', true)
-            .where('business_id', businessId)
-
-        return works
-    }
-
     public async select({ auth, response, i18n }: HttpContext) {
         try {
             const userId = auth.user!.id
             const business = await BusinessUser.query()
+                .from('business_users')
                 .where('selected', 1)
                 .where('user_id', userId)
                 .firstOrFail()
             const businessId = business.businessId
 
-            const works = await Work.query()
-                .select(['id', 'name'])
-                .where('business_id', businessId)
+            const positions = await Position.query()
                 .where('enabled', true)
+                .where('business_id', businessId)
+                .orderBy('id')
 
-            return works
+            return positions.map((p) => ({ text: p.name, value: p.id }))
         } catch (error) {
-            console.log(error)
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),
