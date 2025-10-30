@@ -44,17 +44,21 @@ export default class CostCenterController {
   }
 
   public async store({ auth, request, response, i18n }: HttpContext) {
-    const { business_id, name, code } = request.all()
+    const { businessId, name, code } = await request.validateUsing(vine.compile(vine.object({
+      businessId: vine.number().positive(),
+      name: vine.string().trim(),
+      code: vine.string().trim(),
+    })))
     const dateTime = DateTime.local()
 
     try {
       const data = {
-        business_id,
+        businessId,
         name,
         code,
-        created_at: dateTime,
+        createdAt: dateTime,
         updatedAt: dateTime,
-        created_by: auth.user!.id,
+        createdById: auth.user!.id,
         updatedById: auth.user!.id,
       }
 
@@ -79,7 +83,10 @@ export default class CostCenterController {
 
   public async update({ params, request, response, auth, i18n }: HttpContext) {
     const costCenterId = params.id
-    const { name, code } = request.all()
+    const { name, code } = await request.validateUsing(vine.compile(vine.object({
+      name: vine.string().trim().optional(),
+      code: vine.string().trim().optional(),
+    })))
     const dateTime = DateTime.local()
 
     try {
@@ -153,10 +160,10 @@ export default class CostCenterController {
 
   public async select({ request }: HttpContext) {
     try {
-      const { business_id } = await request.validateUsing(vine.compile(vine.object({
-        business_id: vine.number().positive()
+      const { businessId } = await request.validateUsing(vine.compile(vine.object({
+        businessId: vine.number().positive()
       })))
-      const costCenters = await CostCenterRepository.select(business_id)
+      const costCenters = await CostCenterRepository.select(businessId)
 
       const result = costCenters.map((costCenter) => ({
         text: `${costCenter.code} - ${costCenter.name}`,

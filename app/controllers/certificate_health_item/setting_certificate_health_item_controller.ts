@@ -1,5 +1,6 @@
 import SettingCertificateHealthItem from '#models/certificate_health_item/setting_certificate_health_item'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { certificateHealthItemStoreValidator, certificateHealthItemUpdateValidator } from '#validators/certificate_health_item'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
@@ -46,15 +47,7 @@ export default class SettingCertificateHealthItemController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                    type: vine.string(),
-                    position: vine.number(),
-                })
-            )
-        )
+        const data = await request.validateUsing(certificateHealthItemStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -97,31 +90,25 @@ export default class SettingCertificateHealthItemController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const itemId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                    type: vine.string(),
-                    position: vine.number(),
-                })
-            )
-        )
+        const data = await request.validateUsing(certificateHealthItemUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const item = await SettingCertificateHealthItem.findOrFail(itemId)
 
-            if (item.position !== data.position) {
+            if (data.position !== undefined && item.position !== data.position) {
                 await db.from('setting_certificate_health_items')
                     .where('position', '>=', data.position)
                     .whereNot('id', itemId)
                     .increment('position', 1)
             }
 
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
+            if (data.type !== undefined) payload.type = data.type
+            if (data.position !== undefined) payload.position = data.position
             item.merge({
-                name: data.name,
-                type: data.type,
-                position: data.position,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

@@ -1,5 +1,6 @@
 import SettingExRegime from '#models/exregime/setting_ex_regime';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
+import { exRegimeStoreValidator, exRegimeUpdateValidator } from '#validators/exregime';
 import { HttpContext } from '@adonisjs/core/http';
 import vine from '@vinejs/vine';
 import { DateTime } from 'luxon';
@@ -44,13 +45,7 @@ export default class SettingExRegimeController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(exRegimeStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -87,19 +82,15 @@ export default class SettingExRegimeController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const exregimeId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(exRegimeUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const exregimen = await SettingExRegime.findOrFail(exregimeId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
             exregimen.merge({
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

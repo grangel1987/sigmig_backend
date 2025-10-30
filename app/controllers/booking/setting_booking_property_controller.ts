@@ -1,5 +1,6 @@
 import SettingBookingProperty from '#models/booking/setting_booking_property'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { bookingPropertyStoreValidator, bookingPropertyUpdateValidator } from '#validators/booking'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -39,16 +40,7 @@ export default class SettingBookingPropertieController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string(),
-                    manyRooms: vine.number(),
-                    description: vine.string(),
-                    numberMaxPerson: vine.number(),
-                })
-            )
-        )
+        const data = await request.validateUsing(bookingPropertyStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -88,25 +80,18 @@ export default class SettingBookingPropertieController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const propertieId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().optional(),
-                    manyRooms: vine.number().optional(),
-                    description: vine.string().optional(),
-                    numberMaxPerson: vine.number().optional(),
-                })
-            )
-        )
+        const data = await request.validateUsing(bookingPropertyUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const propertie = await SettingBookingProperty.findOrFail(propertieId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
+            if (data.manyRooms !== undefined) payload.manyRooms = data.manyRooms
+            if (data.description !== undefined) payload.description = data.description
+            if (data.numberMaxPerson !== undefined) payload.numberMaxPerson = data.numberMaxPerson
             propertie.merge({
-                name: data.name,
-                manyRooms: data.manyRooms,
-                description: data.description,
-                numberMaxPerson: data.numberMaxPerson,
+                ...payload,
                 updatedAt: dateTime,
                 updatedById: auth.user!.id,
             })

@@ -90,7 +90,7 @@ export default class SettingTypeContractController {
         const data = await request.validateUsing(
             vine.compile(
                 vine.object({
-                    name: vine.string().trim(),
+                    name: vine.string().trim().optional(),
                 })
             )
         )
@@ -98,13 +98,14 @@ export default class SettingTypeContractController {
 
         try {
             const typeContract = await SettingTypeContract.findOrFail(id)
-            typeContract.merge({
-                name: data.name,
-                updatedById: auth.user!.id,
-                updatedAt: dateTime,
-            })
-            await typeContract.save()
-
+            if (data.name) {
+                typeContract.merge({
+                    ...data,
+                    updatedById: auth.user!.id,
+                    updatedAt: dateTime,
+                })
+                await typeContract.save()
+            }
             await typeContract.load('createdBy', (builder) => {
                 builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })

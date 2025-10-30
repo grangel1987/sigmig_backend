@@ -53,7 +53,6 @@ export default class ProviderController {
         try {
             const provider = await Provider.create({
                 ...data,
-                cityId: data.city_id,
                 createdById: auth.user!.id,
                 updatedById: auth.user!.id,
                 createdAt: dateTime,
@@ -92,7 +91,6 @@ export default class ProviderController {
             const provider = await Provider.findOrFail(params.id)
             provider.merge({
                 ...data,
-                cityId: data.city_id,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })
@@ -184,8 +182,16 @@ export default class ProviderController {
 
     /** Autocomplete: Provider Products */
     async findProductAutoComplete({ request }: HttpContext) {
-        const { val, provider_id } = request.only(['val', 'provider_id'])
-        return await ProviderRepository.findProductAutoComplete(provider_id, val)
+        const { val, providerId } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    providerId: vine.number().positive(),
+                    val: vine.string().trim().optional(),
+                })
+            )
+        )
+        const search = val ?? ''
+        return await ProviderRepository.findProductAutoComplete(providerId, search)
     }
 
     /** Show single product */

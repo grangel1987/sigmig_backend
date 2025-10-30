@@ -1,5 +1,6 @@
 import SettingLicTypeLicense from '#models/setting_lic/setting_lic_type_license'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { licTypeLicenseStoreValidator, licTypeLicenseUpdateValidator } from '#validators/setting_lics'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -44,13 +45,7 @@ export default class LicTypeLicenseController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licTypeLicenseStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -87,19 +82,15 @@ export default class LicTypeLicenseController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const typeLicenseId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licTypeLicenseUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const typeLicense = await SettingLicTypeLicense.findOrFail(typeLicenseId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
             typeLicense.merge({
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

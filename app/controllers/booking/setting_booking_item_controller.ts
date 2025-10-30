@@ -1,5 +1,6 @@
 import SettingBookingItem from '#models/booking/setting_booking_item'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { bookingItemStoreValidator, bookingItemUpdateValidator } from '#validators/booking'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -38,16 +39,7 @@ export default class SettingBookingItemController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string(),
-                    isRoom: vine.boolean(),
-                    isQuantity: vine.boolean(),
-                    description: vine.string(),
-                })
-            )
-        )
+        const data = await request.validateUsing(bookingItemStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -87,25 +79,18 @@ export default class SettingBookingItemController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const itemId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().optional(),
-                    isRoom: vine.boolean().optional(),
-                    isQuantity: vine.boolean().optional(),
-                    description: vine.string().optional(),
-                })
-            )
-        )
+        const data = await request.validateUsing(bookingItemUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const item = await SettingBookingItem.findOrFail(itemId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
+            if (data.isRoom !== undefined) payload.isRoom = data.isRoom
+            if (data.isQuantity !== undefined) payload.isQuantity = data.isQuantity
+            if (data.description !== undefined) payload.description = data.description
             item.merge({
-                name: data.name,
-                isRoom: data.isRoom,
-                isQuantity: data.isQuantity,
-                description: data.description,
+                ...payload,
                 updatedAt: dateTime,
                 updatedById: auth.user!.id,
             })

@@ -1,5 +1,6 @@
 import SettingIsapre from '#models/isapre/setting_isapre';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
+import { isapreStoreValidator, isapreUpdateValidator } from '#validators/isapre';
 import { HttpContext } from '@adonisjs/core/http';
 import db from '@adonisjs/lucid/services/db';
 import vine from '@vinejs/vine';
@@ -45,16 +46,7 @@ export default class SettingIsapreController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                    code: vine.string().trim().unique({ table: 'setting_isapres', column: 'code' }),
-                    type: vine.string(),
-                    value: vine.number(),
-                })
-            )
-        )
+        const data = await request.validateUsing(isapreStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -94,39 +86,34 @@ export default class SettingIsapreController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const isapreId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim().optional(),
-                    code: vine.string().trim(),
-                    type: vine.string().optional(),
-                    value: vine.number().optional(),
-                })
-            )
-        )
+        const data = await request.validateUsing(isapreUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
-            const existing = await db.from('setting_isapres')
-                .whereNot('id', isapreId)
-                .where('code', data.code)
-                .first()
+            if (data.code) {
+                const existing = await db.from('setting_isapres')
+                    .whereNot('id', isapreId)
+                    .where('code', data.code)
+                    .first()
 
-            if (existing) {
-                return response.status(500).json({
-                    ...MessageFrontEnd(
-                        i18n.formatMessage('messages.exists_code'),
-                        i18n.formatMessage('messages.error_title')
-                    ),
-                })
+                if (existing) {
+                    return response.status(500).json({
+                        ...MessageFrontEnd(
+                            i18n.formatMessage('messages.exists_code'),
+                            i18n.formatMessage('messages.error_title')
+                        ),
+                    })
+                }
             }
 
             const isapre = await SettingIsapre.findOrFail(isapreId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
+            if (data.code !== undefined) payload.code = data.code
+            if (data.type !== undefined) payload.type = data.type
+            if (data.value !== undefined) payload.value = data.value
             isapre.merge({
-                name: data.name,
-                code: data.code,
-                type: data.type,
-                value: data.value,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

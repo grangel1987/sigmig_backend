@@ -2,6 +2,7 @@ import Indicator from "#models/settings/indicator"
 import SettingRepository from "#repositories/settings/setting_repository"
 import MessageFrontEnd from "#utils/MessageFrontEnd"
 import Util from "#utils/Util"
+import { countryIdParamValidator } from '#validators/settings'
 import { HttpContext } from "@adonisjs/core/http"
 import logger from "@adonisjs/core/services/logger"
 import ky from 'ky'
@@ -16,13 +17,19 @@ interface IndicatorPayload {
 
 export default class SettingController {
   // Fetch settings by country
-  public async findSettingsByCountry({ params }: HttpContext) {
-    const countryId = parseInt(params.id, 10)
-    if (isNaN(countryId)) {
-      return { error: 'Invalid country ID' }
+  public async findSettingsByCountry({ params, response, i18n }: HttpContext) {
+    try {
+      const { id } = await countryIdParamValidator.validate(params)
+      const settings = await SettingRepository.findSettingsByCountry(id)
+      return settings
+    } catch (error: any) {
+      return response.status(400).json({
+        ...MessageFrontEnd(
+          error?.message || i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      })
     }
-    const settings = await SettingRepository.findSettingsByCountry(countryId)
-    return settings
   }
 
   // Fetch or update economic indicators

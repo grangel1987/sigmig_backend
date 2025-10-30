@@ -1,5 +1,6 @@
 import SettingBookingNote from '#models/booking/setting_booking_note'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { bookingNoteStoreValidator, bookingNoteUpdateValidator } from '#validators/booking'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -39,13 +40,7 @@ export default class SettingBookingNoteController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    note: vine.string(),
-                })
-            )
-        )
+        const data = await request.validateUsing(bookingNoteStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -82,24 +77,19 @@ export default class SettingBookingNoteController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const noteId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    note: vine.string(),
-                })
-            )
-        )
+        const data = await request.validateUsing(bookingNoteUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const note = await SettingBookingNote.findOrFail(noteId)
-            note.merge({
-                note: data.note,
-                updatedAt: dateTime,
-                updatedById: auth.user!.id,
-            })
-            await note.save()
-
+            if (data.note) {
+                note.merge({
+                    ...data,
+                    updatedAt: dateTime,
+                    updatedById: auth.user!.id,
+                })
+                await note.save()
+            }
             await note.load('createdBy', (builder) => {
                 builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })

@@ -1,6 +1,7 @@
 import Country from '#models/countries/country'
 import CountryRepository from '#repositories/countries/country_repository'
 import messageFrontEnd from '#utils/MessageFrontEnd'
+import { countryUpdateValidator } from '#validators/country'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { log } from 'console'
@@ -44,19 +45,17 @@ export default class CountryController {
   public async update({ params, request, response, auth, i18n }: HttpContext) {
     const countryId = params.id
     const dateTime = DateTime.local()
-    const { name, prefix, nationality } = await request.validateUsing(vine.compile(vine.object({
-      name: vine.string().trim().minLength(1).optional(),
-      prefix: vine.string().trim().minLength(1).optional(),
-      nationality: vine.string().trim().minLength(1).optional()
-    })))
+    const { name, prefix, nationality } = await request.validateUsing(countryUpdateValidator)
 
     try {
       const country = await Country.findOrFail(countryId)
 
+      const payload: Record<string, unknown> = {}
+      if (name !== undefined) payload.name = name
+      if (prefix !== undefined) payload.phoneCode = prefix
+      if (nationality !== undefined) payload.nationality = nationality
       country.merge({
-        name,
-        phoneCode: prefix,
-        nationality,
+        ...payload,
         updatedById: auth.user!.id,
         updatedAt: dateTime,
       })

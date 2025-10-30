@@ -1,5 +1,6 @@
 import SettingLicCompensationBox from '#models/setting_lic/setting_lic_compensation_box'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { licCompensationBoxStoreValidator, licCompensationBoxUpdateValidator } from '#validators/setting_lics'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -44,13 +45,7 @@ export default class LicCompensationBoxController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licCompensationBoxStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -87,19 +82,15 @@ export default class LicCompensationBoxController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const compensationId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licCompensationBoxUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const compensation = await SettingLicCompensationBox.findOrFail(compensationId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
             compensation.merge({
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

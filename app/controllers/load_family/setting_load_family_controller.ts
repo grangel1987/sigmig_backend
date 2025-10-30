@@ -90,7 +90,7 @@ export default class SettingLoadFamilyController {
         const data = await request.validateUsing(
             vine.compile(
                 vine.object({
-                    name: vine.string().trim(),
+                    name: vine.string().trim().optional(),
                 })
             )
         )
@@ -98,8 +98,10 @@ export default class SettingLoadFamilyController {
 
         try {
             const loadFamily = await SettingLoadFamily.findOrFail(loadFamilyId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
             loadFamily.merge({
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

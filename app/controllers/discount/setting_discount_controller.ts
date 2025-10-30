@@ -1,5 +1,6 @@
 import SettingDiscount from '#models/discount/setting_discount';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
+import { discountStoreValidator, discountUpdateValidator } from '#validators/discount';
 import { HttpContext } from '@adonisjs/core/http';
 import db from '@adonisjs/lucid/services/db';
 import vine from '@vinejs/vine';
@@ -45,15 +46,7 @@ export default class SettingDiscountController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                    type: vine.string(),
-                    code: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(discountStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -92,37 +85,33 @@ export default class SettingDiscountController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const discountId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                    type: vine.string(),
-                    code: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(discountUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
-            const existing = await db.from('setting_discounts')
-                .whereNot('id', discountId)
-                .where('code', data.code)
-                .first()
+            if (data.code) {
+                const existing = await db.from('setting_discounts')
+                    .whereNot('id', discountId)
+                    .where('code', data.code)
+                    .first()
 
-            if (existing) {
-                return response.status(500).json({
-                    ...MessageFrontEnd(
-                        i18n.formatMessage('messages.exists_code'),
-                        i18n.formatMessage('messages.error_title')
-                    ),
-                })
+                if (existing) {
+                    return response.status(500).json({
+                        ...MessageFrontEnd(
+                            i18n.formatMessage('messages.exists_code'),
+                            i18n.formatMessage('messages.error_title')
+                        ),
+                    })
+                }
             }
 
             const discount = await SettingDiscount.findOrFail(discountId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
+            if (data.type !== undefined) payload.type = data.type
+            if (data.code !== undefined) payload.code = data.code
             discount.merge({
-                name: data.name,
-                type: data.type,
-                code: data.code,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

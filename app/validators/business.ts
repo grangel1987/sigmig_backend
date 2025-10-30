@@ -3,8 +3,8 @@ import vine from "@vinejs/vine";
 export const businessValidator = vine.compile(vine.object({
     name: vine.string().trim().maxLength(255),
 
-    country_id: vine.number().positive(),
-    type_identify_id: vine.number().positive(),
+    countryId: vine.number().positive(),
+    typeIdentifyId: vine.number().positive(),
 
     identify: vine.string().trim().maxLength(50),
     address: vine.string().trim().maxLength(255),
@@ -12,15 +12,15 @@ export const businessValidator = vine.compile(vine.object({
     phone: vine.string().trim().mobile(),
     email: vine.string().trim().email(),
 
-    days_expire_buget: vine.number().min(1).max(365),
+    daysExpireBuget: vine.number().min(1).max(365),
     coins: vine.any().optional(),
 
-    del_name: vine.any().optional(),
-    del_type_identify_id: vine.any().optional(),
-    del_identify: vine.any().optional(),
-    del_phone: vine.any().optional(),
-    del_email: vine.any().optional(),
+    delName: vine.any().optional(),
+    delTypeIdentifyId: vine.any().optional(),
+    delIdentify: vine.any().optional(),
+    delPhone: vine.any().optional(),
+    delEmail: vine.any().optional(),
 
-    authorization_minor: vine.any().optional(),
-    email_confirm_inactive_employee: vine.any().optional(),
+    authorizationMinor: vine.any().optional(),
+    emailConfirmInactiveEmployee: vine.any().optional(),
 }))

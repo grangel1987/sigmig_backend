@@ -1,5 +1,6 @@
 import SettingAfp from '#models/afp';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
+import { afpStoreValidator, afpUpdateValidator } from '#validators/afp';
 import { HttpContext } from '@adonisjs/core/http';
 import db from '@adonisjs/lucid/services/db';
 import vine from '@vinejs/vine';
@@ -46,14 +47,7 @@ export default class SettingAfpController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                    code: vine.string().trim().unique({ table: 'setting_afps', column: 'code' }),
-                })
-            )
-        )
+        const data = await request.validateUsing(afpStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -91,21 +85,17 @@ export default class SettingAfpController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const afpId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                    code: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(afpUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
-            const existing = await db.from('setting_afps')
-                .whereNot('id', afpId)
-                .where('code', data.code)
-                .first()
+            let existing: any = null
+            if (data.code) {
+                existing = await db.from('setting_afps')
+                    .whereNot('id', afpId)
+                    .where('code', data.code)
+                    .first()
+            }
 
             if (existing) {
                 return response.status(500).json({
@@ -117,9 +107,11 @@ export default class SettingAfpController {
             }
 
             const afp = await SettingAfp.findOrFail(afpId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
+            if (data.code !== undefined) payload.code = data.code
             afp.merge({
-                name: data.name,
-                code: data.code,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

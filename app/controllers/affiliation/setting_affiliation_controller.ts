@@ -1,5 +1,6 @@
 import SettingAffiliation from '#models/affiliation/setting_affiliation'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { affiliationStoreValidator, affiliationUpdateValidator } from '#validators/affiliation'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
@@ -45,14 +46,7 @@ export default class SettingAffiliationController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    code: vine.string().trim().unique({ table: 'setting_affiliations', column: 'code' }),
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(affiliationStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -90,35 +84,32 @@ export default class SettingAffiliationController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const affiliationId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    code: vine.string().trim(),
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(affiliationUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
-            const existing = await db.from('setting_affiliations')
-                .whereNot('id', affiliationId)
-                .where('code', data.code)
-                .first()
+            if (data.code) {
+                const existing = await db.from('setting_affiliations')
+                    .whereNot('id', affiliationId)
+                    .where('code', data.code)
+                    .first()
 
-            if (existing) {
-                return response.status(500).json({
-                    ...MessageFrontEnd(
-                        i18n.formatMessage('messages.exists_code'),
-                        i18n.formatMessage('messages.error_title')
-                    ),
-                })
+                if (existing) {
+                    return response.status(500).json({
+                        ...MessageFrontEnd(
+                            i18n.formatMessage('messages.exists_code'),
+                            i18n.formatMessage('messages.error_title')
+                        ),
+                    })
+                }
             }
 
             const affiliation = await SettingAffiliation.findOrFail(affiliationId)
+            const payload: Record<string, unknown> = {}
+            if (data.code !== undefined) payload.code = data.code
+            if (data.name !== undefined) payload.name = data.name
             affiliation.merge({
-                code: data.code,
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

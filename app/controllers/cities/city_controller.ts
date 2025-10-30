@@ -34,12 +34,19 @@ export default class CityController {
   }
 
   public async store({ request, response, auth, i18n }: HttpContext) {
-    const { country_id, name } = request.all()
+    const { countryId, name } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          countryId: vine.number().positive(),
+          name: vine.string().trim().minLength(1),
+        })
+      )
+    )
     const dateTime = DateTime.local()
 
     try {
       const payload = {
-        country_id,
+        countryId: countryId,
         name,
         createdBy: auth.user!.id,
         updatedBy: auth.user!.id,
@@ -147,7 +154,7 @@ export default class CityController {
   public async findByCountry({ request }: HttpContext) {
     const { countryId } = request.all()
     const cities = await City.query()
-      .where('country_id', countryId)
+      .where('countryId', countryId)
       .select(['id', 'name'])
 
     return cities

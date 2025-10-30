@@ -1,5 +1,6 @@
 import SettingAsset from '#models/asset/setting_asset';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
+import { assetStoreValidator, assetUpdateValidator } from '#validators/asset';
 import { HttpContext } from '@adonisjs/core/http';
 import vine from '@vinejs/vine';
 import { DateTime } from 'luxon';
@@ -44,19 +45,7 @@ export default class SettingAssetController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    code: vine.string().trim().unique({ table: 'setting_assets', column: 'code' }),
-                    name: vine.string().trim(),
-                    type: vine.string(),
-                    taxable: vine.boolean(),
-                    tributable: vine.boolean(),
-                    gratifying: vine.boolean(),
-                    extraHours: vine.boolean(),
-                })
-            )
-        )
+        const data = await request.validateUsing(assetStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -99,32 +88,23 @@ export default class SettingAssetController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const assetId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    code: vine.string().trim(),
-                    name: vine.string().trim(),
-                    type: vine.string(),
-                    taxable: vine.boolean(),
-                    tributable: vine.boolean(),
-                    gratifying: vine.boolean(),
-                    extraHours: vine.boolean(),
-                })
-            )
-        )
+        const data = await request.validateUsing(assetUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const asset = await SettingAsset.findOrFail(assetId)
 
+            const payload: Record<string, unknown> = {}
+            if (data.code !== undefined) payload.code = data.code
+            if (data.name !== undefined) payload.name = data.name
+            if (data.type !== undefined) payload.type = data.type
+            if (data.taxable !== undefined) payload.taxable = data.taxable
+            if (data.tributable !== undefined) payload.tributable = data.tributable
+            if (data.gratifying !== undefined) payload.gratifying = data.gratifying
+            if (data.extraHours !== undefined) payload.extraHours = data.extraHours
+
             asset.merge({
-                code: data.code,
-                name: data.name,
-                type: data.type,
-                taxable: data.taxable,
-                tributable: data.tributable,
-                gratifying: data.gratifying,
-                extraHours: data.extraHours,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

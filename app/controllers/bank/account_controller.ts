@@ -1,7 +1,7 @@
 import Account from '#models/bank/account';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
+import { accountStoreValidator, accountUpdateValidator } from '#validators/bank';
 import { HttpContext } from '@adonisjs/core/http';
-import vine from '@vinejs/vine';
 import { DateTime } from 'luxon';
 
 type MessageFrontEndType = {
@@ -42,18 +42,7 @@ export default class AccountController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    bankId: vine.number(),
-                    number: vine.string(),
-                    owner: vine.string(),
-                    typeIdentifyId: vine.number(),
-                    typeAccountId: vine.number(),
-                    identify: vine.string(),
-                })
-            )
-        )
+        const data = await request.validateUsing(accountStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -106,30 +95,21 @@ export default class AccountController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const accountId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    bankId: vine.number(),
-                    number: vine.string(),
-                    owner: vine.string(),
-                    typeIdentifyId: vine.number(),
-                    typeAccountId: vine.number(),
-                    identify: vine.string(),
-                })
-            )
-        )
+        const data = await request.validateUsing(accountUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const account = await Account.findOrFail(accountId)
 
+            const payload: Record<string, unknown> = {}
+            if (data.bankId !== undefined) payload.bankId = data.bankId
+            if (data.number !== undefined) payload.number = data.number
+            if (data.owner !== undefined) payload.owner = data.owner
+            if (data.typeIdentifyId !== undefined) payload.typeIdentifyId = data.typeIdentifyId
+            if (data.typeAccountId !== undefined) payload.typeAccountId = data.typeAccountId
+            if (data.identify !== undefined) payload.identify = data.identify
             account.merge({
-                bankId: data.bankId,
-                number: data.number,
-                owner: data.owner,
-                typeIdentifyId: data.typeIdentifyId,
-                typeAccountId: data.typeAccountId,
-                identify: data.identify,
+                ...payload,
                 updatedAt: dateTime,
                 updatedById: auth.user!.id,
             })

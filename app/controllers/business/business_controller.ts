@@ -34,21 +34,21 @@ export default class BusinessController {
 
     const {
       name,
-      country_id,
-      type_identify_id,
+      countryId,
+      typeIdentifyId,
       identify,
       address,
       phone,
       email,
-      days_expire_buget,
+      daysExpireBuget,
       coins,
-      del_name,
-      del_type_identify_id,
-      del_identify,
-      del_phone,
-      del_email,
-      authorization_minor,
-      email_confirm_inactive_employee,
+      delName,
+      delTypeIdentifyId,
+      delIdentify,
+      delPhone,
+      delEmail,
+      authorizationMinor,
+      emailConfirmInactiveEmployee,
     } = await request.validateUsing(businessValidator)
 
     const photo = request.file('photo', { size: '2mb', extnames: ['jpg', 'png', 'jpeg', 'webp',] })
@@ -57,28 +57,28 @@ export default class BusinessController {
 
       try {
         const payload: BusinessPayload = {
-          countryId: country_id,
-          typeIdentifyId: type_identify_id,
+          countryId,
+          typeIdentifyId,
           identify,
           name,
           address,
           phone,
           email,
-          authorizationMinor: authorization_minor === 'true',
-          daysExpireBuget: days_expire_buget,
+          authorizationMinor: authorizationMinor === 'true',
+          daysExpireBuget: daysExpireBuget,
           createdAt: dateTime,
           createdById: auth.user!.id,
           updatedAt: dateTime,
           updatedById: auth.user!.id,
-          emailConfirmInactiveEmployee: email_confirm_inactive_employee === 'true',
+          emailConfirmInactiveEmployee: emailConfirmInactiveEmployee === 'true',
         }
 
         const delegatePayload = {
-          name: del_name,
-          type_identify_id: del_type_identify_id,
-          identify: del_identify,
-          phone: del_phone,
-          email: del_email,
+          name: delName,
+          type_identify_id: delTypeIdentifyId,
+          identify: delIdentify,
+          phone: delPhone,
+          email: delEmail,
         }
 
         const business = await Business.create(payload, { client: trx })

@@ -93,32 +93,36 @@ export default class SettingLayoffController {
         const data = await request.validateUsing(
             vine.compile(
                 vine.object({
-                    name: vine.string().trim(),
-                    code: vine.string().trim(),
+                    name: vine.string().trim().optional(),
+                    code: vine.string().trim().optional(),
                 })
             )
         )
         const dateTime = DateTime.local()
 
         try {
-            const existing = await db.from('setting_layoffs')
-                .whereNot('id', layoffId)
-                .where('code', data.code)
-                .first()
+            if (data.code) {
+                const existing = await db.from('setting_layoffs')
+                    .whereNot('id', layoffId)
+                    .where('code', data.code)
+                    .first()
 
-            if (existing) {
-                return response.status(500).json({
-                    ...MessageFrontEnd(
-                        i18n.formatMessage('messages.exists_code'),
-                        i18n.formatMessage('messages.error_title')
-                    ),
-                })
+                if (existing) {
+                    return response.status(500).json({
+                        ...MessageFrontEnd(
+                            i18n.formatMessage('messages.exists_code'),
+                            i18n.formatMessage('messages.error_title')
+                        ),
+                    })
+                }
             }
 
             const layoff = await SettingLayoff.findOrFail(layoffId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
+            if (data.code !== undefined) payload.code = data.code
             layoff.merge({
-                name: data.name,
-                code: data.code,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

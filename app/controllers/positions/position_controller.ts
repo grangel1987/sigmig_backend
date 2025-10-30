@@ -54,12 +54,22 @@ export default class WorkController {
     }
 
     public async store({ auth, request, response, i18n }: HttpContext) {
-        const { business_id, name, code, lat, log } = request.all()
+        const { businessId, name, code, lat, log } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    businessId: vine.number().positive(),
+                    name: vine.string().trim(),
+                    code: vine.string().trim(),
+                    lat: vine.number().optional(),
+                    log: vine.number().optional(),
+                })
+            )
+        )
         const dateTime = DateTime.local()
 
         try {
             const data = {
-                businessId: business_id,
+                businessId,
                 name,
                 code,
                 lat,
@@ -97,7 +107,16 @@ export default class WorkController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const workId = params.id
-        const { name, code, lat, log } = request.all()
+        const { name, code, lat, log } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    name: vine.string().trim().optional(),
+                    code: vine.string().trim().optional(),
+                    lat: vine.number().optional(),
+                    log: vine.number().optional(),
+                })
+            )
+        )
         const dateTime = DateTime.local()
 
         try {

@@ -1,5 +1,6 @@
 import SettingLicOccupation from '#models/setting_lic/setting_lic_occupation'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { licOccupationStoreValidator, licOccupationUpdateValidator } from '#validators/setting_lics'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -44,13 +45,7 @@ export default class LicOccupationController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licOccupationStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -87,19 +82,15 @@ export default class LicOccupationController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const occupationId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licOccupationUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const occupation = await SettingLicOccupation.findOrFail(occupationId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
             occupation.merge({
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

@@ -181,11 +181,18 @@ export default class UserController {
 
   public async resetPassword({ request, response, auth, i18n }: HttpContext) {
     const dateTime = await Util.getDateTimes(request.ip())
-    const { business_id, user_id } = request.all()
+    const { businessId, userId } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          businessId: vine.number().positive(),
+          userId: vine.number().positive(),
+        })
+      )
+    )
     const user = await auth.use('jwt').authenticate()
 
     const businessUser = await BusinessUser.query()
-      .where('business_id', business_id)
+      .where('business_id', businessId)
       .where('user_id', user.id)
       .preload('businessUserRols', (builder) => {
         builder.where('rol_id', 1)
@@ -193,7 +200,7 @@ export default class UserController {
       .first()
 
     if (businessUser?.businessUserRols.length) {
-      const targetUser = await User.findOrFail(user_id)
+      const targetUser = await User.findOrFail(userId)
       targetUser.password = '12345678'
       targetUser.updatedAt = dateTime
       await targetUser.save()

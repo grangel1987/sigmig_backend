@@ -1,5 +1,6 @@
 import SettingLicPayingEntity from '#models/setting_lic/setting_lic_paying_entity';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
+import { licPayingEntityStoreValidator, licPayingEntityUpdateValidator } from '#validators/setting_lics';
 import { HttpContext } from '@adonisjs/core/http';
 import vine from '@vinejs/vine';
 import { DateTime } from 'luxon';
@@ -44,13 +45,7 @@ export default class LicPayingEntityController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licPayingEntityStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -87,19 +82,15 @@ export default class LicPayingEntityController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const payingEntityId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licPayingEntityUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const payingEntity = await SettingLicPayingEntity.findOrFail(payingEntityId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
             payingEntity.merge({
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })

@@ -127,7 +127,21 @@ export default class ProductController {
     /** Update – (you didn’t provide the method body, but here’s a complete version) */
     async update({ params, request, response, auth, i18n }: HttpContext) {
         const data = await request.validateUsing(productUpdateValidator)
-        const photo = request.file('photo')
+        const photo = request.file('photo', {
+            size: '10mb',
+            extnames: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+        })
+
+        if (photo && !photo.isValid) {
+            return response
+                .status(422)
+                .json(
+                    MessageFrontEnd(
+                        i18n.formatMessage('messages.invalid_image') || 'Invalid image or file too large (max 10 MB).',
+                        i18n.formatMessage('messages.error_title')
+                    )
+                )
+        }
         const dateTime = DateTime.local()
 
         try {

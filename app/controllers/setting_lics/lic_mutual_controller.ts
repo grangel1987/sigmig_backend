@@ -1,5 +1,6 @@
 import SettingLicMutual from '#models/setting_lic/setting_lic_mutual'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { licMutualStoreValidator, licMutualUpdateValidator } from '#validators/setting_lics'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -44,13 +45,7 @@ export default class LicMutualController {
     }
 
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licMutualStoreValidator)
         const dateTime = DateTime.local()
 
         try {
@@ -87,19 +82,15 @@ export default class LicMutualController {
 
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const mutualId = params.id
-        const data = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    name: vine.string().trim(),
-                })
-            )
-        )
+        const data = await request.validateUsing(licMutualUpdateValidator)
         const dateTime = DateTime.local()
 
         try {
             const mutual = await SettingLicMutual.findOrFail(mutualId)
+            const payload: Record<string, unknown> = {}
+            if (data.name !== undefined) payload.name = data.name
             mutual.merge({
-                name: data.name,
+                ...payload,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })
