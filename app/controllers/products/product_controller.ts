@@ -27,9 +27,16 @@ export default class ProductController {
             const business = await Database.from('business_users')
                 .where('selected', true)
                 .where('user_id', userId)
+
                 .firstOrFail()
 
-            const query = ProductRepository.index(business.business_id)
+            const query = ProductRepository.index(business.business_id).preload('createdBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+                .preload('updatedBy', (builder) => {
+                    builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+                })
+
             const products = page ? await query.paginate(page, perPage ?? 10) : await query
 
             return products
@@ -68,8 +75,16 @@ export default class ProductController {
                 updatedAt: dateTime,
             })
 
-            await product.load('createdBy', (b) => b.select('id', 'full_name', 'email'))
-            await product.load('updatedBy', (b) => b.select('id', 'full_name', 'email'))
+            await product.load('createdBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            await product.load('updatedBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
 
             return response.status(201).json({
                 product,
@@ -108,8 +123,16 @@ export default class ProductController {
             })
             await product.save()
 
-            await product.load('createdBy', (b) => b.select('id', 'full_name', 'email'))
-            await product.load('updatedBy', (b) => b.select('id', 'full_name', 'email'))
+            await product.load('createdBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            await product.load('updatedBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
 
             return response.status(200).json({
                 product,
@@ -171,8 +194,15 @@ export default class ProductController {
             })
             await product.save()
 
-            await product.load('createdBy', (b) => b.select('id', 'full_name', 'email'))
-            await product.load('updatedBy', (b) => b.select('id', 'full_name', 'email'))
+
+
+            await product.load('createdBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+            await product.load('updatedBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+
 
             return response.status(200).json({
                 product,

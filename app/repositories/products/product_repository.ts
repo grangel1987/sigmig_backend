@@ -6,8 +6,17 @@ export default class ProductRepository {
   static index(businessId: number) {
     return Product.query()
       .where('business_id', businessId)
-      .preload('createdBy', (b) => b.select('id', 'full_name', 'email'))
-      .preload('updatedBy', (b) => b.select('id', 'full_name', 'email'))
+      .preload('createdBy', (builder) => {
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
+      })
+      .preload('updatedBy', (builder) => {
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
+      })
+
   }
 
   /** Autocomplete – raw query kept for speed */
