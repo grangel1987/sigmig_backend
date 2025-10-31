@@ -393,6 +393,38 @@ router.group(() => {
     .middleware(auth);
 
 
+  router.group(() => {
+    router.get("/", "#controllers/setting_lics/lic_paying_entity_controller.index");
+    router.post("/store", "#controllers/setting_lics/lic_paying_entity_controller.store");
+    router.put("/update/:id", "#controllers/setting_lics/lic_paying_entity_controller.update");
+    router.put("/change-status/:id", "#controllers/setting_lics/lic_paying_entity_controller.changeStatus");
+    router.get("/select", "#controllers/setting_lics/lic_paying_entity_controller.select");
+  })
+    .prefix('setting-lic-paying-entities')
+    .middleware([auth]);
+
+  router.group(() => {
+    router.get("/", "#controllers/setting_lics/lic_type_license_controller.index");
+    router.post("/store", "#controllers/setting_lics/lic_type_license_controller.store");
+    router.put("/update/:id", "#controllers/setting_lics/lic_type_license_controller.update");
+    router.put("/change-status/:id", "#controllers/setting_lics/lic_type_license_controller.changeStatus");
+    router.get("/select", "#controllers/setting_lics/lic_type_license_controller.select");
+  })
+    .prefix('setting-lic-type-licenses')
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/setting_lics/lic_compensation_box_controller.index");
+    router.post("/store", "#controllers/setting_lics/lic_compensation_box_controller.store");
+    router.put("/update/:id", "#controllers/setting_lics/lic_compensation_box_controller.update");
+    router.put("/change-status/:id", "#controllers/setting_lics/lic_compensation_box_controller.changeStatus");
+    router.get("/select", "#controllers/setting_lics/lic_compensation_box_controller.select");
+  })
+    .prefix('setting-lic-compensation-boxes')
+    .middleware(auth);
+
+
 }).prefix('api/v2')
 
 router.get('/', async () => {
