@@ -1,0 +1,3741 @@
+{
+    "info": {
+        "name": "SIGMI Backend API",
+        "_postman_id": "a87b1f20-8d6f-4b1f-9c0c-000000000001",
+        "description": "Postman collection for SIGMI Backend routes (start/routes.ts).",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3333"
+        },
+        {
+            "key": "apiPrefix",
+            "value": "api/v2"
+        },
+        {
+            "key": "authToken",
+            "value": ""
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{authToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "item": [
+        {
+            "name": "account",
+            "auth": {
+                "type": "noauth"
+            },
+            "item": [
+                {
+                    "name": "POST account/login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "account",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST account/client/login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"client@example.com\",\n  \"password\": \"secret\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/client/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "account",
+                                "client",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST account/forgot-password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@example.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/forgot-password",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "account",
+                                "forgot-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST account/change-password-forgot",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\",\n  \"password\": \"newSecret\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/change-password-forgot",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "account",
+                                "change-password-forgot"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET account/find-user-by-token",
+                    "auth": {
+                        "type": "bearer",
+                        "bearer": [
+                            {
+                                "key": "token",
+                                "value": "{{authToken}}",
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/find-user-by-token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "account",
+                                "find-user-by-token"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST account/reset-password",
+                    "auth": {
+                        "type": "bearer",
+                        "bearer": [
+                            {
+                                "key": "token",
+                                "value": "{{authToken}}",
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"currentPassword\": \"secret\",\n  \"password\": \"newSecret\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/reset-password",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "account",
+                                "reset-password"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting",
+            "item": [
+                {
+                    "name": "GET setting/country/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting/country/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting",
+                                "country",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "business",
+            "item": [
+                {
+                    "name": "POST business/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"countryId\": 1,\n  \"name\": \"My Business\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/business/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "business",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET business/find/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/business/find/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "business",
+                                "find",
+                                "select"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT business/change/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/business/change/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "business",
+                                "change",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET business/find/id/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/business/find/id/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "business",
+                                "find",
+                                "id",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE business/delete/photo/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/business/delete/photo/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "business",
+                                "delete",
+                                "photo",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT business/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/business/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "business",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "business (web)",
+            "item": [
+                {
+                    "name": "GET business/web/find/id/:id",
+                    "auth": {
+                        "type": "noauth"
+                    },
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/business/web/find/id/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "business",
+                                "web",
+                                "find",
+                                "id",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "city",
+            "item": [
+                {
+                    "name": "GET city/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/city/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "city",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST city/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"countryId\": 1,\n  \"name\": \"Santiago\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/city/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "city",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST city/country",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"countryId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/city/country",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "city",
+                                "country"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT city/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/city/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "city",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET city/select/:country_id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/city/select/:country_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "city",
+                                "select",
+                                ":country_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "country_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT city/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/city/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "city",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET city/web/select/:country_id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/city/web/select/:country_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "city",
+                                "web",
+                                "select",
+                                ":country_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "country_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "country",
+            "item": [
+                {
+                    "name": "GET country/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/country/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "country",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET country/find-by-params",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/country/find-by-params",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "country",
+                                "find-by-params"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET country/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/country/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "country",
+                                "select"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT country/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Chile\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/country/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "country",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET country/web",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/country/web",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "country",
+                                "web"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "work",
+            "item": [
+                {
+                    "name": "GET work/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/work/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "work",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST work/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessId\": 1,\n  \"name\": \"Work A\",\n  \"code\": \"W-A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/work/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "work",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT work/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/work/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "work",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT work/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/work/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "work",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET work/find-all/:business_id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/work/find-all/:business_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "work",
+                                "find-all",
+                                ":business_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "business_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET work/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/work/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "work",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "cost-center",
+            "item": [
+                {
+                    "name": "GET cost-center/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST cost-center/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessId\": 1,\n  \"name\": \"CC-1\",\n  \"code\": \"001\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT cost-center/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT cost-center/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST cost-center/select",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                "select"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET cost-center/show/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/show/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                "show",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET cost-center/find-all/:business_id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/find-all/:business_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                "find-all",
+                                ":business_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "business_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET cost-center/select/:business_id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/select/:business_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "cost-center",
+                                "select",
+                                ":business_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "business_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "position",
+            "item": [
+                {
+                    "name": "GET position/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/position/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "position",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST position/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessId\": 1,\n  \"name\": \"Manager\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/position/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "position",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT position/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Team Lead\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/position/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "position",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT position/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/position/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "position",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET position/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/position/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "position",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-booking-item",
+            "item": [
+                {
+                    "name": "GET setting-booking-item/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-item",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-booking-item/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Item A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-item",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-booking-item/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-item",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-booking-item/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-item",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-booking-item/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-item",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-booking-propertie",
+            "item": [
+                {
+                    "name": "GET setting-booking-propertie/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-propertie",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-booking-propertie/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Property A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-propertie",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-booking-propertie/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-propertie",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-booking-propertie/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-propertie",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-booking-propertie/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-propertie",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-buget-categories",
+            "item": [
+                {
+                    "name": "GET setting-buget-categories/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-categories",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-buget-categories/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Category A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-categories",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-buget-categories/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-categories",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-buget-categories/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-categories",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-buget-categories/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-categories",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-buget-item",
+            "item": [
+                {
+                    "name": "GET setting-buget-item/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-item",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-buget-item/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"typeId\": 1,\n  \"value\": \"100.00\",\n  \"withTitle\": false,\n  \"title\": null,\n  \"categoryIds\": [1,2]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-item",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-buget-item/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"value\": \"120.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-item",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-buget-item/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-item",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-buget-item/find-by-type/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/find-by-type/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-item",
+                                "find-by-type",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-buget-item/find-all",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/find-all",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-item",
+                                "find-all"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-buget-item/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-buget-item",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-booking-notes",
+            "item": [
+                {
+                    "name": "GET setting-booking-notes/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-notes",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-booking-notes/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"note\": \"Some note\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-notes",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-booking-notes/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"note\": \"Updated\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-notes",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-booking-notes/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-notes",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-booking-notes/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-booking-notes",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-isapres",
+            "item": [
+                {
+                    "name": "GET setting-isapres/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-isapres",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-isapres/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Isapre A\",\n  \"code\": \"IS-A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-isapres",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-isapres/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-isapres",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-isapres/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-isapres",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-isapres/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-isapres",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-discounts",
+            "item": [
+                {
+                    "name": "GET setting-discounts/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-discounts/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-discounts",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-discounts/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Discount A\",\n  \"code\": \"D-A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-discounts/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-discounts",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-discounts/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-discounts/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-discounts",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-discounts/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-discounts/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-discounts",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-assets",
+            "item": [
+                {
+                    "name": "GET setting-assets/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-assets/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-assets",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-assets/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"A-1\",\n  \"name\": \"Asset A\",\n  \"type\": \"asset\",\n  \"taxable\": true,\n  \"tributable\": false,\n  \"gratifying\": false,\n  \"extraHours\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-assets/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-assets",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-assets/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-assets/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-assets",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-assets/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-assets/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-assets",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-afp",
+            "item": [
+                {
+                    "name": "GET setting-afp/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-afp",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-afp/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"AFP A\",\n  \"code\": \"AFP-A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-afp",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-afp/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-afp",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-afp/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-afp",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-afp/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-afp",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "type-contract",
+            "item": [
+                {
+                    "name": "GET type-contract/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "type-contract",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST type-contract/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Full Time\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "type-contract",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT type-contract/update/:type_id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Part Time\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/update/:type_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "type-contract",
+                                "update",
+                                ":type_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "type_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT type-contract/change-status/:type_id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/change-status/:type_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "type-contract",
+                                "change-status",
+                                ":type_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "type_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET type-contract/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "type-contract",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-affiliation",
+            "item": [
+                {
+                    "name": "GET setting-affiliation/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-affiliation",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-affiliation/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"AF-1\",\n  \"name\": \"Affiliation\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-affiliation",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-affiliation/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-affiliation",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-affiliation/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-affiliation",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-affiliation/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-affiliation",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-load-family",
+            "item": [
+                {
+                    "name": "GET setting-load-family/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-load-family",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-load-family/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Family Load\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-load-family",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-load-family/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-load-family",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-load-family/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-load-family",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-load-family/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-load-family",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-layoff",
+            "item": [
+                {
+                    "name": "GET setting-layoff/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-layoff",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-layoff/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"L-1\",\n  \"name\": \"Layoff reason\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-layoff",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-layoff/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-layoff",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-layoff/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-layoff",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-layoff/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-layoff",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "exregime",
+            "item": [
+                {
+                    "name": "GET exregime/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "exregime",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST exregime/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Regime A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "exregime",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT exregime/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "exregime",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT exregime/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "exregime",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET exregime/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "exregime",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "certificate-health-item",
+            "item": [
+                {
+                    "name": "GET certificate-health-item/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "certificate-health-item",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT certificate-health-item/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Item name\",\n  \"type\": \"text\",\n  \"position\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "certificate-health-item",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT certificate-health-item/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "certificate-health-item",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST certificate-health-item/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Item name\",\n  \"type\": \"text\",\n  \"position\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "certificate-health-item",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET certificate-health-item/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "certificate-health-item",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setting-business-salary",
+            "item": [
+                {
+                    "name": "GET setting-business-salary/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-business-salary",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST setting-business-salary/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Salary Item\",\n  \"code\": \"S-1\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-business-salary",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-business-salary/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-business-salary",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT setting-business-salary/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-business-salary",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET setting-business-salary/select",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "setting-business-salary",
+                                "select"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "product",
+            "item": [
+                {
+                    "name": "GET product/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "product",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST product/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessId\": 1,\n  \"typeId\": 1,\n  \"name\": \"Service A\",\n  \"count\": 1,\n  \"amount\": 100,\n  \"period\": \"month\",\n  \"periodCount\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "product",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT product/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Service B\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "product",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT product/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "product",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST product/findAutoComplete",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"val\": \"Serv\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/findAutoComplete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "product",
+                                "findAutoComplete"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET product/show/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/show/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "product",
+                                "show",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE product/delete/photo/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/delete/photo/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "product",
+                                "delete",
+                                "photo",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "provider",
+            "item": [
+                {
+                    "name": "GET provider/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST provider/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessId\": 1,\n  \"cityId\": 1,\n  \"name\": \"Provider A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT provider/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New name\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT provider/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST provider/select",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/select",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "select"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET provider/show/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/show/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "show",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET provider/find/products/:provider_id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/find/products/:provider_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "find",
+                                "products",
+                                ":provider_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "provider_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST provider/product/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"providerId\": 1,\n  \"productId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/product/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "product",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT provider/product/update/:product_id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/product/update/:product_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "product",
+                                "update",
+                                ":product_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "product_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT provider/product/change-status/:product_id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/product/change-status/:product_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "product",
+                                "change-status",
+                                ":product_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "product_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST provider/find/autocomplete",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"val\": \"Prov\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/find/autocomplete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "find",
+                                "autocomplete"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST provider/product/find/autocomplete",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"providerId\": 1,\n  \"val\": \"Serv\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/product/find/autocomplete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "product",
+                                "find",
+                                "autocomplete"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET provider/product/show/:product_id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/provider/product/show/:product_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "provider",
+                                "product",
+                                "show",
+                                ":product_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "product_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
