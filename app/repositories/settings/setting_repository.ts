@@ -38,6 +38,7 @@ export default class SettingRepository {
 
     // Transform response to match v4 format
     return settings.map((setting) => {
+      console.log(setting.serialize());
 
       const createdBy = setting.createdBy
       let full_name = createdBy.personalData ?
@@ -46,7 +47,7 @@ export default class SettingRepository {
       const serialized = setting.serialize() as SettingResponse
       return {
         ...serialized,
-        key: setting.key?.name || '',
+        key: setting.key?.key || '',
         createdBy: setting.createdBy
           ? {
             id: setting.createdBy.id,

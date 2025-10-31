@@ -6,7 +6,7 @@ export default class SettingKey extends BaseModel {
   public id: number
 
   @column()
-  public name: string
+  public key: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
