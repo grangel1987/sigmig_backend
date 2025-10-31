@@ -372,13 +372,24 @@ router.group(() => {
     .middleware(auth)
 
   router.group(() => {
-    router.get("/", "#controllers/setting_lics/lic_work_activity_controller");
+    router.get("/", "#controllers/setting_lics/lic_work_activity_controller.index");
     router.post("/store", "#controllers/setting_lics/lic_work_activity_controller.store");
     router.put("/update/:id", "#controllers/setting_lics/lic_work_activity_controller.update");
     router.put("/change-status/:id", "#controllers/setting_lics/lic_work_activity_controller.changeStatus");
     router.get("/select", "#controllers/setting_lics/lic_work_activity_controller.select");
   })
-    .prefix('api/v2/setting-lic-work-activities')
+    .prefix('setting-lic-work-activities')
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/setting_lics/lic_occupation_controller.index");
+    router.post("/store", "#controllers/setting_lics/lic_occupation_controller.store");
+    router.put("/update/:id", "#controllers/setting_lics/lic_occupation_controller.update");
+    router.put("/change-status/:id", "#controllers/setting_lics/lic_occupation_controller.changeStatus");
+    router.get("/select", "#controllers/setting_lics/lic_occupation_controller.select");
+  })
+    .prefix('setting-lic-occupations')
     .middleware(auth);
 
 
