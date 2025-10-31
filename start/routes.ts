@@ -352,6 +352,25 @@ router.group(() => {
     .middleware(auth)
 
 
+  router.group(() => {
+    router.get("/", "#controllers/bank/account_controller.index")
+    router.post("/store", "#controllers/bank/account_controller.store")
+    router.put("/update/:id", "#controllers/bank/account_controller.update")
+    router.put("/change-status/:id", "#controllers/bank/account_controller.changeStatus")
+    router.get("/find/all", "#controllers/bank/account_controller.findAll")
+  })
+    .prefix('bank')
+    .middleware(auth)
+  router.group(() => {
+    router.get("/", "#controllers/coin/coin_controller.index");
+    router.post("/store", "#controllers/coin/coin_controller.store");
+    router.put("/update/:id", "#controllers/coin/coin_controller.update");
+    router.put("/change-status/:id", "#controllers/coin/coin_controller.changeStatus");
+    router.get("/select", "#controllers/coin/coin_controller.select");
+  })
+    .prefix('coin')
+    .middleware(auth)
+
 
 }).prefix('api/v2')
 
