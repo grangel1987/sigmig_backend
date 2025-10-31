@@ -423,6 +423,26 @@ router.group(() => {
   })
     .prefix('setting-lic-compensation-boxes')
     .middleware(auth);
+  router.group(() => {
+    router.get("/", "#controllers/setting_lics/lic_mutual_controller.index");
+    router.post("/store", "#controllers/setting_lics/lic_mutual_controller.store");
+    router.put("/update/:id", "#controllers/setting_lics/lic_mutual_controller.update");
+    router.put("/change-status/:id", "#controllers/setting_lics/lic_mutual_controller.changeStatus");
+    router.get("/select", "#controllers/setting_lics/lic_mutual_controller.select");
+  })
+    .prefix('setting-lic-mutuals')
+    .middleware(auth);
+
+
+  router.group(() => {
+    router.get("/", "#controllers/setting_lics/setting_lic_motive_controller.index");
+    router.post("/store", "#controllers/setting_lics/setting_lic_motive_controller.store");
+    router.put("/update/:id", "#controllers/setting_lics/setting_lic_motive_controller.update");
+    router.put("/change-status/:id", "#controllers/setting_lics/setting_lic_motive_controller.changeStatus");
+    router.get("/select", "#controllers/setting_lics/setting_lic_motive_controller.select");
+  })
+    .prefix('setting-lic-motive')
+    .middleware(auth);
 
 
 }).prefix('api/v2')
