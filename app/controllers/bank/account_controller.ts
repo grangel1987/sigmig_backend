@@ -2,6 +2,7 @@ import Account from '#models/bank/account';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { accountStoreValidator, accountUpdateValidator } from '#validators/bank';
 import { HttpContext } from '@adonisjs/core/http';
+import vine from '@vinejs/vine';
 import { DateTime } from 'luxon';
 
 type MessageFrontEndType = {
@@ -10,9 +11,18 @@ type MessageFrontEndType = {
 }
 
 export default class AccountController {
-    public async index({ response, i18n }: HttpContext) {
+    public async index({ request, response, i18n }: HttpContext) {
         try {
-            const accounts = await Account.query()
+            const { page, perPage } = await request.validateUsing(
+                vine.compile(
+                    vine.object({
+                        page: vine.number().positive().optional(),
+                        perPage: vine.number().positive().optional(),
+                    })
+                )
+            )
+
+            const baseQuery = Account.query()
                 .preload('typeIdentify', (builder) => {
                     builder.select(['id', 'text'])
                 })
@@ -29,6 +39,7 @@ export default class AccountController {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
 
+            const accounts = await (page ? baseQuery.paginate(page, perPage || 10) : baseQuery)
             return accounts
         } catch (error) {
             console.log(error)
