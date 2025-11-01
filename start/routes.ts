@@ -421,7 +421,7 @@ router.group(() => {
     router.put("/change-status/:id", "#controllers/setting_lics/lic_compensation_box_controller.changeStatus");
     router.get("/select", "#controllers/setting_lics/lic_compensation_box_controller.select");
   })
-    .prefix('setting-lic-compensation-boxes')
+    .prefix('setting-lic-compensation-box')
     .middleware(auth);
   router.group(() => {
     router.get("/", "#controllers/setting_lics/lic_mutual_controller.index");
