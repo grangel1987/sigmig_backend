@@ -162,10 +162,10 @@ export default class CityController {
 
   public async select({ request }: HttpContext) {
 
-    const { countryId } = await request.validateUsing(vine.compile(vine.object({
-      countryId: vine.number().positive()
-    })))
-    const cities = await CityRepository.select(countryId)
+    const { country_Id } = request.params()
+
+
+    const cities = await CityRepository.select(country_Id)
     return cities
   }
 }
