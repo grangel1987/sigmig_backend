@@ -452,3 +452,28 @@ router.get('/', async () => {
     hello: 'world',
   }
 })
+
+// Clients (protected)
+router.group(() => {
+  router.get('/', '#controllers/clients/client_controller.index')
+  router.post('/store', '#controllers/clients/client_controller.store')
+  router.put('/update/:id', '#controllers/clients/client_controller.update')
+  router.put('/change-status/:id', '#controllers/clients/client_controller.changeStatus')
+  router.post('/findAutoComplete', '#controllers/clients/client_controller.findAutoComplete')
+  router.get('/show/:id', '#controllers/clients/client_controller.show')
+  router.delete('/delete/photo/:id', '#controllers/clients/client_controller.deletePhoto')
+  router.post('/find/params', '#controllers/clients/client_controller.findByParams')
+  router.post('/search', '#controllers/clients/client_controller.search')
+}).prefix('client').middleware(auth)
+// Client Web helpers (public endpoints used by web client area)
+router.group(() => {
+  router.post('/find-profile', '#controllers/clients/client_controller.finProfileClientById')
+  router.post('/delete-file', '#controllers/clients/client_controller.deleteFile')
+}).prefix('client-web')
+
+// Client Requests
+router.group(() => {
+  router.post('/store', '#controllers/client_requests/client_request_controller.store')
+  router.post('/find-by-token', '#controllers/client_requests/client_request_controller.findByToken')
+  router.post('/find-by-client', '#controllers/client_requests/client_request_controller.findRequestByClientId')
+}).prefix('client-request')
