@@ -18,6 +18,9 @@ export default class ProviderProduct extends BaseModel {
     public name: string
 
     @column()
+    declare price: number
+
+    @column()
     public enabled: boolean
 
     @column({ columnName: 'created_by' })
