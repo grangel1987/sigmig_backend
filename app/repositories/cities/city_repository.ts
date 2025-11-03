@@ -12,7 +12,7 @@ export default class CityRepository {
     const result = await db.from('cities')
       .select('id', 'name as text')
       .where('enabled', 'true')
-      .where('country_id', country_id).first()
+      .where('country_id', country_id)
     return result
   }
 }
