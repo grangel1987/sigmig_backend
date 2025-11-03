@@ -151,21 +151,48 @@ export default class CityController {
     }
   }
 
-  public async findByCountry({ request }: HttpContext) {
-    const { countryId } = request.all()
-    const cities = await City.query()
+  public async findByCountry({ request, response, i18n }: HttpContext) {
+    // Validate pagination from querystring
+    const { page, perPage } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          page: vine.number().positive().optional(),
+          perPage: vine.number().positive().optional(),
+        })
+      )
+    )
+
+    // Validate required param country_id
+    const { country_id } = request.params()
+
+    console.log(request.params());
+
+    const countryId = Number(country_id)
+    if (!country_id || Number.isNaN(countryId) || countryId <= 0) {
+      return response.status(422).json({
+        message: i18n.formatMessage('messages.update_error'),
+        title: i18n.formatMessage('messages.error_title'),
+      } as MessageFrontEnd)
+    }
+
+    const query = City.query()
       .where('countryId', countryId)
       .select(['id', 'name'])
+    const cities = await (page ? query.paginate(page || 1, perPage || 10) : query)
 
-    return cities
+    return response.ok(cities)
   }
 
-  public async select({ request }: HttpContext) {
-
-    const { country_Id } = request.params()
-
-
-    const cities = await CityRepository.select(country_Id)
-    return cities
+  public async select({ request, response, i18n }: HttpContext) {
+    const { country_id } = request.params()
+    const countryId = Number(country_id)
+    if (!country_id || Number.isNaN(countryId) || countryId <= 0) {
+      return response.status(422).json({
+        message: i18n.formatMessage('messages.update_error'),
+        title: i18n.formatMessage('messages.error_title'),
+      } as MessageFrontEnd)
+    }
+    const cities = await CityRepository.select(countryId)
+    return response.ok(cities)
   }
 }

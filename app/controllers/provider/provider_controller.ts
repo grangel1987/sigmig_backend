@@ -121,15 +121,36 @@ export default class ProviderController {
 
 
 
-    /** List products by provider */
-    async findProductsByProvider({ params }: HttpContext) {
-        const providerId = Number(params.provider_id)
+    /** List products by provider (paginated) */
+    async findProductsByProvider({ params, request, response, i18n }: HttpContext) {
+        // Validate pagination from querystring
+        const { page, perPage } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    page: vine.number().positive().optional(),
+                    perPage: vine.number().positive().optional(),
+                })
+            )
+        )
 
-        const products = await ProviderProduct.query()
+        // Validate required param provider_id
+        const providerId = Number(params.provider_id)
+        if (!params.provider_id || Number.isNaN(providerId) || providerId <= 0) {
+            return response.status(422).json(
+                MessageFrontEnd(
+                    i18n.formatMessage('messages.update_error'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            )
+        }
+
+        const query = ProviderProduct.query()
             .where('providerId', providerId)
             .preload('provider', (b) => b.select('id', 'name'))
 
-        return products
+        const products = page ? await query.paginate(page, perPage ?? 10) : await query
+
+        return response.ok(products)
     }
 
     /** Change provider status */
