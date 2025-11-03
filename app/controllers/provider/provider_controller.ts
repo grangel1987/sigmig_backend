@@ -119,6 +119,19 @@ export default class ProviderController {
         }
     }
 
+
+
+    /** List products by provider */
+    async findProductsByProvider({ params }: HttpContext) {
+        const providerId = Number(params.provider_id)
+
+        const products = await ProviderProduct.query()
+            .where('providerId', providerId)
+            .preload('provider', (b) => b.select('id', 'name'))
+
+        return products
+    }
+
     /** Change provider status */
     async changeStatus({ params, response, auth, i18n }: HttpContext) {
         const dateTime = DateTime.local()
