@@ -445,6 +445,57 @@ router.group(() => {
     .middleware(auth);
 
 
+  // Clients (protected)
+  router.group(() => {
+    router.get('/', '#controllers/clients/client_controller.index')
+    router.post('/store', '#controllers/clients/client_controller.store')
+    router.put('/update/:id', '#controllers/clients/client_controller.update')
+    router.put('/change-status/:id', '#controllers/clients/client_controller.changeStatus')
+    router.post('/findAutoComplete', '#controllers/clients/client_controller.findAutoComplete')
+    router.get('/show/:id', '#controllers/clients/client_controller.show')
+    router.delete('/delete/photo/:id', '#controllers/clients/client_controller.deletePhoto')
+    router.post('/find/params', '#controllers/clients/client_controller.findByParams')
+    router.post('/search', '#controllers/clients/client_controller.search')
+  }).prefix('client').middleware(auth)
+  // Client Web helpers (public endpoints used by web client area)
+  router.group(() => {
+    router.post('/find-profile', '#controllers/clients/client_controller.finProfileClientById')
+    router.post('/delete-file', '#controllers/clients/client_controller.deleteFile')
+  }).prefix('client-web')
+
+  // Client Requests
+  router.group(() => {
+    router.post('/store', '#controllers/client_requests/client_request_controller.store')
+    router.post('/find-by-token', '#controllers/client_requests/client_request_controller.findByToken')
+    router.post('/find-by-client', '#controllers/client_requests/client_request_controller.findRequestByClientId')
+  }).prefix('client-request')
+
+
+
+  // Shopping (protected)
+  router.group(() => {
+    router.post('/store', '#controllers/shoppings/shopping_controller.store')
+    router.get('/show/:id', '#controllers/shoppings/shopping_controller.show')
+    router.post('/find/number', '#controllers/shoppings/shopping_controller.findByNro')
+    router.put('/update/:shop_id', '#controllers/shoppings/shopping_controller.update')
+    router.post('/authorizer', '#controllers/shoppings/shopping_controller.authorizer')
+    router.put('/delete/:shop_id', '#controllers/shoppings/shopping_controller.delete')
+    router.put('/update/nro-buget/:id', '#controllers/shoppings/shopping_controller.updateNroBuget')
+    router.post('/find/name', '#controllers/shoppings/shopping_controller.findByNameProvider')
+    router.post('/find/date', '#controllers/shoppings/shopping_controller.findByDate')
+    router.get('/share/:id', '#controllers/shoppings/shopping_controller.share')
+  })
+    .prefix('shopping')
+    .middleware(auth)
+
+  // Shopping (public)
+  router.group(() => {
+    router.get('/details/:token', '#controllers/shoppings/shopping_controller.showByToken')
+  })
+    .prefix('shopping')
+
+
+
 }).prefix('api/v2')
 
 router.get('/', async () => {
@@ -453,27 +504,3 @@ router.get('/', async () => {
   }
 })
 
-// Clients (protected)
-router.group(() => {
-  router.get('/', '#controllers/clients/client_controller.index')
-  router.post('/store', '#controllers/clients/client_controller.store')
-  router.put('/update/:id', '#controllers/clients/client_controller.update')
-  router.put('/change-status/:id', '#controllers/clients/client_controller.changeStatus')
-  router.post('/findAutoComplete', '#controllers/clients/client_controller.findAutoComplete')
-  router.get('/show/:id', '#controllers/clients/client_controller.show')
-  router.delete('/delete/photo/:id', '#controllers/clients/client_controller.deletePhoto')
-  router.post('/find/params', '#controllers/clients/client_controller.findByParams')
-  router.post('/search', '#controllers/clients/client_controller.search')
-}).prefix('client').middleware(auth)
-// Client Web helpers (public endpoints used by web client area)
-router.group(() => {
-  router.post('/find-profile', '#controllers/clients/client_controller.finProfileClientById')
-  router.post('/delete-file', '#controllers/clients/client_controller.deleteFile')
-}).prefix('client-web')
-
-// Client Requests
-router.group(() => {
-  router.post('/store', '#controllers/client_requests/client_request_controller.store')
-  router.post('/find-by-token', '#controllers/client_requests/client_request_controller.findByToken')
-  router.post('/find-by-client', '#controllers/client_requests/client_request_controller.findRequestByClientId')
-}).prefix('client-request')

@@ -3728,6 +3728,706 @@
             ]
         },
         {
+            "name": "client",
+            "item": [
+                {
+                    "name": "GET client/",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST client/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"identifyTypeId\": 1,\n  \"identify\": \"76.543.210-9\",\n  \"name\": \"Acme SpA\",\n  \"phone\": \"+56912345678\",\n  \"email\": \"contact@acme.test\",\n  \"giro\": \"Servicios de software\",\n  \"address\": \"Av. Siempre Viva 742, Santiago\",\n  \"typeId\": 2,\n  \"cityId\": 13101\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT client/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Acme SpA (Updated)\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT client/change-status/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/change-status/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "change-status",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST client/findAutoComplete",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"val\": \"Ac\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/findAutoComplete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "findAutoComplete"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET client/show/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/show/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "show",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE client/delete/photo/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/delete/photo/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "delete",
+                                "photo",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST client/find/params",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"contact@acme.test\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/find/params",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "find",
+                                "params"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST client/search",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"value\": \"acme\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client/search",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client",
+                                "search"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "client-web",
+            "auth": {
+                "type": "noauth"
+            },
+            "item": [
+                {
+                    "name": "POST client-web/find-profile",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client-web/find-profile",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client-web",
+                                "find-profile"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST client-web/delete-file",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 10\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client-web/delete-file",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client-web",
+                                "delete-file"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "client-request",
+            "auth": {
+                "type": "noauth"
+            },
+            "item": [
+                {
+                    "name": "POST client-request/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"clientId\": 1,\n  \"isBooking\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client-request/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client-request",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST client-request/find-by-token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"00000000-0000-4000-8000-000000000000\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client-request/find-by-token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client-request",
+                                "find-by-token"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST client-request/find-by-client",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"clientId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/client-request/find-by-client",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "client-request",
+                                "find-by-client"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "shopping",
+            "item": [
+                {
+                    "name": "POST shopping/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"currency_symbol\": \"$\",\n  \"provider\": { \"id\": 1 },\n  \"products\": [{ \"id\": 1, \"name\": \"Item\", \"price\": 1000, \"quantity\": 2 }],\n  \"cost_center\": 1,\n  \"work\": 1,\n  \"rounding\": 0,\n  \"info\": {\n    \"name\": \"Solicitante\",\n    \"payment_term\": 1,\n    \"send_condition\": 1,\n    \"send_amount\": 0,\n    \"other_amount\": 0,\n    \"observation\": \"Obs\",\n    \"authorizer_id\": 1,\n    \"nro_buget\": \"OC-001\",\n    \"days_expire_buget\": 7\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "store"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET shopping/show/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/show/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "show",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST shopping/find/number",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"number\": \"1\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/find/number",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "find",
+                                "number"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT shopping/update/:shop_id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"provider\": { \"id\": 1 },\n  \"products\": [{ \"id\": 1, \"name\": \"Item\", \"price\": 2000, \"quantity\": 1 }],\n  \"cost_center\": 1,\n  \"work\": 1,\n  \"rounding\": 0,\n  \"info\": { \"name\": \"Solicitante\", \"nro_buget\": \"OC-002\", \"authorizer_id\": 1, \"payment_term\": 1, \"send_condition\": 1, \"send_amount\": 0, \"other_amount\": 0, \"observation\": \"Obs upd\" }\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/update/:shop_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "update",
+                                ":shop_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "shop_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST shopping/authorizer",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/authorizer",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "authorizer"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT shopping/delete/:shop_id",
+                    "request": {
+                        "method": "PUT",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/delete/:shop_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "delete",
+                                ":shop_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "shop_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PUT shopping/update/nro-buget/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"nro_buget\": \"OC-003\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/update/nro-buget/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "update",
+                                "nro-buget",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST shopping/find/name",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"name\": \"prove\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/find/name",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "find",
+                                "name"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST shopping/find/date",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"date\": \"2025-01-31\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/find/date",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "find",
+                                "date"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET shopping/share/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/share/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "share",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "GET shopping/details/:token (public)",
+                    "auth": {
+                        "type": "noauth"
+                    },
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/details/:token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "shopping",
+                                "details",
+                                ":token"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "00000000-0000-4000-8000-000000000000"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "name": "bank",
             "item": [
                 {

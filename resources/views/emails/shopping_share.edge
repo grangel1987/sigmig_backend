@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nueva cotización disponible</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color:#1f2937; }
+      .container { max-width: 640px; margin: 0 auto; padding: 16px; }
+      .btn { display: inline-block; background: #2563eb; color: #fff; padding: 10px 16px; text-decoration: none; border-radius: 6px; }
+      .muted { color: #6b7280; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Hola {{ full_name }},</h2>
+      <p>Has recibido una nueva cotización para su revisión.</p>
+      <p>
+        Token de acceso: <strong>{{ token }}</strong>
+      </p>
+      @if(url)
+      <p>
+        <a href="{{ url }}" class="btn" target="_blank" rel="noopener noreferrer">Ver cotización</a>
+      </p>
+      @endif
+      <p class="muted">Si no esperabas este correo, puedes ignorarlo.</p>
+    </div>
+  </body>
+</html>

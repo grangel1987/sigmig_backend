@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bienvenido/a</title>
+  </head>
+  <body>
+    <h2>¡Cuenta creada!</h2>
+    <p>Hola {{ full_name ?? 'usuario' }}, tu cuenta ha sido creada exitosamente.</p>
+    @if(verify_url)
+    <p><a href="{{ verify_url }}" target="_blank" rel="noopener noreferrer">Verificar cuenta</a></p>
+    @endif
+  </body>
+</html>
