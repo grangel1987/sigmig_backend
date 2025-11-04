@@ -6,10 +6,10 @@ export default class extends BaseSchema {
     async up() {
         if (!(await this.schema.hasTable(this.tableName)))
             this.schema.createTable(this.tableName, (table) => {
-                table.increments()
+                table.increments('id').primary()
 
                 table
-                    .integer('client_id')
+                    .bigint('client_id')
                     .notNullable()
                     .references('id')
                     .inTable('clients')
@@ -22,13 +22,13 @@ export default class extends BaseSchema {
 
                 // Audit
                 table
-                    .integer('created_by')
+                    .bigint('created_by')
                     .nullable()
                     .references('id')
                     .inTable('users')
                     .onDelete('RESTRICT')
                 table
-                    .integer('updated_by')
+                    .bigint('updated_by')
                     .nullable()
                     .references('id')
                     .inTable('users')
