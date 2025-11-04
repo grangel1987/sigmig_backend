@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Permiso pendiente de autorización</title>
+  </head>
+  <body>
+    <h2>Solicitud de permiso</h2>
+    <p>Estimado/a {{ authorizer_name ?? 'autor(a)' }},</p>
+    <p>El empleado {{ employee_name }} ha solicitado un permiso.</p>
+    <ul>
+      <li>Tipo: {{ permit_type }}</li>
+      <li>Desde: {{ date_from }} — Hasta: {{ date_to }}</li>
+    </ul>
+    @if(approve_url)
+    <p><a href="{{ approve_url }}" target="_blank" rel="noopener noreferrer">Revisar/Autorizar</a></p>
+    @endif
+  </body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nueva reserva registrada</title>
+  </head>
+  <body>
+    <h2>Reserva creada</h2>
+    <p>Se ha creado una nueva reserva para {{ client_name ?? 'cliente' }}.</p>
+    <ul>
+      <li>Fecha: {{ date }}</li>
+      <li>Servicio: {{ service_name }}</li>
+      <li>Referencia: {{ reference ?? 'N/A' }}</li>
+    </ul>
+  </body>
+</html>

@@ -37,8 +37,4 @@ export default class ClientFile extends BaseModel {
 
     @column.dateTime({ columnName: 'updated_at', autoCreate: true, autoUpdate: true, serializeAs: 'updated_at' })
     public updatedAt: DateTime
-
-    // Internal storage path (kept for compatibility but not serialized)
-    @column({ serializeAs: null })
-    public path: string | null
 }

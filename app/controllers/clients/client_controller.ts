@@ -7,6 +7,7 @@ import Util from '#utils/Util'
 import { clientStoreValidator, clientUpdateValidator } from '#validators/client'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
+import console from 'node:console'
 
 export default class ClientController {
     // GET /client/ (optionally could be paginated in future)
@@ -166,6 +167,8 @@ export default class ClientController {
                 ),
             })
         } catch (error) {
+            console.log(error);
+
             return response.status(500).json(
                 MessageFrontEnd(
                     i18n.formatMessage('messages.store_error'),

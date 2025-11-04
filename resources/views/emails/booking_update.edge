@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reserva actualizada</title>
+  </head>
+  <body>
+    <h2>Actualización de reserva</h2>
+    <p>La reserva {{ booking_code ?? 'N/A' }} fue actualizada.</p>
+    <ul>
+      <li>Estado: {{ status }}</li>
+      <li>Fecha: {{ date }}</li>
+      <li>Servicio: {{ service_name }}</li>
+    </ul>
+  </body>
+</html>

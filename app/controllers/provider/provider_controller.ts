@@ -119,6 +119,112 @@ export default class ProviderController {
         }
     }
 
+    /** Show single provider */
+    async show({ params }: HttpContext) {
+        const provider = await Provider.findOrFail(params.id)
+        await provider.load('city', (b) => b.select('id', 'name'))
+        return provider
+    }
+
+    /** Store provider product */
+    async storeProduct({ request, response, auth, i18n }: HttpContext) {
+        const { name, code, price, providerId } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    providerId: vine.number().positive(),
+                    name: vine.string().trim().minLength(1),
+                    code: vine.string().trim().minLength(1),
+                    price: vine.number().positive(),
+                })
+            )
+        )
+
+        try {
+            const exists = await ProviderProduct.query()
+                .where('providerId', providerId)
+                .where('code', code)
+                .first()
+            if (exists) {
+                return response.status(422).json(
+                    MessageFrontEnd('El codigo ingresado ya esta asignado', 'Error')
+                )
+            }
+
+            const dateTime = DateTime.local()
+            const product = await ProviderProduct.create({
+                providerId,
+                name,
+                code,
+                price,
+                createdById: auth.user!.id,
+                updatedById: auth.user!.id,
+                createdAt: dateTime,
+                updatedAt: dateTime,
+            })
+
+            return response.status(201).json({
+                product,
+                message: i18n.formatMessage('messages.store_ok'),
+                title: i18n.formatMessage('messages.ok_title'),
+            } as MessageFrontEndType)
+        } catch (error) {
+            return response.status(500).json(
+                MessageFrontEnd(
+                    i18n.formatMessage('messages.store_error'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            )
+        }
+    }
+
+    /** Update provider product */
+    async updateProduct({ request, response, params, auth, i18n }: HttpContext) {
+        const { name, code, price, providerId } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    providerId: vine.number().positive(),
+                    name: vine.string().trim().minLength(1).optional(),
+                    code: vine.string().trim().minLength(1).optional(),
+                    price: vine.number().positive().optional(),
+                })
+            )
+        )
+
+        try {
+            const product = await ProviderProduct.findOrFail(params.product_id)
+
+            // If code is changing, ensure uniqueness within provider
+            if (code && code !== product.code) {
+                const exists = await ProviderProduct.query()
+                    .where('providerId', providerId)
+                    .where('code', code)
+                    .first()
+                if (exists) {
+                    return response.status(422).json(
+                        MessageFrontEnd('El codigo ingresado ya esta asignado', 'Error')
+                    )
+                }
+            }
+
+            const dateTime = DateTime.local()
+            product.merge({ name, code, price, updatedById: auth.user!.id, updatedAt: dateTime })
+            await product.save()
+
+            return response.status(200).json({
+                product,
+                message: i18n.formatMessage('messages.update_ok'),
+                title: i18n.formatMessage('messages.ok_title'),
+            } as MessageFrontEndType)
+        } catch (error) {
+            return response.status(500).json(
+                MessageFrontEnd(
+                    i18n.formatMessage('messages.update_error'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            )
+        }
+    }
+
 
 
     /** List products by provider (paginated) */

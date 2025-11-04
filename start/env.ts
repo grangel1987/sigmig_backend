@@ -37,4 +37,15 @@ export default await Env.create(new URL('../', import.meta.url), {
   DRIVE_DISK: Env.schema.enum(['gcs'] as const),
   GCS_KEY: Env.schema.string(),
   GCS_BUCKET: Env.schema.string()
+  ,
+  // Mail / SMTP (optional)
+  MAIL_CONNECTION: Env.schema.string.optional(),
+  SMTP_HOST: Env.schema.string.optional(),
+  SMTP_PORT: Env.schema.number.optional(),
+  SMTP_SECURE: Env.schema.string.optional(),
+  SMTP_USERNAME: Env.schema.string.optional(),
+  SMTP_PASSWORD: Env.schema.string.optional(),
+  MAIL_USERNAME: Env.schema.string.optional(),
+  MAIL_PASSWORD: Env.schema.string.optional(),
+  MAIL_FROM: Env.schema.string.optional(),
 })
