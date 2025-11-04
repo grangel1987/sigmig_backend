@@ -11,6 +11,13 @@ export default class Setting extends BaseModel {
   @column()
   public text: string
 
+  @column({ columnName: 'country_id' })
+  public countryId: number
+
+
+  @column()
+  declare value: string
+
   @column()
   public keyId: number | null
 
