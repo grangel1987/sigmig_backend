@@ -20,49 +20,65 @@ interface SettingResponse {
 }
 
 export default class SettingRepository {
-  // Fetch settings by country
+  // Fetch settings by country (legacy-compatible shape)
   public static async findSettingsByCountry(countryId: number): Promise<SettingResponse[]> {
     const settings = await Setting.query()
       .where('country_id', countryId)
       .where('enabled', true)
       .preload('key')
       .preload('createdBy', (builder) => {
-        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
       })
       .preload('updatedBy', (builder) => {
-        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
       })
       .exec()
 
-
-
-    // Transform response to match v4 format
     return settings.map((setting) => {
-      console.log(setting.serialize());
+      const keyString = setting.key?.key || ''
 
-      const createdBy = setting.createdBy
-      let full_name = createdBy.personalData ?
-        `${createdBy.personalData.names} ${createdBy.personalData.lastNameP} ${createdBy.personalData.lastNameM}` :
-        'Sin Nombre';
-      const serialized = setting.serialize() as SettingResponse
-      return {
-        ...serialized,
-        key: setting.key?.key || '',
+      // Build legacy-like payload explicitly to ensure all legacy fields exist
+      const createdAt = setting.createdAt
+      const updatedAt = setting.updatedAt
+      const lastLoginAt = setting.lastLoginAt
+      const resetPasswordAt = setting.resetPasswordAt
+
+      const fmt = (d?: any) => (d ? (d as any).toFormat?.('dd/MM/yyyy hh:mm:ss a') ?? null : null)
+
+      const out: SettingResponse = {
+        id: setting.id,
+        key_id: setting.keyId as number,
+        key: keyString,
+        value: setting.value,
+        country_id: setting.countryId,
+        created_by: setting.createdById as number,
+        updated_by: setting.updatedById as number,
+        enabled: setting.enabled,
+        created_at: fmt(createdAt),
+        updated_at: fmt(updatedAt),
+        last_login_at: fmt(lastLoginAt),
+        reset_password_at: resetPasswordAt ? (resetPasswordAt as any).toFormat?.('YYYY-MM-DD HH:mm:ss') ?? null : null,
         createdBy: setting.createdBy
           ? {
             id: setting.createdBy.id,
-            full_name,
+            full_name: (setting.createdBy as any).full_name || undefined,
             email: setting.createdBy.email,
           }
           : null,
         updatedBy: setting.updatedBy
           ? {
             id: setting.updatedBy.id,
-            full_name,
-            email: setting.createdBy.email,
+            full_name: (setting.updatedBy as any).full_name || undefined,
+            email: setting.updatedBy.email,
           }
           : null,
       }
+
+      return out
     })
   }
 
