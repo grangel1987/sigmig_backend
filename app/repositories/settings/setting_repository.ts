@@ -1,11 +1,13 @@
 import Indicator from "#models/settings/indicator"
 import Setting from "#models/settings/setting"
+import { DateTime } from "luxon"
 
 
 interface SettingResponse {
   id: number
   key_id: number
   key: string
+  text: string
   value: string
   country_id: number
   created_by: number
@@ -47,11 +49,12 @@ export default class SettingRepository {
       const lastLoginAt = setting.lastLoginAt
       const resetPasswordAt = setting.resetPasswordAt
 
-      const fmt = (d?: any) => (d ? (d as any).toFormat?.('dd/MM/yyyy hh:mm:ss a') ?? null : null)
+      const fmt = (d?: DateTime | null) => (d ? d.toFormat?.('dd/MM/yyyy hh:mm:ss a') ?? null : null)
 
       const out: SettingResponse = {
         id: setting.id,
         key_id: setting.keyId as number,
+        text: setting.text,
         key: keyString,
         value: setting.value,
         country_id: setting.countryId,
