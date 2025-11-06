@@ -6,6 +6,7 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { clientStoreValidator, clientUpdateValidator } from '#validators/client'
 import { HttpContext } from '@adonisjs/core/http'
+import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
 import console from 'node:console'
 
@@ -47,10 +48,10 @@ export default class ClientController {
     public async store({ request, response, auth, i18n }: HttpContext) {
         const data = await request.validateUsing(clientStoreValidator)
         const dateTime = await Util.getDateTimes(request.ip())
-
+        const trx = await db.transaction()
         try {
             // Check duplicate document
-            const exists = await Client.query()
+            const exists = await Client.query({ client: trx })
                 .where('identify_type_id', data.identifyTypeId)
                 .where('identify', data.identify)
                 .first()
@@ -102,7 +103,8 @@ export default class ClientController {
                 payload.urlThumbShort = url_thumb_short
             }
 
-            const client = await Client.create(payload)
+            const client = await Client.create(payload, { client: trx })
+            client.useTransaction(trx)
 
             // Contacts
             if (responsibles.length) {
@@ -118,7 +120,7 @@ export default class ClientController {
                     createdAt: dateTime,
                     updatedAt: dateTime,
                 }))
-                await client.related('contact').createMany(contactRows)
+                await client.related('contact').createMany(contactRows, { client: trx })
             }
 
             // Upload additional files (optional, supports multiple files under `files`)
@@ -141,10 +143,11 @@ export default class ClientController {
                     })
                 }
                 if (rows.length) {
-                    await client.related('files').createMany(rows as any)
+                    await client.related('files').createMany(rows, { client: trx })
                 }
             }
 
+            await trx.commit()
             await client.load('createdBy', (builder) => {
                 builder
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -167,8 +170,8 @@ export default class ClientController {
                 ),
             })
         } catch (error) {
+            await trx.rollback()
             console.log(error);
-
             return response.status(500).json(
                 MessageFrontEnd(
                     i18n.formatMessage('messages.store_error'),
@@ -183,9 +186,10 @@ export default class ClientController {
         const clientId = params.id
         const data = await request.validateUsing(clientUpdateValidator)
         const dateTime = await Util.getDateTimes(request.ip())
-
+        const trx = await db.transaction()
         try {
-            const client = await Client.findOrFail(clientId)
+            const client = await Client.findOrFail(clientId, { client: trx })
+            client.useTransaction(trx)
 
             const payload: Record<string, any> = {}
             if (data.identifyTypeId !== undefined) payload.identifyTypeId = data.identifyTypeId
@@ -229,22 +233,23 @@ export default class ClientController {
             }
 
             if (responsibles.length) {
-                await client.related('contact').query().delete()
+                await client.useTransaction(trx).related('contact').query().delete()
                 const contactRows = responsibles.map((r) => ({
                     name: r.name,
                     phone: r.phone,
                     email: r.email,
-                    identifyTypeId: r.identify_type_id ?? r.identifyTypeId,
+                    identifyTypeId: r.identifyTypeId ?? r.identify_type_id,
                     identify: r.identify,
-                    clientContactTypeId: r.client_contact_type_id ?? r.clientContactTypeId,
+                    clientContactTypeId: r.clientContactTypeId ?? r.client_contact_type_id,
                     createdById: auth.user!.id,
                     updatedById: auth.user!.id,
                     createdAt: dateTime,
                     updatedAt: dateTime,
                 }))
-                await client.related('contact').createMany(contactRows)
+                await client.related('contact').createMany(contactRows, { client: trx })
             }
 
+            await trx.commit()
             await client.load('createdBy', (builder) => {
                 builder
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -295,6 +300,7 @@ export default class ClientController {
                 ),
             })
         } catch (error) {
+            await trx.rollback()
             return response.status(500).json(
                 MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),

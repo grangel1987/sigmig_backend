@@ -16,6 +16,16 @@ export const clientStoreValidator = vine.compile(
         address: vine.string().trim().maxLength(255),
         typeId: vine.number().positive(),
         cityId: vine.number().positive(),
+        responsibles: vine.array(
+            vine.object({
+                name: vine.string().trim().maxLength(255),
+                phone: vine.string().trim().maxLength(255),
+                email: vine.string().trim().email(),
+                identifyTypeId: vine.number().positive(),
+                identify: vine.string().trim().maxLength(255),
+                clientContactTypeId: vine.number().positive(),
+            })
+        ).optional(),
     })
 )
 
@@ -44,5 +54,15 @@ export const clientUpdateValidator = vine.compile(
         address: vine.string().trim().maxLength(255).optional(),
         typeId: vine.number().positive().optional(),
         cityId: vine.number().positive().optional(),
+        responsibles: vine.array(
+            vine.object({
+                name: vine.string().trim().maxLength(255),
+                phone: vine.string().trim().maxLength(255),
+                email: vine.string().trim().email(),
+                identifyTypeId: vine.number().positive(),
+                identify: vine.string().trim().maxLength(255),
+                clientContactTypeId: vine.number().positive(),
+            })
+        ).optional(),
     })
 )
