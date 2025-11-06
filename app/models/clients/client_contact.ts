@@ -1,45 +1,51 @@
 import Setting from '#models/settings/setting'
-import User from '#models/users/user'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class ClientContact extends BaseModel {
-    @column({ isPrimary: true })
-    public id: number
+    // No id PK in schema
 
-    @column({ columnName: 'client_id' })
+    @column({ columnName: 'client_id', isPrimary: true })
     public clientId: number
 
+    @column()
+    public name: string
+
+    @column()
+    public phone: string
+
+    @column()
+    public email: string
+
     @column({ columnName: 'identify_type_id' })
-    public identifyTypeId: number | null
+    public identifyTypeId: number
+
+    @column()
+    public identify: string
 
     @column({ columnName: 'client_contact_type_id' })
-    public clientContactTypeId: number | null
+    public clientContactTypeId: number
 
-    @column({ columnName: 'created_by' })
-    public createdById: number | null
-
-    @column({ columnName: 'updated_by' })
-    public updatedById: number | null
-
-    @column.dateTime({ autoCreate: true })
+    @column.dateTime()
     public createdAt: DateTime
 
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    @column.dateTime()
     public updatedAt: DateTime
 
-    @belongsTo(() => User, { foreignKey: 'createdById' })
-    public createdBy: BelongsTo<typeof User>
+    @column({ columnName: 'created_by' })
+    public createdById: number
 
-    @belongsTo(() => User, { foreignKey: 'updatedById' })
-    public updatedBy: BelongsTo<typeof User>
+    @column({ columnName: 'updated_by' })
+    public updatedById: number
 
     @belongsTo(() => Setting, { foreignKey: 'identifyTypeId' })
     public typeIdentify: BelongsTo<typeof Setting>
 
     @belongsTo(() => Setting, { foreignKey: 'clientContactTypeId' })
     public typeContact: BelongsTo<typeof Setting>
+
+    // No user relations since only user IDs are present
 
     public static castDates(_field: string, value: DateTime) {
         return value.toFormat('dd/MM/yyyy hh:mm:ss a')

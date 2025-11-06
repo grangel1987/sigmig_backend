@@ -511,6 +511,19 @@ router.group(() => {
   })
     .prefix('shopping')
 
+  // Booking (protected)
+  router.group(() => {
+    router.post('/store', '#controllers/booking/booking_controller.store')
+    router.get('/:id', '#controllers/booking/booking_controller.show')
+    router.post('/find/number', '#controllers/booking/booking_controller.findByNro')
+    router.post('/find/status', '#controllers/booking/booking_controller.findByStatus')
+    router.post('/find/name', '#controllers/booking/booking_controller.findByName')
+    router.post('/find/buget', '#controllers/booking/booking_controller.findByNroBuget')
+    router.post('/count/unattended', '#controllers/booking/booking_controller.findCountUnattended')
+    router.post('/find/complements', '#controllers/booking/booking_controller.findComplements')
+    router.put('/update/:booking_id', '#controllers/booking/booking_controller.update')
+  }).prefix('booking').middleware(auth)
+
 
 
 }).prefix('api/v2')
