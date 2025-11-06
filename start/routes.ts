@@ -471,6 +471,23 @@ router.group(() => {
   }).prefix('client-request')
 
 
+  // Bugets (quotes)
+  router.group(() => {
+    router.post('/store', '#controllers/bugets/buget_controller.store')
+    router.get('/:id', '#controllers/bugets/buget_controller.show')
+    router.post('/find/number', '#controllers/bugets/buget_controller.findByNro')
+    router.post('/find/name', '#controllers/bugets/buget_controller.findByNameClient')
+    router.post('/find/date', '#controllers/bugets/buget_controller.findByDate')
+    router.put('/update/:id', '#controllers/bugets/buget_controller.update')
+    router.delete('/delete/:id', '#controllers/bugets/buget_controller.delete')
+    router.get('/count/made/:business_id', '#controllers/bugets/buget_controller.countMade')
+    router.get('/count/made/year/:business_id', '#controllers/bugets/buget_controller.countMadeYear')
+    router.post('/report', '#controllers/bugets/buget_controller.report')
+    router.post('/search-items', '#controllers/bugets/buget_controller.searchItems')
+  })
+    .prefix('buget')
+    .middleware(auth)
+
 
   // Shopping (protected)
   router.group(() => {
