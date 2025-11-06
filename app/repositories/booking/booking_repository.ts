@@ -1,20 +1,36 @@
-/* import Booking from '#models/bookings/booking'; // Adjust path based on your project structure
+import Booking from '#models/booking/booking'
+import db from '@adonisjs/lucid/services/db'
 
 export default class BookingRepository {
+    // Find bookings by client name or email (legacy behavior, raw SQL)
     public static async findByNameOrEmail(name: string) {
         try {
-            return await Booking.query()
-                .select('bookings.id', 'clients.name', 'clients.identify', 'bookings.created_at', 'cities.name as city', 'settings.text as type_identify', 'bookings.attended')
-                .join('clients', 'bookings.client_id', 'clients.id')
-                .join('cities', 'clients.city_id', 'cities.id')
-                .join('settings', 'clients.identify_type_id', 'settings.id')
-                .whereRaw('(clients.name ILIKE ? OR clients.email ILIKE ?)', [`%${name}%`, `%${name}%`])
+            const like = `%${name}%`
+            const query = `
+                SELECT 
+                    bookings.id,
+                    clients.name,
+                    clients.identify,
+                    bookings.created_at,
+                    cities.name AS city,
+                    settings.text AS type_identify,
+                    bookings.attended
+                FROM 
+                    bookings
+                    INNER JOIN clients ON bookings.client_id = clients.id
+                    INNER JOIN cities ON clients.city_id = cities.id
+                    INNER JOIN settings ON clients.identify_type_id = settings.id
+                WHERE (clients.name LIKE ? OR clients.email LIKE ?)`
+
+            const result = await db.rawQuery(query, [like, like])
+            return (result.rows ?? result[0]) as any[]
         } catch (error) {
             console.log(error)
             throw error
         }
     }
 
+    // Find one booking with full preloads
     public static async findBookingById(bookingId: number) {
         try {
             return await Booking.query()
@@ -30,7 +46,9 @@ export default class BookingRepository {
                 })
                 .preload('feedings')
                 .preload('attendedBy', (builder) => {
-                    builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+                    builder
+                        .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                        .select(['id', 'personal_data_id', 'email'])
                 })
                 .preload('client', (builder) => {
                     builder
@@ -45,4 +63,4 @@ export default class BookingRepository {
             throw error
         }
     }
-} */
+}
