@@ -1,43 +1,103 @@
 {
     "info": {
-        "_postman_id": "c3a0de1a-0000-4c3f-9b3a-000000000002",
-        "name": "SIGMI Backend API (Full)",
+        "_postman_id": "2b73b57b-e407-459d-b1ce-82ed9746e3b0",
+        "name": "SIGMI Backend API (Full) Copy",
         "description": "Complete Postman collection for SIGMI Backend routes (start/routes.ts)",
-        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-    },
-    "variable": [
-        {
-            "key": "baseUrl",
-            "value": "http://localhost:3333"
-        },
-        {
-            "key": "apiPrefix",
-            "value": "api/v2"
-        },
-        {
-            "key": "authToken",
-            "value": ""
-        }
-    ],
-    "auth": {
-        "type": "bearer",
-        "bearer": [
-            {
-                "key": "token",
-                "value": "{{authToken}}",
-                "type": "string"
-            }
-        ]
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "49390994"
     },
     "item": [
         {
             "name": "account",
-            "auth": {
-                "type": "noauth"
-            },
             "item": [
                 {
                     "name": "POST account/login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "// Parse response JSON\r",
+                                    "let jsonData;\r",
+                                    "try {\r",
+                                    "    jsonData = pm.response.json();\r",
+                                    "} catch (e) {\r",
+                                    "    pm.test(\"Response is valid JSON\", function () {\r",
+                                    "        pm.expect.fail(\"Response body is not valid JSON\");\r",
+                                    "    });\r",
+                                    "}\r",
+                                    "\r",
+                                    "// Assert status code is 200\r",
+                                    "pm.test(\"Status code is 200\", function () {\r",
+                                    "    pm.response.to.have.status(200);\r",
+                                    "});\r",
+                                    "\r",
+                                    "// Helper to get nested or top-level accessToken.token\r",
+                                    "function getAccessToken(data) {\r",
+                                    "    if (!data) return undefined;\r",
+                                    "    if (data.accessToken && typeof data.accessToken === 'object' && data.accessToken.token) {\r",
+                                    "        return data.accessToken.token;\r",
+                                    "    }\r",
+                                    "    // Also check for top-level accessToken.token (redundant, but for completeness)\r",
+                                    "    if (data.token) {\r",
+                                    "        return data.token;\r",
+                                    "    }\r",
+                                    "    return undefined;\r",
+                                    "}\r",
+                                    "\r",
+                                    "// Helper to get token type\r",
+                                    "function getTokenType(data) {\r",
+                                    "    if (data.accessToken && typeof data.accessToken === 'object' && data.accessToken.type) {\r",
+                                    "        return data.accessToken.type;\r",
+                                    "    }\r",
+                                    "    return undefined;\r",
+                                    "}\r",
+                                    "\r",
+                                    "// Helper to get token expiry\r",
+                                    "function getTokenExpiresIn(data) {\r",
+                                    "    if (data.accessToken && typeof data.accessToken === 'object' && data.accessToken.expiresIn) {\r",
+                                    "        return data.accessToken.expiresIn;\r",
+                                    "    }\r",
+                                    "    return undefined;\r",
+                                    "}\r",
+                                    "\r",
+                                    "// Save tokens and info to environment variables\r",
+                                    "if (jsonData) {\r",
+                                    "    const token = getAccessToken(jsonData);\r",
+                                    "    const tokenType = getTokenType(jsonData);\r",
+                                    "    const expiresIn = getTokenExpiresIn(jsonData);\r",
+                                    "    const refreshToken = jsonData.refreshToken;\r",
+                                    "    const userEmail = jsonData.userData && jsonData.userData.email ? jsonData.userData.email : undefined;\r",
+                                    "\r",
+                                    "    pm.test(\"accessToken.token is present\", function () {\r",
+                                    "        pm.expect(token, \"accessToken.token should be present\").to.be.a(\"string\").and.not.empty;\r",
+                                    "    });\r",
+                                    "\r",
+                                    "    if (token) {\r",
+                                    "        pm.environment.set(\"auth_token\", token);\r",
+                                    "        pm.environment.set(\"authToken\", token);\r",
+                                    "    }\r",
+                                    "    if (tokenType) {\r",
+                                    "        pm.environment.set(\"token_type\", tokenType);\r",
+                                    "    }\r",
+                                    "    if (expiresIn) {\r",
+                                    "        pm.environment.set(\"token_expires_in\", expiresIn);\r",
+                                    "    }\r",
+                                    "    if (refreshToken) {\r",
+                                    "        pm.environment.set(\"refresh_token\", refreshToken);\r",
+                                    "    }\r",
+                                    "    if (userEmail) {\r",
+                                    "        pm.environment.set(\"user_email\", userEmail);\r",
+                                    "    }\r",
+                                    "}\r",
+                                    ""
+                                ],
+                                "type": "text/javascript",
+                                "packages": {},
+                                "requests": {}
+                            }
+                        }
+                    ],
                     "request": {
                         "method": "POST",
                         "header": [
@@ -61,7 +121,8 @@
                                 "login"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST account/client/login",
@@ -89,7 +150,8 @@
                                 "login"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST account/forgot-password",
@@ -116,7 +178,8 @@
                                 "forgot-password"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST account/change-password-forgot",
@@ -143,12 +206,14 @@
                                 "change-password-forgot"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET account/find-user-by-token",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/account/find-user-by-token",
                             "host": [
@@ -160,7 +225,8 @@
                                 "find-user-by-token"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST account/reset-password",
@@ -187,9 +253,13 @@
                                 "reset-password"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
-            ]
+            ],
+            "auth": {
+                "type": "noauth"
+            }
         },
         {
             "name": "setting",
@@ -198,6 +268,7 @@
                     "name": "GET setting/country/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting/country/:id",
                             "host": [
@@ -216,7 +287,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -248,12 +320,14 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET business/find/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/business/find/select",
                             "host": [
@@ -266,7 +340,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT business/change/:id",
@@ -300,12 +375,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET business/find/id/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/business/find/id/:id",
                             "host": [
@@ -325,12 +402,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "DELETE business/delete/photo/:id",
                     "request": {
                         "method": "DELETE",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/business/delete/photo/:id",
                             "host": [
@@ -350,7 +429,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT business/update/:id",
@@ -384,7 +464,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -393,11 +474,9 @@
             "item": [
                 {
                     "name": "GET business/web/find/id/:id",
-                    "auth": {
-                        "type": "noauth"
-                    },
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/business/web/find/id/:id",
                             "host": [
@@ -418,7 +497,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -429,6 +509,7 @@
                     "name": "GET city/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/city/",
                             "host": [
@@ -440,7 +521,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST city/store",
@@ -467,7 +549,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST city/country",
@@ -494,7 +577,8 @@
                                 "country"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT city/update/:id",
@@ -528,12 +612,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET city/select/:country_id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/city/select/:country_id",
                             "host": [
@@ -552,12 +638,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT city/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/city/change-status/:id",
                             "host": [
@@ -576,12 +664,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET city/web/select/:country_id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/city/web/select/:country_id",
                             "host": [
@@ -601,7 +691,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -612,6 +703,7 @@
                     "name": "GET country/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/country/",
                             "host": [
@@ -623,12 +715,14 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET country/find-by-params",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/country/find-by-params",
                             "host": [
@@ -640,12 +734,14 @@
                                 "find-by-params"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET country/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/country/select",
                             "host": [
@@ -657,7 +753,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT country/update/:id",
@@ -691,12 +788,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET country/web",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/country/web",
                             "host": [
@@ -708,7 +807,8 @@
                                 "web"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -719,6 +819,7 @@
                     "name": "GET work/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/work/",
                             "host": [
@@ -730,7 +831,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST work/store",
@@ -757,7 +859,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT work/update/:id",
@@ -791,12 +894,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT work/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/work/change-status/:id",
                             "host": [
@@ -815,12 +920,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET work/find-all/:business_id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/work/find-all/:business_id",
                             "host": [
@@ -839,12 +946,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET work/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/work/select",
                             "host": [
@@ -856,7 +965,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -867,6 +977,7 @@
                     "name": "GET cost-center/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/",
                             "host": [
@@ -878,7 +989,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST cost-center/store",
@@ -905,7 +1017,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT cost-center/update/:id",
@@ -939,12 +1052,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT cost-center/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/change-status/:id",
                             "host": [
@@ -963,7 +1078,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST cost-center/select",
@@ -990,12 +1106,14 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET cost-center/show/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/show/:id",
                             "host": [
@@ -1014,12 +1132,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET cost-center/find-all/:business_id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/find-all/:business_id",
                             "host": [
@@ -1038,12 +1158,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET cost-center/select/:business_id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/select/:business_id",
                             "host": [
@@ -1062,7 +1184,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1073,6 +1196,7 @@
                     "name": "GET position/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/position/",
                             "host": [
@@ -1084,7 +1208,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST position/store",
@@ -1111,7 +1236,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT position/update/:id",
@@ -1145,12 +1271,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT position/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/position/change-status/:id",
                             "host": [
@@ -1169,12 +1297,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET position/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/position/select",
                             "host": [
@@ -1186,7 +1316,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1197,6 +1328,7 @@
                     "name": "GET setting-booking-item/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/",
                             "host": [
@@ -1208,7 +1340,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-booking-item/store",
@@ -1235,7 +1368,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-booking-item/update/:id",
@@ -1269,12 +1403,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-booking-item/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/change-status/:id",
                             "host": [
@@ -1293,12 +1429,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-booking-item/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-item/select",
                             "host": [
@@ -1310,7 +1448,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1321,6 +1460,7 @@
                     "name": "GET setting-booking-propertie/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/",
                             "host": [
@@ -1332,7 +1472,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-booking-propertie/store",
@@ -1359,7 +1500,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-booking-propertie/update/:id",
@@ -1393,12 +1535,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-booking-propertie/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/change-status/:id",
                             "host": [
@@ -1417,12 +1561,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-booking-propertie/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-propertie/select",
                             "host": [
@@ -1434,7 +1580,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1445,6 +1592,7 @@
                     "name": "GET setting-buget-categories/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/",
                             "host": [
@@ -1456,7 +1604,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-buget-categories/store",
@@ -1483,7 +1632,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-buget-categories/update/:id",
@@ -1517,12 +1667,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-buget-categories/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/change-status/:id",
                             "host": [
@@ -1541,12 +1693,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-buget-categories/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-categories/select",
                             "host": [
@@ -1558,7 +1712,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1569,6 +1724,7 @@
                     "name": "GET setting-buget-item/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/",
                             "host": [
@@ -1580,7 +1736,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-buget-item/store",
@@ -1607,7 +1764,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-buget-item/update/:id",
@@ -1641,12 +1799,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-buget-item/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/change-status/:id",
                             "host": [
@@ -1665,12 +1825,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-buget-item/find-by-type/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/find-by-type/:id",
                             "host": [
@@ -1689,12 +1851,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-buget-item/find-all",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/find-all",
                             "host": [
@@ -1706,12 +1870,14 @@
                                 "find-all"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-buget-item/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-buget-item/select",
                             "host": [
@@ -1723,7 +1889,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1734,6 +1901,7 @@
                     "name": "GET setting-booking-notes/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/",
                             "host": [
@@ -1745,7 +1913,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-booking-notes/store",
@@ -1772,7 +1941,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-booking-notes/update/:id",
@@ -1806,12 +1976,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-booking-notes/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/change-status/:id",
                             "host": [
@@ -1830,12 +2002,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-booking-notes/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-booking-notes/select",
                             "host": [
@@ -1847,7 +2021,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1858,6 +2033,7 @@
                     "name": "GET setting-isapres/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/",
                             "host": [
@@ -1869,7 +2045,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-isapres/store",
@@ -1896,7 +2073,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-isapres/update/:id",
@@ -1930,12 +2108,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-isapres/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/change-status/:id",
                             "host": [
@@ -1954,12 +2134,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-isapres/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-isapres/select",
                             "host": [
@@ -1971,7 +2153,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -1982,6 +2165,7 @@
                     "name": "GET setting-discounts/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-discounts/",
                             "host": [
@@ -1993,7 +2177,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-discounts/store",
@@ -2020,7 +2205,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-discounts/update/:id",
@@ -2054,12 +2240,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-discounts/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-discounts/change-status/:id",
                             "host": [
@@ -2078,7 +2266,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2089,6 +2278,7 @@
                     "name": "GET setting-assets/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-assets/",
                             "host": [
@@ -2100,7 +2290,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-assets/store",
@@ -2127,7 +2318,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-assets/update/:id",
@@ -2161,12 +2353,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-assets/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-assets/change-status/:id",
                             "host": [
@@ -2185,7 +2379,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2196,6 +2391,7 @@
                     "name": "GET setting-afp/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/",
                             "host": [
@@ -2207,7 +2403,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-afp/store",
@@ -2234,7 +2431,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-afp/update/:id",
@@ -2268,12 +2466,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-afp/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/change-status/:id",
                             "host": [
@@ -2292,12 +2492,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-afp/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-afp/select",
                             "host": [
@@ -2309,7 +2511,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2320,6 +2523,7 @@
                     "name": "GET type-contract/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/",
                             "host": [
@@ -2331,7 +2535,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST type-contract/store",
@@ -2358,7 +2563,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT type-contract/update/:type_id",
@@ -2392,12 +2598,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT type-contract/change-status/:type_id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/change-status/:type_id",
                             "host": [
@@ -2416,12 +2624,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET type-contract/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/type-contract/select",
                             "host": [
@@ -2433,7 +2643,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2444,6 +2655,7 @@
                     "name": "GET setting-affiliation/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/",
                             "host": [
@@ -2455,7 +2667,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-affiliation/store",
@@ -2482,7 +2695,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-affiliation/update/:id",
@@ -2516,12 +2730,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-affiliation/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/change-status/:id",
                             "host": [
@@ -2540,12 +2756,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-affiliation/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-affiliation/select",
                             "host": [
@@ -2557,7 +2775,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2568,6 +2787,7 @@
                     "name": "GET setting-load-family/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/",
                             "host": [
@@ -2579,7 +2799,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-load-family/store",
@@ -2606,7 +2827,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-load-family/update/:id",
@@ -2640,12 +2862,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-load-family/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/change-status/:id",
                             "host": [
@@ -2664,12 +2888,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-load-family/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-load-family/select",
                             "host": [
@@ -2681,7 +2907,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2692,6 +2919,7 @@
                     "name": "GET setting-layoff/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/",
                             "host": [
@@ -2703,7 +2931,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-layoff/store",
@@ -2730,7 +2959,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-layoff/update/:id",
@@ -2764,12 +2994,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-layoff/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/change-status/:id",
                             "host": [
@@ -2788,12 +3020,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-layoff/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-layoff/select",
                             "host": [
@@ -2805,7 +3039,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2816,6 +3051,7 @@
                     "name": "GET exregime/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/",
                             "host": [
@@ -2827,7 +3063,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST exregime/store",
@@ -2854,7 +3091,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT exregime/update/:id",
@@ -2888,12 +3126,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT exregime/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/change-status/:id",
                             "host": [
@@ -2912,12 +3152,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET exregime/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/exregime/select",
                             "host": [
@@ -2929,7 +3171,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -2940,6 +3183,7 @@
                     "name": "GET certificate-health-item/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/",
                             "host": [
@@ -2951,7 +3195,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT certificate-health-item/update/:id",
@@ -2985,12 +3230,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT certificate-health-item/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/change-status/:id",
                             "host": [
@@ -3009,7 +3256,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST certificate-health-item/store",
@@ -3036,12 +3284,14 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET certificate-health-item/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/certificate-health-item/select",
                             "host": [
@@ -3053,7 +3303,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -3064,6 +3315,7 @@
                     "name": "GET setting-business-salary/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/",
                             "host": [
@@ -3075,7 +3327,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-business-salary/store",
@@ -3102,7 +3355,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-business-salary/update/:id",
@@ -3136,12 +3390,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-business-salary/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/change-status/:id",
                             "host": [
@@ -3160,12 +3416,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-business-salary/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-business-salary/select",
                             "host": [
@@ -3177,7 +3435,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -3188,6 +3447,7 @@
                     "name": "GET product/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/product/",
                             "host": [
@@ -3199,7 +3459,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST product/store",
@@ -3226,7 +3487,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT product/update/:id",
@@ -3260,12 +3522,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT product/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/product/change-status/:id",
                             "host": [
@@ -3284,7 +3548,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST product/findAutoComplete",
@@ -3311,12 +3576,14 @@
                                 "findAutoComplete"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET product/show/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/product/show/:id",
                             "host": [
@@ -3335,12 +3602,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "DELETE product/delete/photo/:id",
                     "request": {
                         "method": "DELETE",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/product/delete/photo/:id",
                             "host": [
@@ -3360,7 +3629,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -3371,6 +3641,7 @@
                     "name": "GET provider/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/provider/",
                             "host": [
@@ -3382,7 +3653,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST provider/store",
@@ -3409,7 +3681,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT provider/update/:id",
@@ -3443,12 +3716,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT provider/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/provider/change-status/:id",
                             "host": [
@@ -3467,7 +3742,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST provider/select",
@@ -3494,12 +3770,14 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET provider/show/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/provider/show/:id",
                             "host": [
@@ -3518,12 +3796,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET provider/find/products/:provider_id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/provider/find/products/:provider_id?page=1&perPage=10",
                             "host": [
@@ -3553,7 +3833,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST provider/product/store",
@@ -3581,7 +3862,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT provider/product/update/:product_id",
@@ -3616,12 +3898,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT provider/product/change-status/:product_id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/provider/product/change-status/:product_id",
                             "host": [
@@ -3641,7 +3925,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST provider/find/autocomplete",
@@ -3669,7 +3954,8 @@
                                 "autocomplete"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST provider/product/find/autocomplete",
@@ -3698,12 +3984,14 @@
                                 "autocomplete"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET provider/product/show/:product_id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/provider/product/show/:product_id",
                             "host": [
@@ -3723,7 +4011,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -3734,6 +4023,7 @@
                     "name": "GET client/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/client/",
                             "host": [
@@ -3745,7 +4035,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST client/store",
@@ -3772,7 +4063,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT client/update/:id",
@@ -3806,12 +4098,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT client/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/client/change-status/:id",
                             "host": [
@@ -3830,7 +4124,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST client/findAutoComplete",
@@ -3857,12 +4152,14 @@
                                 "findAutoComplete"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET client/show/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/client/show/:id",
                             "host": [
@@ -3881,12 +4178,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "DELETE client/delete/photo/:id",
                     "request": {
                         "method": "DELETE",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/client/delete/photo/:id",
                             "host": [
@@ -3906,7 +4205,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST client/find/params",
@@ -3934,7 +4234,8 @@
                                 "params"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST client/search",
@@ -3961,15 +4262,13 @@
                                 "search"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
         {
             "name": "client-web",
-            "auth": {
-                "type": "noauth"
-            },
             "item": [
                 {
                     "name": "POST client-web/find-profile",
@@ -3996,7 +4295,8 @@
                                 "find-profile"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST client-web/delete-file",
@@ -4023,15 +4323,16 @@
                                 "delete-file"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
-            ]
+            ],
+            "auth": {
+                "type": "noauth"
+            }
         },
         {
             "name": "client-request",
-            "auth": {
-                "type": "noauth"
-            },
             "item": [
                 {
                     "name": "POST client-request/store",
@@ -4058,7 +4359,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST client-request/find-by-token",
@@ -4085,7 +4387,8 @@
                                 "find-by-token"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST client-request/find-by-client",
@@ -4112,9 +4415,13 @@
                                 "find-by-client"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
-            ]
+            ],
+            "auth": {
+                "type": "noauth"
+            }
         },
         {
             "name": "shopping",
@@ -4144,12 +4451,14 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET shopping/show/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/show/:id",
                             "host": [
@@ -4168,35 +4477,47 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST shopping/find/number",
                     "request": {
                         "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
+                        "header": [],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"business_id\": 1,\n  \"number\": \"1\"\n}"
+                            "raw": "{\"number\": \"12345\"}"
                         },
-                        "url": {
-                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/find/number",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "{{apiPrefix}}",
-                                "shopping",
-                                "find",
-                                "number"
-                            ]
-                        }
-                    }
+                        "url": "http://localhost:3000/api/v2/shopping/find/number"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST shopping/find/name",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\": \"Client Name\"}"
+                        },
+                        "url": "http://localhost:3000/api/v2/shopping/find/name"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST shopping/find/date",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"date\": \"2025-11-06\"}"
+                        },
+                        "url": "http://localhost:3000/api/v2/shopping/find/date"
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT shopping/update/:shop_id",
@@ -4230,7 +4551,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST shopping/authorizer",
@@ -4257,12 +4579,14 @@
                                 "authorizer"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT shopping/delete/:shop_id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/delete/:shop_id",
                             "host": [
@@ -4281,7 +4605,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT shopping/update/nro-buget/:id",
@@ -4316,7 +4641,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST shopping/find/name",
@@ -4344,7 +4670,8 @@
                                 "name"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST shopping/find/date",
@@ -4372,12 +4699,14 @@
                                 "date"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET shopping/share/:id",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/share/:id",
                             "host": [
@@ -4396,15 +4725,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET shopping/details/:token (public)",
-                    "auth": {
-                        "type": "noauth"
-                    },
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/details/:token",
                             "host": [
@@ -4423,7 +4751,8 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -4434,6 +4763,7 @@
                     "name": "GET bank/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/bank/",
                             "host": [
@@ -4445,7 +4775,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST bank/store",
@@ -4472,7 +4803,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT bank/update/:id",
@@ -4506,12 +4838,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT bank/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/bank/change-status/:id",
                             "host": [
@@ -4530,12 +4864,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET bank/find/all",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/bank/find/all",
                             "host": [
@@ -4548,7 +4884,8 @@
                                 "all"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -4559,6 +4896,7 @@
                     "name": "GET coin/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/coin/",
                             "host": [
@@ -4570,7 +4908,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST coin/store",
@@ -4597,7 +4936,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT coin/update/:id",
@@ -4631,12 +4971,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT coin/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/coin/change-status/:id",
                             "host": [
@@ -4655,12 +4997,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET coin/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/coin/select",
                             "host": [
@@ -4672,7 +5016,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -4683,6 +5028,7 @@
                     "name": "GET setting-lic-work-activities/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-work-activities/",
                             "host": [
@@ -4694,7 +5040,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-lic-work-activities/store",
@@ -4721,7 +5068,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-work-activities/update/:id",
@@ -4755,12 +5103,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-work-activities/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-work-activities/change-status/:id",
                             "host": [
@@ -4779,12 +5129,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-lic-work-activities/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-work-activities/select",
                             "host": [
@@ -4796,7 +5148,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -4807,6 +5160,7 @@
                     "name": "GET setting-lic-occupations/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-occupations/",
                             "host": [
@@ -4818,7 +5172,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-lic-occupations/store",
@@ -4845,7 +5200,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-occupations/update/:id",
@@ -4879,12 +5235,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-occupations/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-occupations/change-status/:id",
                             "host": [
@@ -4903,12 +5261,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-lic-occupations/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-occupations/select",
                             "host": [
@@ -4920,7 +5280,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -4931,6 +5292,7 @@
                     "name": "GET setting-lic-paying-entities/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-paying-entities/",
                             "host": [
@@ -4942,7 +5304,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-lic-paying-entities/store",
@@ -4969,7 +5332,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-paying-entities/update/:id",
@@ -5003,12 +5367,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-paying-entities/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-paying-entities/change-status/:id",
                             "host": [
@@ -5027,12 +5393,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-lic-paying-entities/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-paying-entities/select",
                             "host": [
@@ -5044,7 +5412,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -5055,6 +5424,7 @@
                     "name": "GET setting-lic-type-licenses/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-type-licenses/",
                             "host": [
@@ -5066,7 +5436,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-lic-type-licenses/store",
@@ -5093,7 +5464,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-type-licenses/update/:id",
@@ -5127,12 +5499,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-type-licenses/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-type-licenses/change-status/:id",
                             "host": [
@@ -5151,12 +5525,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-lic-type-licenses/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-type-licenses/select",
                             "host": [
@@ -5168,7 +5544,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -5179,6 +5556,7 @@
                     "name": "GET setting-lic-compensation-boxes/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-compensation-boxes/",
                             "host": [
@@ -5190,7 +5568,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-lic-compensation-boxes/store",
@@ -5217,7 +5596,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-compensation-boxes/update/:id",
@@ -5251,12 +5631,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-compensation-boxes/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-compensation-boxes/change-status/:id",
                             "host": [
@@ -5275,12 +5657,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-lic-compensation-boxes/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-compensation-boxes/select",
                             "host": [
@@ -5292,7 +5676,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -5303,6 +5688,7 @@
                     "name": "GET setting-lic-mutuals/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-mutuals/",
                             "host": [
@@ -5314,7 +5700,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-lic-mutuals/store",
@@ -5341,7 +5728,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-mutuals/update/:id",
@@ -5375,12 +5763,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-mutuals/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-mutuals/change-status/:id",
                             "host": [
@@ -5399,12 +5789,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-lic-mutuals/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-mutuals/select",
                             "host": [
@@ -5416,7 +5808,8 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
         },
@@ -5427,6 +5820,7 @@
                     "name": "GET setting-lic-motive/",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-motive/",
                             "host": [
@@ -5438,7 +5832,8 @@
                                 ""
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "POST setting-lic-motive/store",
@@ -5465,7 +5860,8 @@
                                 "store"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-motive/update/:id",
@@ -5499,12 +5895,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "PUT setting-lic-motive/change-status/:id",
                     "request": {
                         "method": "PUT",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-motive/change-status/:id",
                             "host": [
@@ -5523,12 +5921,14 @@
                                 }
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 },
                 {
                     "name": "GET setting-lic-motive/select",
                     "request": {
                         "method": "GET",
+                        "header": [],
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/setting-lic-motive/select",
                             "host": [
@@ -5540,9 +5940,424 @@
                                 "select"
                             ]
                         }
-                    }
+                    },
+                    "response": []
                 }
             ]
+        },
+        {
+            "name": "buget",
+            "item": [
+                {
+                    "name": "POST buget/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"data\": {}}"
+                        },
+                        "url": "http://localhost:3000/api/v2/buget/store"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET buget/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:3000/api/v2/buget/:id"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST buget/find/number",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"number\": \"12345\"}"
+                        },
+                        "url": "http://localhost:3000/api/v2/buget/find/number"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST buget/find/name",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\": \"Client Name\"}"
+                        },
+                        "url": "http://localhost:3000/api/v2/buget/find/name"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST buget/find/date",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"date\": \"2025-11-06\"}"
+                        },
+                        "url": "http://localhost:3000/api/v2/buget/find/date"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT buget/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "url": "http://localhost:3000/api/v2/buget/update/:id"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "DELETE buget/delete/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "http://localhost:3000/api/v2/buget/delete/:id"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET buget/count/made/:business_id",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:3000/api/v2/buget/count/made/:business_id"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET buget/count/made/year/:business_id",
+                    "request": {
+                        "method": "GET",
+                        "url": "http://localhost:3000/api/v2/buget/count/made/year/:business_id"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST buget/report",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"report\": true}"
+                        },
+                        "url": "http://localhost:3000/api/v2/buget/report"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST buget/search-items",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"items\": []}"
+                        },
+                        "url": "http://localhost:3000/api/v2/buget/search-items"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "booking",
+            "item": [
+                {
+                    "name": "POST booking/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"clientId\": 1,\n  \"booking\": {\n    \"checkIn\": \"2025-11-06T10:00:00.000Z\",\n    \"checkOut\": \"2025-11-07T10:00:00.000Z\",\n    \"type\": \"DIARIO\",\n    \"monthQuantity\": 0\n  },\n  \"guests\": [\n    { \"name\": \"John\", \"identifyTypeId\": 1, \"identify\": \"12345678-9\" }\n  ],\n  \"propertie\": { \"propertieId\": 1 },\n  \"items\": [ { \"itemId\": 1, \"quantity\": 1 } ],\n  \"feeding\": [ { \"feeding\": \"breakfast\", \"count\": 1 } ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "store"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET booking/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST booking/find/number",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"number\": \"001\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/find/number",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "find",
+                                "number"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST booking/find/status",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"status\": \"pending\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/find/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "find",
+                                "status"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST booking/find/name",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"name\": \"Client\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/find/name",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "find",
+                                "name"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST booking/find/buget",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1,\n  \"nro_buget\": \"B-001\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/find/buget",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "find",
+                                "buget"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST booking/count/unattended",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/count/unattended",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "count",
+                                "unattended"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST booking/find/complements",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"business_id\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/find/complements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "find",
+                                "complements"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT booking/update/:booking_id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"attended\": true,\n  \"nro_buget\": \"B-001\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/booking/update/:booking_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "booking",
+                                "update",
+                                ":booking_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "booking_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{authToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3333"
+        },
+        {
+            "key": "apiPrefix",
+            "value": "api/v2"
+        },
+        {
+            "key": "authToken",
+            "value": ""
         }
     ]
 }
