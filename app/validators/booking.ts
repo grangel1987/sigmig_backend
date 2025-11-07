@@ -1,5 +1,49 @@
 import vine from '@vinejs/vine'
 
+export const bookingStoreValidator = vine.compile(
+    vine.object({
+        clientId: vine.number().positive(),
+        booking: vine.object({
+            checkIn: vine.string().trim().minLength(10),
+            checkOut: vine.string().trim().minLength(10),
+            type: vine.string().trim().minLength(1),
+            monthQuantity: vine.number(),
+        }),
+        // Require presence of arrays, they may be empty but must be provided
+        guests: vine.array(
+            vine.object({
+                name: vine.string().trim().minLength(1),
+                identifyTypeId: vine.number().positive(),
+                identify: vine.string().trim().minLength(1),
+                lastName: vine.string().trim().optional(),
+                phone: vine.string().trim().optional(),
+                email: vine.string().trim().optional(),
+                fromWhere: vine.string().trim().optional(),
+                answer1: vine.boolean().optional(),
+                answer2: vine.boolean().optional(),
+                mobilityPassUrlShort: vine.string().trim().optional(),
+                mobilityPassUrl: vine.string().trim().optional(),
+            })
+        ),
+        propertie: vine.object({
+            propertieId: vine.number().positive(),
+            propertieView: vine.any().optional(),
+        }),
+        items: vine.array(
+            vine.object({
+                itemId: vine.number().positive(),
+                quantity: vine.number().min(0),
+            })
+        ),
+        feeding: vine.array(
+            vine.object({
+                feeding: vine.string().trim().minLength(1),
+                count: vine.number().min(0),
+            })
+        ),
+    })
+)
+
 export const bookingItemStoreValidator = vine.compile(
     vine.object({
         name: vine.string(),

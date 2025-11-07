@@ -300,6 +300,7 @@ export default class ClientController {
                 ),
             })
         } catch (error) {
+            console.error('Error updating client:', error)
             await trx.rollback()
             return response.status(500).json(
                 MessageFrontEnd(

@@ -6,6 +6,7 @@ import Util from '#utils/Util'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
+import { log } from 'node:console'
 
 export default class BugetController {
   // Create a new buget (legacy parity)
@@ -104,6 +105,7 @@ export default class BugetController {
       })
     } catch (error) {
       await trx.rollback()
+      log(error)
       return response.status(500).json(
         MessageFrontEnd(
           i18n.formatMessage('messages.store_error'),
