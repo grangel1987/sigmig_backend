@@ -25,6 +25,7 @@ interface PersonalDataPayload {
   identify: string
 }
 
+const SUPERUSER_ROLE_CURRENT_ID = 1
 export default class UserController {
   public async login({ request, response, auth, i18n }: HttpContext) {
     const { email, password } = await request.validateUsing(
@@ -137,6 +138,41 @@ export default class UserController {
       return response.status(401).json({
         ...MessageFrontEnd(
           i18n.formatMessage('messages.invalid_token'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async findSuperusers({ request, response, i18n }: HttpContext) {
+
+    const { params } = await request.validateUsing(vine.compile(vine.object({
+      params: vine.object({
+        business_id: vine.number().positive()
+      })
+    })))
+    const businessId = params.business_id
+
+    const q = BusinessUser.query()
+      .preload('user', q => q.preload('personalData', pdQ => pdQ.select(['id', 'names', 'last_name_p', 'last_name_m'])))
+      .whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
+      .where('business_id', businessId)
+    const businessUsers = await q
+
+
+    const res = businessUsers.map(bu => {
+      const serialized = { ...bu.serialize(), personalData: bu.user.personalData } as Record<string, any>
+      delete serialized.user
+      return serialized
+    })
+
+    response.ok(res)
+    try {
+    } catch (error) {
+      console.error(error)
+      return response.status(401).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.error'),
           i18n.formatMessage('messages.error_title')
         ),
       })

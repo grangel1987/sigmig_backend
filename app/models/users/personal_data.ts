@@ -1,5 +1,5 @@
 import Setting from '#models/settings/setting'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
 import type { BelongsTo, } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 // import TypeIdentify from '#models/type_identify'
@@ -39,4 +39,10 @@ export default class PersonalData extends BaseModel {
     foreignKey: 'typeIdentifyId',
   })
   public typeIdentify: BelongsTo<typeof Setting>
+
+
+  @computed()
+  public get fullName(): string {
+    return `${this.names} ${this.lastNameP} ${this.lastNameM}`
+  }
 }

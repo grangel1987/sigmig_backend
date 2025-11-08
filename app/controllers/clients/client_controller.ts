@@ -195,7 +195,7 @@ export default class ClientController {
     // PUT /client/update/:id
     public async update({ params, request, response, auth, i18n }: HttpContext) {
         const clientId = params.id
-        const data = await request.validateUsing(clientUpdateValidator)
+        const { clientDocumentInvoiceId, clientDocumentInvoiceValue, systemPaymentProvider, ...data } = await request.validateUsing(clientUpdateValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         const trx = await db.transaction()
         try {
@@ -232,6 +232,12 @@ export default class ClientController {
             client.merge({ ...payload, updatedAt: dateTime, updatedById: auth.user!.id })
             await client.save()
 
+            if (clientDocumentInvoiceId || clientDocumentInvoiceValue || systemPaymentProvider) {
+
+                await client.related('documentInvoice').updateOrCreate({ clientId: clientId }, { clientId, systemPaymentProvider, value: clientDocumentInvoiceValue })
+            }
+
+
             // Replace contacts if responsibles provided
             let responsibles: any[] = []
             const rawResponsibles = request.input('responsibles')
@@ -261,6 +267,8 @@ export default class ClientController {
             }
 
             await trx.commit()
+
+            await client.load('documentInvoice')
             await client.load('createdBy', (builder) => {
                 builder
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
