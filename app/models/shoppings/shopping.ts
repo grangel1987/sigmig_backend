@@ -1,6 +1,7 @@
 import Business from '#models/business/business'
 import CostCenter from '#models/cost_centers/cost_center'
 import Provider from '#models/provider/provider'
+import Setting from '#models/settings/setting'
 import ShoppingProduct from '#models/shoppings/shopping_product'
 import User from '#models/users/user'
 import Work from '#models/works/work'
@@ -113,6 +114,15 @@ export default class Shopping extends BaseModel {
 
     @belongsTo(() => User, { foreignKey: 'deletedById' })
     public deletedBy: BelongsTo<typeof User>
+
+    @belongsTo(() => User, { foreignKey: 'authorizerId' })
+    public authorizer: BelongsTo<typeof User>
+
+    @belongsTo(() => Setting, { foreignKey: 'paymentTermId' })
+    public paymentTerm: BelongsTo<typeof Setting>
+
+    @belongsTo(() => Setting, { foreignKey: 'sendConditionId' })
+    public sendCondition: BelongsTo<typeof Setting>
 
     @beforeCreate()
     public static async setDefaults(shopping: Shopping) {

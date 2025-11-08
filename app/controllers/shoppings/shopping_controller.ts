@@ -190,19 +190,41 @@ export default class ShoppingController {
     /** Show a shopping by id with preloads */
     public async show({ params }: HttpContext) {
         const shopId = params.id
-        const shop = await Shopping.find(shopId)
+        let shop = await Shopping.find(shopId)
         if (!shop) return null
 
-        await shop.load('business', (b) => b.select(['id', 'name', 'url', 'email', 'identify', 'address', 'phone', 'days_expire_buget', 'type_identify_id', 'footer']))
-        await shop.load('provider', (b) => b.select(['id', 'name', 'email', 'address', 'city_id', 'phone']))
+        // Deep preloads with selects and nested relations
+        await shop.load('business', (builder) => {
+            builder.select(['id', 'name', 'url', 'email', 'identify', 'address', 'phone', 'days_expire_buget', 'type_identify_id', 'footer'])
+            builder.preload('typeIdentify', (b) => b.select(['text', 'id']))
+        })
+        await shop.load('provider', (builder) => {
+            builder.select(['id', 'name', 'email', 'address', 'city_id', 'phone'])
+            builder.preload('city', (b) => b.select(['id', 'name']))
+        })
         await shop.load('products')
         await shop.load('costCenter', (b) => b.select(['id', 'code', 'name']))
         await shop.load('work', (b) => b.select(['id', 'code', 'name']))
-        await shop.load('createdBy')
-        await shop.load('updatedBy')
-        await shop.load('deletedBy')
+        await shop.load('authorizer', (builder) => {
+            builder.select(['id', 'full_name', 'email', 'url_signature', 'position_id'])
+            builder.preload('position', (b) => b.select(['id', 'name']))
+        })
+        await shop.load('createdBy', (b) => b.select(['id', 'full_name', 'email']))
+        await shop.load('updatedBy', (b) => b.select(['id', 'full_name', 'email']))
+        await shop.load('deletedBy', (b) => b.select(['id', 'full_name', 'email']))
+        await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
+        await shop.load('sendCondition', (b) => b.select(['id', 'text']))
 
-        return shop
+        // Convert to plain object and post-process
+        const serialized: any = shop.toJSON()
+        if (Array.isArray(serialized.products)) {
+            for (const p of serialized.products) {
+                const importe = Number(p.price) * Number(p.count)
+                const tax = Number(p.tax) / 100
+                    ; (p as any).total = importe * tax + importe
+            }
+        }
+        return serialized
     }
 
     /** Soft-delete a shopping (mark disabled) */
@@ -259,14 +281,27 @@ export default class ShoppingController {
         const shop = await Shopping.findBy('token', token)
         if (!shop) return null
         await shop.load('business')
-        await shop.load('provider')
+        await shop.load('authorizer', (builder) => {
+            builder.select(['id', 'full_name', 'email', 'url_signature'])
+        })
+        await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
+        await shop.load('sendCondition', (b) => b.select(['id', 'text']))
         await shop.load('products')
         await shop.load('costCenter')
         await shop.load('work')
-        await shop.load('createdBy')
-        await shop.load('updatedBy')
+        await shop.load('createdBy', (b) => b.select(['id', 'full_name', 'email']))
+        await shop.load('updatedBy', (b) => b.select(['id', 'full_name', 'email']))
         await shop.load('deletedBy')
-        return shop
+        // serialize and compute product totals (price * count + tax)
+        const serialized: any = shop.toJSON()
+        if (Array.isArray(serialized.products)) {
+            for (const p of serialized.products) {
+                const subtotal = Number(p.price) * Number(p.count)
+                const tax = Number(p.tax) / 100
+                p.total = subtotal * tax + subtotal
+            }
+        }
+        return serialized
     }
 
     /** Share shopping via event */
