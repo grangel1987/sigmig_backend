@@ -18,7 +18,7 @@ export default class ClientController {
                 .preload('city', (builder) => {
                     builder.select(['id', 'country_id'])
                 })
-                .preload('contact', (builder) => {
+                .preload('responsibles', (builder) => {
                     builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
                     builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
                 })
@@ -48,6 +48,8 @@ export default class ClientController {
     public async store({ request, response, auth, i18n }: HttpContext) {
         const data = await request.validateUsing(clientStoreValidator)
         const dateTime = await Util.getDateTimes(request.ip())
+
+
         const trx = await db.transaction()
         try {
             // Check duplicate document
@@ -120,10 +122,18 @@ export default class ClientController {
                     createdAt: dateTime,
                     updatedAt: dateTime,
                 }))
-                await client.related('contact').createMany(contactRows, { client: trx })
+                await client.related('responsibles').createMany(contactRows, { client: trx })
             }
 
-            // Upload additional files (optional, supports multiple files under `files`)
+            if (Number(data.typeId) === 2) {
+                const { clientDocumentInvoiceValue, clientDocumentInvoiceId, systemPaymentProvider } = data
+                await client.related('documentInvoice').create({
+                    documentInvoiceId: clientDocumentInvoiceId!,
+                    value: clientDocumentInvoiceValue ?? null,
+                    systemPaymentProvider: systemPaymentProvider ?? null,
+                } as any, { client: trx })
+            }
+
             const uploadFiles = request.files('files', { size: '30mb' })
             if (uploadFiles && uploadFiles.length) {
                 const rows: Partial<ClientFile>[] = []
@@ -161,6 +171,7 @@ export default class ClientController {
             await client.load('typeIdentify', (builder) => builder.select(['id', 'text']))
             await client.load('city', (builder) => builder.select(['id', 'country_id']))
             await client.load('files')
+            await client.load('documentInvoice')
 
             return response.status(201).json({
                 client,
@@ -233,7 +244,7 @@ export default class ClientController {
             }
 
             if (responsibles.length) {
-                await client.useTransaction(trx).related('contact').query().delete()
+                await client.useTransaction(trx).related('responsibles').query().delete()
                 const contactRows = responsibles.map((r) => ({
                     name: r.name,
                     phone: r.phone,
@@ -246,7 +257,7 @@ export default class ClientController {
                     createdAt: dateTime,
                     updatedAt: dateTime,
                 }))
-                await client.related('contact').createMany(contactRows, { client: trx })
+                await client.related('responsibles').createMany(contactRows, { client: trx })
             }
 
             await trx.commit()
@@ -456,7 +467,7 @@ export default class ClientController {
             .preload('city', (builder) => {
                 builder.preload('country', (b) => b.select(['id', 'name']))
             })
-            .preload('contact', (builder) => {
+            .preload('responsibles', (builder) => {
                 builder.preload('typeContact', (b) => b.select(['id', 'text']))
             })
             .preload('documentInvoice')

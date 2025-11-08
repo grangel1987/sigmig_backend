@@ -86,7 +86,7 @@ export default class Client extends BaseModel {
     public city: BelongsTo<typeof City>
 
     @hasMany(() => ClientContact, { foreignKey: 'clientId' })
-    public contact: HasMany<typeof ClientContact>
+    public responsibles: HasMany<typeof ClientContact>
 
     @hasMany(() => ClientFile, { foreignKey: 'clientId' })
     public files: HasMany<typeof ClientFile>
