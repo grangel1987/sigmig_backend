@@ -6,6 +6,7 @@ import { DateTime } from 'luxon'
 export default class ClientContact extends BaseModel {
     // No id PK in schema
 
+
     @column({ columnName: 'client_id', isPrimary: true })
     public clientId: number
 
