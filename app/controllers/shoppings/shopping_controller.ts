@@ -205,13 +205,23 @@ export default class ShoppingController {
         await shop.load('products')
         await shop.load('costCenter', (b) => b.select(['id', 'code', 'name']))
         await shop.load('work', (b) => b.select(['id', 'code', 'name']))
-        await shop.load('authorizer', (builder) => {
-            builder.select(['id', 'full_name', 'email', 'url_signature', 'position_id'])
-            builder.preload('position', (b) => b.select(['id', 'name']))
+        /*         await shop.load('authorizer', (builder) => {
+                    builder.select(['id', 'email', 'url_signature', 'position_id'])
+                    builder.preload('position', (b) => b.select(['id', 'name']))
+                    builder.preload('personalData')
+                }) */
+        await shop.load('createdBy', (b) => {
+            b.select(['id', 'personal_data_id', 'email'])
+            b.preload('personalData')
         })
-        await shop.load('createdBy', (b) => b.select(['id', 'full_name', 'email']))
-        await shop.load('updatedBy', (b) => b.select(['id', 'full_name', 'email']))
-        await shop.load('deletedBy', (b) => b.select(['id', 'full_name', 'email']))
+        await shop.load('updatedBy', (b) => {
+            b.select(['id', 'personal_data_id', 'email'])
+            b.preload('personalData')
+        })
+        await shop.load('deletedBy', (b) => {
+            b.select(['id', 'personal_data_id', 'email'])
+            b.preload('personalData')
+        })
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
 
@@ -281,17 +291,27 @@ export default class ShoppingController {
         const shop = await Shopping.findBy('token', token)
         if (!shop) return null
         await shop.load('business')
-        await shop.load('authorizer', (builder) => {
-            builder.select(['id', 'full_name', 'email', 'url_signature'])
-        })
+        /*         await shop.load('authorizer', (builder) => {
+                    builder.select(['id', 'email', 'url_signature'])
+                    builder.preload('personalData')
+                }) */
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
         await shop.load('products')
         await shop.load('costCenter')
         await shop.load('work')
-        await shop.load('createdBy', (b) => b.select(['id', 'full_name', 'email']))
-        await shop.load('updatedBy', (b) => b.select(['id', 'full_name', 'email']))
-        await shop.load('deletedBy')
+        await shop.load('createdBy', (b) => {
+            b.select(['id', 'email'])
+            b.preload('personalData')
+        })
+        await shop.load('updatedBy', (b) => {
+            b.select(['id', 'email'])
+            b.preload('personalData')
+        })
+        await shop.load('deletedBy', (b) => {
+            b.select(['id', 'email'])
+            b.preload('personalData')
+        })
         // serialize and compute product totals (price * count + tax)
         const serialized: any = shop.toJSON()
         if (Array.isArray(serialized.products)) {

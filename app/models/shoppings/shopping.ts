@@ -115,8 +115,8 @@ export default class Shopping extends BaseModel {
     @belongsTo(() => User, { foreignKey: 'deletedById' })
     public deletedBy: BelongsTo<typeof User>
 
-    @belongsTo(() => User, { foreignKey: 'authorizerId' })
-    public authorizer: BelongsTo<typeof User>
+    // @belongsTo(() => emplo, { foreignKey: 'authorizerId' })
+    // public authorizer: BelongsTo<typeof emplo>
 
     @belongsTo(() => Setting, { foreignKey: 'paymentTermId' })
     public paymentTerm: BelongsTo<typeof Setting>
