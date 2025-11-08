@@ -57,6 +57,9 @@ export const clientUpdateValidator = vine.compile(
         address: vine.string().trim().maxLength(255).optional(),
         typeId: vine.number().positive().optional(),
         cityId: vine.number().positive().optional(),
+        clientDocumentInvoiceId: vine.number().positive().optional().requiredWhen('typeId', '=', 2),
+        clientDocumentInvoiceValue: vine.string().trim().maxLength(250).optional().requiredWhen('typeId', '=', 2),
+        systemPaymentProvider: vine.string().trim().maxLength(250).optional().requiredWhen('typeId', '=', 2),
         responsibles: vine.array(
             vine.object({
                 name: vine.string().trim().maxLength(255),

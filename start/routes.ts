@@ -19,7 +19,7 @@ router.group(() => {
     router.post("/client/login", "#controllers/users/user_controller.loginClient");
     router.post("/forgot-password", "#controllers/users/user_controller.forgotPassword");
     router.post("/change-password-forgot", "#controllers/users/user_controller.changePasswordForgot");
-
+    router.get("/find/super/:business_id", "#controllers/users/user_controller.findSuperusers");
 
 
     router.group(() => {
