@@ -13,11 +13,12 @@ export default class ClientRepository {
       FROM clients c
       JOIN settings s ON s.id = c.identify_type_id
       WHERE c.enabled = true
-      AND (c.identify ILIKE $1 OR c.name ILIKE $1)
+      AND (c.identify LIKE ? OR c.name LIKE ?)
       LIMIT 20
       `
     console.log({ val, sql });
-    const result = await Database.rawQuery(sql, [`%${val}%`])
+    const valBinding = `%${val}%`;
+    const result = await Database.rawQuery(sql, [valBinding, valBinding])
     return result
   }
 

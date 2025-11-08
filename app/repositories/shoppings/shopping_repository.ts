@@ -1,8 +1,8 @@
 import Database from '@adonisjs/lucid/services/db'
 
 export default class ShoppingRepository {
-    static async findByNameProvider(businessId: number, name: string) {
-        const sql = `
+  static async findByNameProvider(businessId: number, name: string) {
+    const sql = `
       SELECT 
         shoppings.id,
         shoppings.nro,
@@ -18,17 +18,17 @@ export default class ShoppingRepository {
         providers,
         cities
       WHERE
-        shoppings.business_id=$1 AND
-        providers.name ILIKE $2 AND
+        shoppings.business_id= ? AND
+        providers.name LIKE ? AND
         providers.id = shoppings.provider_id AND
         providers.city_id = cities.id
     `
-        const result = await Database.rawQuery(sql, [businessId, `%${name}%`])
-        return result
-    }
+    const result = await Database.rawQuery(sql, [businessId, `%${name}%`])
+    return result[0]
+  }
 
-    static async findByDate(businessId: number, date: string) {
-        const sql = `
+  static async findByDate(businessId: number, date: string) {
+    const sql = `
       SELECT 
         shoppings.id,
         shoppings.nro,
@@ -44,12 +44,12 @@ export default class ShoppingRepository {
         providers,
         cities
       WHERE
-        shoppings.business_id=$1 AND
-        to_char(shoppings.created_at, 'YYYY-MM-DD') = $2 AND
+        shoppings.business_id=? AND
+        to_char(shoppings.created_at, 'YYYY-MM-DD') = ? AND
         providers.id = shoppings.provider_id AND
         providers.city_id = cities.id
     `
-        const result = await Database.rawQuery(sql, [businessId, date])
-        return result
-    }
+    const result = await Database.rawQuery(sql, [businessId, date])
+    return result[0]
+  }
 }

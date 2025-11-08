@@ -25,8 +25,8 @@ export default class ProductRepository {
       SELECT id, name
       FROM products
       WHERE enabled = true
-        AND name ILIKE $1
-        AND business_id = $2
+        AND name LIKE ?
+        AND business_id = ?
       LIMIT 20
     `
     const result = await Database.rawQuery(sql, [`%${val}%`, businessId])
