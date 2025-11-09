@@ -123,6 +123,21 @@ export default class BusinessEmployee extends BaseModel {
     public position: BelongsTo<typeof Position>
 
 
+    serializeExtras() {
+        const emp = this.employee
+        const last_name_m = emp ? emp.lastNameM : this.$extras.last_name_m
+        const last_name_p = emp ? emp.lastNameP : this.$extras.last_name_p
+        const names = emp ? emp.names : this.$extras.names
+
+        const full_name = `${names || ''} ${last_name_p || ''} ${last_name_m || ''}`.trim()
+        return {
+            names: names,
+            last_name_p: last_name_p,
+            last_name_m: last_name_m,
+            full_name
+        }
+    }
+
 
     @belongsTo(() => Setting, { foreignKey: 'typeAccountId' })
     public typeAccount: BelongsTo<typeof Setting>
