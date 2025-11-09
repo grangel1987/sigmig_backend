@@ -14,7 +14,8 @@ export const shoppingStoreValidator = vine.compile(
                     name: vine.string().trim().optional(),
                     code: vine.string().trim().optional(),
                     price: vine.number().min(0).optional(),
-                    quantity: vine.number().positive().optional(),
+                    tax: vine.number().range(0, 100).optional(),
+                    count: vine.number().positive().optional(),
                 })
             )
             .optional(),

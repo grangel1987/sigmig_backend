@@ -65,13 +65,13 @@ export default class ShoppingController {
             const shopping = await Shopping.create(payload, { client: trx })
 
             // normalize products to match DB schema (shopping_products): product_id, code, name, price, count, tax
-            const productsRows = (products || []).map((p: any) => {
+            const productsRows = products!.map((p) => {
                 const productId = Number(p.id)
                 const code = p.code ?? ''
                 const name = p.name ?? ''
-                const price = Number(p.price ?? 0)
-                const count = Number(p.count ?? p.quantity ?? 0)
-                const tax = Number(p.tax ?? 0)
+                const price = p.price ?? 0
+                const count = p.count ?? 0
+                const tax = p.tax ?? 0
                 return { productId, code, name, price, count, tax }
             })
 
