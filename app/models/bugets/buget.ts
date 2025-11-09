@@ -59,7 +59,7 @@ export default class Buget extends BaseModel {
     public deletedAt: DateTime | null
 
     @column({ columnName: 'deleted_by' })
-    public deletedBy: number | null
+    public deletedById: number | null
 
     @beforeCreate()
     public static setDefaults(model: Buget) {
@@ -72,14 +72,14 @@ export default class Buget extends BaseModel {
     @belongsTo(() => Client, { foreignKey: 'clientId' })
     public client: BelongsTo<typeof Client>
 
-    @belongsTo(() => User, { foreignKey: 'createdBy' })
+    @belongsTo(() => User, { foreignKey: 'createdById' })
     public createdBy: BelongsTo<typeof User>
 
-    @belongsTo(() => User, { foreignKey: 'updatedBy' })
+    @belongsTo(() => User, { foreignKey: 'updatedById' })
     public updatedBy: BelongsTo<typeof User>
 
-    @belongsTo(() => User, { foreignKey: 'deletedBy' })
-    public deleter: BelongsTo<typeof User>
+    @belongsTo(() => User, { foreignKey: 'deletedById' })
+    public deletedBy: BelongsTo<typeof User>
 
     @hasMany(() => BugetProduct, { foreignKey: 'bugetId' })
     public products: HasMany<typeof BugetProduct>
