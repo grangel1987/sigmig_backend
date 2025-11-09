@@ -19,7 +19,7 @@ export default class ProductRepository {
 
   }
 
-  static async findAutoComplete(val: string, businessId: number, limit = 20) {
+  static async findAutoComplete(val: string | undefined, businessId: number, limit = 20) {
     const sql = `
       SELECT id, name
       FROM products
