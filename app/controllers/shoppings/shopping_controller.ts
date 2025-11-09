@@ -207,7 +207,9 @@ export default class ShoppingController {
         await shop.load('costCenter', (b) => b.select(['id', 'code', 'name']))
         await shop.load('work', (b) => b.select(['id', 'code', 'name']))
         await shop.load('authorizer', (builder) => {
-            builder.select(['id', 'last_name_p', 'last_name_m', 'position_id'])
+            builder
+                .join('employees', 'employees.id', 'authorizer.employee_id')
+                .select(['business_employees.id', 'last_name_p', 'last_name_m', 'position_id'])
             builder.preload('position', (b) => b.select(['id', 'name']))
         })
         await shop.load('createdBy', (b) => {
@@ -292,7 +294,9 @@ export default class ShoppingController {
         if (!shop) return null
         await shop.load('business')
         await shop.load('authorizer', (builder) => {
-            builder.select(['id', 'last_name_p', 'last_name_m', 'position_id'])
+            builder
+                .join('employees', 'employees.id', 'authorizer.employee_id')
+                .select(['business_employees.id', 'last_name_p', 'last_name_m', 'position_id'])
             builder.preload('position', (b) => b.select(['id', 'name']))
         })
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
