@@ -19,17 +19,21 @@ export default class ProductRepository {
 
   }
 
-  /** Autocomplete – raw query kept for speed */
-  static async findAutoComplete(val: string, businessId: number) {
+  static async findAutoComplete(val: string, businessId: number, limit = 20) {
     const sql = `
       SELECT id, name
       FROM products
       WHERE enabled = true
-        AND name LIKE ?
+        ${val ? 'AND name LIKE ?' : ''}
         AND business_id = ?
-      LIMIT 20
+      LIMIT ?
     `
-    const result = await Database.rawQuery(sql, [`%${val}%`, businessId])
-    return result
+
+
+    const bindings: any[] = [businessId, limit]
+
+    if (val) bindings.unshift(`%${val}%`)
+    const result = await Database.rawQuery(sql, bindings)
+    return result[0]
   }
 }
