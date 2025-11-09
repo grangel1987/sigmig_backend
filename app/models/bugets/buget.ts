@@ -47,10 +47,10 @@ export default class Buget extends BaseModel {
     public updatedAt: DateTime
 
     @column({ columnName: 'created_by' })
-    public createdBy: number
+    public createdById: number
 
     @column({ columnName: 'updated_by' })
-    public updatedBy: number
+    public updatedById: number
 
     @column.dateTime({ columnName: 'expire_date' })
     public expireDate: DateTime
@@ -73,10 +73,10 @@ export default class Buget extends BaseModel {
     public client: BelongsTo<typeof Client>
 
     @belongsTo(() => User, { foreignKey: 'createdBy' })
-    public creator: BelongsTo<typeof User>
+    public createdBy: BelongsTo<typeof User>
 
     @belongsTo(() => User, { foreignKey: 'updatedBy' })
-    public updater: BelongsTo<typeof User>
+    public updatedBy: BelongsTo<typeof User>
 
     @belongsTo(() => User, { foreignKey: 'deletedBy' })
     public deleter: BelongsTo<typeof User>

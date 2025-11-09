@@ -48,8 +48,8 @@ export default class BugetController {
         utility: Number(utility) || 0,
         createdAt: dateTime,
         updatedAt: dateTime,
-        createdBy: auth.user!.id,
-        updatedBy: auth.user!.id,
+        createdById: auth.user!.id,
+        updatedById: auth.user!.id,
         expireDate,
         enabled: true,
       }
@@ -96,6 +96,13 @@ export default class BugetController {
 
       await trx.commit()
 
+      await buget.load('createdBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      await buget.load('updatedBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+
       return response.status(201).json({
         buget,
         ...MessageFrontEnd(
@@ -122,6 +129,14 @@ export default class BugetController {
     const now = dateTime
     const buget = await Buget.find(bugetId)
     if (!buget) return null
+
+
+    await buget.load('createdBy', (builder) => {
+      builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+    })
+    await buget.load('updatedBy', (builder) => {
+      builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+    })
 
     await buget.load('business', (q) => {
       q.select(['id', 'name', 'url', 'email', 'identify', 'days_expire_buget', 'type_identify_id', 'footer'])
@@ -253,7 +268,7 @@ export default class BugetController {
         utility: Number(utility) || 0,
         discount: Number(discount) || 0,
         updatedAt: dateTime,
-        updatedBy: auth.user!.id,
+        updatedById: auth.user!.id,
         currencySymbol: currency_symbol ?? null,
         currencyId: currency_id ?? null,
         currencyValue: currency_value ?? null,
@@ -305,6 +320,13 @@ export default class BugetController {
           await buget.related('details').create({ costCenter: cost_center, work, observation }, { client: trx })
         }
       }
+
+      await buget.load('createdBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      await buget.load('updatedBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
 
       await trx.commit()
       return response.status(201).json({
