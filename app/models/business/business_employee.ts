@@ -68,6 +68,15 @@ export default class BusinessEmployee extends BaseModel {
     @column({ columnName: 'type_account_id' })
     public typeAccountId: number | null
 
+    @column({ columnName: 'admission_date' })
+    public admissionDate: DateTime | null
+
+    @column({ columnName: 'contract_date' })
+    public contractDate: DateTime | null
+
+    @column({ columnName: 'settlement_date' })
+    public settlementDate: DateTime | null
+
     @column()
     public enabled: boolean
 
