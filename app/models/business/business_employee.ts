@@ -2,6 +2,7 @@ import SettingAfp from '#models/afp'
 import Business from '#models/business/business'
 import Coin from '#models/coin/coin'
 import CostCenter from '#models/cost_centers/cost_center'
+import Employee from '#models/employees/employee'
 import Position from '#models/positions/position'
 import Setting from '#models/settings/setting'
 import User from '#models/users/user'
@@ -82,6 +83,9 @@ export default class BusinessEmployee extends BaseModel {
     @belongsTo(() => User, { foreignKey: 'updatedById' })
     public updatedBy: BelongsTo<typeof User>
 
+    @belongsTo(() => Employee)
+    declare employee: BelongsTo<typeof Employee>
+
     @belongsTo(() => Business, { foreignKey: 'businessId' })
     public business: BelongsTo<typeof Business>
 
@@ -108,6 +112,8 @@ export default class BusinessEmployee extends BaseModel {
 
     @belongsTo(() => Position, { foreignKey: 'positionId' })
     public position: BelongsTo<typeof Position>
+
+
 
     @belongsTo(() => Setting, { foreignKey: 'typeAccountId' })
     public typeAccount: BelongsTo<typeof Setting>
