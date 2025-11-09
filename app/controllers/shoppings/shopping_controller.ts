@@ -202,10 +202,13 @@ export default class ShoppingController {
             builder.select(['id', 'name', 'email', 'address', 'city_id', 'phone'])
             builder.preload('city', (b) => b.select(['id', 'name']))
         })
+
         await shop.load('products')
         await shop.load('costCenter', (b) => b.select(['id', 'code', 'name']))
         await shop.load('work', (b) => b.select(['id', 'code', 'name']))
-        await shop.load('authorizer')
+        await shop.load('authorizer', (builder) => {
+            builder.preload('employee').preload('position', (b) => b.select(['id', 'name']))
+        })
         await shop.load('createdBy', (b) => {
             b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
@@ -287,7 +290,9 @@ export default class ShoppingController {
         const shop = await Shopping.findBy('token', token)
         if (!shop) return null
         await shop.load('business')
-        await shop.load('authorizer')
+        await shop.load('authorizer', (builder) => {
+            builder.preload('employee').preload('position', (b) => b.select(['id', 'name']))
+        })
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
         await shop.load('products')

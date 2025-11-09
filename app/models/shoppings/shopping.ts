@@ -1,6 +1,6 @@
 import Business from '#models/business/business'
+import BusinessEmployee from '#models/business/business_employee'
 import CostCenter from '#models/cost_centers/cost_center'
-import Employee from '#models/employees/employee'
 import Provider from '#models/provider/provider'
 import Setting from '#models/settings/setting'
 import ShoppingProduct from '#models/shoppings/shopping_product'
@@ -116,8 +116,8 @@ export default class Shopping extends BaseModel {
     @belongsTo(() => User, { foreignKey: 'deletedById' })
     public deletedBy: BelongsTo<typeof User>
 
-    @belongsTo(() => Employee, { foreignKey: 'authorizerId' })
-    public authorizer: BelongsTo<typeof Employee>
+    @belongsTo(() => BusinessEmployee, { foreignKey: 'authorizerId' })
+    public authorizer: BelongsTo<typeof BusinessEmployee>
 
     @belongsTo(() => Setting, { foreignKey: 'paymentTermId' })
     public paymentTerm: BelongsTo<typeof Setting>

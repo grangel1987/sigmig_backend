@@ -1,6 +1,8 @@
+
 import BusinessEmployee from '#models/business/business_employee'
 import City from '#models/cities/City'
 import Country from '#models/countries/country'
+import Position from '#models/positions/position'
 import Setting from '#models/settings/setting'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany } from '@adonisjs/lucid/orm'
@@ -22,6 +24,12 @@ export default class Employee extends BaseModel {
 
     @column({ columnName: 'last_name_p' })
     public lastNameP: string
+
+    @column({ columnName: 'position_id' })
+    public positionId: number | null
+
+    @belongsTo(() => Position, { foreignKey: 'positionId' })
+    public position: BelongsTo<typeof Position>
 
     @column({ columnName: 'last_name_m' })
     public lastNameM: string
