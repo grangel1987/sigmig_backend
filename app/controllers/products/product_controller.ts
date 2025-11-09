@@ -48,6 +48,63 @@ export default class ProductController {
         }
     }
 
+    /** changeStatus – toggle enabled flag */
+    async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+        const dateTime = DateTime.local()
+        try {
+            const product = await Product.findOrFail(params.id)
+            product.enabled = !product.enabled
+            product.updatedById = auth.user!.id
+            product.updatedAt = dateTime
+            await product.save()
+
+            await product.load('createdBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            await product.load('updatedBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+
+            return response.status(201).json({
+                product,
+                ...MessageFrontEnd(
+                    i18n.formatMessage(product.enabled ? 'messages.ok_enabled' : 'messages.ok_disabled'),
+                    i18n.formatMessage('messages.ok_title')
+                ),
+            })
+        } catch (error) {
+            console.error(error)
+            return response
+                .status(500)
+                .json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
+        }
+    }
+
+    async findAutoComplete({ request, response, i18n }: HttpContext) {
+        const { val, businessId } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    val: vine.string().trim().minLength(1).optional(),
+                    businessId: vine.number().positive(),
+                })
+            )
+        )
+        try {
+            const products = await ProductRepository.findAutoComplete(val, businessId)
+            response.ok(products)
+        } catch (error) {
+            console.error(error)
+            console.error(error)
+            return response.status(500).json(
+                MessageFrontEnd(i18n.formatMessage('messages.store_error'), i18n.formatMessage('messages.error_title'))
+            )
+        }
+    }
+
     /** Store – create a new product (with optional photo) */
     async store({ request, response, auth, i18n }: HttpContext) {
         const data = await request.validateUsing(productStoreValidator)
