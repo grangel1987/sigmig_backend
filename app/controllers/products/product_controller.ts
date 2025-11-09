@@ -49,7 +49,7 @@ export default class ProductController {
     }
 
     /** changeStatus – toggle enabled flag */
-    async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+    async changeStatus({ params, response, auth, i18n }: HttpContext) {
         const dateTime = DateTime.local()
         try {
             const product = await Product.findOrFail(params.id)
