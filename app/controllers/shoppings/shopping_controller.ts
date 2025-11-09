@@ -1,3 +1,4 @@
+import BusinessEmployee from '#models/business/business_employee'
 import Shopping from '#models/shoppings/shopping'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
@@ -206,12 +207,7 @@ export default class ShoppingController {
         await shop.load('products')
         await shop.load('costCenter', (b) => b.select(['id', 'code', 'name']))
         await shop.load('work', (b) => b.select(['id', 'code', 'name']))
-        await shop.load('authorizer', (builder) => {
-            builder
-                .join('employees', 'employees.id', 'authorizer.employee_id')
-                .select(['business_employees.id', 'last_name_p', 'last_name_m', 'position_id'])
-            builder.preload('position', (b) => b.select(['id', 'name']))
-        })
+
         await shop.load('createdBy', (b) => {
             b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
@@ -227,8 +223,28 @@ export default class ShoppingController {
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
 
+
+
+        const authorizer = await
+            BusinessEmployee.query()
+                .join('employees', 'employees.id',
+                    'business_employees.employee_id'
+                )
+                .select([
+                    'business_employees.id as id',
+                    'employees.last_name_p',
+                    'employees.names',
+                    'employees.last_name_m',
+                    'business_employees.position_id',
+                ])
+                .preload('position', (b) => b.select(['id', 'name'])).first()
+
+
         // Convert to plain object and post-process
         const serialized: any = shop.toJSON()
+        serialized.authorizer = authorizer?.serialize()
+
+
         if (Array.isArray(serialized.products)) {
             for (const p of serialized.products) {
                 const importe = Number(p.price) * Number(p.count)
@@ -293,12 +309,7 @@ export default class ShoppingController {
         const shop = await Shopping.findBy('token', token)
         if (!shop) return null
         await shop.load('business')
-        await shop.load('authorizer', (builder) => {
-            builder
-                .join('employees', 'employees.id', 'authorizer.employee_id')
-                .select(['business_employees.id', 'last_name_p', 'last_name_m', 'position_id'])
-            builder.preload('position', (b) => b.select(['id', 'name']))
-        })
+
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
         await shop.load('products')
@@ -316,8 +327,30 @@ export default class ShoppingController {
             b.select(['id', 'email'])
             b.preload('personalData')
         })
+
+
+
+        const authorizer = await
+            BusinessEmployee.query()
+                .join('employees', 'employees.id',
+                    'business_employees.employee_id'
+                )
+                .select([
+                    'business_employees.id as id',
+                    'employees.last_name_p',
+                    'employees.names',
+                    'employees.last_name_m',
+                    'business_employees.position_id',
+                ])
+                .preload('position', (b) => b.select(['id', 'name'])).first()
+
+
+        // Convert to plain object and post-process
+
+
         // serialize and compute product totals (price * count + tax)
         const serialized: any = shop.toJSON()
+        serialized.authorizer = authorizer?.serialize()
         if (Array.isArray(serialized.products)) {
             for (const p of serialized.products) {
                 const subtotal = Number(p.price) * Number(p.count)
