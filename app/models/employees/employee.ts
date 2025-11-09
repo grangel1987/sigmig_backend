@@ -7,11 +7,15 @@ import Setting from '#models/settings/setting'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { randomUUID } from 'crypto'
 import { DateTime } from 'luxon'
 
 export default class Employee extends BaseModel {
     @column({ isPrimary: true })
     public id: number
+
+    @column()
+    public token: string | null
 
     @column()
     public identifyTypeId: number
@@ -37,6 +41,9 @@ export default class Employee extends BaseModel {
     @column({ columnName: 'birth_date' })
     public birthDate: DateTime | null
 
+    @column({ columnName: 'state_civil_id' })
+    public stateCivilId: number | null
+
     @column({ columnName: 'admission_date' })
     public admissionDate: DateTime | null
 
@@ -56,7 +63,41 @@ export default class Employee extends BaseModel {
     public sexId: number | null
 
     @column()
-    public enabled: boolean
+    public address: string
+
+    @column()
+    public phone: string | null
+
+    @column()
+    public movil: string
+
+    @column()
+    public email: string
+
+    // Media columns
+    @column()
+    public photo: string | null
+
+    @column()
+    public thumb: string | null
+
+    @column({ columnName: 'photo_short' })
+    public photoShort: string | null
+
+    @column({ columnName: 'thumb_short' })
+    public thumbShort: string | null
+
+    @column({ columnName: 'authorization_mirror' })
+    public authorizationMirror: string | null
+
+    @column({ columnName: 'thumb_authorization_mirror' })
+    public thumbAuthorizationMirror: string | null
+
+    @column({ columnName: 'authorization_mirror_short' })
+    public authorizationMirrorShort: string | null
+
+    @column({ columnName: 'thumb_authorization_mirror_short' })
+    public thumbAuthorizationMirrorShort: string | null
 
     @column({ columnName: 'created_by' })
     public createdById: number | null
@@ -71,8 +112,8 @@ export default class Employee extends BaseModel {
     public updatedAt: DateTime
 
     @beforeCreate()
-    public static async setEnabled(model: Employee) {
-        model.enabled = model.enabled ?? true
+    public static async setDefaults(model: Employee) {
+        model.token = model.token ?? randomUUID()
     }
 
     @belongsTo(() => User, { foreignKey: 'createdById' })

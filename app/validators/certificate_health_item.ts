@@ -1,3 +1,4 @@
+
 import vine from '@vinejs/vine'
 
 export const certificateHealthItemStoreValidator = vine.compile(

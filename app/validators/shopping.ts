@@ -2,8 +2,8 @@ import vine from '@vinejs/vine'
 
 export const shoppingStoreValidator = vine.compile(
     vine.object({
-        business_id: vine.number().positive(),
-        currency_symbol: vine.string().trim().minLength(1).maxLength(50),
+        businessId: vine.number().positive(),
+        currencySymbol: vine.string().trim().minLength(1).maxLength(50),
         provider: vine.object({
             id: vine.number().positive(),
         }),
@@ -18,40 +18,40 @@ export const shoppingStoreValidator = vine.compile(
                 })
             )
             .optional(),
-        cost_center: vine.number().positive().optional(),
+        costCenter: vine.number().positive().optional(),
         work: vine.number().positive().optional(),
         rounding: vine.number().optional(),
         info: vine.object({
             name: vine.string().trim().minLength(1),
-            payment_term: vine.number().positive().optional(),
-            send_condition: vine.number().positive().optional(),
-            send_amount: vine.number().min(0).optional(),
-            other_amount: vine.number().min(0).optional(),
+            paymentTerm: vine.number().positive().optional(),
+            sendCondition: vine.number().positive().optional(),
+            sendAmount: vine.number().min(0).optional(),
+            otherAmount: vine.number().min(0).optional(),
             observation: vine.string().trim().optional(),
-            days_expire_buget: vine.number().min(0).optional(),
-            authorizer_id: vine.number().positive().optional(),
-            nro_buget: vine.string().trim().maxLength(50).optional(),
+            daysExpireBuget: vine.number().min(0).optional(),
+            authorizerId: vine.number().positive().optional(),
+            nroBuget: vine.string().trim().maxLength(50).optional(),
         }),
     })
 )
 
 export const shoppingFindByNameProviderValidator = vine.compile(
     vine.object({
-        business_id: vine.number().positive(),
+        businessId: vine.number().positive(),
         name: vine.string().trim().minLength(1),
     })
 )
 
 export const shoppingFindByDateValidator = vine.compile(
     vine.object({
-        business_id: vine.number().positive(),
+        businessId: vine.number().positive(),
         date: vine.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     })
 )
 
 export const shoppingUpdateNroBugetValidator = vine.compile(
     vine.object({
-        nro_buget: vine.string().trim().minLength(1).maxLength(50),
+        nroBuget: vine.string().trim().minLength(1).maxLength(50),
     })
 )
 
@@ -63,7 +63,7 @@ export const shoppingIdParamValidator = vine.compile(
 
 export const shoppingShopIdParamValidator = vine.compile(
     vine.object({
-        shop_id: vine.number().positive(),
+        shopId: vine.number().positive(),
     })
 )
 

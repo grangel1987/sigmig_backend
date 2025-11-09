@@ -23,7 +23,7 @@ type MessageFrontEndType = { message: string; title: string }
 export default class ShoppingController {
     /** Store a new shopping (creates shopping and its products) */
     public async store({ request, response, auth, i18n }: HttpContext) {
-        const { business_id, currency_symbol, provider, products, cost_center, work, info, rounding } =
+        const { businessId, currencySymbol, provider, products, costCenter, work, info, rounding } =
             await request.validateUsing(shoppingStoreValidator)
 
         const trx = await db.transaction()
@@ -31,7 +31,7 @@ export default class ShoppingController {
 
         try {
             const lastShop = await db.from('shoppings')
-                .where('business_id', business_id)
+                .where('business_id', businessId)
                 .orderBy('id', 'desc')
                 .limit(1)
 
@@ -39,25 +39,25 @@ export default class ShoppingController {
 
             const payload: any = {
                 nro: String(nro),
-                businessId: business_id,
-                currencySymbol: currency_symbol,
+                businessId,
+                currencySymbol,
                 providerId: provider.id,
-                costCenterId: cost_center,
+                costCenterId: costCenter,
                 workId: work,
                 rounding,
                 requestedBy: info.name,
-                paymentTermId: info.payment_term,
-                sendConditionId: info.send_condition,
-                sendAmount: info.send_amount,
-                otherAmount: info.other_amount,
+                paymentTermId: info.paymentTerm,
+                sendConditionId: info.sendCondition,
+                sendAmount: info.sendAmount,
+                otherAmount: info.otherAmount,
                 observation: info.observation,
                 createdAt: dateTime,
                 updatedAt: dateTime,
                 createdById: auth.user!.id,
                 updatedById: auth.user!.id,
-                expireDate: Util.getDateAddDays(dateTime, info.days_expire_buget ?? 0),
-                authorizerId: info.authorizer_id,
-                nroBuget: info.nro_buget,
+                expireDate: Util.getDateAddDays(dateTime, info.daysExpireBuget ?? 0),
+                authorizerId: info.authorizerId,
+                nroBuget: info.nroBuget,
                 token: randomUUID(),
             }
 
@@ -93,23 +93,23 @@ export default class ShoppingController {
 
     /** Update an existing shopping and its products */
     public async update({ params, request, response, auth, i18n }: HttpContext) {
-        const { shop_id: shopId } = await shoppingShopIdParamValidator.validate(params)
+        const { shopId } = await shoppingShopIdParamValidator.validate(params)
         const trx = await db.transaction()
         const dateTime = await Util.getDateTimes(request.ip())
 
         try {
-            const { provider, products, cost_center, work, info, rounding } = request.all() as any
+            const { provider, products, cost_center: costCenter, work, info, rounding } = request.all() as any
             const shop = await Shopping.findOrFail(shopId)
 
-            shop.costCenterId = cost_center ?? null
+            shop.costCenterId = costCenter ?? null
             shop.workId = work ?? null
             shop.requestedBy = info?.name ?? shop.requestedBy
-            shop.nroBuget = info?.nro_buget ?? shop.nroBuget
-            shop.authorizerId = shop.isAuthorized ? shop.authorizerId : (info?.authorizer_id ?? shop.authorizerId)
-            shop.paymentTermId = info?.payment_term ?? shop.paymentTermId
-            shop.sendConditionId = info?.send_condition ?? shop.sendConditionId
-            shop.sendAmount = info?.send_amount ?? shop.sendAmount
-            shop.otherAmount = info?.other_amount ?? shop.otherAmount
+            shop.nroBuget = info?.nroBuget ?? shop.nroBuget
+            shop.authorizerId = shop.isAuthorized ? shop.authorizerId : (info?.authorizerId ?? shop.authorizerId)
+            shop.paymentTermId = info?.paymentTerm ?? shop.paymentTermId
+            shop.sendConditionId = info?.sendCondition ?? shop.sendConditionId
+            shop.sendAmount = info?.sendAmount ?? shop.sendAmount
+            shop.otherAmount = info?.otherAmount ?? shop.otherAmount
             shop.observation = info?.observation ?? shop.observation
             shop.providerId = provider?.id ?? shop.providerId
             shop.rounding = rounding ?? shop.rounding
@@ -163,17 +163,17 @@ export default class ShoppingController {
 
     /** Find shopping by business and number */
     public async findByNro({ request }: HttpContext) {
-        const { business_id, number } = await request.validateUsing(
+        const { businessId, number } = await request.validateUsing(
             vine.compile(
                 vine.object({
-                    business_id: vine.number().positive(),
+                    businessId: vine.number().positive(),
                     number: vine.string(),
                 })
             )
         )
 
         // find id by business + number (nro)
-        const rows = await db.from('shoppings').where('business_id', business_id).where('nro', String(number)).limit(1)
+        const rows = await db.from('shoppings').where('business_id', businessId).where('nro', String(number)).limit(1)
         const shopId = rows.length > 0 ? rows[0].id : 0
         if (!shopId) return []
 
@@ -207,7 +207,8 @@ export default class ShoppingController {
         await shop.load('costCenter', (b) => b.select(['id', 'code', 'name']))
         await shop.load('work', (b) => b.select(['id', 'code', 'name']))
         await shop.load('authorizer', (builder) => {
-            builder.preload('employee').preload('position', (b) => b.select(['id', 'name']))
+            builder.select(['id', 'names', 'last_name_p', 'last_name_m', 'position_id'])
+            builder.preload('position', (b) => b.select(['id', 'name']))
         })
         await shop.load('createdBy', (b) => {
             b.select(['id', 'personal_data_id', 'email'])
@@ -238,7 +239,7 @@ export default class ShoppingController {
 
     /** Soft-delete a shopping (mark disabled) */
     public async delete({ params, auth, response, i18n }: HttpContext) {
-        const { shop_id: shopId } = await shoppingShopIdParamValidator.validate(params)
+        const { shopId } = await shoppingShopIdParamValidator.validate(params)
         const dateTime = await Util.getDateTimes('')
         try {
             const shop = await Shopping.findOrFail(shopId)
@@ -255,15 +256,15 @@ export default class ShoppingController {
 
     /** Find shoppings by provider name (uses repository) */
     public async findByNameProvider({ request }: HttpContext) {
-        const { business_id, name } = await request.validateUsing(shoppingFindByNameProviderValidator)
-        const shoppings = await ShoppingRepository.findByNameProvider(business_id, name)
+        const { businessId, name } = await request.validateUsing(shoppingFindByNameProviderValidator)
+        const shoppings = await ShoppingRepository.findByNameProvider(businessId, name)
         return shoppings
     }
 
     /** Find shoppings by date */
     public async findByDate({ request }: HttpContext) {
-        const { business_id, date } = await request.validateUsing(shoppingFindByDateValidator)
-        const shoppings = await ShoppingRepository.findByDate(business_id, date)
+        const { businessId, date } = await request.validateUsing(shoppingFindByDateValidator)
+        const shoppings = await ShoppingRepository.findByDate(businessId, date)
         return shoppings
     }
 
@@ -271,10 +272,10 @@ export default class ShoppingController {
     public async updateNroBuget({ params, request, response, i18n }: HttpContext) {
         const dateTime = DateTime.local()
         const { id: shopId } = await shoppingIdParamValidator.validate(params)
-        const { nro_buget } = await request.validateUsing(shoppingUpdateNroBugetValidator)
+        const { nroBuget } = await request.validateUsing(shoppingUpdateNroBugetValidator)
         try {
             const shop = await Shopping.findOrFail(shopId)
-            shop.nroBuget = nro_buget
+            shop.nroBuget = nroBuget
             shop.updatedAt = dateTime
             await shop.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')))
@@ -291,7 +292,8 @@ export default class ShoppingController {
         if (!shop) return null
         await shop.load('business')
         await shop.load('authorizer', (builder) => {
-            builder.preload('employee').preload('position', (b) => b.select(['id', 'name']))
+            builder.select(['id', 'names', 'last_name_p', 'last_name_m', 'position_id'])
+            builder.preload('position', (b) => b.select(['id', 'name']))
         })
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
