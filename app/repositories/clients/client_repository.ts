@@ -9,7 +9,7 @@ export default class ClientRepository {
     const sql = `
       SELECT 
       c.id,
-      (s.text || ' ' || c.identify || ' ' || c.name) AS identify
+      CONCAT(s.text, ' ', c.identify, ' ', c.name) AS identify
       FROM clients c
       JOIN settings s ON s.id = c.identify_type_id
       WHERE c.enabled = true
@@ -19,7 +19,7 @@ export default class ClientRepository {
     console.log({ val, sql });
     const valBinding = `%${val}%`;
     const result = await Database.rawQuery(sql, [valBinding, valBinding])
-    return result
+    return result[0]
   }
 
   /** Find by params (email) */
