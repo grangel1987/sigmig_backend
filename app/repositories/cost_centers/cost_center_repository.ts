@@ -15,8 +15,9 @@ export default new class CostCenterRepository {
         'cost_centers.id',
         'cost_centers.name',
         'cost_centers.code'
-      ).where('cost_centers.enabled', true).where('business_id', business_id)
-      .first()
+      ).where('cost_centers.enabled', true)
+      .where('business_id', business_id)
+
     return result  // MySQL driver returns results in an array
   }
 }

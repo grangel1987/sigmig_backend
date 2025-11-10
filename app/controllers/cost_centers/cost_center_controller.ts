@@ -3,6 +3,7 @@ import CostCenterRepository from '#repositories/cost_centers/cost_center_reposit
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
+import console from 'console'
 import { DateTime } from 'luxon'
 
 type MessageFrontEnd = {
@@ -172,6 +173,8 @@ export default class CostCenterController {
 
       return result
     } catch (error) {
+      console.log(error);
+
       throw new Exception('Failed to fetch cost centers for select')
     }
   }
