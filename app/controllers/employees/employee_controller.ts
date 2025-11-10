@@ -9,6 +9,20 @@ import EmployeeRepository from '#repositories/employees/employee_repository'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import {
+    employeeBusinessEmployeeIdValidator,
+    employeeDeletePhotoValidator,
+    employeeFindAccessByEmployeeIdValidator,
+    employeeFindAccessValidator,
+    employeeFindByIdentifyValidator,
+    employeeFindByIdValidator,
+    employeeFindByLastNamePValidator,
+    employeeFindByNameValidator,
+    employeeFindLicensesHealthValidator,
+    employeeFindWorkPermitsValidator,
+    employeePermitIdValidator,
+    employeeReportValidator,
+} from '#validators/employee'
 import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
@@ -35,24 +49,24 @@ export default class EmployeeController {
 
         try {
             // Expect JSON strings for nested collections similar to legacy
-            JSON.parse(payload.schedule_work || '[]') // scheduleWork not yet implemented
-            JSON.parse(payload.certificate_health || '[]') // certificateHealth not yet implemented
-            const contactsEmergency = JSON.parse(payload.contacts_emergency || '[]')
+            JSON.parse(payload.scheduleWork || '[]') // scheduleWork not yet implemented
+            JSON.parse(payload.certificateHealth || '[]') // certificateHealth not yet implemented
+            const contactsEmergency = JSON.parse(payload.contactsEmergency || '[]')
 
             const photo = request.file('photo')
             const authorization = request.file('authorization')
 
             const employeeData: any = {
-                identifyTypeId: payload.type_identify_id,
+                identifyTypeId: payload.typeIdentifyId,
                 identify: payload.identify,
                 names: payload.names,
-                lastNameP: payload.last_name_p,
-                lastNameM: payload.last_name_m,
-                stateCivilId: payload.state_civil ?? null,
-                sexId: payload.sex_id,
-                birthDate: payload.birth_date ? DateTime.fromISO(payload.birth_date) : null,
-                nationalityId: payload.nationality_id,
-                cityId: payload.city_id,
+                lastNameP: payload.lastNameP,
+                lastNameM: payload.lastNameM,
+                stateCivilId: payload.stateCivil ?? null,
+                sexId: payload.sexId,
+                birthDate: payload.birthDate ? DateTime.fromISO(payload.birthDate) : null,
+                nationalityId: payload.nationalityId,
+                cityId: payload.cityId,
                 address: payload.address,
                 phone: payload.phone ?? null,
                 movil: payload.movil,
@@ -64,23 +78,23 @@ export default class EmployeeController {
             }
 
             const businessEmployeeData: any = {
-                businessId: payload.business_id,
-                afpId: payload.afp_id,
-                exRegimeId: payload.ex_regime_id,
-                afp2Id: payload.afp2_id,
-                coinAhorroId: payload.coin_ahorro_id,
-                affiliationId: payload.affiliation_id,
-                layoffId: payload.layoff_id,
-                isapreId: payload.isapre_id,
-                loadFamilyId: payload.load_family_id,
-                remunerationTypeId: payload.remuneration_type_id,
-                bankId: payload.bank_id,
-                costCenterId: payload.cost_center_id,
-                positionId: payload.position_id,
-                typeAccountId: payload.type_account_id,
-                admissionDate: payload.admission_date ? DateTime.fromISO(payload.admission_date) : null,
-                contractDate: payload.contract_date ? DateTime.fromISO(payload.contract_date) : null,
-                settlementDate: payload.settlement_date ? DateTime.fromISO(payload.settlement_date) : null,
+                businessId: payload.businessId,
+                afpId: payload.afpId,
+                exRegimeId: payload.exRegimeId,
+                afp2Id: payload.afp2Id,
+                coinAhorroId: payload.coinAhorroId,
+                affiliationId: payload.affiliationId,
+                layoffId: payload.layoffId,
+                isapreId: payload.isapreId,
+                loadFamilyId: payload.loadFamilyId,
+                remunerationTypeId: payload.remunerationTypeId,
+                bankId: payload.bankId,
+                costCenterId: payload.costCenterId,
+                positionId: payload.positionId,
+                typeAccountId: payload.typeAccountId,
+                admissionDate: payload.admissionDate ? DateTime.fromISO(payload.admissionDate) : null,
+                contractDate: payload.contractDate ? DateTime.fromISO(payload.contractDate) : null,
+                settlementDate: payload.settlementDate ? DateTime.fromISO(payload.settlementDate) : null,
                 createdAt: dateTime,
                 updatedAt: dateTime,
             }
@@ -144,16 +158,16 @@ export default class EmployeeController {
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             }
-            if (payload.type_identify_id !== undefined) employeePatch.identifyTypeId = payload.type_identify_id
+            if (payload.typeIdentifyId !== undefined) employeePatch.identifyTypeId = payload.typeIdentifyId
             if (payload.identify !== undefined) employeePatch.identify = payload.identify
             if (payload.names !== undefined) employeePatch.names = payload.names
-            if (payload.last_name_p !== undefined) employeePatch.lastNameP = payload.last_name_p
-            if (payload.last_name_m !== undefined) employeePatch.lastNameM = payload.last_name_m
-            if (payload.state_civil !== undefined) employeePatch.stateCivilId = payload.state_civil
-            if (payload.sex_id !== undefined) employeePatch.sexId = payload.sex_id
-            if (payload.birth_date !== undefined) employeePatch.birthDate = payload.birth_date ? DateTime.fromISO(payload.birth_date) : null
-            if (payload.nationality_id !== undefined) employeePatch.nationalityId = payload.nationality_id
-            if (payload.city_id !== undefined) employeePatch.cityId = payload.city_id
+            if (payload.lastNameP !== undefined) employeePatch.lastNameP = payload.lastNameP
+            if (payload.lastNameM !== undefined) employeePatch.lastNameM = payload.lastNameM
+            if (payload.stateCivil !== undefined) employeePatch.stateCivilId = payload.stateCivil
+            if (payload.sexId !== undefined) employeePatch.sexId = payload.sexId
+            if (payload.birthDate !== undefined) employeePatch.birthDate = payload.birthDate ? DateTime.fromISO(payload.birthDate) : null
+            if (payload.nationalityId !== undefined) employeePatch.nationalityId = payload.nationalityId
+            if (payload.cityId !== undefined) employeePatch.cityId = payload.cityId
             if (payload.address !== undefined) employeePatch.address = payload.address
             if (payload.phone !== undefined) employeePatch.phone = payload.phone
             if (payload.movil !== undefined) employeePatch.movil = payload.movil
@@ -195,28 +209,28 @@ export default class EmployeeController {
             await employee.useTransaction(trx).save()
 
             const businessEmployee = await BusinessEmployee.query({ client: trx })
-                .where('business_id', payload.business_id)
+                .where('business_id', payload.businessId)
                 .where('employee_id', employeeId)
                 .first()
 
             if (businessEmployee) {
                 const patch: any = { updatedAt: dateTime }
-                if (payload.afp_id !== undefined) patch.afpId = payload.afp_id
-                if (payload.ex_regime_id !== undefined) patch.exRegimeId = payload.ex_regime_id
-                if (payload.afp2_id !== undefined) patch.afp2Id = payload.afp2_id
-                if (payload.coin_ahorro_id !== undefined) patch.coinAhorroId = payload.coin_ahorro_id
-                if (payload.affiliation_id !== undefined) patch.affiliationId = payload.affiliation_id
-                if (payload.layoff_id !== undefined) patch.layoffId = payload.layoff_id
-                if (payload.isapre_id !== undefined) patch.isapreId = payload.isapre_id
-                if (payload.load_family_id !== undefined) patch.loadFamilyId = payload.load_family_id
-                if (payload.remuneration_type_id !== undefined) patch.remunerationTypeId = payload.remuneration_type_id
-                if (payload.bank_id !== undefined) patch.bankId = payload.bank_id
-                if (payload.type_account_id !== undefined) patch.typeAccountId = payload.type_account_id
-                if (payload.cost_center_id !== undefined) patch.costCenterId = payload.cost_center_id
-                if (payload.position_id !== undefined) patch.positionId = payload.position_id
-                if (payload.admission_date !== undefined) patch.admissionDate = payload.admission_date ? DateTime.fromISO(payload.admission_date) : null
-                if (payload.contract_date !== undefined) patch.contractDate = payload.contract_date ? DateTime.fromISO(payload.contract_date) : null
-                if (payload.settlement_date !== undefined) patch.settlementDate = payload.settlement_date ? DateTime.fromISO(payload.settlement_date) : null
+                if (payload.afpId !== undefined) patch.afpId = payload.afpId
+                if (payload.exRegimeId !== undefined) patch.exRegimeId = payload.exRegimeId
+                if (payload.afp2Id !== undefined) patch.afp2Id = payload.afp2Id
+                if (payload.coinAhorroId !== undefined) patch.coinAhorroId = payload.coinAhorroId
+                if (payload.affiliationId !== undefined) patch.affiliationId = payload.affiliationId
+                if (payload.layoffId !== undefined) patch.layoffId = payload.layoffId
+                if (payload.isapreId !== undefined) patch.isapreId = payload.isapreId
+                if (payload.loadFamilyId !== undefined) patch.loadFamilyId = payload.loadFamilyId
+                if (payload.remunerationTypeId !== undefined) patch.remunerationTypeId = payload.remunerationTypeId
+                if (payload.bankId !== undefined) patch.bankId = payload.bankId
+                if (payload.typeAccountId !== undefined) patch.typeAccountId = payload.typeAccountId
+                if (payload.costCenterId !== undefined) patch.costCenterId = payload.costCenterId
+                if (payload.positionId !== undefined) patch.positionId = payload.positionId
+                if (payload.admissionDate !== undefined) patch.admissionDate = payload.admissionDate ? DateTime.fromISO(payload.admissionDate) : null
+                if (payload.contractDate !== undefined) patch.contractDate = payload.contractDate ? DateTime.fromISO(payload.contractDate) : null
+                if (payload.settlementDate !== undefined) patch.settlementDate = payload.settlementDate ? DateTime.fromISO(payload.settlementDate) : null
                 businessEmployee.merge(patch)
                 await businessEmployee.useTransaction(trx).save()
             }
@@ -259,13 +273,13 @@ export default class EmployeeController {
 
     /** Find employees by identify */
     public async findByIdentify({ request, response, i18n }: HttpContext) {
-        const { identify, type_identify, business_id } = request.all()
+        const { identify, typeIdentify, businessId } = await request.validateUsing(employeeFindByIdentifyValidator)
         const rows = await Employee.query()
             .where('identify', String(identify).trim())
-            .where('identify_type_id', type_identify)
+            .where('identify_type_id', typeIdentify)
             .select(['id', 'identify_type_id', 'identify', 'names', 'last_name_p', 'last_name_m', 'birth_date'])
             .preload('business', (b) => {
-                b.where('business_id', business_id)
+                b.where('business_id', businessId)
                 b.select(['id', 'enabled', 'employee_id', 'business_id'])
             })
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
@@ -282,7 +296,7 @@ export default class EmployeeController {
     }
 
     public async findById({ request }: HttpContext) {
-        const { employeeId, businessId } = request.all()
+        const { employeeId, businessId } = await request.validateUsing(employeeFindByIdValidator)
         const employee = await Employee.query()
             .where('id', employeeId)
             .preload('city', (b) => b.select(['id', 'name']))
@@ -306,8 +320,8 @@ export default class EmployeeController {
     }
 
     public async findByName({ request, response, i18n }: HttpContext) {
-        const { name, business_id } = request.all()
-        const employees = await EmployeeRepository.findByName(business_id, name)
+        const { name, businessId } = await request.validateUsing(employeeFindByNameValidator)
+        const employees = await EmployeeRepository.findByName(businessId, name)
         if (!employees || !employees.length) return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.search_empty'), i18n.formatMessage('messages.ok_title')))
         for (const e of employees) {
             e.typeIdentify = { id: e.identify_type_id, text: e.text }
@@ -321,8 +335,8 @@ export default class EmployeeController {
     }
 
     public async findByLastNameP({ request, response, i18n }: HttpContext) {
-        const { last_name_p, business_id } = request.all()
-        const employees = await EmployeeRepository.findByLastNameP(business_id, last_name_p)
+        const { lastNameP, businessId } = await request.validateUsing(employeeFindByLastNamePValidator)
+        const employees = await EmployeeRepository.findByLastNameP(businessId, lastNameP)
         if (!employees || !employees.length) return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.search_empty'), i18n.formatMessage('messages.ok_title')))
         for (const e of employees) {
             e.typeIdentify = { id: e.identify_type_id, text: e.text }
@@ -336,7 +350,7 @@ export default class EmployeeController {
     }
 
     public async deletePhoto({ request, response, i18n }: HttpContext) {
-        const { employeeId } = request.all()
+        const { employeeId } = await request.validateUsing(employeeDeletePhotoValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         const employee = await Employee.find(employeeId)
         if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
@@ -358,8 +372,8 @@ export default class EmployeeController {
     }
 
     public async report({ request }: HttpContext) {
-        const { condition, expire_date, cost_center, business_id } = request.all()
-        const report = await EmployeeRepository.report(condition, expire_date, cost_center, business_id)
+        const { condition, expireDate, costCenter, businessId } = await request.validateUsing(employeeReportValidator)
+        const report = await EmployeeRepository.report(condition, expireDate ?? null, costCenter ?? null, businessId)
         return report.map((r) => ({
             token: r.token,
             nombre: r.names,
@@ -370,10 +384,13 @@ export default class EmployeeController {
     }
 
     public async inactive({ request, auth, response, i18n }: HttpContext) {
-        const { business_employee_id } = request.all()
+        const { businessEmployeeId } = await request.validateUsing(employeeBusinessEmployeeIdValidator)
+        if (typeof businessEmployeeId !== 'number' || businessEmployeeId <= 0) {
+            return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.validation_error'), i18n.formatMessage('messages.error_title')))
+        }
         const dateTime = await Util.getDateTimes(request.ip())
         try {
-            const businessEmployee = await BusinessEmployee.find(business_employee_id)
+            const businessEmployee = await BusinessEmployee.find(businessEmployeeId)
             if (!businessEmployee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
             businessEmployee.enabled = false
                 ; (businessEmployee as any).inactive_at = dateTime
@@ -386,9 +403,12 @@ export default class EmployeeController {
     }
 
     public async reactive({ request, response, i18n }: HttpContext) {
-        const { business_employee_id } = request.all()
+        const { businessEmployeeId } = await request.validateUsing(employeeBusinessEmployeeIdValidator)
+        if (typeof businessEmployeeId !== 'number' || businessEmployeeId <= 0) {
+            return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.validation_error'), i18n.formatMessage('messages.error_title')))
+        }
         try {
-            const businessEmployee = await BusinessEmployee.find(business_employee_id)
+            const businessEmployee = await BusinessEmployee.find(businessEmployeeId)
             if (!businessEmployee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
             businessEmployee.enabled = true
                 ; (businessEmployee as any).inactive_at = null
@@ -401,8 +421,8 @@ export default class EmployeeController {
     }
 
     public async findWorkPermits({ request, auth }: HttpContext) {
-        const { employee_id, business_id } = request.all()
-        const permits = await EmployeePermit.query().where('employee_id', employee_id).where('business_id', business_id).orderBy('id', 'desc')
+        const { employeeId, businessId } = await request.validateUsing(employeeFindWorkPermitsValidator)
+        const permits = await EmployeePermit.query().where('employee_id', employeeId).where('business_id', businessId).orderBy('id', 'desc')
         const result = permits.map((p) => {
             const json = p.toJSON()
                 ; (json as any).is_authorizer = json.authorizer_id === auth.user!.id
@@ -414,17 +434,17 @@ export default class EmployeeController {
     public async storeWorkPermits({ request, response, auth, i18n }: HttpContext) {
         const dateTime = await Util.getDateTimes(request.ip())
         const { employeePermitStoreValidator } = await import('#validators/employee')
-        const { type, date_start, date_end, reason, employee_id, business_id, authorizer_id } = await request.validateUsing(employeePermitStoreValidator)
+        const { type, dateStart, dateEnd, reason, employeeId, businessId, authorizerId } = await request.validateUsing(employeePermitStoreValidator)
 
         try {
             const permit = await EmployeePermit.create({
                 type,
-                date_start,
-                date_end,
+                date_start: dateStart,
+                date_end: dateEnd,
                 reason,
-                employee_id,
-                business_id,
-                authorizer_id,
+                employee_id: employeeId,
+                business_id: businessId,
+                authorizer_id: authorizerId,
                 authorized: false,
                 created_at: dateTime,
                 updated_at: dateTime,
@@ -432,8 +452,8 @@ export default class EmployeeController {
                 updated_by: auth.user!.id,
             } as any)
 
-            const employee = await Employee.find(employee_id)
-            const authorizer = await User.find(authorizer_id)
+            const employee = await Employee.find(employeeId)
+            const authorizer = await User.find(authorizerId)
             if (employee && authorizer) {
                 emitter.emit('new::employeePermitStore', {
                     email: (employee as any).email,
@@ -491,9 +511,9 @@ export default class EmployeeController {
     }
 
     public async autorizePermit({ request, response, auth, i18n }: HttpContext) {
-        const { permit_id } = request.all()
+        const { permitId } = await request.validateUsing(employeePermitIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
-        const permit = await EmployeePermit.find(permit_id)
+        const permit = await EmployeePermit.find(permitId)
         if (!permit) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
         if (!(permit as any).authorized && permit.authorizerId === auth.user!.id) {
             ; (permit as any).authorized = true
@@ -505,9 +525,9 @@ export default class EmployeeController {
     }
 
     public async deletePermit({ request, response, auth, i18n }: HttpContext) {
-        const { permit_id } = request.all()
+        const { permitId } = await request.validateUsing(employeePermitIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
-        const permit = await EmployeePermit.find(permit_id)
+        const permit = await EmployeePermit.find(permitId)
         if (!permit) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
         permit.enabled = !permit.enabled
         permit.updatedAt = dateTime
@@ -520,8 +540,8 @@ export default class EmployeeController {
     }
 
     public async findLicensesHealth({ request }: HttpContext) {
-        const { employee_id, business_id } = request.all()
-        const rows = await EmployeeLicenseHealth.query().where('employee_id', employee_id).where('business_id', business_id).orderBy('id', 'desc').preload('typeLicense')
+        const { employeeId, businessId } = await request.validateUsing(employeeFindLicensesHealthValidator)
+        const rows = await EmployeeLicenseHealth.query().where('employee_id', employeeId).where('business_id', businessId).orderBy('id', 'desc').preload('typeLicense')
         return rows
     }
 
@@ -580,40 +600,44 @@ export default class EmployeeController {
     }
 
     public async findAccess({ request }: HttpContext) {
-        let { condition, work_id, date_start, date_end } = request.all()
+        let { condition, workId, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         if (condition === 1) {
-            date_start = dateTime.toFormat('yyyy-LL-dd')
-            date_end = date_start
+            dateStart = dateTime.toFormat('yyyy-LL-dd')
+            dateEnd = dateStart
         } else if (condition === 2) {
             const prev = dateTime.minus({ days: 1 })
-            date_start = prev.toFormat('yyyy-LL-dd')
-            date_end = date_start
+            dateStart = prev.toFormat('yyyy-LL-dd')
+            dateEnd = dateStart
         } else if (condition === 3) {
-            date_start = dateTime.startOf('month').toFormat('yyyy-LL-dd')
-            date_end = dateTime.endOf('month').toFormat('yyyy-LL-dd')
+            dateStart = dateTime.startOf('month').toFormat('yyyy-LL-dd')
+            dateEnd = dateTime.endOf('month').toFormat('yyyy-LL-dd')
         }
-        if (work_id > 0) {
-            return EmployeeAccessRepository.findAccessByWorkId(work_id, date_start, date_end)
+        if (workId && workId > 0) {
+            const ds = dateStart ?? dateTime.toFormat('yyyy-LL-dd')
+            const de = dateEnd ?? ds
+            return EmployeeAccessRepository.findAccessByWorkId(workId, ds, de)
         }
         return []
     }
 
     public async findAccessByEmployeeId({ request }: HttpContext) {
-        let { employee_id, condition, date_start, date_end } = request.all()
+        let { employeeId, condition, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessByEmployeeIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         if (condition === 1) {
-            date_start = dateTime.toFormat('yyyy-LL-dd')
-            date_end = date_start
+            dateStart = dateTime.toFormat('yyyy-LL-dd')
+            dateEnd = dateStart
         } else if (condition === 2) {
             const prev = dateTime.minus({ days: 1 })
-            date_start = prev.toFormat('yyyy-LL-dd')
-            date_end = date_start
+            dateStart = prev.toFormat('yyyy-LL-dd')
+            dateEnd = dateStart
         } else if (condition === 3) {
-            date_start = dateTime.startOf('month').toFormat('yyyy-LL-dd')
-            date_end = dateTime.endOf('month').toFormat('yyyy-LL-dd')
+            dateStart = dateTime.startOf('month').toFormat('yyyy-LL-dd')
+            dateEnd = dateTime.endOf('month').toFormat('yyyy-LL-dd')
         }
-        const access = await EmployeeAccessRepository.findAccessByEmployeeId(employee_id, date_start, date_end)
+        const ds = dateStart ?? dateTime.toFormat('yyyy-LL-dd')
+        const de = dateEnd ?? ds
+        const access = await EmployeeAccessRepository.findAccessByEmployeeId(employeeId, ds, de)
         const grouped = groupBy(access, ['date'])
         return grouped
     }

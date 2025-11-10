@@ -466,6 +466,45 @@ router.group(() => {
     router.get('/select', '#controllers/legal_gratifications/setting_legal_gratification_controller.select')
   }).prefix('setting-legal-gratification').middleware(auth)
 
+  // Business Employee legacy actions
+  router.group(() => {
+    router.post('/business/change', '#controllers/business/business_employee_controller.changeBusiness')
+    router.post('/business/add-other', '#controllers/business/business_employee_controller.addOtherBusiness')
+  }).prefix('business-employee').middleware(auth)
+
+  // Employee protected routes
+  router.group(() => {
+    router.post('/store', '#controllers/employees/employee_controller.store')
+    router.get('/:token/:business_id', '#controllers/employees/employee_controller.show')
+    router.put('/update/:id', '#controllers/employees/employee_controller.update')
+    router.post('/find-by-identify', '#controllers/employees/employee_controller.findByIdentify')
+    router.post('/find-by-id', '#controllers/employees/employee_controller.findById')
+    router.post('/find-by-name', '#controllers/employees/employee_controller.findByName')
+    router.post('/find-by-last-name-p', '#controllers/employees/employee_controller.findByLastNameP')
+    router.put('/delete/photo', '#controllers/employees/employee_controller.deletePhoto')
+    router.get('/count/active/:business_id', '#controllers/employees/employee_controller.countActive')
+    router.post('/report', '#controllers/employees/employee_controller.report')
+    router.post('/inactive', '#controllers/employees/employee_controller.inactive')
+    router.post('/reactive', '#controllers/employees/employee_controller.reactive')
+    router.post('/find/autocomplete', '#controllers/employees/employee_controller.findAutocomplete')
+    router.post('/find/permits', '#controllers/employees/employee_controller.findWorkPermits')
+    router.post('/permits/store', '#controllers/employees/employee_controller.storeWorkPermits')
+    router.put('/permits/update', '#controllers/employees/employee_controller.updateWorkPermits')
+    router.post('/permits/authorize', '#controllers/employees/employee_controller.autorizePermit')
+    router.post('/permits/delete-file', '#controllers/employees/employee_controller.deleteFilePermit')
+    router.post('/permits/delete-all', '#controllers/employees/employee_controller.deletePermit')
+    router.post('/find/license-health', '#controllers/employees/employee_controller.findLicensesHealth')
+    router.post('/store/license-health', '#controllers/employees/employee_controller.storeLicenseHealth')
+    router.put('/update/license-health/:id', '#controllers/employees/employee_controller.updateLicenseHealth')
+    router.delete('/delete/license-health/:id', '#controllers/employees/employee_controller.deleteLicenseHealth')
+    router.post('/access/find', '#controllers/employees/employee_controller.findAccess')
+    router.post('/access/find-by-empployee', '#controllers/employees/employee_controller.findAccessByEmployeeId')
+  }).prefix('employee').middleware(auth)
+
+  // Employee public routes (permits by token)
+  router.group(() => {
+    router.get('/permits/find-by-token/:token', '#controllers/employees/employee_controller.showWorkPermitByToken')
+  }).prefix('employee')
 
   // Clients (protected)
   router.group(() => {
