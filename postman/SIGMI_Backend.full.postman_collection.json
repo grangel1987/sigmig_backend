@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "2b73b57b-e407-459d-b1ce-82ed9746e3b0",
+        "_postman_id": "b47a355f-39df-42fe-962a-fa8c548f5551",
         "name": "SIGMI Backend API (Full) Copy",
         "description": "Complete Postman collection for SIGMI Backend routes (start/routes.ts)",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -108,12 +108,12 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"secret\"\n}"
+                            "raw": "{\n  \"email\": \"g.rangel1987@gmail.com\",\n  \"password\": \"12345678\"\n}"
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/login",
+                            "raw": "{{local_url}}/{{apiPrefix}}/account/login",
                             "host": [
-                                "{{baseUrl}}"
+                                "{{local_url}}"
                             ],
                             "path": [
                                 "{{apiPrefix}}",
@@ -211,6 +211,25 @@
                 },
                 {
                     "name": "GET account/find-user-by-token",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/account/find-user-by-token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "account",
+                                "find-user-by-token"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET account/find/super",
                     "request": {
                         "method": "GET",
                         "header": [],
@@ -1096,14 +1115,15 @@
                             "raw": "{\n  \"businessId\": 1\n}"
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/{{apiPrefix}}/cost-center/select",
+                            "raw": "{{local_url}}/{{apiPrefix}}/cost-center/select/1",
                             "host": [
-                                "{{baseUrl}}"
+                                "{{local_url}}"
                             ],
                             "path": [
                                 "{{apiPrefix}}",
                                 "cost-center",
-                                "select"
+                                "select",
+                                "1"
                             ]
                         }
                     },
@@ -3563,12 +3583,12 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"val\": \"Serv\"\n}"
+                            "raw": "{\n  \"val\": \"AP\",\n  \"businessId\":1\n}"
                         },
                         "url": {
-                            "raw": "{{baseUrl}}/{{apiPrefix}}/product/findAutoComplete",
+                            "raw": "{{local_url}}/{{apiPrefix}}/product/findAutoComplete",
                             "host": [
-                                "{{baseUrl}}"
+                                "{{local_url}}"
                             ],
                             "path": [
                                 "{{apiPrefix}}",
@@ -3940,7 +3960,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"val\": \"Prov\"\n}"
+                            "raw": "{\n  \"val\": \"mig\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/provider/find/autocomplete",
@@ -4050,7 +4070,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"identifyTypeId\": 1,\n  \"identify\": \"76.543.210-9\",\n  \"name\": \"Acme SpA\",\n  \"phone\": \"+56912345678\",\n  \"email\": \"contact@acme.test\",\n  \"giro\": \"Servicios de software\",\n  \"address\": \"Av. Siempre Viva 742, Santiago\",\n  \"typeId\": 2,\n  \"cityId\": 13101\n}"
+                            "raw": "{\n    \"identifyTypeId\": 4,\n    \"identify\": \"34534539\",\n    \"name\": \"PABLO LORENZON\",\n    \"phone\": \"0412838238238\",\n    \"email\": \"tyhjdg@adwaw.com\",\n    \"address\": \"nose\",\n    \"typeId\": 2,\n    \"cityId\": 180,\n    \"countryId\": 1,\n    \"giro\": \"45\",\n    \"responsibles\": [\n        {\n            \"name\": \"pero lorenzo\",\n            \"identifyTypeId\": 4,\n            \"identify\": \"43564645\",\n            \"email\": \"daswdasd@wdawd.com\",\n            \"phone\": \"0412838238238\",\n            \"clientContactTypeId\": 65,\n            \"clientContactTypeView\": \"GERENTE GENERAL\",\n            \"identifyTypeView\": \"DNI\"\n        }\n    ],\n    \"systemPaymentProvider\": \"34534\",\n    \"clientDocumentInvoiceId\": 73,\n    \"clientDocumentInvoiceValue\": \"menos\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/client/store",
@@ -4078,7 +4098,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"name\": \"Acme SpA (Updated)\"\n}"
+                            "raw": "{\n  \"name\": \"Elpro vedor\",\n   \"systemPaymentProvider\": \"34552\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/client/update/:id",
@@ -4094,7 +4114,7 @@
                             "variable": [
                                 {
                                     "key": "id",
-                                    "value": "1"
+                                    "value": "240"
                                 }
                             ]
                         }
@@ -4174,7 +4194,7 @@
                             "variable": [
                                 {
                                     "key": "id",
-                                    "value": "1"
+                                    "value": "239"
                                 }
                             ]
                         }
@@ -4249,7 +4269,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"value\": \"acme\"\n}"
+                            "raw": "{\n  \"value\": \"emp\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/client/search",
@@ -4460,9 +4480,9 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{baseUrl}}/{{apiPrefix}}/shopping/show/:id",
+                            "raw": "{{local_url}}/{{apiPrefix}}/shopping/show/:id",
                             "host": [
-                                "{{baseUrl}}"
+                                "{{local_url}}"
                             ],
                             "path": [
                                 "{{apiPrefix}}",
@@ -4489,7 +4509,21 @@
                             "mode": "raw",
                             "raw": "{\"number\": \"12345\"}"
                         },
-                        "url": "http://localhost:3000/api/v2/shopping/find/number"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/shopping/find/number",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "shopping",
+                                "find",
+                                "number"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -4502,7 +4536,21 @@
                             "mode": "raw",
                             "raw": "{\"name\": \"Client Name\"}"
                         },
-                        "url": "http://localhost:3000/api/v2/shopping/find/name"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/shopping/find/name",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "shopping",
+                                "find",
+                                "name"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -4515,7 +4563,21 @@
                             "mode": "raw",
                             "raw": "{\"date\": \"2025-11-06\"}"
                         },
-                        "url": "http://localhost:3000/api/v2/shopping/find/date"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/shopping/find/date",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "shopping",
+                                "find",
+                                "date"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -5957,7 +6019,20 @@
                             "mode": "raw",
                             "raw": "{\"data\": {}}"
                         },
-                        "url": "http://localhost:3000/api/v2/buget/store"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/store",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "store"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -5965,7 +6040,24 @@
                     "name": "GET buget/:id",
                     "request": {
                         "method": "GET",
-                        "url": "http://localhost:3000/api/v2/buget/:id"
+                        "header": [],
+                        "url": {
+                            "raw": "{{url}}/{{apiPrefix}}/buget/:id",
+                            "host": [
+                                "{{url}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "buget",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -5978,7 +6070,21 @@
                             "mode": "raw",
                             "raw": "{\"number\": \"12345\"}"
                         },
-                        "url": "http://localhost:3000/api/v2/buget/find/number"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/find/number",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "find",
+                                "number"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -5991,7 +6097,21 @@
                             "mode": "raw",
                             "raw": "{\"name\": \"Client Name\"}"
                         },
-                        "url": "http://localhost:3000/api/v2/buget/find/name"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/find/name",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "find",
+                                "name"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -6004,7 +6124,21 @@
                             "mode": "raw",
                             "raw": "{\"date\": \"2025-11-06\"}"
                         },
-                        "url": "http://localhost:3000/api/v2/buget/find/date"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/find/date",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "find",
+                                "date"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -6012,7 +6146,27 @@
                     "name": "PUT buget/update/:id",
                     "request": {
                         "method": "PUT",
-                        "url": "http://localhost:3000/api/v2/buget/update/:id"
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/update/:id",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id"
+                                }
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -6020,7 +6174,27 @@
                     "name": "DELETE buget/delete/:id",
                     "request": {
                         "method": "DELETE",
-                        "url": "http://localhost:3000/api/v2/buget/delete/:id"
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/delete/:id",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "delete",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id"
+                                }
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -6028,7 +6202,28 @@
                     "name": "GET buget/count/made/:business_id",
                     "request": {
                         "method": "GET",
-                        "url": "http://localhost:3000/api/v2/buget/count/made/:business_id"
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/count/made/:business_id",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "count",
+                                "made",
+                                ":business_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "business_id"
+                                }
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -6036,7 +6231,29 @@
                     "name": "GET buget/count/made/year/:business_id",
                     "request": {
                         "method": "GET",
-                        "url": "http://localhost:3000/api/v2/buget/count/made/year/:business_id"
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/count/made/year/:business_id",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "count",
+                                "made",
+                                "year",
+                                ":business_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "business_id"
+                                }
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -6049,7 +6266,20 @@
                             "mode": "raw",
                             "raw": "{\"report\": true}"
                         },
-                        "url": "http://localhost:3000/api/v2/buget/report"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/report",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "report"
+                            ]
+                        }
                     },
                     "response": []
                 },
@@ -6062,7 +6292,20 @@
                             "mode": "raw",
                             "raw": "{\"items\": []}"
                         },
-                        "url": "http://localhost:3000/api/v2/buget/search-items"
+                        "url": {
+                            "raw": "http://localhost:3000/api/v2/buget/search-items",
+                            "protocol": "http",
+                            "host": [
+                                "localhost"
+                            ],
+                            "port": "3000",
+                            "path": [
+                                "api",
+                                "v2",
+                                "buget",
+                                "search-items"
+                            ]
+                        }
                     },
                     "response": []
                 }
@@ -6083,7 +6326,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"clientId\": 1,\n  \"booking\": {\n    \"checkIn\": \"2025-11-06T10:00:00.000Z\",\n    \"checkOut\": \"2025-11-07T10:00:00.000Z\",\n    \"type\": \"DIARIO\",\n    \"monthQuantity\": 0\n  },\n  \"guests\": [\n    { \"name\": \"John\", \"identifyTypeId\": 1, \"identify\": \"12345678-9\" }\n  ],\n  \"propertie\": { \"propertieId\": 1 },\n  \"items\": [ { \"itemId\": 1, \"quantity\": 1 } ],\n  \"feeding\": [ { \"feeding\": \"breakfast\", \"count\": 1 } ]\n}"
+                            "raw": "{\n\"clientId\": 1,\n\"booking\": {\n\"checkIn\": \"2025-11-06T10:00:00.000Z\",\n\"checkOut\": \"2025-11-07T10:00:00.000Z\",\n\"type\": \"DIARIO\",\n\"monthQuantity\": 0\n},\n\"guests\": [\n{ \"name\": \"John\", \"identifyTypeId\": 1, \"identify\": \"12345678-9\" }\n],\n\"propertie\": { \"propertieId\": 1 },\n\"items\": [ { \"itemId\": 1, \"quantity\": 1 } ],\n\"feeding\": [ { \"feeding\": \"breakfast\", \"count\": 1 } ]\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/{{apiPrefix}}/booking/store",
@@ -6327,6 +6570,770 @@
                                 {
                                     "key": "booking_id",
                                     "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "employee",
+            "item": [
+                {
+                    "name": "POST employee/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"typeIdentifyId\": 1,\n  \"identify\": \"12345678-9\",\n  \"names\": \"John\",\n  \"lastNameP\": \"Doe\",\n  \"lastNameM\": \"Smith\",\n  \"sexId\": 1,\n  \"birthDate\": \"1980-01-01\",\n  \"nationalityId\": 1,\n  \"cityId\": 1,\n  \"address\": \"Main St 123\",\n  \"movil\": \"99999999\",\n  \"email\": \"john@example.com\",\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "store"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET employee/:token/:business_id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/:token/:business_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                ":token",
+                                ":business_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "token-123"
+                                },
+                                {
+                                    "key": "business_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT employee/update/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"typeIdentifyId\": 1,\n  \"identify\": \"12345678-9\",\n  \"names\": \"John\",\n  \"lastNameP\": \"Doe\",\n  \"lastNameM\": \"Smith\",\n  \"sexId\": 1,\n  \"birthDate\": \"1980-01-01\",\n  \"nationalityId\": 1,\n  \"cityId\": 1,\n  \"address\": \"Main St 123\",\n  \"movil\": \"99999999\",\n  \"email\": \"john@example.com\",\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/update/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "update",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/find-by-identify",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"identify\": \"12345678-9\",\n  \"typeIdentify\": 1,\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/find-by-identify",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "find-by-identify"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/find-by-id",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"employeeId\": 1,\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/find-by-id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "find-by-id"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/find-by-name",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"John\",\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/find-by-name",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "find-by-name"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/find-by-last-name-p",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"lastNameP\": \"Doe\",\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/find-by-last-name-p",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "find-by-last-name-p"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT employee/delete/photo",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"employeeId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/delete/photo",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "delete",
+                                "photo"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET employee/count/active/:business_id",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/count/active/:business_id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "count",
+                                "active",
+                                ":business_id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "business_id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/report",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"condition\": 1,\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/report",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "report"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/inactive",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessEmployeeId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/inactive",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "inactive"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/reactive",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessEmployeeId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/reactive",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "reactive"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/find/autocomplete",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/find/autocomplete",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "find",
+                                "autocomplete"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/find/permits",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"employeeId\": 1,\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/find/permits",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "find",
+                                "permits"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/permits/store",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"type\": \"PERSONAL\",\n  \"dateStart\": \"2025-11-10\",\n  \"dateEnd\": \"2025-11-10\",\n  \"reason\": \"Medical\",\n  \"employeeId\": 1,\n  \"businessId\": 1,\n  \"authorizerId\": 2\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/permits/store",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "permits",
+                                "store"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT employee/permits/update",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"permitId\": 1,\n  \"reason\": \"Updated reason\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/permits/update",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "permits",
+                                "update"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/permits/authorize",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"permitId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/permits/authorize",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "permits",
+                                "authorize"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/permits/delete-file",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"permitId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/permits/delete-file",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "permits",
+                                "delete-file"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/permits/delete-all",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"permitId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/permits/delete-all",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "permits",
+                                "delete-all"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/find/license-health",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"employeeId\": 1,\n  \"businessId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/find/license-health",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "find",
+                                "license-health"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/store/license-health",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"employeeId\": 1,\n  \"bussinesId\": 1,\n  \"status\": \"NEW\",\n  \"typeLicenseId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/store/license-health",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "store",
+                                "license-health"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "PUT employee/update/license-health/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"employeeId\": 1,\n  \"bussinesId\": 1,\n  \"status\": \"UPDATED\",\n  \"typeLicenseId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/update/license-health/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "update",
+                                "license-health",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "DELETE employee/delete/license-health/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/delete/license-health/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "delete",
+                                "license-health",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/access/find",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"condition\": 1,\n  \"workId\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/access/find",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "access",
+                                "find"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "POST employee/access/find-by-empployee",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"employeeId\": 1,\n  \"condition\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/access/find-by-empployee",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "access",
+                                "find-by-empployee"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "employee (public)",
+            "item": [
+                {
+                    "name": "GET employee/permits/find-by-token/:token",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/{{apiPrefix}}/employee/permits/find-by-token/:token",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{apiPrefix}}",
+                                "employee",
+                                "permits",
+                                "find-by-token",
+                                ":token"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "token",
+                                    "value": "permit-token-123"
                                 }
                             ]
                         }

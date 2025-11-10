@@ -27,6 +27,7 @@ import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
+import { log } from 'node:console'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
     return arr.reduce((acc: any, item: any) => {
@@ -295,7 +296,7 @@ export default class EmployeeController {
         return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.search_empty'), i18n.formatMessage('messages.ok_title')))
     }
 
-    public async findById({ request }: HttpContext) {
+    public async findById({ response, request }: HttpContext) {
         const { employeeId, businessId } = await request.validateUsing(employeeFindByIdValidator)
         const employee = await Employee.query()
             .where('id', employeeId)
@@ -306,8 +307,10 @@ export default class EmployeeController {
             })
             .first()
 
-        if (!employee) return null
+        if (!employee) return response.ok(null)
         const data: any = employee.toJSON()
+
+        log(data)
         data.birth_date_format = Util.parseDateSingle(data.birth_date)
         if (data.business?.[0]) {
             data.business[0].admission_date_format = Util.parseDateSingle(data.business[0].admission_date)
@@ -316,7 +319,7 @@ export default class EmployeeController {
                 data.business[0].settlement_date_format = Util.parseDateSingle(data.business[0].settlement_date)
             }
         }
-        return data
+        response.ok(data)
     }
 
     public async findByName({ request, response, i18n }: HttpContext) {
