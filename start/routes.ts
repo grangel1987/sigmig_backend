@@ -445,6 +445,28 @@ router.group(() => {
     .middleware(auth);
 
 
+  // Schedules
+  router.group(() => {
+    router.get("/", "#controllers/schedules/setting_schedule_controller.index");
+    router.get("/show/:schedule_id", "#controllers/schedules/setting_schedule_controller.show");
+    router.post("/store", "#controllers/schedules/setting_schedule_controller.store");
+    router.put("/update/:id", "#controllers/schedules/setting_schedule_controller.update");
+    router.put("/change-status/:id", "#controllers/schedules/setting_schedule_controller.changeStatus");
+    router.get("/select", "#controllers/schedules/setting_schedule_controller.select");
+  })
+    .prefix('schedule')
+    .middleware(auth)
+
+  // Legal Gratifications
+  router.group(() => {
+    router.get('/', '#controllers/legal_gratifications/setting_legal_gratification_controller.index')
+    router.post('/store', '#controllers/legal_gratifications/setting_legal_gratification_controller.store')
+    router.put('/update/:id', '#controllers/legal_gratifications/setting_legal_gratification_controller.update')
+    router.put('/change-status/:id', '#controllers/legal_gratifications/setting_legal_gratification_controller.changeStatus')
+    router.get('/select', '#controllers/legal_gratifications/setting_legal_gratification_controller.select')
+  }).prefix('setting-legal-gratification').middleware(auth)
+
+
   // Clients (protected)
   router.group(() => {
     router.get('/', '#controllers/clients/client_controller.index')
