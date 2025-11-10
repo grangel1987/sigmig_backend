@@ -161,11 +161,11 @@ export default class CostCenterController {
 
   public async select({ request }: HttpContext) {
     const { params } = await request.validateUsing(vine.compile(vine.object({
-      params: vine.object({ businessId: vine.number().positive() })
+      params: vine.object({ business_id: vine.number().positive() })
     })))
     try {
 
-      const businessId = params.businessId
+      const businessId = params.business_id
       const costCenters = await CostCenterRepository.select(businessId)
 
       const result = costCenters.map((costCenter) => ({
