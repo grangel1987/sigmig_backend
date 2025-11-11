@@ -27,15 +27,19 @@ export default class EmployeeRepository {
             employees.thumb,
             employees.token,
             settings.text,
-            employees.birth_date
-        FROM
-            employees,
-            business_employees,
-            settings
+            employees.birth_date,
+            cities.id AS city_id,
+            cities.name AS city_name,
+            cities.country_id AS city_country_id,
+            countries.id AS country_id,
+            countries.name AS country_name
+        FROM employees
+        INNER JOIN business_employees ON employees.id = business_employees.employee_id
+        INNER JOIN settings ON settings.id = employees.identify_type_id
+        LEFT JOIN cities ON cities.id = employees.city_id
+        LEFT JOIN countries ON countries.id = cities.country_id
         WHERE
-            employees.id = business_employees.employee_id AND
-            business_employees.business_id=${businessId} AND
-            settings.id = employees.identify_type_id AND
+            business_employees.business_id = ${businessId} AND
             employees.names LIKE "%${name}%"`;
 
         const result = await db.rawQuery(query)
@@ -57,15 +61,19 @@ export default class EmployeeRepository {
             employees.thumb,
             employees.token,
             settings.text,
-            employees.birth_date
-        FROM
-            employees,
-            business_employees,
-            settings
+            employees.birth_date,
+            cities.id AS city_id,
+            cities.name AS city_name,
+            cities.country_id AS city_country_id,
+            countries.id AS country_id,
+            countries.name AS country_name
+        FROM employees
+        INNER JOIN business_employees ON employees.id = business_employees.employee_id
+        INNER JOIN settings ON settings.id = employees.identify_type_id
+        LEFT JOIN cities ON cities.id = employees.city_id
+        LEFT JOIN countries ON countries.id = cities.country_id
         WHERE
-            employees.id = business_employees.employee_id AND
-            business_employees.business_id=${businessId} AND
-            settings.id = employees.identify_type_id AND
+            business_employees.business_id = ${businessId} AND
             employees.last_name_p LIKE "%${lastNameP}%"`;
 
         const result = await db.rawQuery(query)

@@ -40,17 +40,23 @@ const groupBy = (arr: any[], keys: string[]) => {
 // NOTE: Implemented GCS image handling (photo & authorization) using Google util.
 
 export default class EmployeeController {
-    // Formatting helpers to keep controller methods tidy
-    private fmtDate(iso?: string | null): string | null {
-        if (!iso) return null
-        const dt = DateTime.fromISO(iso)
-        return dt.isValid ? dt.toFormat('dd/MM/yyyy') : null
+    // Date parsing helpers (accept ISO string or JS Date)
+    private toDt(value?: unknown): DateTime | null {
+        if (value == null) return null
+        if (typeof value === 'string') {
+            const dt = DateTime.fromISO(value)
+            return dt.isValid ? dt : null
+        }
+        if (value instanceof Date) {
+            const dt = DateTime.fromJSDate(value)
+            return dt.isValid ? dt : null
+        }
+        return null
     }
 
-    private fmtDateTime(iso?: string | null): string | null {
-        if (!iso) return null
-        const dt = DateTime.fromISO(iso)
-        return dt.isValid ? dt.toFormat('dd/MM/yyyy hh:mm:ss a').toLowerCase() : null
+    private fmtDateTime(value?: unknown): string | null {
+        const dt = this.toDt(value)
+        return dt ? dt.toFormat('dd/MM/yyyy hh:mm:ss a').toLowerCase() : null
     }
 
     private mapBusinessItemLegacy(be: any): any {
@@ -69,26 +75,20 @@ export default class EmployeeController {
         }
         if (item.created_at) item.created_at = this.fmtDateTime(item.created_at)
         if (item.updated_at) item.updated_at = this.fmtDateTime(item.updated_at)
-        if (item.admission_date) {
-            const d = DateTime.fromISO(item.admission_date)
-            if (d.isValid) {
-                item.admission_date_format = d.toFormat('yyyy-MM-dd')
-                item.admission_date = this.fmtDate(item.admission_date)
-            }
+        const ad = this.toDt(item.admission_date)
+        if (ad) {
+            item.admission_date_format = ad.toFormat('yyyy-LL-dd')
+            item.admission_date = ad.toFormat('dd/MM/yyyy')
         }
-        if (item.contract_date) {
-            const d = DateTime.fromISO(item.contract_date)
-            if (d.isValid) {
-                item.contract_date_format = d.toFormat('yyyy-MM-dd')
-                item.contract_date = this.fmtDate(item.contract_date)
-            }
+        const cd = this.toDt(item.contract_date)
+        if (cd) {
+            item.contract_date_format = cd.toFormat('yyyy-LL-dd')
+            item.contract_date = cd.toFormat('dd/MM/yyyy')
         }
-        if (item.settlement_date) {
-            const d = DateTime.fromISO(item.settlement_date)
-            if (d.isValid) {
-                item.settlement_date_format = d.toFormat('yyyy-MM-dd')
-                item.settlement_date = this.fmtDate(item.settlement_date)
-            }
+        const sd = this.toDt(item.settlement_date)
+        if (sd) {
+            item.settlement_date_format = sd.toFormat('yyyy-LL-dd')
+            item.settlement_date = sd.toFormat('dd/MM/yyyy')
         }
         if (item.full_name) delete item.full_name
         return item
@@ -96,12 +96,10 @@ export default class EmployeeController {
 
     private toLegacyEmployee(raw: any): any {
         const data = { ...raw }
-        if (data.birth_date) {
-            const dt = DateTime.fromISO(data.birth_date)
-            if (dt.isValid) {
-                data.birth_date = dt.toFormat('dd/MM/yyyy')
-                data.birth_date_format = dt.toFormat('yyyy-MM-dd')
-            }
+        const bd = this.toDt(data.birth_date)
+        if (bd) {
+            data.birth_date = bd.toFormat('dd/MM/yyyy')
+            data.birth_date_format = bd.toFormat('yyyy-LL-dd')
         } else {
             data.birth_date_format = null
         }
@@ -131,6 +129,28 @@ export default class EmployeeController {
         }
 
         return data
+    }
+
+    // Helper for search endpoints (lightweight mapping)
+    private mapSearchEmployee(obj: any): any {
+        const out: any = { ...obj }
+        const bd = this.toDt(out.birth_date)
+        if (bd) {
+            out.birth_date_format = bd.toFormat('yyyy-LL-dd')
+            out.birth_date = bd.toFormat('dd/MM/yyyy')
+            out.age = Math.trunc(DateTime.now().diff(bd, 'years').years)
+        } else {
+            out.birth_date_format = null
+            out.age = null
+        }
+        if (out.business?.length > 0 && out.business[0]?.enabled !== undefined) {
+            out.enabled = out.business[0].enabled
+        }
+        if (out.city && out.city.country && out.city.country.id && out.city.country_id === undefined) {
+            out.city.country_id = out.city.country.id
+        }
+        if (out.full_name) delete out.full_name
+        return out
     }
     /** Create a new employee with related business link and nested collections */
     public async store({ request, response, auth, i18n }: HttpContext) {
@@ -372,20 +392,13 @@ export default class EmployeeController {
                 b.where('business_id', businessId)
                 b.select(['id', 'enabled', 'employee_id', 'business_id'])
             })
+            .preload('city', (b) => {
+                b.select(['id', 'name', 'country_id'])
+                b.preload('country', (cb) => cb.select(['id', 'name']))
+            })
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
 
-        const list = rows.map((e) => {
-            const obj: any = e.toJSON()
-            if (obj.birth_date) {
-                const dt = DateTime.fromISO(obj.birth_date)
-                if (dt.isValid) obj.birth_date = dt.toFormat('dd/MM/yyyy')
-                obj.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
-            } else {
-                obj.age = null
-            }
-            if (obj.business?.length > 0) obj.enabled = obj.business[0].enabled
-            return obj
-        })
+        const list = rows.map((e) => this.mapSearchEmployee(e.toJSON()))
         return response.ok(list)
     }
 
@@ -393,7 +406,10 @@ export default class EmployeeController {
         const { employeeId, businessId } = await request.validateUsing(employeeFindByIdValidator)
         const employee = await Employee.query()
             .where('id', employeeId)
-            .preload('city', (b) => b.select(['id', 'name']))
+            .preload('city', (b) => {
+                b.select(['id', 'name', 'country_id'])
+                b.preload('country', (cb) => cb.select(['id', 'name']))
+            })
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                 b.orderBy('id', 'desc')
@@ -413,9 +429,22 @@ export default class EmployeeController {
             e.typeIdentify = { id: e.identify_type_id, text: e.text }
             if (e.birth_date) {
                 const dt = DateTime.fromISO(e.birth_date)
-                e.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
-                e.birth_date = dt.toFormat('dd/MM/yyyy') as any
+                if (dt.isValid) {
+                    ; (e as any).birth_date_format = dt.toFormat('yyyy-LL-dd')
+                    e.birth_date = dt.toFormat('dd/MM/yyyy') as any
+                        ; (e as any).age = Math.trunc(DateTime.now().diff(dt, 'years').years)
+                } else {
+                    ; (e as any).birth_date_format = null
+                        ; (e as any).age = null
+                }
+            } else {
+                ; (e as any).birth_date_format = null
+                    ; (e as any).age = null
             }
+            if ((e as any).city && (e as any).city.country && (e as any).city.country.id && (e as any).city.country_id === undefined) {
+                (e as any).city.country_id = (e as any).city.country.id
+            }
+            if ((e as any).full_name) delete (e as any).full_name
         }
         return response.ok(employees)
     }
@@ -427,9 +456,22 @@ export default class EmployeeController {
             e.typeIdentify = { id: e.identify_type_id, text: e.text }
             if (e.birth_date) {
                 const dt = DateTime.fromISO(e.birth_date)
-                e.birth_date = dt.toFormat('dd/MM/yyyy') as any
-                e.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
+                if (dt.isValid) {
+                    ; (e as any).birth_date_format = dt.toFormat('yyyy-LL-dd')
+                    e.birth_date = dt.toFormat('dd/MM/yyyy') as any
+                        ; (e as any).age = Math.trunc(DateTime.now().diff(dt, 'years').years)
+                } else {
+                    ; (e as any).birth_date_format = null
+                        ; (e as any).age = null
+                }
+            } else {
+                ; (e as any).birth_date_format = null
+                    ; (e as any).age = null
             }
+            if ((e as any).city && (e as any).city.country && (e as any).city.country.id && (e as any).city.country_id === undefined) {
+                (e as any).city.country_id = (e as any).city.country.id
+            }
+            if ((e as any).full_name) delete (e as any).full_name
         }
         return response.ok(employees || [])
     }
