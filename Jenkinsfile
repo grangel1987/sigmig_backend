@@ -14,32 +14,38 @@ pipeline {
         NOTIFY_SLACK = 'false' // Cambiar a 'true' para habilitar notificaciones
     }
 
-    stages {
+stages {
         stage('Verificar Cambios') {
             steps {
-                script {
-                    def checkChangesScript = """
-                        #!/bin/bash
-                        set -euo pipefail
-                        cd ${DEPLOY_PATH}
-                        git fetch origin ${BRANCH}
-                        CHANGES=\$(git diff --name-only HEAD origin/${BRANCH})
+                sshagent(credentials: ['jenkis_docker']) {
+                    script {
+                        def checkChangesScript = """
+                            #!/bin/bash
+                            set -euo pipefail
+                            cd ${DEPLOY_PATH}
+                            git fetch origin ${BRANCH}
+                            CHANGES=\$(git diff --name-only HEAD origin/${BRANCH})
 
-                        if [ -z "\$CHANGES" ]; then
-                            exit ${NO_CHANGES_CODE}
-                        fi
-                    """
+                            if [ -z "\$CHANGES" ]; then
+                                exit ${NO_CHANGES_CODE}
+                            fi
+                        """
 
-                    def statusCode = sh(
-                        script: checkChangesScript,
-                        returnStatus: true
-                    )
+                        def statusCode = sh(
+                            script: """
+                                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '/bin/bash -s' <<'EOF'
+${checkChangesScript}
+EOF
+                            """,
+                            returnStatus: true
+                        )
 
-                    if (statusCode == env.NO_CHANGES_CODE.toInteger()) {
-                        env.DEPLOY_STATUS = 'NO_CHANGES'
-                        return
+                        if (statusCode == env.NO_CHANGES_CODE.toInteger()) {
+                            env.DEPLOY_STATUS = 'NO_CHANGES'
+                            return
+                        }
+                        env.DEPLOY_STATUS = 'CHANGES_DETECTED'
                     }
-                    env.DEPLOY_STATUS = 'CHANGES_DETECTED'
                 }
             }
         }
@@ -52,29 +58,35 @@ pipeline {
                 expression { env.DEPLOY_STATUS == 'CHANGES_DETECTED' }
             }
             steps {
-                script {
-                    def deployScript = """#!/bin/bash
-                        set -euo pipefail
-                        cd ${DEPLOY_PATH}
-                        git fetch origin ${BRANCH}
-                        git reset --hard origin/${BRANCH}
-                        git clean -fd
-                        echo "::COMMIT_AUTHOR::\$(git log -1 --pretty=format:'%an')"
-                        echo "::COMMIT_MSG::\$(git log -1 --pretty=format:'%s')"
-                        echo "::FILES_CHANGED::\$(git diff --name-only HEAD^ HEAD)"
-                        npm install
-                        npm run build
-                        cp .env build/
-                        pm2 restart 0
-                        echo "::MIGRATION_FAILED::false"
-                    """
+                sshagent(credentials: ['jenkis_docker']) {
+                    script {
+                        def deployScript = """#!/bin/bash
+                            set -euo pipefail
+                            cd ${DEPLOY_PATH}
+                            git fetch origin ${BRANCH}
+                            git reset --hard origin/${BRANCH}
+                            git clean -fd
+                            echo "::COMMIT_AUTHOR::\$(git log -1 --pretty=format:'%an')"
+                            echo "::COMMIT_MSG::\$(git log -1 --pretty=format:'%s')"
+                            echo "::FILES_CHANGED::\$(git diff --name-only HEAD^ HEAD)"
+                            npm install
+                            npm run build
+                            cp .env build/
+                            pm2 restart 0
+                            echo "::MIGRATION_FAILED::false"
+                        """
 
-                    def fullOutput = sh(
-                        script: deployScript,
-                        returnStdout: true
-                    ).trim()
-
-                    processDeployOutput(fullOutput)
+                        def fullOutput = sh(
+                            script: """
+                                ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '/bin/bash -s' <<'EOF'
+${deployScript}
+EOF
+                            """,
+                            returnStdout: true
+                        ).trim()
+                        
+                        processDeployOutput(fullOutput)
+                    }
                 }
             }
         }
