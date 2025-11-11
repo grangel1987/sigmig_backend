@@ -27,7 +27,6 @@ import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
-import { log } from 'node:console'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
     return arr.reduce((acc: any, item: any) => {
@@ -41,6 +40,98 @@ const groupBy = (arr: any[], keys: string[]) => {
 // NOTE: Implemented GCS image handling (photo & authorization) using Google util.
 
 export default class EmployeeController {
+    // Formatting helpers to keep controller methods tidy
+    private fmtDate(iso?: string | null): string | null {
+        if (!iso) return null
+        const dt = DateTime.fromISO(iso)
+        return dt.isValid ? dt.toFormat('dd/MM/yyyy') : null
+    }
+
+    private fmtDateTime(iso?: string | null): string | null {
+        if (!iso) return null
+        const dt = DateTime.fromISO(iso)
+        return dt.isValid ? dt.toFormat('dd/MM/yyyy hh:mm:ss a').toLowerCase() : null
+    }
+
+    private mapBusinessItemLegacy(be: any): any {
+        const item = { ...be }
+        if (item.created_by_id !== undefined) {
+            item.created_by = item.created_by_id
+            delete item.created_by_id
+        }
+        if (item.updated_by_id !== undefined) {
+            item.updated_by = item.updated_by_id
+            delete item.updated_by_id
+        }
+        if (item.afp_2_id !== undefined && item.afp2_id === undefined) {
+            item.afp2_id = item.afp_2_id
+            delete item.afp_2_id
+        }
+        if (item.created_at) item.created_at = this.fmtDateTime(item.created_at)
+        if (item.updated_at) item.updated_at = this.fmtDateTime(item.updated_at)
+        if (item.admission_date) {
+            const d = DateTime.fromISO(item.admission_date)
+            if (d.isValid) {
+                item.admission_date_format = d.toFormat('yyyy-MM-dd')
+                item.admission_date = this.fmtDate(item.admission_date)
+            }
+        }
+        if (item.contract_date) {
+            const d = DateTime.fromISO(item.contract_date)
+            if (d.isValid) {
+                item.contract_date_format = d.toFormat('yyyy-MM-dd')
+                item.contract_date = this.fmtDate(item.contract_date)
+            }
+        }
+        if (item.settlement_date) {
+            const d = DateTime.fromISO(item.settlement_date)
+            if (d.isValid) {
+                item.settlement_date_format = d.toFormat('yyyy-MM-dd')
+                item.settlement_date = this.fmtDate(item.settlement_date)
+            }
+        }
+        if (item.full_name) delete item.full_name
+        return item
+    }
+
+    private toLegacyEmployee(raw: any): any {
+        const data = { ...raw }
+        if (data.birth_date) {
+            const dt = DateTime.fromISO(data.birth_date)
+            if (dt.isValid) {
+                data.birth_date = dt.toFormat('dd/MM/yyyy')
+                data.birth_date_format = dt.toFormat('yyyy-MM-dd')
+            }
+        } else {
+            data.birth_date_format = null
+        }
+        if (data.created_at) data.created_at = this.fmtDateTime(data.created_at)
+        if (data.updated_at) data.updated_at = this.fmtDateTime(data.updated_at)
+
+        if (data.created_by_id !== undefined) {
+            data.created_by = data.created_by_id
+            delete data.created_by_id
+        }
+        if (data.updated_by_id !== undefined) {
+            data.updated_by = data.updated_by_id
+            delete data.updated_by_id
+        }
+
+        if (data.city && data.city.country && data.city.country.id && data.city.country_id === undefined) {
+            data.city.country_id = data.city.country.id
+        }
+
+        if (!data.scheduleWork) data.scheduleWork = []
+        if (!data.certificateHeatlh) data.certificateHeatlh = []
+        if (!data.emergencyContacts) data.emergencyContacts = []
+        if (data.full_name) delete data.full_name
+
+        if (Array.isArray(data.business)) {
+            data.business = data.business.map((be: any) => this.mapBusinessItemLegacy(be))
+        }
+
+        return data
+    }
     /** Create a new employee with related business link and nested collections */
     public async store({ request, response, auth, i18n }: HttpContext) {
         const { employeeStoreValidator } = await import('#validators/employee')
@@ -245,35 +336,33 @@ export default class EmployeeController {
         }
     }
 
-    /** Show employee by token + business context */
+    /** Show employee by token + business context (legacy-shaped response) */
     public async show({ params }: HttpContext) {
         const token = params.token
         const businessId = Number(params.business_id)
         const employee = await Employee.query()
             .where('token', token)
-            .preload('createdBy', (b) => b.select(['id', 'email']))
-            .preload('updatedBy', (b) => b.select(['id', 'email']))
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
-            .preload('city', (b) => b.select(['id', 'name']))
+            .preload('city', (b) => {
+                b.select(['id', 'name', 'country_id'])
+                b.preload('country', (cb) => cb.select(['id', 'name']))
+            })
             .preload('nationality', (b) => b.select(['id', 'name']))
             .preload('sexes', (b) => b.select(['id', 'text']))
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                 b.where('enabled', true)
-                b.preload('business', (bb) => {
-                    bb.select(['id', 'identify', 'name', 'url', 'url_thumb'])
-                    bb.preload('typeIdentify', (tb) => tb.select(['id', 'text']))
-                })
                 b.preload('afp', (bb) => bb.select(['id', 'name']))
                 b.preload('position', (bb) => bb.select(['id', 'name']))
             })
             .first()
 
-        return employee
+        if (!employee) return null
+        return this.toLegacyEmployee(employee.toJSON())
     }
 
-    /** Find employees by identify */
-    public async findByIdentify({ request, response, i18n }: HttpContext) {
+    /** Find employees by identify (uniform formatting, no 500 on empty) */
+    public async findByIdentify({ request, response }: HttpContext) {
         const { identify, typeIdentify, businessId } = await request.validateUsing(employeeFindByIdentifyValidator)
         const rows = await Employee.query()
             .where('identify', String(identify).trim())
@@ -285,15 +374,19 @@ export default class EmployeeController {
             })
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
 
-        const list = rows.map((e) => e.toJSON())
-        if (!list.length) return response.ok([])
-
-        list[0].age = list[0].birth_date ? Math.trunc(DateTime.now().diff(DateTime.fromISO(list[0].birth_date), 'years').years) : null
-        if (list[0].business?.length > 0) {
-            list[0].enabled = list[0].business[0].enabled
-            return list
-        }
-        return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.search_empty'), i18n.formatMessage('messages.ok_title')))
+        const list = rows.map((e) => {
+            const obj: any = e.toJSON()
+            if (obj.birth_date) {
+                const dt = DateTime.fromISO(obj.birth_date)
+                if (dt.isValid) obj.birth_date = dt.toFormat('dd/MM/yyyy')
+                obj.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
+            } else {
+                obj.age = null
+            }
+            if (obj.business?.length > 0) obj.enabled = obj.business[0].enabled
+            return obj
+        })
+        return response.ok(list)
     }
 
     public async findById({ response, request }: HttpContext) {
@@ -308,24 +401,14 @@ export default class EmployeeController {
             .first()
 
         if (!employee) return response.ok(null)
-        const data: any = employee.toJSON()
-
-        log(data)
-        data.birth_date_format = Util.parseDateSingle(data.birth_date)
-        if (data.business?.[0]) {
-            data.business[0].admission_date_format = Util.parseDateSingle(data.business[0].admission_date)
-            data.business[0].contract_date_format = Util.parseDateSingle(data.business[0].contract_date)
-            if (data.business[0].settlement_date) {
-                data.business[0].settlement_date_format = Util.parseDateSingle(data.business[0].settlement_date)
-            }
-        }
-        response.ok(data)
+        const legacy = this.toLegacyEmployee(employee.toJSON())
+        return response.ok(legacy)
     }
 
-    public async findByName({ request, response, i18n }: HttpContext) {
+    public async findByName({ request, response }: HttpContext) {
         const { name, businessId } = await request.validateUsing(employeeFindByNameValidator)
         const employees = await EmployeeRepository.findByName(businessId, name)
-        if (!employees || !employees.length) return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.search_empty'), i18n.formatMessage('messages.ok_title')))
+        if (!employees || !employees.length) return response.ok([])
         for (const e of employees) {
             e.typeIdentify = { id: e.identify_type_id, text: e.text }
             if (e.birth_date) {
@@ -334,7 +417,7 @@ export default class EmployeeController {
                 e.birth_date = dt.toFormat('dd/MM/yyyy') as any
             }
         }
-        return employees
+        return response.ok(employees)
     }
 
     public async findByLastNameP({ request, response }: HttpContext) {
@@ -348,7 +431,7 @@ export default class EmployeeController {
                 e.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
             }
         }
-        response.ok(employees || [])
+        return response.ok(employees || [])
     }
 
     public async deletePhoto({ request, response, i18n }: HttpContext) {
