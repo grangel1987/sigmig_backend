@@ -286,7 +286,7 @@ export default class EmployeeController {
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
 
         const list = rows.map((e) => e.toJSON())
-        if (!list.length) return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.search_empty'), i18n.formatMessage('messages.ok_title')))
+        if (!list.length) return response.ok([])
 
         list[0].age = list[0].birth_date ? Math.trunc(DateTime.now().diff(DateTime.fromISO(list[0].birth_date), 'years').years) : null
         if (list[0].business?.length > 0) {
@@ -337,10 +337,9 @@ export default class EmployeeController {
         return employees
     }
 
-    public async findByLastNameP({ request, response, i18n }: HttpContext) {
+    public async findByLastNameP({ request, response }: HttpContext) {
         const { lastNameP, businessId } = await request.validateUsing(employeeFindByLastNamePValidator)
         const employees = await EmployeeRepository.findByLastNameP(businessId, lastNameP)
-        if (!employees || !employees.length) return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.search_empty'), i18n.formatMessage('messages.ok_title')))
         for (const e of employees) {
             e.typeIdentify = { id: e.identify_type_id, text: e.text }
             if (e.birth_date) {
@@ -349,7 +348,7 @@ export default class EmployeeController {
                 e.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
             }
         }
-        return employees
+        response.ok(employees || [])
     }
 
     public async deletePhoto({ request, response, i18n }: HttpContext) {
