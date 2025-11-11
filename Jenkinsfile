@@ -1,4 +1,4 @@
-/*pipeline {
+pipeline {
     agent {
         label 'servidor-desarrollo'
     }
@@ -199,4 +199,4 @@ def extractFromOutput(String output, String type) {
         echo "⚠️ Error extrayendo ${type}: ${e.message}"
         return null
     }
-*/
+}
