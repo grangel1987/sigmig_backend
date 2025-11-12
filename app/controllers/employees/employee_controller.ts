@@ -291,6 +291,13 @@ export default class EmployeeController {
         try {
             const { employeeUpdateValidator } = await import('#validators/employee')
             const payload = await request.validateUsing(employeeUpdateValidator)
+            // Parse optional nested collections if present in the payload
+            const hasScheduleWork = (payload as any).scheduleWork !== undefined
+            const hasCertificateHealth = (payload as any).certificateHealth !== undefined
+            const hasContactsEmergency = (payload as any).contactsEmergency !== undefined
+            const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork ? JSON.parse((payload as any).scheduleWork || '[]') : []
+            const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth ? JSON.parse((payload as any).certificateHealth || '[]') : []
+            const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency ? JSON.parse((payload as any).contactsEmergency || '[]') : []
             const employee = await Employee.find(employeeId)
             if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
 
@@ -376,8 +383,71 @@ export default class EmployeeController {
                 await businessEmployee.useTransaction(trx).save()
             }
 
+            // Replace nested relationships if provided
+            const businessId = payload.businessId
+            if (hasCertificateHealth) {
+                await employee.useTransaction(trx).related('certificateHealth').query().delete()
+                const certs: Array<{ healthItemId: number }> = []
+                for (const c of certificateHealthRaw) {
+                    const healthItemId = c.healthItemId ?? c.typeLicenseId
+                    if (!healthItemId) continue
+                    certs.push({ healthItemId: Number(healthItemId) })
+                }
+                if (certs.length) {
+                    await employee.related('certificateHealth').createMany(certs, { client: trx })
+                }
+            }
+
+            if (hasContactsEmergency) {
+                await employee.useTransaction(trx).related('emergencyContacts').query().delete()
+                const contacts: Array<{ fullName: string; phone1: string; phone2: string | null; relationshipId: number; createdById?: number; updatedById?: number }> = []
+                for (const c of contactsEmergencyRaw) {
+                    const fullName = c.fullName ?? c.name
+                    const phone1 = c.phone1 ?? c.phone
+                    const phone2 = c.phone2 ?? null
+                    const relationshipId = c.relationshipId ?? c.relationId
+                    if (!fullName || !phone1 || !relationshipId) continue
+                    contacts.push({
+                        fullName: String(fullName),
+                        phone1: String(phone1),
+                        phone2: phone2 ? String(phone2) : null,
+                        relationshipId: Number(relationshipId),
+                        createdById: auth.user!.id,
+                        updatedById: auth.user!.id,
+                    })
+                }
+                if (contacts.length) {
+                    await employee.related('emergencyContacts').createMany(contacts as any, { client: trx })
+                }
+            }
+
+            if (hasScheduleWork) {
+                await employee.useTransaction(trx).related('scheduleWork').query().delete()
+                const normalizedScheduleWork: Array<{ workId: number; scheduleId: number; businessId: number; art22: boolean }> = []
+                for (const item of scheduleWorkRaw) {
+                    const workId = item.workId ?? item.work_id
+                    const scheduleId = item.scheduleId ?? item.schedule_id
+                    const art22 = item.art22 === undefined ? false : Boolean(item.art22)
+                    if (!workId || !scheduleId) continue
+                    normalizedScheduleWork.push({
+                        workId: Number(workId),
+                        scheduleId: Number(scheduleId),
+                        businessId: Number(businessId),
+                        art22,
+                    })
+                }
+                if (normalizedScheduleWork.length) {
+                    await employee.related('scheduleWork').createMany(normalizedScheduleWork as any, { client: trx })
+                }
+            }
+
+            await employee.load('business')
+            await employee.load('certificateHealth')
+            await employee.load('emergencyContacts')
+            await employee.load('scheduleWork')
+
             await trx.commit()
-            return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')))
+            return response.status(200).json({ ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')), data: employee })
         } catch (error) {
             await trx.rollback()
             console.error(error)
