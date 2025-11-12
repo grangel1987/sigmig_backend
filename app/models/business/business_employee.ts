@@ -68,13 +68,13 @@ export default class BusinessEmployee extends BaseModel {
     @column({ columnName: 'type_account_id' })
     public typeAccountId: number | null
 
-    @column({ columnName: 'admission_date' })
+    @column.date({ columnName: 'admission_date' })
     public admissionDate: DateTime | null
 
-    @column({ columnName: 'contract_date' })
+    @column.date({ columnName: 'contract_date' })
     public contractDate: DateTime | null
 
-    @column({ columnName: 'settlement_date' })
+    @column.date({ columnName: 'settlement_date' })
     public settlementDate: DateTime | null
 
     @column()
@@ -85,6 +85,12 @@ export default class BusinessEmployee extends BaseModel {
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     public updatedAt: DateTime
+
+    @column({ columnName: 'created_by' })
+    public createdById: number
+
+    @column({ columnName: 'updated_by' })
+    public updatedById: number
 
     @belongsTo(() => User, { foreignKey: 'createdById' })
     public createdBy: BelongsTo<typeof User>

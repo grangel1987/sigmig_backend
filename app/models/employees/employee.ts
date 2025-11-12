@@ -9,6 +9,9 @@ import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany } from '@
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { randomUUID } from 'crypto'
 import { DateTime } from 'luxon'
+import EmployeeCertificateHealth from './employee_certificate_health.js'
+import EmployeeEmergencyContact from './employee_emergency_contact.js'
+import EmployeeScheduleWork from './employee_schedule_work.js'
 
 export default class Employee extends BaseModel {
     @column({ isPrimary: true })
@@ -38,19 +41,28 @@ export default class Employee extends BaseModel {
     @column({ columnName: 'last_name_m' })
     public lastNameM: string
 
-    @column({ columnName: 'birth_date' })
+    @column.date({ columnName: 'birth_date' })
     public birthDate: DateTime | null
 
     @column({ columnName: 'state_civil_id' })
     public stateCivilId: number | null
 
-    @column({ columnName: 'admission_date' })
+    @hasMany(() => EmployeeCertificateHealth)
+    public certificateHealth: HasMany<typeof EmployeeCertificateHealth>
+
+    @hasMany(() => EmployeeScheduleWork)
+    public scheduleWork: HasMany<typeof EmployeeScheduleWork>
+
+    @hasMany(() => EmployeeEmergencyContact)
+    public emergencyContacts: HasMany<typeof EmployeeEmergencyContact>
+
+    @column.date({ columnName: 'admission_date' })
     public admissionDate: DateTime | null
 
-    @column({ columnName: 'contract_date' })
+    @column.date({ columnName: 'contract_date' })
     public contractDate: DateTime | null
 
-    @column({ columnName: 'settlement_date' })
+    @column.date({ columnName: 'settlement_date' })
     public settlementDate: DateTime | null
 
     @column({ columnName: 'city_id' })

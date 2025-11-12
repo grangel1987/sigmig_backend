@@ -26,6 +26,7 @@ import {
 import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
+import { log } from 'console'
 import { DateTime } from 'luxon'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
@@ -161,9 +162,11 @@ export default class EmployeeController {
 
         try {
             // Expect JSON strings for nested collections similar to legacy
-            JSON.parse(payload.scheduleWork || '[]') // scheduleWork not yet implemented
-            JSON.parse(payload.certificateHealth || '[]') // certificateHealth not yet implemented
-            const contactsEmergency = JSON.parse(payload.contactsEmergency || '[]')
+            const scheduleWork: Record<string, any>[] = JSON.parse(payload.scheduleWork || '[]')
+            const certificateHealth: Record<string, any>[] = JSON.parse(payload.certificateHealth || '[]') // certificateHealth not yet implemented
+            const contactsEmergency: Record<string, any>[] = JSON.parse(payload.contactsEmergency || '[]')
+
+            log(scheduleWork, certificateHealth, contactsEmergency)
 
             const photo = request.file('photo')
             const authorization = request.file('authorization')
@@ -209,6 +212,8 @@ export default class EmployeeController {
                 settlementDate: payload.settlementDate ? DateTime.fromISO(payload.settlementDate) : null,
                 createdAt: dateTime,
                 updatedAt: dateTime,
+                createdById: auth.user!.id,
+                updatedById: auth.user!.id,
             }
 
             // Upload images if present
@@ -230,10 +235,28 @@ export default class EmployeeController {
                     thumb_authorization_mirror_short: uploadedA.url_thumb_short,
                 })
             }
-
+            const businessId = payload.businessId
             const employee = await Employee.create(employeeData, { client: trx })
             await employee.related('business').create(businessEmployeeData, { client: trx })
+            await employee.related('certificateHealth').createMany(certificateHealth, { client: trx })
+            await employee.related('emergencyContacts').createMany(contactsEmergency, { client: trx })
 
+
+            const normalizedScheduleWork: Array<{ workId: number; scheduleId: number; businessId: number; art22: boolean }> = []
+            for (const item of scheduleWork) {
+                const workId = item.workId ?? item.work_id
+                const scheduleId = item.scheduleId ?? item.schedule_id
+                if (!workId || !scheduleId) continue
+                normalizedScheduleWork.push({
+                    workId: Number(workId),
+                    scheduleId: Number(scheduleId),
+                    businessId: Number(businessId),
+                    art22: item.art22 === undefined ? false : Boolean(item.art22),
+                })
+            }
+            if (normalizedScheduleWork.length) {
+                await employee.related('scheduleWork').createMany(normalizedScheduleWork as any, { client: trx })
+            }
             // Attach nested collections if model relations exist in the future
             for (const c of contactsEmergency) {
                 c.created_at = dateTime
@@ -243,6 +266,12 @@ export default class EmployeeController {
             }
 
             await trx.commit()
+
+            await employee.load('business')
+            await employee.load('certificateHealth')
+            await employee.load('emergencyContacts')
+            await employee.load('scheduleWork')
+
             return response.status(201).json({
                 employee,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
