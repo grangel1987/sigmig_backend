@@ -240,6 +240,7 @@ export default class EmployeeController {
             await employee.related('business').create(businessEmployeeData, { client: trx })
             await employee.related('certificateHealth').createMany(certificateHealth, { client: trx })
             await employee.related('emergencyContacts').createMany(contactsEmergency, { client: trx })
+            await employee.related('scheduleWork').createMany(scheduleWork, { client: trx })
 
 
             const normalizedScheduleWork: Array<{ workId: number; scheduleId: number; businessId: number; art22: boolean }> = []
