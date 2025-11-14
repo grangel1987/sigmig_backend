@@ -153,15 +153,21 @@ export default class UserController {
     })))
     const businessId = params.business_id
 
-    const q = BusinessUser.query()
-      .preload('user', q => q.preload('personalData', pdQ => pdQ.select(['id', 'names', 'last_name_p', 'last_name_m'])))
-      .whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
-      .where('business_id', businessId)
+    const q = User.query().preload('personalData')
+      .preload('businessUser', q =>
+        q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
+          .preload('business')
+          .where('business_id', businessId)
+      )
+      .whereHas('businessUser', q =>
+        q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
+          .where('business_id', businessId)
+      )
     const businessUsers = await q
 
 
     const res = businessUsers.map(bu => {
-      const serialized = { ...bu.serialize(), personalData: bu.user.personalData } as Record<string, any>
+      const serialized = { ...bu.serialize() } as Record<string, any>
       delete serialized.user
       return serialized
     })
