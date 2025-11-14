@@ -17,7 +17,6 @@ export const employeeStoreValidator = vine.compile(
         movil: vine.string(),
         email: vine.string().email(),
         businessId: vine.number().positive(),
-        // Business employee optional fields
         afpId: vine.number().optional(),
         exRegimeId: vine.number().optional(),
         afp2Id: vine.number().optional(),
@@ -35,10 +34,33 @@ export const employeeStoreValidator = vine.compile(
         contractDate: vine.string().optional(),
         settlementDate: vine.string().optional(),
 
-        // JSON strings (legacy compatibility)
-        scheduleWork: vine.string().optional(),
-        certificateHealth: vine.string().optional(),
-        contactsEmergency: vine.string().optional(),
+        // Nested collections as arrays of objects
+        scheduleWork: vine
+            .array(
+                vine.object({
+                    workId: vine.number().positive(),
+                    scheduleId: vine.number().positive(),
+                    art22: vine.boolean(),
+                })
+            )
+            .optional(),
+        certificateHealth: vine
+            .array(
+                vine.object({
+                    healthItemId: vine.number().positive(),
+                })
+            )
+            .optional(),
+        contactsEmergency: vine
+            .array(
+                vine.object({
+                    fullName: vine.string().trim().optional(),
+                    phone1: vine.string().trim().optional(),
+                    phone2: vine.string().trim().optional(),
+                    relationshipId: vine.number().positive().optional(),
+                })
+            )
+            .optional(),
     })
 )
 
@@ -79,9 +101,32 @@ export const employeeUpdateValidator = vine.compile(
         contractDate: vine.string().optional(),
         settlementDate: vine.string().optional(),
 
-        scheduleWork: vine.string().optional(),
-        certificateHealth: vine.string().optional(),
-        contactsEmergency: vine.string().optional(),
+        scheduleWork: vine
+            .array(
+                vine.object({
+                    workId: vine.number().positive().optional(),
+                    scheduleId: vine.number().positive().optional(),
+                    art22: vine.boolean().optional(),
+                })
+            )
+            .optional(),
+        certificateHealth: vine
+            .array(
+                vine.object({
+                    healthItemId: vine.number().positive(),
+                })
+            )
+            .optional(),
+        contactsEmergency: vine
+            .array(
+                vine.object({
+                    fullName: vine.string().trim().optional(),
+                    phone1: vine.string().trim().optional(),
+                    phone2: vine.string().trim().optional(),
+                    relationshipId: vine.number().positive().optional(),
+                })
+            )
+            .optional(),
     })
 )
 

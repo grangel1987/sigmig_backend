@@ -26,7 +26,6 @@ import {
 import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
-import { log } from 'console'
 import { DateTime } from 'luxon'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
@@ -159,14 +158,15 @@ export default class EmployeeController {
         const payload = await request.validateUsing(employeeStoreValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         const trx = await db.transaction()
+        const authUserId = auth.user!.id
 
         try {
-            // Expect JSON strings for nested collections similar to legacy
-            const scheduleWork: Record<string, any>[] = JSON.parse(payload.scheduleWork || '[]')
-            const certificateHealth: Record<string, any>[] = JSON.parse(payload.certificateHealth || '[]') // certificateHealth not yet implemented
-            const contactsEmergency: Record<string, any>[] = JSON.parse(payload.contactsEmergency || '[]')
+            // Nested collections are now arrays of objects (validator updated)
+            const scheduleWork: Record<string, any>[] = Array.isArray((payload as any).scheduleWork) ? (payload as any).scheduleWork : []
+            const certificateHealthRaw: Record<string, any>[] = Array.isArray((payload as any).certificateHealth) ? (payload as any).certificateHealth : []
+            const contactsEmergencyRaw: Record<string, any>[] = Array.isArray((payload as any).contactsEmergency) ? (payload as any).contactsEmergency : []
 
-            log(scheduleWork, certificateHealth, contactsEmergency)
+            // Debug: nested collections received (disabled in production)
 
             const photo = request.file('photo')
             const authorization = request.file('authorization')
@@ -186,8 +186,8 @@ export default class EmployeeController {
                 phone: payload.phone ?? null,
                 movil: payload.movil,
                 email: payload.email,
-                createdById: auth.user!.id,
-                updatedById: auth.user!.id,
+                createdById: authUserId,
+                updatedById: authUserId,
                 createdAt: dateTime,
                 updatedAt: dateTime,
             }
@@ -212,8 +212,8 @@ export default class EmployeeController {
                 settlementDate: payload.settlementDate ? DateTime.fromISO(payload.settlementDate) : null,
                 createdAt: dateTime,
                 updatedAt: dateTime,
-                createdById: auth.user!.id,
-                updatedById: auth.user!.id,
+                createdById: authUserId,
+                updatedById: authUserId,
             }
 
             // Upload images if present
@@ -238,9 +238,42 @@ export default class EmployeeController {
             const businessId = payload.businessId
             const employee = await Employee.create(employeeData, { client: trx })
             await employee.related('business').create(businessEmployeeData, { client: trx })
-            await employee.related('certificateHealth').createMany(certificateHealth, { client: trx })
-            await employee.related('emergencyContacts').createMany(contactsEmergency, { client: trx })
-            await employee.related('scheduleWork').createMany(scheduleWork, { client: trx })
+
+            // Map certificate health entries to expected shape (certificate health != license health)
+            if (certificateHealthRaw?.length) {
+                const certs: Array<{ healthItemId: number }> = []
+                for (const c of certificateHealthRaw) {
+                    const healthItemId = c.healthItemId
+                    if (!healthItemId) continue
+                    certs.push({ healthItemId: Number(healthItemId) })
+                }
+                if (certs.length) {
+                    await employee.related('certificateHealth').createMany(certs, { client: trx })
+                }
+            }
+
+            // Map emergency contacts to expected shape
+            if (contactsEmergencyRaw?.length) {
+                const contacts: Array<{ fullName: string; phone1: string; phone2: string | null; relationshipId: number; createdById?: number; updatedById?: number }> = []
+                for (const c of contactsEmergencyRaw) {
+                    const fullName = c.fullName ?? c.name
+                    const phone1 = c.phone1 ?? c.phone
+                    const phone2 = c.phone2 ?? null
+                    const relationshipId = c.relationshipId ?? c.relationId
+                    if (!fullName || !phone1 || !relationshipId) continue
+                    contacts.push({
+                        fullName: String(fullName),
+                        phone1: String(phone1),
+                        phone2: phone2 ? String(phone2) : null,
+                        relationshipId: Number(relationshipId),
+                        createdById: authUserId,
+                        updatedById: authUserId,
+                    })
+                }
+                if (contacts.length) {
+                    await employee.related('emergencyContacts').createMany(contacts as any, { client: trx })
+                }
+            }
 
 
             const normalizedScheduleWork: Array<{ workId: number; scheduleId: number; businessId: number; art22: boolean }> = []
@@ -258,13 +291,7 @@ export default class EmployeeController {
             if (normalizedScheduleWork.length) {
                 await employee.related('scheduleWork').createMany(normalizedScheduleWork as any, { client: trx })
             }
-            // Attach nested collections if model relations exist in the future
-            for (const c of contactsEmergency) {
-                c.created_at = dateTime
-                c.updated_at = dateTime
-                c.created_by = auth.user!.id
-                c.updated_by = auth.user!.id
-            }
+            // (contacts metadata already set during mapping)
 
             await trx.commit()
 
@@ -292,13 +319,13 @@ export default class EmployeeController {
         try {
             const { employeeUpdateValidator } = await import('#validators/employee')
             const payload = await request.validateUsing(employeeUpdateValidator)
-            // Parse optional nested collections if present in the payload
+            // Nested collections are arrays of objects now
             const hasScheduleWork = (payload as any).scheduleWork !== undefined
             const hasCertificateHealth = (payload as any).certificateHealth !== undefined
             const hasContactsEmergency = (payload as any).contactsEmergency !== undefined
-            const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork ? JSON.parse((payload as any).scheduleWork || '[]') : []
-            const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth ? JSON.parse((payload as any).certificateHealth || '[]') : []
-            const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency ? JSON.parse((payload as any).contactsEmergency || '[]') : []
+            const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork && Array.isArray((payload as any).scheduleWork) ? (payload as any).scheduleWork : []
+            const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth && Array.isArray((payload as any).certificateHealth) ? (payload as any).certificateHealth : []
+            const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency && Array.isArray((payload as any).contactsEmergency) ? (payload as any).contactsEmergency : []
             const employee = await Employee.find(employeeId)
             if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
 
@@ -390,7 +417,7 @@ export default class EmployeeController {
                 await employee.useTransaction(trx).related('certificateHealth').query().delete()
                 const certs: Array<{ healthItemId: number }> = []
                 for (const c of certificateHealthRaw) {
-                    const healthItemId = c.healthItemId ?? c.typeLicenseId
+                    const healthItemId = c.healthItemId
                     if (!healthItemId) continue
                     certs.push({ healthItemId: Number(healthItemId) })
                 }
