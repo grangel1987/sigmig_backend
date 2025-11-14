@@ -563,6 +563,12 @@ export default class EmployeeController {
                 b.preload('country', (cb) => cb.select(['id', 'name']))
             })
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
+            .preload('certificateHealth')
+            .preload('emergencyContacts')
+            .preload('scheduleWork', (b) => {
+                b.preload('schedule')
+                b.preload('work')
+            })
 
         const list = rows.map((e) => this.mapSearchEmployee(e.toJSON()))
         return response.ok(list)
@@ -579,6 +585,12 @@ export default class EmployeeController {
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                 b.orderBy('id', 'desc')
+            })
+            .preload('certificateHealth')
+            .preload('emergencyContacts')
+            .preload('scheduleWork', (b) => {
+                b.preload('schedule')
+                b.preload('work')
             })
             .first()
 
