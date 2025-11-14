@@ -40,7 +40,7 @@ export const employeeStoreValidator = vine.compile(
                 vine.object({
                     workId: vine.number().positive(),
                     scheduleId: vine.number().positive(),
-                    art22: vine.boolean(),
+                    art22: vine.boolean().optional(),
                 })
             )
             .optional(),
