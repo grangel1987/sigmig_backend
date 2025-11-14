@@ -356,9 +356,9 @@ export default class EmployeeController {
         const employeeId = Number(params.id)
         const dateTime = await Util.getDateTimes(request.ip())
         const trx = await db.transaction()
+        const { employeeUpdateValidator } = await import('#validators/employee')
+        const payload = await request.validateUsing(employeeUpdateValidator)
         try {
-            const { employeeUpdateValidator } = await import('#validators/employee')
-            const payload = await request.validateUsing(employeeUpdateValidator)
             // Nested collections are arrays of objects now
             const hasScheduleWork = (payload as any).scheduleWork !== undefined
             const hasCertificateHealth = (payload as any).certificateHealth !== undefined

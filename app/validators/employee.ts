@@ -95,7 +95,7 @@ export const employeeUpdateValidator = vine.compile(
         sexId: vine.number().positive(),
         birthDate: vine.string().trim(),
         nationalityId: vine.number().positive(),
-        cityId: vine.number().positive(),
+        cityId: vine.number().positive().optional(),
         address: vine.string(),
         phone: vine.string().optional(),
         movil: vine.string(),
