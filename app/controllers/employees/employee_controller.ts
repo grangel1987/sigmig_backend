@@ -199,19 +199,39 @@ export default class EmployeeController {
 
             const businessEmployeeData: any = {
                 businessId: payload.businessId,
-                afpId: payload.afpId,
-                exRegimeId: payload.exRegimeId,
-                afp2Id: payload.afp2Id,
-                coinAhorroId: payload.coinAhorroId,
-                affiliationId: payload.affiliationId,
-                layoffId: payload.layoffId,
-                isapreId: payload.isapreId,
-                loadFamilyId: payload.loadFamilyId,
-                remunerationTypeId: payload.remunerationTypeId,
-                bankId: payload.bankId,
-                costCenterId: payload.costCenterId,
-                positionId: payload.positionId,
-                typeAccountId: payload.typeAccountId,
+                afpId: payload.afpId ?? 0,
+                afpPercentage: payload.afpPercentage ?? 0,
+                exRegimeId: payload.exRegimeId ?? 0,
+                afp2Id: payload.afp2Id ?? 0,
+                afp2Ahorro: payload.afp2Ahorro ?? 0,
+                coinAhorroId: payload.coinAhorroId ?? 0,
+                typeContractId: payload.typeContractId ?? 0,
+                affiliationId: payload.affiliationId ?? 0,
+                layoffId: payload.layoffId ?? 0,
+                isapreId: payload.isapreId ?? 0,
+                loadFamilyId: payload.loadFamilyId ?? 0,
+                loadFamilyNormal: payload.loadFamilyNormal ?? 0,
+                loadFamilyInvalidate: payload.loadFamilyInvalidate ?? 0,
+                weeklyShiftHours: payload.weeklyShiftHours ?? 0,
+                viewLiquidation: payload.viewLiquidation ?? false,
+                healthPactValue: payload.healthPactValue ?? 0,
+                healthPactCoinId: payload.healthPactCoinId ?? 0,
+                mountPact: payload.mountPact ?? 0,
+                additionalPact: payload.additionalPact ?? 0,
+                remunerationTypeId: payload.remunerationTypeId ?? 0,
+                remunerationAmount: payload.remunerationAmount ?? 0,
+                legalGratificationId: payload.legalGratificationId ?? 0,
+                bankId: payload.bankId ?? 0,
+                typeAccountId: payload.typeAccountId ?? 0,
+                nroAccount: payload.nroAccount ?? null,
+                owner: payload.owner ?? null,
+                zoneBonus: payload.zoneBonus ?? 0,
+                snacksBonus: payload.snacksBonus ?? 0,
+                mobilizationsBonus: payload.mobilizationsBonus ?? 0,
+                businessSalaryId: payload.businessSalaryId ?? 0,
+                quoteSis: payload.quoteSis ?? false,
+                costCenterId: payload.costCenterId ?? 0,
+                positionId: payload.positionId ?? 0,
                 admissionDate: payload.admissionDate ? DateTime.fromISO(payload.admissionDate) : null,
                 contractDate: payload.contractDate ? DateTime.fromISO(payload.contractDate) : null,
                 settlementDate: payload.settlementDate ? DateTime.fromISO(payload.settlementDate) : null,
@@ -412,16 +432,36 @@ export default class EmployeeController {
             if (businessEmployee) {
                 const patch: any = { updatedAt: dateTime }
                 if (payload.afpId !== undefined) patch.afpId = payload.afpId
+                if (payload.afpPercentage !== undefined) patch.afpPercentage = payload.afpPercentage
                 if (payload.exRegimeId !== undefined) patch.exRegimeId = payload.exRegimeId
                 if (payload.afp2Id !== undefined) patch.afp2Id = payload.afp2Id
+                if (payload.afp2Ahorro !== undefined) patch.afp2Ahorro = payload.afp2Ahorro
                 if (payload.coinAhorroId !== undefined) patch.coinAhorroId = payload.coinAhorroId
+                if (payload.typeContractId !== undefined) patch.typeContractId = payload.typeContractId
                 if (payload.affiliationId !== undefined) patch.affiliationId = payload.affiliationId
                 if (payload.layoffId !== undefined) patch.layoffId = payload.layoffId
                 if (payload.isapreId !== undefined) patch.isapreId = payload.isapreId
                 if (payload.loadFamilyId !== undefined) patch.loadFamilyId = payload.loadFamilyId
+                if (payload.loadFamilyNormal !== undefined) patch.loadFamilyNormal = payload.loadFamilyNormal
+                if (payload.loadFamilyInvalidate !== undefined) patch.loadFamilyInvalidate = payload.loadFamilyInvalidate
+                if (payload.weeklyShiftHours !== undefined) patch.weeklyShiftHours = payload.weeklyShiftHours
+                if (payload.viewLiquidation !== undefined) patch.viewLiquidation = payload.viewLiquidation
+                if (payload.healthPactValue !== undefined) patch.healthPactValue = payload.healthPactValue
+                if (payload.healthPactCoinId !== undefined) patch.healthPactCoinId = payload.healthPactCoinId
+                if (payload.mountPact !== undefined) patch.mountPact = payload.mountPact
+                if (payload.additionalPact !== undefined) patch.additionalPact = payload.additionalPact
                 if (payload.remunerationTypeId !== undefined) patch.remunerationTypeId = payload.remunerationTypeId
+                if (payload.remunerationAmount !== undefined) patch.remunerationAmount = payload.remunerationAmount
+                if (payload.legalGratificationId !== undefined) patch.legalGratificationId = payload.legalGratificationId
                 if (payload.bankId !== undefined) patch.bankId = payload.bankId
                 if (payload.typeAccountId !== undefined) patch.typeAccountId = payload.typeAccountId
+                if (payload.nroAccount !== undefined) patch.nroAccount = payload.nroAccount
+                if (payload.owner !== undefined) patch.owner = payload.owner
+                if (payload.zoneBonus !== undefined) patch.zoneBonus = payload.zoneBonus
+                if (payload.snacksBonus !== undefined) patch.snacksBonus = payload.snacksBonus
+                if (payload.mobilizationsBonus !== undefined) patch.mobilizationsBonus = payload.mobilizationsBonus
+                if (payload.businessSalaryId !== undefined) patch.businessSalaryId = payload.businessSalaryId
+                if (payload.quoteSis !== undefined) patch.quoteSis = payload.quoteSis
                 if (payload.costCenterId !== undefined) patch.costCenterId = payload.costCenterId
                 if (payload.positionId !== undefined) patch.positionId = payload.positionId
                 if (payload.admissionDate !== undefined) patch.admissionDate = payload.admissionDate ? DateTime.fromISO(payload.admissionDate) : null

@@ -1,10 +1,16 @@
+import SettingAffiliation from '#models/affiliation/setting_affiliation'
 import SettingAfp from '#models/afp'
 import Business from '#models/business/business'
 import Coin from '#models/coin/coin'
 import CostCenter from '#models/cost_centers/cost_center'
 import Employee from '#models/employees/employee'
+import SettingExRegime from '#models/exregime/setting_ex_regime'
+import SettingIsapre from '#models/isapre/setting_isapre'
+import SettingLayoff from '#models/layoff/setting_layoff'
+import SettingLoadFamily from '#models/load_family/setting_load_family'
 import Position from '#models/positions/position'
 import Setting from '#models/settings/setting'
+import SettingTypeContract from '#models/type_contract/setting_type_contract'
 import User from '#models/users/user'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -21,52 +27,103 @@ export default class BusinessEmployee extends BaseModel {
     public businessId: number
 
     @column({ columnName: 'afp_id' })
-    public afpId: number | null
+    public afpId: number
 
-    @column({ columnName: 'afp2_id' })
-    public afp2Id: number | null
-
-    @column({ columnName: 'coin_ahorro_id' })
-    public coinAhorroId: number | null
+    @column({ columnName: 'afp_percentage' })
+    public afpPercentage: number
 
     @column({ columnName: 'ex_regime_id' })
-    public exRegimeId: number | null
+    public exRegimeId: number
+
+    @column({ columnName: 'afp2_id' })
+    public afp2Id: number
+
+    @column({ columnName: 'afp2_ahorro' })
+    public afp2Ahorro: number
+
+    @column({ columnName: 'coin_ahorro_id' })
+    public coinAhorroId: number
+
+    @column({ columnName: 'type_contract_id' })
+    public typeContractId: number
 
     @column({ columnName: 'affiliation_id' })
-    public affiliationId: number | null
+    public affiliationId: number
 
     @column({ columnName: 'layoff_id' })
-    public layoffId: number | null
+    public layoffId: number
 
     @column({ columnName: 'isapre_id' })
-    public isapreId: number | null
+    public isapreId: number
 
     @column({ columnName: 'load_family_id' })
-    public loadFamilyId: number | null
+    public loadFamilyId: number
+
+    @column({ columnName: 'load_family_normal' })
+    public loadFamilyNormal: number
+
+    @column({ columnName: 'load_family_invalidate' })
+    public loadFamilyInvalidate: number
+
+    @column({ columnName: 'weekly_shift_hours' })
+    public weeklyShiftHours: number
+
+    @column({ columnName: 'view_liquidation' })
+    public viewLiquidation: boolean
+
+    @column({ columnName: 'health_pact_value' })
+    public healthPactValue: number
 
     @column({ columnName: 'health_pact_coin_id' })
-    public healthPactCoinId: number | null
+    public healthPactCoinId: number
+
+    @column({ columnName: 'mount_pact' })
+    public mountPact: number
+
+    @column({ columnName: 'additional_pact' })
+    public additionalPact: number
 
     @column({ columnName: 'remuneration_type_id' })
-    public remunerationTypeId: number | null
+    public remunerationTypeId: number
+
+    @column({ columnName: 'remuneration_amount' })
+    public remunerationAmount: number
 
     @column({ columnName: 'legal_gratification_id' })
-    public legalGratificationId: number | null
+    public legalGratificationId: number
 
     @column({ columnName: 'bank_id' })
-    public bankId: number | null
-
-    @column({ columnName: 'cost_center_id' })
-    public costCenterId: number | null
-
-    @column({ columnName: 'position_id' })
-    public positionId: number | null
-
-    @column({ columnName: 'business_salary_id' })
-    public businessSalaryId: number | null
+    public bankId: number
 
     @column({ columnName: 'type_account_id' })
-    public typeAccountId: number | null
+    public typeAccountId: number
+
+    @column({ columnName: 'nro_account' })
+    public nroAccount: string | null
+
+    @column({ columnName: 'owner' })
+    public owner: string | null
+
+    @column({ columnName: 'zone_bonus' })
+    public zoneBonus: number
+
+    @column({ columnName: 'snacks_bonus' })
+    public snacksBonus: number
+
+    @column({ columnName: 'mobilizations_bonus' })
+    public mobilizationsBonus: number
+
+    @column({ columnName: 'business_salary_id' })
+    public businessSalaryId: number
+
+    @column({ columnName: 'quote_sis' })
+    public quoteSis: boolean
+
+    @column({ columnName: 'cost_center_id' })
+    public costCenterId: number
+
+    @column({ columnName: 'position_id' })
+    public positionId: number
 
     @column.date({ columnName: 'admission_date' })
     public admissionDate: DateTime | null
@@ -92,6 +149,12 @@ export default class BusinessEmployee extends BaseModel {
     @column({ columnName: 'updated_by' })
     public updatedById: number
 
+    @column.dateTime({ columnName: 'inactive_at' })
+    public inactiveAt: DateTime | null
+
+    @column({ columnName: 'inactive_by' })
+    public inactiveBy: number | null
+
     @belongsTo(() => User, { foreignKey: 'createdById' })
     public createdBy: BelongsTo<typeof User>
 
@@ -113,20 +176,47 @@ export default class BusinessEmployee extends BaseModel {
     @belongsTo(() => Coin, { foreignKey: 'coinAhorroId' })
     public ahorroCoin: BelongsTo<typeof Coin>
 
-    // exRegimes, affiliation, layoff, isapre, loadFamily likely map to their respective models
-    // For now, keep only those with existing models; add the rest as needed
+    @belongsTo(() => Coin, { foreignKey: 'healthPactCoinId' })
+    public healthPactCoin: BelongsTo<typeof Coin>
+
+    @belongsTo(() => SettingExRegime, { foreignKey: 'exRegimeId' })
+    public exRegime: BelongsTo<typeof SettingExRegime>
+
+    @belongsTo(() => SettingTypeContract, { foreignKey: 'typeContractId' })
+    public typeContract: BelongsTo<typeof SettingTypeContract>
+
+    @belongsTo(() => SettingAffiliation, { foreignKey: 'affiliationId' })
+    public affiliation: BelongsTo<typeof SettingAffiliation>
+
+    @belongsTo(() => SettingLayoff, { foreignKey: 'layoffId' })
+    public layoff: BelongsTo<typeof SettingLayoff>
+
+    @belongsTo(() => SettingIsapre, { foreignKey: 'isapreId' })
+    public isapre: BelongsTo<typeof SettingIsapre>
+
+    @belongsTo(() => SettingLoadFamily, { foreignKey: 'loadFamilyId' })
+    public loadFamily: BelongsTo<typeof SettingLoadFamily>
 
     @belongsTo(() => Setting, { foreignKey: 'remunerationTypeId' })
     public remunerationType: BelongsTo<typeof Setting>
 
+    @belongsTo(() => Setting, { foreignKey: 'legalGratificationId' })
+    public legalGratification: BelongsTo<typeof Setting>
+
     @belongsTo(() => Setting, { foreignKey: 'bankId' })
     public bank: BelongsTo<typeof Setting>
+
+    @belongsTo(() => Setting, { foreignKey: 'typeAccountId' })
+    public typeAccount: BelongsTo<typeof Setting>
 
     @belongsTo(() => CostCenter, { foreignKey: 'costCenterId' })
     public costCenter: BelongsTo<typeof CostCenter>
 
     @belongsTo(() => Position, { foreignKey: 'positionId' })
     public position: BelongsTo<typeof Position>
+
+    @belongsTo(() => User, { foreignKey: 'inactiveBy' })
+    public inactiveByUser: BelongsTo<typeof User>
 
 
     serializeExtras() {
@@ -143,10 +233,6 @@ export default class BusinessEmployee extends BaseModel {
             full_name
         }
     }
-
-
-    @belongsTo(() => Setting, { foreignKey: 'typeAccountId' })
-    public typeAccount: BelongsTo<typeof Setting>
 
     public static castDates(field: string, value: DateTime) {
         if (['contract_date', 'admission_date', 'settlement_date'].includes(field)) {
