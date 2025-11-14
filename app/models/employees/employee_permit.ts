@@ -19,6 +19,9 @@ export default class EmployeePermit extends BaseModel {
     @column({ columnName: 'authorizer_id' })
     public authorizerId: number | null
 
+    @column()
+    public type: string
+
     @column({ columnName: 'date_start' })
     public dateStart: DateTime | null
 
@@ -26,7 +29,28 @@ export default class EmployeePermit extends BaseModel {
     public dateEnd: DateTime | null
 
     @column()
+    public reason: string
+
+    @column()
+    public file: string | null
+
+    @column({ columnName: 'file_short' })
+    public fileShort: string | null
+
+    @column()
+    public thumb: string | null
+
+    @column({ columnName: 'thumb_short' })
+    public thumbShort: string | null
+
+    @column()
     public token: string | null
+
+    @column()
+    public authorized: boolean
+
+    @column.dateTime({ columnName: 'authorized_at' })
+    public authorizedAt: DateTime | null
 
     @column()
     public enabled: boolean
@@ -46,6 +70,7 @@ export default class EmployeePermit extends BaseModel {
     @beforeCreate()
     public static async setDefaults(model: EmployeePermit) {
         model.enabled = model.enabled ?? true
+        model.authorized = model.authorized ?? false
         model.token = model.token ?? randomUUID()
     }
 

@@ -179,6 +179,7 @@ export const employeePermitStoreValidator = vine.compile(
         employeeId: vine.number().positive(),
         businessId: vine.number().positive(),
         authorizerId: vine.number().positive(),
+        file: vine.file().optional(),
     })
 )
 

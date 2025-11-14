@@ -779,26 +779,40 @@ export default class EmployeeController {
     public async storeWorkPermits({ request, response, auth, i18n }: HttpContext) {
         const dateTime = await Util.getDateTimes(request.ip())
         const { employeePermitStoreValidator } = await import('#validators/employee')
-        const { type, dateStart, dateEnd, reason, employeeId, businessId, authorizerId } = await request.validateUsing(employeePermitStoreValidator)
+        const payload = await request.validateUsing(employeePermitStoreValidator)
 
         try {
-            const permit = await EmployeePermit.create({
-                type,
-                date_start: dateStart,
-                date_end: dateEnd,
-                reason,
-                employee_id: employeeId,
-                business_id: businessId,
-                authorizer_id: authorizerId,
+            const permitData: any = {
+                type: payload.type,
+                date_start: payload.dateStart,
+                date_end: payload.dateEnd,
+                reason: payload.reason,
+                employee_id: payload.employeeId,
+                business_id: payload.businessId,
+                authorizer_id: payload.authorizerId,
                 authorized: false,
                 created_at: dateTime,
                 updated_at: dateTime,
                 created_by: auth.user!.id,
                 updated_by: auth.user!.id,
-            } as any)
+            }
 
-            const employee = await Employee.find(employeeId)
-            const authorizer = await User.find(authorizerId)
+            // Handle file upload if present
+            const file = request.file('file')
+            if (file) {
+                const uploaded = await Google.uploadFile(file, 'admin/permits')
+                Object.assign(permitData, {
+                    file: uploaded.url,
+                    file_short: uploaded.url_short,
+                    thumb: uploaded.url_thumb,
+                    thumb_short: uploaded.url_thumb_short,
+                })
+            }
+
+            const permit = await EmployeePermit.create(permitData)
+
+            const employee = await Employee.find(payload.employeeId)
+            const authorizer = await User.find(payload.authorizerId)
             if (employee && authorizer) {
                 emitter.emit('new::employeePermitStore', {
                     email: (employee as any).email,
