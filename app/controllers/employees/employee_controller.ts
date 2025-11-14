@@ -120,6 +120,11 @@ export default class EmployeeController {
         }
 
         if (!data.scheduleWork) data.scheduleWork = []
+        // Normalize certificate health property name for legacy clients
+        if (data.certificateHealth !== undefined && data.certificateHeatlh === undefined) {
+            data.certificateHeatlh = data.certificateHealth
+            delete data.certificateHealth
+        }
         if (!data.certificateHeatlh) data.certificateHeatlh = []
         if (!data.emergencyContacts) data.emergencyContacts = []
         if (data.full_name) delete data.full_name
@@ -295,13 +300,28 @@ export default class EmployeeController {
 
             await trx.commit()
 
+            // Preload relations needed for legacy-shaped response
             await employee.load('business')
             await employee.load('certificateHealth')
             await employee.load('emergencyContacts')
-            await employee.load('scheduleWork')
+            await employee.load('city', (b) => {
+                b.select(['id', 'name', 'country_id'])
+                b.preload('country', (cb) => cb.select(['id', 'name']))
+            })
+            await employee.load('scheduleWork', (b) => {
+                b.preload('schedule')
+                b.preload('work')
+            })
+
+            // Map to legacy shape (formats, aliases, etc.)
+            const legacy = this.toLegacyEmployee(employee.toJSON())
+            if ((legacy as any).certificateHeatlh === undefined && (legacy as any).certificateHealth !== undefined) {
+                ; (legacy as any).certificateHeatlh = (legacy as any).certificateHealth
+                delete (legacy as any).certificateHealth
+            }
 
             return response.status(201).json({
-                employee,
+                employee: legacy,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
             })
         } catch (error) {
@@ -472,10 +492,23 @@ export default class EmployeeController {
             await employee.load('business')
             await employee.load('certificateHealth')
             await employee.load('emergencyContacts')
-            await employee.load('scheduleWork')
+            await employee.load('city', (b) => {
+                b.select(['id', 'name', 'country_id'])
+                b.preload('country', (cb) => cb.select(['id', 'name']))
+            })
+            await employee.load('scheduleWork', (b) => {
+                b.preload('schedule')
+                b.preload('work')
+            })
+
+            const legacy = this.toLegacyEmployee(employee.toJSON())
+            if ((legacy as any).certificateHeatlh === undefined && (legacy as any).certificateHealth !== undefined) {
+                ; (legacy as any).certificateHeatlh = (legacy as any).certificateHealth
+                delete (legacy as any).certificateHealth
+            }
 
             await trx.commit()
-            return response.status(200).json({ ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')), data: employee })
+            return response.status(200).json({ ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')), data: legacy })
         } catch (error) {
             await trx.rollback()
             console.error(error)
@@ -501,6 +534,12 @@ export default class EmployeeController {
                 b.where('enabled', true)
                 b.preload('afp', (bb) => bb.select(['id', 'name']))
                 b.preload('position', (bb) => bb.select(['id', 'name']))
+            })
+            .preload('certificateHealth')
+            .preload('emergencyContacts')
+            .preload('scheduleWork', (b) => {
+                b.preload('schedule')
+                b.preload('work')
             })
             .first()
 
