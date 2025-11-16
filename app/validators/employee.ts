@@ -2,6 +2,7 @@ import vine from '@vinejs/vine'
 
 export const employeeStoreValidator = vine.compile(
     vine.object({
+        enabled: vine.boolean().optional(),
         typeIdentifyId: vine.number().positive(),
         identify: vine.string().trim().minLength(3),
         names: vine.string().trim().minLength(1),
@@ -86,6 +87,7 @@ export const employeeStoreValidator = vine.compile(
 
 export const employeeUpdateValidator = vine.compile(
     vine.object({
+        enabled: vine.boolean().optional(),
         typeIdentifyId: vine.number().positive(),
         identify: vine.string().trim().minLength(3),
         names: vine.string().trim().minLength(1),

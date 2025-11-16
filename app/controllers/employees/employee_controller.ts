@@ -205,6 +205,7 @@ export default class EmployeeController {
             }
 
             const businessEmployeeData: any = {
+                enabled: payload.enabled || false,
                 businessId: payload.businessId,
                 afpId: payload.afpId ?? 0,
                 afpPercentage: payload.afpPercentage ?? 0,
@@ -505,6 +506,7 @@ export default class EmployeeController {
                 if (payload.admissionDate !== undefined) patch.admissionDate = payload.admissionDate ? DateTime.fromISO(payload.admissionDate) : null
                 if (payload.contractDate !== undefined) patch.contractDate = payload.contractDate ? DateTime.fromISO(payload.contractDate) : null
                 if (payload.settlementDate !== undefined) patch.settlementDate = payload.settlementDate ? DateTime.fromISO(payload.settlementDate) : null
+                if (payload.enabled !== undefined) patch.enabled = payload.enabled
                 businessEmployee.merge(patch)
                 await businessEmployee.useTransaction(trx).save()
             }
