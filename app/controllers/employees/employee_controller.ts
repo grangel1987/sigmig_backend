@@ -73,6 +73,13 @@ export default class EmployeeController {
             item.afp2_id = item.afp_2_id
             delete item.afp_2_id
         }
+        // Normalize settings-based relations that use 'text' internally to legacy 'name'
+        if (item.legalGratification && item.legalGratification.text && item.legalGratification.name === undefined) {
+            item.legalGratification.name = item.legalGratification.text
+        }
+        if (item.businessSalary && item.businessSalary.text && item.businessSalary.name === undefined) {
+            item.businessSalary.name = item.businessSalary.text
+        }
         if (item.created_at) item.created_at = this.fmtDateTime(item.created_at)
         if (item.updated_at) item.updated_at = this.fmtDateTime(item.updated_at)
         const ad = this.toDt(item.admission_date)
@@ -331,15 +338,18 @@ export default class EmployeeController {
                 b.preload('isapre', (bb) => bb.select(['id', 'name']))
                 b.preload('loadFamily', (bb) => bb.select(['id', 'name']))
                 b.preload('remunerationType', (bb) => bb.select(['id', 'text']))
-                b.preload('legalGratification', (bb) => bb.select(['id', 'name']))
+                b.preload('legalGratification', (bb) => bb.select(['id', 'text']))
                 b.preload('bank', (bb) => bb.select(['id', 'text']))
                 b.preload('typeAccount', (bb) => bb.select(['id', 'text']))
                 b.preload('costCenter', (bb) => bb.select(['id', 'name']))
                 b.preload('ahorroCoin', (bb) => bb.select(['id', 'symbol', 'name']))
                 b.preload('healthPactCoin', (bb) => bb.select(['id', 'symbol', 'name']))
-                b.preload('inactiveByUser', (bb) => bb.select(['id', 'full_name', 'email']))
+                b.preload('inactiveByUser', (bb) => {
+                    bb.preload('personalData', (pd) => pd.select('names', 'last_name_p', 'last_name_m'))
+                    bb.select(['id', 'personal_data_id', 'email'])
+                })
                 b.preload('position', (bb) => bb.select(['id', 'name']))
-                b.preload('businessSalary', (bb) => bb.select(['id', 'name']))
+                b.preload('businessSalary', (bb) => bb.select(['id', 'text']))
                 b.preload('business', (bb) => {
                     bb.select(['id', 'type_identify_id', 'identify', 'name', 'url', 'url_thumb'])
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
@@ -567,15 +577,18 @@ export default class EmployeeController {
                 b.preload('isapre', (bb) => bb.select(['id', 'name']))
                 b.preload('loadFamily', (bb) => bb.select(['id', 'name']))
                 b.preload('remunerationType', (bb) => bb.select(['id', 'text']))
-                b.preload('legalGratification', (bb) => bb.select(['id', 'name']))
+                b.preload('legalGratification', (bb) => bb.select(['id', 'text']))
                 b.preload('bank', (bb) => bb.select(['id', 'text']))
                 b.preload('typeAccount', (bb) => bb.select(['id', 'text']))
                 b.preload('costCenter', (bb) => bb.select(['id', 'name']))
                 b.preload('ahorroCoin', (bb) => bb.select(['id', 'symbol', 'name']))
                 b.preload('healthPactCoin', (bb) => bb.select(['id', 'symbol', 'name']))
-                b.preload('inactiveByUser', (bb) => bb.select(['id', 'full_name', 'email']))
+                b.preload('inactiveByUser', (bb) => {
+                    bb.preload('personalData', (pd) => pd.select('names', 'last_name_p', 'last_name_m'))
+                    bb.select(['id', 'personal_data_id', 'email'])
+                })
                 b.preload('position', (bb) => bb.select(['id', 'name']))
-                b.preload('businessSalary', (bb) => bb.select(['id', 'name']))
+                b.preload('businessSalary', (bb) => bb.select(['id', 'text']))
                 b.preload('business', (bb) => {
                     bb.select(['id', 'type_identify_id', 'identify', 'name', 'url', 'url_thumb'])
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
@@ -650,7 +663,10 @@ export default class EmployeeController {
                     .preload('costCenter')
                     .preload('ahorroCoin')
                     .preload('healthPactCoin')
-                    .preload('inactiveByUser')
+                    .preload('inactiveByUser', (bb) => {
+                        bb.preload('personalData', (pd) => pd.select('names', 'last_name_p', 'last_name_m'))
+                        bb.select(['id', 'personal_data_id', 'email'])
+                    })
                     .preload('position')
             })
             .preload('certificateHealth', cHQ => cHQ.preload('item'))
