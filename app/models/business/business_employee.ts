@@ -212,6 +212,10 @@ export default class BusinessEmployee extends BaseModel {
     @belongsTo(() => CostCenter, { foreignKey: 'costCenterId' })
     public costCenter: BelongsTo<typeof CostCenter>
 
+    // Added missing relation to expose businessSalary Setting record
+    @belongsTo(() => Setting, { foreignKey: 'businessSalaryId' })
+    public businessSalary: BelongsTo<typeof Setting>
+
     @belongsTo(() => Position, { foreignKey: 'positionId' })
     public position: BelongsTo<typeof Position>
 

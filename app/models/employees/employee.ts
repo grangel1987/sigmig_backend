@@ -140,6 +140,10 @@ export default class Employee extends BaseModel {
     @belongsTo(() => Setting, { foreignKey: 'identifyTypeId' })
     public typeIdentify: BelongsTo<typeof Setting>
 
+    // Added missing relation for state civil setting (needed for legacy payload)
+    @belongsTo(() => Setting, { foreignKey: 'stateCivilId' })
+    public stateCivil: BelongsTo<typeof Setting>
+
     @belongsTo(() => City, { foreignKey: 'cityId' })
     public city: BelongsTo<typeof City>
 
