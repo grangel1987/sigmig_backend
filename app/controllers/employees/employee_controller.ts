@@ -649,8 +649,8 @@ export default class EmployeeController {
                     .preload('inactiveByUser')
                     .preload('position', (bb) => bb.select(['id', 'name']))
             })
-            .preload('certificateHealth')
-            .preload('emergencyContacts')
+            .preload('certificateHealth', cHQ => cHQ.preload('item'))
+            .preload('emergencyContacts', q => q.preload('relationship'))
             .preload('scheduleWork', (b) => {
                 b.preload('schedule')
                 b.preload('work')
