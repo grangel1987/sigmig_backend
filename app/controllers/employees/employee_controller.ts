@@ -618,8 +618,12 @@ export default class EmployeeController {
         const businessId = Number(params.business_id)
         const employee = await Employee.query()
             .where('token', token)
-            .preload('createdBy')
-            .preload('updatedBy')
+            .preload('createdBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+            .preload('updatedBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
             .preload('city', (b) => {
                 b.select(['id', 'name', 'country_id'])
