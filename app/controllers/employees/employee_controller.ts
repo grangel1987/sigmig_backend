@@ -629,7 +629,7 @@ export default class EmployeeController {
                 b.select(['id', 'name', 'country_id'])
                 b.preload('country', (cb) => cb.select(['id', 'name']))
             })
-            .preload('nationality', (b) => b.select(['id', 'name']))
+            .preload('nationality', (b) => b.select(['id', 'name', 'nationality']))
             .preload('sexes', (b) => b.select(['id', 'text']))
             .preload('business', (b) => {
                 b.where('business_id', businessId)
@@ -651,7 +651,7 @@ export default class EmployeeController {
                     .preload('ahorroCoin')
                     .preload('healthPactCoin')
                     .preload('inactiveByUser')
-                    .preload('position', (bb) => bb.select(['id', 'name']))
+                    .preload('position')
             })
             .preload('certificateHealth', cHQ => cHQ.preload('item'))
             .preload('emergencyContacts', q => q.preload('relationship'))
