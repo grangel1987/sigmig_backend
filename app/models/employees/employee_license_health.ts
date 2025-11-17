@@ -20,23 +20,86 @@ export default class EmployeeLicenseHealth extends BaseModel {
     @column({ columnName: 'type_license_id' })
     public typeLicenseId: number
 
-    @column({ columnName: 'authorizer_id' })
-    public authorizerId: number | null
-
-    @column({ columnName: 'date_status' })
-    public dateStatus: DateTime | null
-
-    @column({ columnName: 'business_date' })
-    public businessDate: DateTime | null
-
-    @column({ columnName: 'date_disposition' })
-    public dateDisposition: DateTime | null
-
-    @column({ columnName: 'son_birth_date' })
-    public sonBirthDate: DateTime | null
-
     @column()
     public token: string | null
+
+    @column()
+    public status: string
+
+    @column()
+    public folio: string
+
+    @column.date({ columnName: 'date_status' })
+    public dateStatus: DateTime | null
+
+    @column({ columnName: 'motive_id' })
+    public motiveId: number
+
+    @column.date({ columnName: 'date_end_relation' })
+    public dateEndRelation: DateTime | null
+
+    @column({ columnName: 'work_activity_id' })
+    public workActivityId: number
+
+    @column({ columnName: 'occupation_id' })
+    public occupationId: number
+
+    @column.date({ columnName: 'date_disposition' })
+    public dateDisposition: DateTime | null
+
+    @column({ columnName: 'license_last_six_month' })
+    public licenseLastSixMonth: string | null
+
+    @column({ columnName: 'payment_entity_id' })
+    public paymentEntityId: number
+
+    @column.date({ columnName: 'business_date' })
+    public businessDate: DateTime | null
+
+    @column({ columnName: 'business_comuna' })
+    public businessComuna: string
+
+    @column({ columnName: 'compensation_box_id' })
+    public compensationBoxId: number
+
+    @column({ columnName: 'mutual_id' })
+    public mutualId: number
+
+    @column()
+    public other: string | null
+
+    @column({ columnName: 'employee_age' })
+    public employeeAge: string
+
+    @column.date({ columnName: 'son_birth_date' })
+    public sonBirthDate: DateTime | null
+
+    @column({ columnName: 'son_last_name_p' })
+    public sonLastNameP: string | null
+
+    @column({ columnName: 'son_last_name_m' })
+    public sonLastNameM: string | null
+
+    @column({ columnName: 'son_names' })
+    public sonNames: string | null
+
+    @column({ columnName: 'son_type_identify_id' })
+    public sonTypeIdentifyId: number
+
+    @column({ columnName: 'son_identify' })
+    public sonIdentify: string | null
+
+    @column({ columnName: 'repose_site' })
+    public reposeSite: string
+
+    @column({ columnName: 'repose_address' })
+    public reposeAddress: string
+
+    @column({ columnName: 'repose_phone' })
+    public reposePhone: string
+
+    @column({ columnName: 'repose_email' })
+    public reposeEmail: string
 
     @column()
     public enabled: boolean
@@ -55,7 +118,7 @@ export default class EmployeeLicenseHealth extends BaseModel {
 
     @beforeCreate()
     public static async setDefaults(model: EmployeeLicenseHealth) {
-        model.enabled = model.enabled ?? true
+        model.enabled = model.enabled ?? false
         model.token = model.token ?? randomUUID()
     }
 
@@ -75,7 +138,7 @@ export default class EmployeeLicenseHealth extends BaseModel {
     public typeLicense: BelongsTo<typeof SettingLicTypeLicense>
 
     public static castDates(field: string, value: DateTime) {
-        if (['date_status', 'business_date', 'date_disposition', 'son_birth_date'].includes(field)) {
+        if (['date_status', 'business_date', 'date_disposition', 'son_birth_date', 'date_end_relation'].includes(field)) {
             return value.toFormat('yyyy-LL-dd')
         }
         return value.toFormat('dd/MM/yyyy hh:mm:ss a')

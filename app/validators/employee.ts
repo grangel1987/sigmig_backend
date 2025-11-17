@@ -192,7 +192,7 @@ export const employeeLicenseHealthStoreValidator = vine.compile(
         status: vine.string(),
         folio: vine.string().optional(),
         dateStatus: vine.string().optional(),
-        motiveId: vine.number().optional(),
+        motiveId: vine.number(),
         dateEndRelation: vine.string().optional(),
         workActivityId: vine.number().optional(),
         occupationId: vine.number().optional(),

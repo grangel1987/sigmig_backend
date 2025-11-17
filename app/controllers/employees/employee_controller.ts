@@ -39,6 +39,43 @@ const groupBy = (arr: any[], keys: string[]) => {
 
 // NOTE: Implemented GCS image handling (photo & authorization) using Google util.
 
+// Typed shapes for Employee License Health endpoints
+type ISODateString = string
+interface EmployeeLicenseHealthBaseInput {
+    employeeId: number
+    typeLicenseId: number
+    status?: string | null
+    folio?: string | null
+    motiveId?: number | null
+    workActivityId?: number | null
+    occupationId?: number | null
+    dateStatus?: ISODateString | null
+    dateEndRelation?: ISODateString | null
+    dateDisposition?: ISODateString | null
+    licenseLastSixMonth?: boolean | number | string | null
+    paymentEntityId?: number | null
+    businessDate?: ISODateString | null
+    businessComuna?: string | null
+    compensationBoxId?: number | null
+    mutualId?: number | null
+    other?: string | null
+    employeeAge?: number | null
+    sonBirthDate?: ISODateString | null
+    sonLastNameP?: string | null
+    sonLastNameM?: string | null
+    sonNames?: string | null
+    sonTypeIdentifyId?: number | null
+    sonIdentify?: string | null
+    reposeSite?: string | null
+    reposeAddress?: string | null
+    reposePhone?: string | null
+    reposeEmail?: string | null
+    enabled?: boolean
+}
+
+type EmployeeLicenseHealthStoreBody = EmployeeLicenseHealthBaseInput & { bussinesId: number }
+type EmployeeLicenseHealthUpdateBody = Partial<EmployeeLicenseHealthBaseInput> & { bussinesId?: number }
+
 export default class EmployeeController {
     // Date parsing helpers (accept ISO string or JS Date)
     private toDt(value?: Date | string | null
@@ -222,7 +259,7 @@ export default class EmployeeController {
     public async store({ request, response, auth, i18n }: HttpContext) {
         const { employeeStoreValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeStoreValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        // Note: timestamps are auto-managed by the model; we only compute dates for normalization when needed
         const trx = await db.transaction()
         const authUserId = auth.user!.id
 
@@ -232,6 +269,7 @@ export default class EmployeeController {
             const certificateHealthRaw: Record<string, any>[] = Array.isArray((payload as any).certificateHealth) ? (payload as any).certificateHealth : []
             const contactsEmergencyRaw: Record<string, any>[] = Array.isArray((payload as any).contactsEmergency) ? (payload as any).contactsEmergency : []
 
+            const currentTime = (await Util.getDateTimes(request.ip())).toISO()
             // Debug: nested collections received (disabled in production)
 
             const photo = request.file('photo')
@@ -254,8 +292,8 @@ export default class EmployeeController {
                 email: payload.email,
                 createdById: authUserId,
                 updatedById: authUserId,
-                createdAt: dateTime,
-                updatedAt: dateTime,
+                createdAt: currentTime,
+                updatedAt: currentTime,
             }
 
             const businessEmployeeData: any = {
@@ -297,8 +335,8 @@ export default class EmployeeController {
                 admissionDate: payload.admissionDate ? DateTime.fromISO(payload.admissionDate) : null,
                 contractDate: payload.contractDate ? DateTime.fromISO(payload.contractDate) : null,
                 settlementDate: payload.settlementDate ? DateTime.fromISO(payload.settlementDate) : null,
-                createdAt: dateTime,
-                updatedAt: dateTime,
+                createdAt: currentTime,
+                updatedAt: currentTime,
                 createdById: authUserId,
                 updatedById: authUserId,
             }
@@ -447,7 +485,7 @@ export default class EmployeeController {
     /** Update base employee and business specific data */
     public async update({ request, params, auth, i18n, response }: HttpContext) {
         const employeeId = Number(params.id)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const currentTime = (await Util.getDateTimes(request.ip())).toISO()
         const trx = await db.transaction()
         const { employeeUpdateValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeUpdateValidator)
@@ -465,7 +503,7 @@ export default class EmployeeController {
             // Build conditional patch for employee fields to avoid nulling omitted values
             const employeePatch: any = {
                 updatedById: auth.user!.id,
-                updatedAt: dateTime,
+                updatedAt: currentTime,
             }
             if (payload.typeIdentifyId !== undefined) employeePatch.identifyTypeId = payload.typeIdentifyId
             if (payload.identify !== undefined) employeePatch.identify = payload.identify
@@ -523,7 +561,7 @@ export default class EmployeeController {
                 .first()
 
             if (businessEmployee) {
-                const patch: any = { updatedAt: dateTime }
+                const patch: any = { updatedAt: currentTime }
                 if (payload.afpId !== undefined) patch.afpId = payload.afpId
                 if (payload.afpPercentage !== undefined) patch.afpPercentage = payload.afpPercentage
                 if (payload.exRegimeId !== undefined) patch.exRegimeId = payload.exRegimeId
@@ -1016,17 +1054,57 @@ export default class EmployeeController {
     }
 
     public async storeLicenseHealth({ request, response, auth, i18n }: HttpContext) {
+        const { employeeLicenseHealthStoreValidator } = await import('#validators/employee')
+        const { bussinesId, ...payload }: EmployeeLicenseHealthStoreBody = await request.validateUsing(employeeLicenseHealthStoreValidator)
         try {
-            const dateTime = await Util.getDateTimes(request.ip())
-            const { employeeLicenseHealthStoreValidator } = await import('#validators/employee')
-            const payload = await request.validateUsing(employeeLicenseHealthStoreValidator)
-            const license = await EmployeeLicenseHealth.create({
-                ...payload,
-                created_at: dateTime,
-                updated_at: dateTime,
-                created_by: auth.user!.id,
-                updated_by: auth.user!.id,
-            } as any)
+
+            // Normalize mixed boolean/number/string to boolean|number
+            const normalizeBoolNumToString = (value: string | number | boolean | null | undefined): string | undefined => {
+                if (value === null || value === undefined) return undefined
+                if (typeof value === 'boolean') return value ? 'true' : 'false'
+                if (typeof value === 'number') return String(value)
+                const v = String(value).trim()
+                if (v.toLowerCase() === 'true' || v.toLowerCase() === 'false') return v.toLowerCase()
+                return v.length ? v : undefined
+            }
+
+            // Build a whitelisted, type-safe create payload
+            const createData = {
+                employeeId: payload.employeeId,
+                typeLicenseId: payload.typeLicenseId,
+                status: payload.status ?? undefined,
+                folio: payload.folio ?? undefined,
+                motiveId: payload.motiveId ?? undefined,
+                workActivityId: payload.workActivityId ?? undefined,
+                occupationId: payload.occupationId ?? undefined,
+                dateStatus: this.toDt(payload.dateStatus ?? null),
+                dateEndRelation: this.toDt(payload.dateEndRelation ?? null),
+                dateDisposition: this.toDt(payload.dateDisposition ?? null),
+                licenseLastSixMonth: normalizeBoolNumToString(payload.licenseLastSixMonth ?? undefined),
+                paymentEntityId: payload.paymentEntityId ?? undefined,
+                businessDate: this.toDt(payload.businessDate ?? null),
+                businessComuna: payload.businessComuna ?? undefined,
+                compensationBoxId: payload.compensationBoxId ?? undefined,
+                mutualId: payload.mutualId ?? undefined,
+                other: payload.other ?? undefined,
+                employeeAge: payload.employeeAge !== undefined && payload.employeeAge !== null ? String(payload.employeeAge) : undefined,
+                sonBirthDate: this.toDt(payload.sonBirthDate ?? null),
+                sonLastNameP: payload.sonLastNameP ?? undefined,
+                sonLastNameM: payload.sonLastNameM ?? undefined,
+                sonNames: payload.sonNames ?? undefined,
+                sonTypeIdentifyId: payload.sonTypeIdentifyId ?? undefined,
+                sonIdentify: payload.sonIdentify ?? undefined,
+                reposeSite: payload.reposeSite ?? undefined,
+                reposeAddress: payload.reposeAddress ?? undefined,
+                reposePhone: payload.reposePhone ?? undefined,
+                reposeEmail: payload.reposeEmail ?? undefined,
+                enabled: payload.enabled ?? false,
+                businessId: bussinesId,
+                createdById: auth.user!.id,
+                updatedById: auth.user!.id,
+            }
+
+            const license = await EmployeeLicenseHealth.create(createData)
             await license.load('typeLicense')
             return response.status(201).json({
                 licenseHealth: license,
@@ -1040,13 +1118,87 @@ export default class EmployeeController {
 
     public async updateLicenseHealth({ request, response, auth, i18n, params }: HttpContext) {
         const licenseId = params.id
-        const dateTime = await Util.getDateTimes(request.ip())
         const { employeeLicenseHealthUpdateValidator } = await import('#validators/employee')
-        const payload = await request.validateUsing(employeeLicenseHealthUpdateValidator)
+        const { bussinesId, ...payload }: EmployeeLicenseHealthUpdateBody = await request.validateUsing(employeeLicenseHealthUpdateValidator)
         const license = await EmployeeLicenseHealth.find(licenseId)
         if (!license) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
         try {
-            license.merge({ ...payload, updated_at: dateTime, updated_by: auth.user!.id } as any)
+            const normalizeBoolNumToString = (value: string | number | boolean | null | undefined): string | undefined => {
+                if (value === null || value === undefined) return undefined
+                if (typeof value === 'boolean') return value ? 'true' : 'false'
+                if (typeof value === 'number') return String(value)
+                const v = String(value).trim()
+                if (v.toLowerCase() === 'true' || v.toLowerCase() === 'false') return v.toLowerCase()
+                return v.length ? v : undefined
+            }
+
+            const patch: Partial<{
+                typeLicenseId: number
+                status: string
+                folio: string
+                motiveId: number
+                dateStatus: DateTime | null
+                dateEndRelation: DateTime | null
+                workActivityId: number
+                occupationId: number
+                dateDisposition: DateTime | null
+                licenseLastSixMonth: string | undefined
+                paymentEntityId: number
+                businessDate: DateTime | null
+                businessComuna: string
+                compensationBoxId: number
+                mutualId: number
+                other: string
+                employeeAge: string
+                sonBirthDate: DateTime | null
+                sonLastNameP: string
+                sonLastNameM: string
+                sonNames: string
+                sonTypeIdentifyId: number
+                sonIdentify: string
+                reposeSite: string
+                reposeAddress: string
+                reposePhone: string
+                reposeEmail: string
+                enabled: boolean
+                businessId: number
+                updatedById: number
+            }> = { updatedById: auth.user!.id }
+
+            if (bussinesId !== undefined) patch.businessId = bussinesId
+            if ('typeLicenseId' in payload && typeof payload.typeLicenseId === 'number') patch.typeLicenseId = payload.typeLicenseId
+            if ('status' in payload && typeof payload.status === 'string') patch.status = payload.status
+            if ('folio' in payload && typeof payload.folio === 'string') patch.folio = payload.folio
+            if ('motiveId' in payload && typeof payload.motiveId === 'number') patch.motiveId = payload.motiveId
+            if ('workActivityId' in payload && typeof payload.workActivityId === 'number') patch.workActivityId = payload.workActivityId
+            if ('occupationId' in payload && typeof payload.occupationId === 'number') patch.occupationId = payload.occupationId
+            if ('paymentEntityId' in payload && typeof payload.paymentEntityId === 'number') patch.paymentEntityId = payload.paymentEntityId
+            if ('businessComuna' in payload && typeof payload.businessComuna === 'string') patch.businessComuna = payload.businessComuna
+            if ('compensationBoxId' in payload && typeof payload.compensationBoxId === 'number') patch.compensationBoxId = payload.compensationBoxId
+            if ('mutualId' in payload && typeof payload.mutualId === 'number') patch.mutualId = payload.mutualId
+            if ('other' in payload && typeof payload.other === 'string') patch.other = payload.other
+            if ('employeeAge' in payload) patch.employeeAge = payload.employeeAge != null ? String(payload.employeeAge) : undefined
+            if ('sonLastNameP' in payload && typeof payload.sonLastNameP === 'string') patch.sonLastNameP = payload.sonLastNameP
+            if ('sonLastNameM' in payload && typeof payload.sonLastNameM === 'string') patch.sonLastNameM = payload.sonLastNameM
+            if ('sonNames' in payload && typeof payload.sonNames === 'string') patch.sonNames = payload.sonNames
+            if ('sonTypeIdentifyId' in payload && typeof payload.sonTypeIdentifyId === 'number') patch.sonTypeIdentifyId = payload.sonTypeIdentifyId
+            if ('sonIdentify' in payload && typeof payload.sonIdentify === 'string') patch.sonIdentify = payload.sonIdentify
+            if ('reposeSite' in payload && typeof payload.reposeSite === 'string') patch.reposeSite = payload.reposeSite
+            if ('reposeAddress' in payload && typeof payload.reposeAddress === 'string') patch.reposeAddress = payload.reposeAddress
+            if ('reposePhone' in payload && typeof payload.reposePhone === 'string') patch.reposePhone = payload.reposePhone
+            if ('reposeEmail' in payload && typeof payload.reposeEmail === 'string') patch.reposeEmail = payload.reposeEmail
+            if ('enabled' in payload) patch.enabled = Boolean(payload.enabled)
+
+            // Dates
+            if ('dateStatus' in payload) patch.dateStatus = this.toDt(payload.dateStatus ?? null)
+            if ('dateEndRelation' in payload) patch.dateEndRelation = this.toDt(payload.dateEndRelation ?? null)
+            if ('dateDisposition' in payload) patch.dateDisposition = this.toDt(payload.dateDisposition ?? null)
+            if ('businessDate' in payload) patch.businessDate = this.toDt(payload.businessDate ?? null)
+            if ('sonBirthDate' in payload) patch.sonBirthDate = this.toDt(payload.sonBirthDate ?? null)
+
+            if ('licenseLastSixMonth' in payload) patch.licenseLastSixMonth = normalizeBoolNumToString(payload.licenseLastSixMonth)
+
+            license.merge(patch)
             await license.save()
             await license.load('typeLicense')
             return response.status(201).json({
