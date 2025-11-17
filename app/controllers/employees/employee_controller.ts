@@ -41,7 +41,8 @@ const groupBy = (arr: any[], keys: string[]) => {
 
 export default class EmployeeController {
     // Date parsing helpers (accept ISO string or JS Date)
-    private toDt(value?: unknown): DateTime | null {
+    private toDt(value?: Date | string | null
+    ): DateTime | null {
         if (value == null) return null
         if (typeof value === 'string') {
             const dt = DateTime.fromISO(value)
@@ -54,7 +55,7 @@ export default class EmployeeController {
         return null
     }
 
-    private fmtDateTime(value?: unknown): string | null {
+    private fmtDateTime(value?: Date | string): string | null {
         const dt = this.toDt(value)
         return dt ? dt.toFormat('dd/MM/yyyy hh:mm:ss a').toLowerCase() : null
     }
@@ -161,6 +162,59 @@ export default class EmployeeController {
         if (out.city && out.city.country && out.city.country.id && out.city.country_id === undefined) {
             out.city.country_id = out.city.country.id
         }
+        if (out.full_name) delete out.full_name
+        return out
+    }
+
+    // Row type returned by raw repository search queries
+    private mapRepoEmployeeSearch(row: {
+        id: number
+        business_id: number
+        enabled: boolean | 0 | 1
+        identify_type_id: number
+        identify: string
+        names: string
+        last_name_p: string
+        last_name_m: string
+        photo?: string | null
+        thumb?: string | null
+        token?: string | null
+        text: string
+        birth_date?: string | Date | null
+        city_id?: number | null
+        city_name?: string | null
+        city_country_id?: number | null
+        country_id?: number | null
+        country_name?: string | null
+        [k: string]: unknown
+    }) {
+        const out: any = { ...row }
+        // Build typed identify object expected by clients
+        out.typeIdentify = { id: row.identify_type_id, text: row.text }
+
+        // Date normalization: prefer birth_date, fallback to birth_day
+        const dt = this.toDt(row.birth_date)
+        if (dt) {
+            out.birth_date_format = dt.toFormat('yyyy-LL-dd')
+            out.birth_date = dt.toFormat('dd/MM/yyyy')
+            out.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
+        } else {
+            out.birth_date_format = null
+            out.age = null
+        }
+
+        // Compose city object if pieces are present
+        if (row.city_id || row.city_name || row.city_country_id) {
+            out.city = {
+                id: row.city_id ?? null,
+                name: row.city_name ?? null,
+                country_id: row.city_country_id ?? null,
+                country: row.country_id || row.country_name
+                    ? { id: row.country_id ?? null, name: row.country_name ?? null }
+                    : undefined,
+            }
+        }
+        // Legacy cleanup
         if (out.full_name) delete out.full_name
         return out
     }
@@ -737,57 +791,18 @@ export default class EmployeeController {
 
     public async findByName({ request, response }: HttpContext) {
         const { name, businessId } = await request.validateUsing(employeeFindByNameValidator)
-        const employees = await EmployeeRepository.findByName(businessId, name)
-        if (!employees || !employees.length) return response.ok([])
-        for (const e of employees) {
-            e.typeIdentify = { id: e.identify_type_id, text: e.text }
-            if (e.birth_date) {
-                const dt = DateTime.fromISO(e.birth_date)
-                if (dt.isValid) {
-                    ; (e as any).birth_date_format = dt.toFormat('yyyy-LL-dd')
-                    e.birth_date = dt.toFormat('dd/MM/yyyy') as any
-                        ; (e as any).age = Math.trunc(DateTime.now().diff(dt, 'years').years)
-                } else {
-                    ; (e as any).birth_date_format = null
-                        ; (e as any).age = null
-                }
-            } else {
-                ; (e as any).birth_date_format = null
-                    ; (e as any).age = null
-            }
-            if ((e as any).city && (e as any).city.country && (e as any).city.country.id && (e as any).city.country_id === undefined) {
-                (e as any).city.country_id = (e as any).city.country.id
-            }
-            if ((e as any).full_name) delete (e as any).full_name
-        }
-        return response.ok(employees)
+        const rows = await EmployeeRepository.findByName(businessId, name)
+        if (!rows || !rows.length) return response.ok([])
+        const list = (rows as any[]).map((r) => this.mapRepoEmployeeSearch(r as any))
+        return response.ok(list)
     }
 
     public async findByLastNameP({ request, response }: HttpContext) {
         const { lastNameP, businessId } = await request.validateUsing(employeeFindByLastNamePValidator)
-        const employees = await EmployeeRepository.findByLastNameP(businessId, lastNameP)
-        for (const e of employees) {
-            e.typeIdentify = { id: e.identify_type_id, text: e.text }
-            if (e.birth_date) {
-                const dt = DateTime.fromISO(e.birth_date)
-                if (dt.isValid) {
-                    ; (e as any).birth_date_format = dt.toFormat('yyyy-LL-dd')
-                    e.birth_date = dt.toFormat('dd/MM/yyyy') as any
-                        ; (e as any).age = Math.trunc(DateTime.now().diff(dt, 'years').years)
-                } else {
-                    ; (e as any).birth_date_format = null
-                        ; (e as any).age = null
-                }
-            } else {
-                ; (e as any).birth_date_format = null
-                    ; (e as any).age = null
-            }
-            if ((e as any).city && (e as any).city.country && (e as any).city.country.id && (e as any).city.country_id === undefined) {
-                (e as any).city.country_id = (e as any).city.country.id
-            }
-            if ((e as any).full_name) delete (e as any).full_name
-        }
-        return response.ok(employees || [])
+        const rows = await EmployeeRepository.findByLastNameP(businessId, lastNameP)
+        if (!rows || !rows.length) return response.ok([])
+        const list = (rows as any[]).map((r) => this.mapRepoEmployeeSearch(r as any))
+        return response.ok(list)
     }
 
     public async deletePhoto({ request, response, i18n }: HttpContext) {
