@@ -1,5 +1,6 @@
 import City from '#models/cities/City'
 import CityRepository from '#repositories/cities/city_repository'
+import Util from '#utils/Util'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -42,18 +43,17 @@ export default class CityController {
         })
       )
     )
-    const dateTime = DateTime.local()
-
+    const tz = await Util.getTimeZone()
+    const dateTime = DateTime.now().setZone(tz)
     try {
-      const payload = {
+      const city = await City.create({
         countryId: countryId,
         name,
-        createdBy: auth.user!.id,
-        updatedBy: auth.user!.id,
+        createdById: auth.user!.id,
+        updatedById: auth.user!.id,
         createdAt: dateTime,
         updatedAt: dateTime,
-      }
-      const city = await City.create(payload)
+      })
 
       await city.load('country', (builder) => {
         builder.select(['id', 'name'])
@@ -71,6 +71,7 @@ export default class CityController {
         title: i18n.formatMessage('messages.ok_title'),
       } as MessageFrontEnd)
     } catch (error) {
+      console.log(error);
       throw new Exception(i18n.formatMessage('messages.store_error'))
     }
   }

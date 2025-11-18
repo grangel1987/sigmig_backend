@@ -843,6 +843,22 @@ export default class EmployeeController {
         return response.ok(list)
     }
 
+    /** Autocomplete endpoint combining name/last name/identify partial matching */
+    public async findAutocomplete({ request, response }: HttpContext) {
+        const { default: vine } = await import('@vinejs/vine')
+        const schema = vine.compile(vine.object({
+            value: vine.string().trim().minLength(1).optional(),
+            businessId: vine.number().positive(),
+            limit: vine.number().positive().max(100).optional(),
+        }))
+        const { value, businessId, limit } = await request.validateUsing(schema)
+        const rows = await EmployeeRepository.findAutocomplete(businessId, value, limit ?? 20)
+        if (!rows || !rows.length) return response.ok([])
+        // Reuse central mapper for consistent date & typeIdentify formatting
+        const list = (rows as any[]).map((r) => this.mapRepoEmployeeSearch(r as any))
+        return response.ok(list)
+    }
+
     public async deletePhoto({ request, response, i18n }: HttpContext) {
         const { employeeId } = await request.validateUsing(employeeDeletePhotoValidator)
         const dateTime = await Util.getDateTimes(request.ip())

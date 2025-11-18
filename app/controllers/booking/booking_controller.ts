@@ -64,7 +64,7 @@ export default class BookingController {
                 type: b.type || '',
                 monthQuantity: Number(b.monthQuantity || 0),
                 attended: false,
-            } as any, { client: trx })
+            }, { client: trx })
             // Ensure subsequent related operations use same transaction
             bk.useTransaction(trx)
 
