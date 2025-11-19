@@ -12,7 +12,7 @@ const corsConfig = defineConfig({
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   headers: true,
   exposeHeaders: [],
-  credentials: true,
+  credentials: false,
   maxAge: 90,
 })
 
