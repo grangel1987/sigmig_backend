@@ -1,22 +1,24 @@
+import { personalDataSchema } from '#validators/personal_data'
 import vine from '@vinejs/vine'
 
 export const employeeStoreValidator = vine.compile(
     vine.object({
         enabled: vine.boolean().optional(),
-        typeIdentifyId: vine.number().positive(),
-        identify: vine.string().trim().minLength(3),
-        names: vine.string().trim().minLength(1),
-        lastNameP: vine.string().trim().minLength(1),
-        lastNameM: vine.string().trim().minLength(1),
+        // All identity fields shared with personalData are now optional (mutual exclusivity with personalData/personalDataId)
+        typeIdentifyId: vine.number().positive().optional(),
+        identify: vine.string().trim().minLength(3).optional(),
+        names: vine.string().trim().minLength(1).optional(),
+        lastNameP: vine.string().trim().minLength(1).optional(),
+        lastNameM: vine.string().trim().minLength(1).optional(),
         stateCivil: vine.number().optional(),
-        sexId: vine.number().positive(),
-        birthDate: vine.string().trim(), // ISO or yyyyMMDd expected
-        nationalityId: vine.number().positive(),
-        cityId: vine.number().positive(),
-        address: vine.string(),
+        sexId: vine.number().positive().optional(),
+        birthDate: vine.string().trim().optional(), // ISO or yyyy-MM-dd expected
+        nationalityId: vine.number().positive().optional(),
+        cityId: vine.number().positive().optional(),
+        address: vine.string().optional(),
         phone: vine.string().optional(),
-        movil: vine.string(),
-        email: vine.string().email(),
+        movil: vine.string().optional(),
+        email: vine.string().email().optional(),
         businessId: vine.number().positive(),
         afpId: vine.number().optional(),
         afpPercentage: vine.number().optional(),
@@ -82,26 +84,29 @@ export const employeeStoreValidator = vine.compile(
                 })
             )
             .optional(),
+        userId: vine.number().positive().exists({ table: 'users', column: 'id' }).optional().requiredIfMissing('personalData'),
+        personalData: personalDataSchema.optional().requiredIfMissing('userId'),
     })
 )
 
 export const employeeUpdateValidator = vine.compile(
     vine.object({
         enabled: vine.boolean().optional(),
-        typeIdentifyId: vine.number().positive(),
-        identify: vine.string().trim().minLength(3),
-        names: vine.string().trim().minLength(1),
-        lastNameP: vine.string().trim().minLength(1),
-        lastNameM: vine.string().trim().minLength(1),
+        // Shared identity fields with personalData made optional (can rely on personalDataId or personalData object)
+        typeIdentifyId: vine.number().positive().optional(),
+        identify: vine.string().trim().minLength(3).optional(),
+        names: vine.string().trim().minLength(1).optional(),
+        lastNameP: vine.string().trim().minLength(1).optional(),
+        lastNameM: vine.string().trim().minLength(1).optional(),
         stateCivil: vine.number().optional(),
-        sexId: vine.number().positive(),
-        birthDate: vine.string().trim(),
-        nationalityId: vine.number().positive(),
+        sexId: vine.number().positive().optional(),
+        birthDate: vine.string().trim().optional(),
+        nationalityId: vine.number().positive().optional(),
         cityId: vine.number().positive().optional(),
-        address: vine.string(),
+        address: vine.string().optional(),
         phone: vine.string().optional(),
-        movil: vine.string(),
-        email: vine.string().email(),
+        movil: vine.string().optional(),
+        email: vine.string().email().optional(),
 
         businessId: vine.number().positive(),
         // Business employee optional fields
@@ -169,6 +174,8 @@ export const employeeUpdateValidator = vine.compile(
                 })
             )
             .optional(),
+        userId: vine.number().positive().exists({ table: 'users', column: 'id' }).optional().requiredIfMissing('personalData'),
+        personalData: personalDataSchema.optional().requiredIfMissing('userId'),
     })
 )
 

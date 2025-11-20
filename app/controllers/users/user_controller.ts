@@ -1,14 +1,17 @@
 import BusinessUser from '#models/business/business_user'
+import Employee from '#models/employees/employee'
 import PersonalData from '#models/users/personal_data'
 import User from '#models/users/user'
 import env from '#start/env'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import { personalDataSchema } from '#validators/personal_data'
 import { HttpContext, Response } from '@adonisjs/core/http'
 import hash from '@adonisjs/core/services/hash'
 import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
+import { DateTime } from 'luxon'
 import UserRepository from '../../repositories/users/user_repository.js'
 
 interface BusinessPayload {
@@ -17,13 +20,7 @@ interface BusinessPayload {
   permissions: number[]
 }
 
-interface PersonalDataPayload {
-  names: string
-  last_name_p: string
-  last_name_m: string
-  type_identify_id: number
-  identify: string
-}
+// PersonalData payload validated inline in handlers to match the model
 
 const SUPERUSER_ROLE_CURRENT_ID = 1
 export default class UserController {
@@ -487,21 +484,35 @@ export default class UserController {
   public async store({ request, response, auth, i18n }: HttpContext) {
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
+    const { email, business, signature, employeeId, personalData } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+          business: vine.any(),
+          employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
+          isAdmin: vine.boolean().optional(),
+          personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
+          signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
+        })
+      )
+    )
+    const createdFiles: string[] = []
 
     try {
-      const { email, business, personalDataId, personal_data: personalData } = request.all() as {
-        email: string
-        business: string | BusinessPayload[]
-        personalDataId?: number
-        personal_data?: string | PersonalDataPayload
+      // Resolve final email from either top-level or personalData.email
+      const resolvedEmail = email ?? personalData?.email
+      if (!resolvedEmail) {
+        await trx.rollback()
+        return response.status(422).json({
+          ...MessageFrontEnd(i18n.formatMessage('messages.email_required'), i18n.formatMessage('messages.error_title')),
+        })
       }
-      const signature = request.file('signature')
       const businessArray: BusinessPayload[] = typeof business === 'string' ? JSON.parse(business) : business
 
-      const existingUser = await User.findBy('email', email)
+      const existingUser = await User.findBy('email', resolvedEmail)
       if (existingUser) {
         await trx.rollback()
-        return response.status(400).json({
+        return response.status(422).json({
           ...MessageFrontEnd(
             i18n.formatMessage('messages.existEmail'),
             i18n.formatMessage('messages.error_title')
@@ -509,17 +520,32 @@ export default class UserController {
         })
       }
 
+      let personalDataId: number | undefined
+      if (employeeId) {
+        const employee = await Employee.findOrFail(employeeId)
+        if (!employee.personalDataId) {
+          await trx.rollback()
+          return response.status(422).json({
+            ...MessageFrontEnd(
+              i18n.formatMessage('messages.employee_missing_personal_data'),
+              i18n.formatMessage('messages.error_title')
+            ),
+          })
+        }
+        personalDataId = employee.personalDataId
+      }
+
       const user = await User.create(
         {
-          email,
+          email: resolvedEmail,
           password: '12345678',
+          personalDataId: personalDataId,
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,
         },
         { client: trx }
       )
-
       if (signature) {
         const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
         user.signature = resultUpload.url
@@ -527,6 +553,7 @@ export default class UserController {
         user.signatureThumb = resultUpload.url_thumb
         user.signatureThumbShort = resultUpload.url_thumb_short
         await user.useTransaction(trx).save()
+        createdFiles.push(resultUpload.url_short)
       }
 
       for (const bus of businessArray) {
@@ -552,36 +579,58 @@ export default class UserController {
         await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
       }
 
-      if (personalDataId) {
-        user.personalDataId = personalDataId
-      } else {
-        const parsedPersonalData =
-          typeof personalData === 'string' ? JSON.parse(personalData) : personalData
-        parsedPersonalData.createdAt = dateTime
-        parsedPersonalData.updatedAt = dateTime
-        parsedPersonalData.createdBy = auth.user!.id
-        parsedPersonalData.updatedBy = auth.user!.id
+      if (!personalDataId && personalData) {
+        let imageData = {}
+        let createdFile: string | null = null
+        const { photo, ...rPersonalData } = personalData!
 
-        const resPersonalData = await PersonalData.create(parsedPersonalData, { client: trx })
+        if (photo) {
+          const resultUploadPhoto =
+            await Google.uploadFile(photo, 'personal_data', 'image')
+
+          imageData = {
+            photo: resultUploadPhoto.url,
+            thumb: resultUploadPhoto.url_thumb,
+            photoShort: resultUploadPhoto.url_short,
+            thumbShort: resultUploadPhoto.url_thumb_short,
+          }
+          createdFile = resultUploadPhoto.url_short
+        }
+
+        const payloadPersonalData = {
+          ...rPersonalData,
+          ...imageData,
+          birthDate: DateTime.fromJSDate(rPersonalData!.birthDate),
+          phone: rPersonalData!.phone ?? null,
+          createdAt: dateTime,
+          updatedAt: dateTime,
+          createdBy: auth.user!.id,
+          updatedBy: auth.user!.id,
+        }
+
+        const resPersonalData = await PersonalData.create(payloadPersonalData, { client: trx })
         user.personalDataId = resPersonalData.id
-        await user.useTransaction(trx).save()
+        if (createdFile) createdFiles.push(createdFile)
+      }
+      // If an employeeId is provided, link the employee to this user
+      if (employeeId) {
+        const employee = await Employee.findOrFail(employeeId)
+        if (employee.userId && employee.userId !== user.id) {
+          await trx.rollback()
+          return response.status(422).json({
+            ...MessageFrontEnd(
+              i18n.formatMessage('messages.exist_user_for_employee'),
+              i18n.formatMessage('messages.error_title')
+            ),
+          })
+        }
+        employee.userId = user.id
+        await employee.useTransaction(trx).save()
       }
 
+      await user.useTransaction(trx).save()
       await trx.commit()
 
-      /*      const full_name = user.personalData
-             ? `${user.personalData.names} ${user.personalData.last_name_p} ${user.personalData.last_name_m}`
-             : 'Sin Nombre'
-     
-           emitter.emit('new::userAssignedToEmployee', {
-             title: 'Registro de usuario',
-             body: 'Se ha realizado el registro de usuario exitosamente, a continuacion usa el siguiente codigo para verificar tu usuario.',
-             time: user.codeDateTime,
-             email,
-             code: user.code,
-             full_name,
-           })
-      */
       return response.status(201).json({
         user,
         ...MessageFrontEnd(
@@ -592,9 +641,152 @@ export default class UserController {
     } catch (error) {
       await trx.rollback()
       console.error(error)
+      if (createdFiles.length) await Promise.all(createdFiles.map(file => Google.deleteFile(file)))
       return response.status(500).json({
         ...MessageFrontEnd(
           i18n.formatMessage('messages.store_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async update({ request, response, auth, i18n }: HttpContext) {
+    const trx = await db.transaction()
+    const dateTime = await Util.getDateTimes(request.ip())
+    const createdFiles: string[] = []
+
+    try {
+      const { params, email, signature, employeeId, personalData } = await request.validateUsing(
+        vine.compile(
+          vine.object({
+            params: vine.object({ id: vine.number().positive() }),
+            email: vine.string().email().optional(),
+            business: vine.any().optional(),
+            employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
+            personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
+            signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
+          })
+        )
+      )
+
+      const user = await User.findOrFail(params.id)
+      user.useTransaction(trx)
+
+      const candidateEmail = email ?? personalData?.email
+      if (candidateEmail && candidateEmail !== user.email) {
+        const existingUser = await User.findBy('email', candidateEmail)
+        if (existingUser && existingUser.id !== user.id) {
+          await trx.rollback()
+          return response.status(422).json({
+            ...MessageFrontEnd(
+              i18n.formatMessage('messages.existEmail'),
+              i18n.formatMessage('messages.error_title')
+            ),
+          })
+        }
+        user.email = candidateEmail
+      }
+
+      if (signature) {
+        const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
+        user.signature = resultUpload.url
+        user.signatureShort = resultUpload.url_short
+        user.signatureThumb = resultUpload.url_thumb
+        user.signatureThumbShort = resultUpload.url_thumb_short
+        createdFiles.push(resultUpload.url_short)
+      }
+
+      // If employeeId is provided, fetch employee and assign its personalDataId
+      if (employeeId) {
+        const employee = await Employee.findOrFail(employeeId)
+        if (!employee.personalDataId) {
+          await trx.rollback()
+          return response.status(422).json({
+            ...MessageFrontEnd(
+              i18n.formatMessage('messages.employee_missing_personal_data'),
+              i18n.formatMessage('messages.error_title')
+            ),
+          })
+        }
+        user.personalDataId = employee.personalDataId
+      } else if (personalData) {
+        let imageData = {}
+        let createdFile: string | null = null
+        const { photo, ...rPersonalData } = personalData
+        try {
+          if (photo) {
+            const resultUploadPhoto = await Google.uploadFile(photo, 'personal_data', 'image')
+            imageData = {
+              photo: resultUploadPhoto.url,
+              thumb: resultUploadPhoto.url_thumb,
+              photoShort: resultUploadPhoto.url_short,
+              thumbShort: resultUploadPhoto.url_thumb_short,
+            }
+            createdFile = resultUploadPhoto.url_short
+          }
+
+          if (user.personalDataId) {
+            // Update existing personal data
+            const pd = await PersonalData.findOrFail(user.personalDataId)
+            pd.useTransaction(trx)
+            pd.names = rPersonalData.names
+            pd.lastNameP = rPersonalData.lastNameP
+            pd.lastNameM = rPersonalData.lastNameM
+            pd.typeIdentifyId = rPersonalData.typeIdentifyId
+            pd.identify = rPersonalData.identify
+            pd.stateCivilId = rPersonalData.stateCivilId
+            pd.sexId = rPersonalData.sexId
+            pd.birthDate = DateTime.fromJSDate(rPersonalData.birthDate)
+            pd.nationalityId = rPersonalData.nationalityId
+            pd.cityId = rPersonalData.cityId
+            pd.address = rPersonalData.address
+            pd.phone = rPersonalData.phone ?? user.email
+            pd.movil = rPersonalData.movil
+            pd.email = rPersonalData.email ?? user.email
+            Object.assign(pd, imageData)
+            pd.updatedAt = dateTime
+            pd.updatedBy = auth.user!.id
+            await pd.save()
+          } else {
+            // Create new personal data
+            const payloadPersonalData = {
+              ...rPersonalData,
+              ...imageData,
+              birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+              phone: rPersonalData.phone ?? null,
+              createdAt: dateTime,
+              updatedAt: dateTime,
+              createdBy: auth.user!.id,
+              updatedBy: auth.user!.id,
+            }
+            const resPersonalData = await PersonalData.create(payloadPersonalData, { client: trx })
+            user.personalDataId = resPersonalData.id
+          }
+        } catch (error) {
+          if (createdFile) await Google.deleteFile(createdFile)
+          throw error
+        }
+      }
+
+      user.updatedAt = dateTime
+      await user.save()
+      await trx.commit()
+
+      return response.status(200).json({
+        user,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      await trx.rollback()
+      console.error(error)
+      if (createdFiles.length) await Promise.all(createdFiles.map(file => Google.deleteFile(file)))
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
           i18n.formatMessage('messages.error_title')
         ),
       })

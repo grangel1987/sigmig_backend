@@ -2,6 +2,7 @@ import BusinessEmployee from '#models/business/business_employee'
 import Employee from '#models/employees/employee'
 import EmployeeLicenseHealth from '#models/employees/employee_license_health'
 import EmployeePermit from '#models/employees/employee_permit'
+import PersonalData from '#models/users/personal_data'
 // import Position from '#models/positions/position' // not used currently
 import User from '#models/users/user'
 import EmployeeAccessRepository from '#repositories/employees/employee_access_repository'
@@ -259,20 +260,21 @@ export default class EmployeeController {
     public async store({ request, response, auth, i18n }: HttpContext) {
         const { employeeStoreValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeStoreValidator)
+        const { userId, personalData } = payload
         // Note: timestamps are auto-managed by the model; we only compute dates for normalization when needed
         const trx = await db.transaction()
+        const createdFiles: string[] = []
         const authUserId = auth.user!.id
 
         try {
             // Nested collections are now arrays of objects (validator updated)
-            const scheduleWork: Record<string, any>[] = Array.isArray((payload as any).scheduleWork) ? (payload as any).scheduleWork : []
-            const certificateHealthRaw: Record<string, any>[] = Array.isArray((payload as any).certificateHealth) ? (payload as any).certificateHealth : []
-            const contactsEmergencyRaw: Record<string, any>[] = Array.isArray((payload as any).contactsEmergency) ? (payload as any).contactsEmergency : []
+            const scheduleWork: Record<string, any>[] = Array.isArray(payload.scheduleWork) ? payload.scheduleWork : []
+            const certificateHealthRaw: Record<string, any>[] = Array.isArray(payload.certificateHealth) ? payload.certificateHealth : []
+            const contactsEmergencyRaw: Record<string, any>[] = Array.isArray(payload.contactsEmergency) ? payload.contactsEmergency : []
 
-            const currentTime = (await Util.getDateTimes(request.ip())).toISO()
+            const currentTime = await Util.getDateTimes(request.ip())
             // Debug: nested collections received (disabled in production)
 
-            const photo = request.file('photo')
             const authorization = request.file('authorization')
 
             const employeeData: any = {
@@ -297,6 +299,7 @@ export default class EmployeeController {
             }
 
             const businessEmployeeData: any = {
+                userId: payload.userId,
                 enabled: payload.enabled || false,
                 businessId: payload.businessId,
                 afpId: payload.afpId ?? 0,
@@ -342,15 +345,6 @@ export default class EmployeeController {
             }
 
             // Upload images if present
-            if (photo) {
-                const uploaded = await Google.uploadFile(photo, 'admin/employees')
-                Object.assign(employeeData, {
-                    photo: uploaded.url,
-                    photo_short: uploaded.url_short,
-                    thumb: uploaded.url_thumb,
-                    thumb_short: uploaded.url_thumb_short,
-                })
-            }
             if (authorization) {
                 const uploadedA = await Google.uploadFile(authorization, 'admin/authorizations')
                 Object.assign(employeeData, {
@@ -359,7 +353,50 @@ export default class EmployeeController {
                     thumb_authorization_mirror: uploadedA.url_thumb,
                     thumb_authorization_mirror_short: uploadedA.url_thumb_short,
                 })
+                if (uploadedA.url_short) createdFiles.push(uploadedA.url_short)
             }
+            // Link or create personalData
+            if (userId) {
+                const user = await User.findOrFail(userId)
+                if (!user.personalDataId) {
+                    await trx.rollback()
+                    return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
+                }
+                employeeData.personalDataId = user.personalDataId
+            } else if (personalData) {
+                let imageData: Record<string, any> = {}
+                const { photo, ...pdData } = personalData
+                let createdFile: string | null = null
+                try {
+                    if (photo) {
+                        const uploaded = await Google.uploadFile(photo, 'personal_data', 'image')
+                        imageData = {
+                            photo: uploaded.url,
+                            thumb: uploaded.url_thumb,
+                            photoShort: uploaded.url_short,
+                            thumbShort: uploaded.url_thumb_short,
+                        }
+                        createdFile = uploaded.url_short
+                    }
+                    const payloadPersonalData = {
+                        ...pdData,
+                        ...imageData,
+                        birthDate: DateTime.fromJSDate(pdData.birthDate)!,
+                        phone: pdData.phone ?? null,
+                        createdAt: currentTime,
+                        updatedAt: currentTime,
+                        createdBy: auth.user!.id,
+                        updatedBy: auth.user!.id,
+                    }
+                    const newPd = await PersonalData.create(payloadPersonalData, { client: trx })
+                    employeeData.personalDataId = newPd.id
+                    if (createdFile) createdFiles.push(createdFile)
+                } catch (e) {
+                    if (createdFile) { try { await Google.deleteFile(createdFile) } catch { } }
+                    throw e
+                }
+            }
+
             const businessId = payload.businessId
             const employee = await Employee.create(employeeData, { client: trx })
             await employee.related('business').create(businessEmployeeData, { client: trx })
@@ -478,6 +515,7 @@ export default class EmployeeController {
         } catch (error) {
             await trx.rollback()
             console.error(error)
+            if (createdFiles.length) { try { await Promise.all(createdFiles.map(f => Google.deleteFile(f))) } catch { } }
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.store_error'), i18n.formatMessage('messages.error_title')))
         }
     }
@@ -489,6 +527,8 @@ export default class EmployeeController {
         const trx = await db.transaction()
         const { employeeUpdateValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeUpdateValidator)
+        const { userId, personalData } = payload as any
+        const createdFiles: string[] = []
         try {
             // Nested collections are arrays of objects now
             const hasScheduleWork = (payload as any).scheduleWork !== undefined
@@ -520,21 +560,8 @@ export default class EmployeeController {
             if (payload.movil !== undefined) employeePatch.movil = payload.movil
             if (payload.email !== undefined) employeePatch.email = payload.email
             // Handle new photo / authorization uploads & remove old if needed
-            const newPhoto = request.file('photo')
-            if (newPhoto) {
-                if ((employee as any).photo_short) {
-                    try { await Google.deleteFile((employee as any).photo_short); } catch { }
-                    if ((employee as any).thumb_short) { try { await Google.deleteFile((employee as any).thumb_short); } catch { } }
-                    Object.assign(employee, { photo: null, photo_short: null, thumb: null, thumb_short: null })
-                }
-                const uploaded = await Google.uploadFile(newPhoto, 'admin/employees')
-                Object.assign(employee, {
-                    photo: uploaded.url,
-                    photo_short: uploaded.url_short,
-                    thumb: uploaded.url_thumb,
-                    thumb_short: uploaded.url_thumb_short,
-                })
-            }
+
+
             const newAuthorization = request.file('authorization')
             if (newAuthorization) {
                 if ((employee as any).authorization_mirror_short) {
@@ -549,6 +576,64 @@ export default class EmployeeController {
                     thumb_authorization_mirror: uploadedA.url_thumb,
                     thumb_authorization_mirror_short: uploadedA.url_thumb_short,
                 })
+                if (uploadedA.url_short) createdFiles.push(uploadedA.url_short)
+            }
+
+            // Handle personalData linking/creation/update
+            if (userId) {
+                const user = await User.findOrFail(userId)
+                if (!user.personalDataId) {
+                    await trx.rollback()
+                    return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
+                }
+                employeePatch.personalDataId = user.personalDataId
+            } else if (personalData) {
+                let imageData: Record<string, any> = {}
+                const { photo, ...pdData } = personalData
+                let createdFile: string | null = null
+                try {
+                    if (photo) {
+                        const uploaded = await Google.uploadFile(photo, 'personal_data', 'image')
+                        imageData = {
+                            photo: uploaded.url,
+                            thumb: uploaded.url_thumb,
+                            photoShort: uploaded.url_short,
+                            thumbShort: uploaded.url_thumb_short,
+                        }
+                        createdFile = uploaded.url_short
+                    }
+                    if (employee.personalDataId) {
+                        const existingPd = await PersonalData.find(employee.personalDataId)
+                        if (existingPd) {
+                            existingPd.merge({
+                                ...pdData,
+                                ...imageData,
+                                birthDate: DateTime.fromJSDate(pdData.birthDate),
+                                phone: pdData.phone ?? null,
+                                updatedAt: currentTime,
+                                updatedBy: auth.user!.id,
+                            })
+                            await existingPd.save()
+                        }
+                    } else {
+                        const payloadPersonalData = {
+                            ...pdData,
+                            ...imageData,
+                            birthDate: DateTime.fromJSDate(pdData.birthDate),
+                            phone: pdData.phone ?? null,
+                            createdAt: currentTime,
+                            updatedAt: currentTime,
+                            createdBy: auth.user!.id,
+                            updatedBy: auth.user!.id,
+                        }
+                        const newPd = await PersonalData.create(payloadPersonalData)
+                        employeePatch.personalDataId = newPd.id
+                    }
+                    if (createdFile) createdFiles.push(createdFile)
+                } catch (e) {
+                    if (createdFile) { try { await Google.deleteFile(createdFile) } catch { } }
+                    throw e
+                }
             }
 
             // Merge patch after potential file operations (we still call merge before save)
@@ -715,6 +800,7 @@ export default class EmployeeController {
         } catch (error) {
             await trx.rollback()
             console.error(error)
+            if (createdFiles.length) { try { await Promise.all(createdFiles.map(f => Google.deleteFile(f))) } catch { } }
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
         }
     }
@@ -725,6 +811,12 @@ export default class EmployeeController {
         const businessId = Number(params.business_id)
         const employee = await Employee.query()
             .where('token', token)
+            .preload('personalData', (pd: any) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
+                    .preload('typeIdentify', (ti: any) => {
+                        ti.select(['id', 'name'])
+                    })
+            })
             .preload('createdBy', (builder) => {
                 builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })
@@ -778,10 +870,10 @@ export default class EmployeeController {
     /** Find employees by identify (uniform formatting, no 500 on empty) */
     public async findByIdentify({ request, response }: HttpContext) {
         const { identify, typeIdentify, businessId } = await request.validateUsing(employeeFindByIdentifyValidator)
-        const rows = await Employee.query()
+        const row = await Employee.query()
             .where('identify', String(identify).trim())
             .where('identify_type_id', typeIdentify)
-            .select(['id', 'identify_type_id', 'identify', 'names', 'last_name_p', 'last_name_m', 'birth_date'])
+            .select(['id', 'identify_type_id', 'identify', 'names', 'last_name_p', 'last_name_m', 'birth_date', 'personal_data_id'])
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                 b.select(['id', 'enabled', 'employee_id', 'business_id'])
@@ -791,14 +883,12 @@ export default class EmployeeController {
                 b.preload('country', (cb) => cb.select(['id', 'name']))
             })
             .preload('typeIdentify', (b) => b.select(['id', 'text']))
-            .preload('certificateHealth')
-            .preload('emergencyContacts')
-            .preload('scheduleWork', (b) => {
-                b.preload('schedule')
-                b.preload('work')
+            .preload('personalData', (pd: any) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
+                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
             })
-
-        const list = rows.map((e) => this.mapSearchEmployee(e.toJSON()))
+            .first()
+        const list = row ? [this.mapSearchEmployee(row.toJSON())] : []
         return response.ok(list)
     }
 
@@ -806,6 +896,12 @@ export default class EmployeeController {
         const { employeeId, businessId } = await request.validateUsing(employeeFindByIdValidator)
         const employee = await Employee.query()
             .where('id', employeeId)
+            .preload('personalData', (pd: any) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
+                    .preload('typeIdentify', (ti: any) => {
+                        ti.select(['id', 'name'])
+                    })
+            })
             .preload('city', (b) => {
                 b.select(['id', 'name', 'country_id'])
                 b.preload('country', (cb) => cb.select(['id', 'name']))
@@ -831,7 +927,35 @@ export default class EmployeeController {
         const { name, businessId } = await request.validateUsing(employeeFindByNameValidator)
         const rows = await EmployeeRepository.findByName(businessId, name)
         if (!rows || !rows.length) return response.ok([])
-        const list = (rows as any[]).map((r) => this.mapRepoEmployeeSearch(r as any))
+        const employeeIds = rows.map((r: any) => r.id)
+        const employees = await Employee.query()
+            .whereIn('id', employeeIds)
+            .select(['id', 'personal_data_id'])
+            .preload('personalData', (pd: any) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
+                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            })
+        const personalDataById: Record<number, any> = {}
+        for (const e of employees) {
+            const pd = (e as any).personalData
+            if (pd) personalDataById[e.id] = pd
+        }
+        const list = (rows as any[]).map((r) => {
+            const base = this.mapRepoEmployeeSearch(r as any)
+            const pd = personalDataById[r.id]
+            if (pd) {
+                base.personalData = {
+                    id: pd.id,
+                    names: pd.names,
+                    last_name_p: pd.last_name_p,
+                    last_name_m: pd.last_name_m,
+                    identify: pd.identify,
+                    type_identify_id: pd.type_identify_id,
+                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
+                }
+            }
+            return base
+        })
         return response.ok(list)
     }
 
@@ -839,7 +963,35 @@ export default class EmployeeController {
         const { lastNameP, businessId } = await request.validateUsing(employeeFindByLastNamePValidator)
         const rows = await EmployeeRepository.findByLastNameP(businessId, lastNameP)
         if (!rows || !rows.length) return response.ok([])
-        const list = (rows as any[]).map((r) => this.mapRepoEmployeeSearch(r as any))
+        const employeeIds = rows.map((r: any) => r.id)
+        const employees = await Employee.query()
+            .whereIn('id', employeeIds)
+            .select(['id', 'personal_data_id'])
+            .preload('personalData', (pd: any) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
+                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            })
+        const personalDataById: Record<number, any> = {}
+        for (const e of employees) {
+            const pd = (e as any).personalData
+            if (pd) personalDataById[e.id] = pd
+        }
+        const list = (rows as any[]).map((r) => {
+            const base = this.mapRepoEmployeeSearch(r as any)
+            const pd = personalDataById[r.id]
+            if (pd) {
+                base.personalData = {
+                    id: pd.id,
+                    names: pd.names,
+                    last_name_p: pd.last_name_p,
+                    last_name_m: pd.last_name_m,
+                    identify: pd.identify,
+                    type_identify_id: pd.type_identify_id,
+                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
+                }
+            }
+            return base
+        })
         return response.ok(list)
     }
 
@@ -854,8 +1006,35 @@ export default class EmployeeController {
         const { value, businessId, limit } = await request.validateUsing(schema)
         const rows = await EmployeeRepository.findAutocomplete(businessId, value, limit ?? 20)
         if (!rows || !rows.length) return response.ok([])
-        // Reuse central mapper for consistent date & typeIdentify formatting
-        const list = (rows as any[]).map((r) => this.mapRepoEmployeeSearch(r as any))
+        const employeeIds = rows.map((r: any) => r.id)
+        const employees = await Employee.query()
+            .whereIn('id', employeeIds)
+            .select(['id', 'personal_data_id'])
+            .preload('personalData', (pd: any) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
+                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            })
+        const personalDataById: Record<number, any> = {}
+        for (const e of employees) {
+            const pd = (e as any).personalData
+            if (pd) personalDataById[e.id] = pd
+        }
+        const list = (rows as any[]).map((r) => {
+            const base = this.mapRepoEmployeeSearch(r as any)
+            const pd = personalDataById[r.id]
+            if (pd) {
+                base.personalData = {
+                    id: pd.id,
+                    names: pd.names,
+                    last_name_p: pd.last_name_p,
+                    last_name_m: pd.last_name_m,
+                    identify: pd.identify,
+                    type_identify_id: pd.type_identify_id,
+                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
+                }
+            }
+            return base
+        })
         return response.ok(list)
     }
 

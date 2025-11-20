@@ -532,6 +532,14 @@ router.group(() => {
   }).prefix('client-request')
 
 
+  // Users (protected)
+  router.group(() => {
+    router.get('/', '#controllers/users/user_controller.index')
+    router.post('/store', '#controllers/users/user_controller.store')
+    router.put('/update/:id', '#controllers/users/user_controller.update')
+  }).prefix('user').middleware(auth)
+
+
   // Bugets (quotes)
   router.group(() => {
     router.post('/store', '#controllers/bugets/buget_controller.store')

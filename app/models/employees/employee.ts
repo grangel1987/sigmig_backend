@@ -4,6 +4,7 @@ import City from '#models/cities/City'
 import Country from '#models/countries/country'
 import Position from '#models/positions/position'
 import Setting from '#models/settings/setting'
+import PersonalData from '#models/users/personal_data'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
@@ -46,6 +47,9 @@ export default class Employee extends BaseModel {
 
     @column({ columnName: 'state_civil_id' })
     public stateCivilId: number | null
+
+    @column({ columnName: 'personal_data_id' })
+    public personalDataId: number | null
 
     @hasMany(() => EmployeeCertificateHealth)
     public certificateHealth: HasMany<typeof EmployeeCertificateHealth>
@@ -117,6 +121,9 @@ export default class Employee extends BaseModel {
     @column({ columnName: 'updated_by' })
     public updatedById: number | null
 
+    @column({ columnName: 'user_id' })
+    public userId: number | null
+
     @column.dateTime({ autoCreate: true })
     public createdAt: DateTime
 
@@ -133,6 +140,12 @@ export default class Employee extends BaseModel {
 
     @belongsTo(() => User, { foreignKey: 'updatedById' })
     public updatedBy: BelongsTo<typeof User>
+
+    @belongsTo(() => User, { foreignKey: 'userId' })
+    public user: BelongsTo<typeof User>
+
+    @belongsTo(() => PersonalData, { foreignKey: 'personalDataId' })
+    public personalData: BelongsTo<typeof PersonalData>
 
     @hasMany(() => BusinessEmployee, { foreignKey: 'employeeId' })
     public business: HasMany<typeof BusinessEmployee>
