@@ -622,6 +622,144 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "PUT user/update/signature/:id",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "signature",
+									"type": "file",
+									"src": ""
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/{{apiPrefix}}/user/update/signature/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{apiPrefix}}",
+								"user",
+								"update",
+								"signature",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PUT user/update/photo/:id",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "photo",
+									"type": "file",
+									"src": ""
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/{{apiPrefix}}/user/update/photo/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{apiPrefix}}",
+								"user",
+								"update",
+								"photo",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE user/delete/signature/:id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{apiPrefix}}/user/delete/signature/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{apiPrefix}}",
+								"user",
+								"delete",
+								"signature",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE user/delete/photo/:id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{apiPrefix}}/user/delete/photo/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{apiPrefix}}",
+								"user",
+								"delete",
+								"photo",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},

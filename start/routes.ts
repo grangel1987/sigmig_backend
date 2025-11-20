@@ -25,7 +25,11 @@ router.group(() => {
     router.group(() => {
       router.get("find-user-by-token", "#controllers/users/user_controller.findByToken")
       router.post("/reset-password", "#controllers/users/user_controller.resetPassword");
+      // Dedicated change password (authenticated user supplies current & new password)
+      router.post("/change-password", "#controllers/users/user_controller.changePasswordOwner");
     }).middleware(auth)
+    // Password recovery with random password (public, sends email)
+    router.post("/recover-password", "#controllers/users/user_controller.recoverPassword");
   }).prefix('account')
 
   router.group(() => {
@@ -537,6 +541,10 @@ router.group(() => {
     router.get('/', '#controllers/users/user_controller.index')
     router.post('/store', '#controllers/users/user_controller.store')
     router.put('/update/:id', '#controllers/users/user_controller.update')
+    router.put('/update/signature/:id', '#controllers/users/user_controller.updateSignature')
+    router.put('/update/photo/:id', '#controllers/users/user_controller.updatePhoto')
+    router.delete('/delete/signature/:id', '#controllers/users/user_controller.deleteSignature')
+    router.delete('/delete/photo/:id', '#controllers/users/user_controller.deletePhoto')
   }).prefix('user').middleware(auth)
 
 

@@ -60,6 +60,10 @@ const MAIL_EVENTS: Record<string, MailDescriptor> = {
         template: 'emails/user_code',
         subject: 'SIG Platform: Asignacion de usuario a empleado',
     },
+    'new::userPasswordRecovered': {
+        template: 'emails/user_password_recovery',
+        subject: 'SIG Platform: Recuperacion de clave',
+    },
 }
 
 async function renderView(template: string, data: any): Promise<string | null> {

@@ -8,10 +8,12 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { personalDataSchema } from '#validators/personal_data'
 import { HttpContext, Response } from '@adonisjs/core/http'
+import emitter from '@adonisjs/core/services/emitter'
 import hash from '@adonisjs/core/services/hash'
 import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
+import crypto from 'node:crypto'
 import UserRepository from '../../repositories/users/user_repository.js'
 
 interface BusinessPayload {
@@ -959,6 +961,69 @@ export default class UserController {
     }
   }
 
+  /**
+   * Recover password by generating a random temporary password and emailing it to the user.
+   * This does not expose the password publicly (only via email template).
+   */
+  public async recoverPassword({ request, response, i18n }: HttpContext) {
+    const { email } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email() })))
+    const dateTime = await Util.getDateTimes(request.ip())
+
+    try {
+      const user = await User.query()
+        .where('email', email)
+        .where('enabled', true)
+        .where('verified', true)
+        .preload('personalData', q => q.select(['names', 'last_name_p', 'last_name_m']))
+        .first()
+
+      if (!user) {
+        return response.status(404).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
+      }
+
+      // Generate a secure random password (12 chars alphanumeric)
+      const raw = crypto.randomBytes(16).toString('base64')
+      const tempPassword = raw.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12)
+      // Ensure minimum length
+      const finalPassword = tempPassword.length < 10 ? tempPassword + crypto.randomBytes(4).toString('hex').slice(0, 2) : tempPassword
+
+      user.password = finalPassword
+      user.updatedAt = dateTime
+      await user.save()
+
+      const full_name = user.personalData
+        ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}`
+        : 'Usuario'
+
+      emitter.emit('new::userPasswordRecovered' as any, {
+        email: user.email,
+        full_name,
+        password: finalPassword,
+        time: dateTime.toISO(),
+      })
+
+      return response.status(200).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
   public async webClientLogin({ request, response, auth, i18n }: HttpContext) {
     const dateTime = await Util.getDateTimes(request.ip())
     const { username, password } = request.only(['username', 'password'])
@@ -1030,5 +1095,185 @@ export default class UserController {
     // Revoke refresh tokens if needed
     await db.from('refresh_tokens').where('user_id', auth.user!.id).delete()
     return null
+  }
+
+  /**
+   * Update only the user signature image.
+   */
+  public async updateSignature({ request, response, i18n }: HttpContext) {
+    const { params, signature } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          params: vine.object({ id: vine.number().positive() }),
+          signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }),
+        })
+      )
+    )
+    const dateTime = await Util.getDateTimes(request.ip())
+    try {
+      const user = await User.findOrFail(params.id)
+      const oldShort = user.signatureShort
+      const upload = await Google.uploadFile(signature, 'signatures', 'image')
+      user.signature = upload.url
+      user.signatureShort = upload.url_short
+      user.signatureThumb = upload.url_thumb
+      user.signatureThumbShort = upload.url_thumb_short
+      user.updatedAt = dateTime
+      await user.save()
+      if (oldShort) await Google.deleteFile(oldShort).catch(() => null)
+      return response.ok({
+        user,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  /**
+   * Update only the PersonalData photo for a given user id.
+   */
+  public async updatePhoto({ request, response, i18n }: HttpContext) {
+    const { params, photo } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          params: vine.object({ id: vine.number().positive() }),
+          photo: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }),
+        })
+      )
+    )
+    const dateTime = await Util.getDateTimes(request.ip())
+    try {
+      const user = await User.findOrFail(params.id)
+      if (!user.personalDataId) {
+        return response.status(422).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.employee_missing_personal_data'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
+      }
+      const personalData = await PersonalData.findOrFail(user.personalDataId)
+      const oldShort = personalData.photoShort
+      const upload = await Google.uploadFile(photo, 'personal_data', 'image')
+      personalData.photo = upload.url
+      personalData.thumb = upload.url_thumb
+      personalData.photoShort = upload.url_short
+      personalData.thumbShort = upload.url_thumb_short
+      personalData.updatedAt = dateTime
+      await personalData.save()
+      if (oldShort) await Google.deleteFile(oldShort).catch(() => null)
+      return response.ok({
+        personalData,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  /**
+   * Delete user signature image and clear signature fields.
+   */
+  public async deleteSignature({ request, response, i18n }: HttpContext) {
+    const { params } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          params: vine.object({ id: vine.number().positive() }),
+        })
+      )
+    )
+    const dateTime = await Util.getDateTimes(request.ip())
+    try {
+      const user = await User.findOrFail(params.id)
+      const oldShort = user.signatureShort
+      user.signature = null as any
+      user.signatureShort = null as any
+      user.signatureThumb = null as any
+      user.signatureThumbShort = null as any
+      user.updatedAt = dateTime
+      await user.save()
+      if (oldShort) await Google.deleteFile(oldShort).catch(() => null)
+      return response.ok({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.delete_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.delete_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  /**
+   * Delete personal data photo for a given user.
+   */
+  public async deletePhoto({ request, response, i18n }: HttpContext) {
+    const { params } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          params: vine.object({ id: vine.number().positive() }),
+        })
+      )
+    )
+    const dateTime = await Util.getDateTimes(request.ip())
+    try {
+      const user = await User.findOrFail(params.id)
+      if (!user.personalDataId) {
+        return response.status(422).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.employee_missing_personal_data'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
+      }
+      const personalData = await PersonalData.findOrFail(user.personalDataId)
+      const oldShort = personalData.photoShort
+      personalData.photo = null
+      personalData.thumb = null
+      personalData.photoShort = null
+      personalData.thumbShort = null
+      personalData.updatedAt = dateTime
+      await personalData.save()
+      if (oldShort) await Google.deleteFile(oldShort).catch(() => null)
+      return response.ok({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.delete_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.delete_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
   }
 }
