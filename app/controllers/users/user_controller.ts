@@ -11,8 +11,10 @@ import { HttpContext, Response } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import hash from '@adonisjs/core/services/hash'
 import db from '@adonisjs/lucid/services/db'
+import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
+import { log } from 'node:console'
 import crypto from 'node:crypto'
 import UserRepository from '../../repositories/users/user_repository.js'
 
@@ -279,24 +281,40 @@ export default class UserController {
         user.codeDateTime = DateTime.now().plus({ hours: 1 })
         await user.save()
 
-        /*         const full_name = user.personalData
-                  ? `${user.personalData.names} ${user.personalData.last_name_p} ${user.personalData.last_name_m}`
-                  : 'Sin Nombre'
-        
-                const userNotification = {
-                  title: 'Recuperación de contraseña',
-                  body: 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Utiliza el siguiente código de verificación para completar el proceso:',
-                  time: user.codeDateTime,
-                  email: user.email,
-                  full_name,
-                  code: user.code,
-                }
-        
-                if (methodSendCode === 'email') {
-                  emitter.emit('new::userForgotPasswordStore', userNotification)
-                } else if (methodSendCode === 'whatsapp') {
-                  // Implement WhatsApp sending logic
-                } */
+        /*             const full_name = user.personalData
+                          ? `${user.personalData.names} ${user.personalData.last_name_p} ${user.personalData.last_name_m}`
+                          : 'Sin Nombre'
+                
+                        const userNotification = {
+                          title: 'Recuperación de contraseña',
+                          body: 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Utiliza el siguiente código de verificación para completar el proceso:',
+                          time: user.codeDateTime,
+                          email: user.email,
+                          full_name,
+                          code: user.code,
+                        }
+                
+                        if (methodSendCode === 'email') {
+                          emitter.emit('new::userForgotPasswordStore', userNotification)
+                        } else if (methodSendCode === 'whatsapp') {
+                          // Implement WhatsApp sending logic
+                        }  */
+
+        try {
+          await mail.send((message) => {
+            message
+              .to(user.email)
+              .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+              .subject('SIGMI - Recuperación de Contraseña')
+              .htmlView('emails/_forgot_password', {
+                full_name: user.personalData?.fullName,
+                code: user.code
+              })
+          })
+          log('Email sent successfully')
+        } catch (error) {
+          console.error('Failed to send email:', error)
+        }
 
         return response.status(201).json({
           ...MessageFrontEnd(
@@ -489,7 +507,7 @@ export default class UserController {
   public async store({ request, response, auth, i18n }: HttpContext) {
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
-    const { email, business, signature, employeeId, personalData, isAuthorizer } = await request.validateUsing(
+    const { email, business, signature, employeeId, personalData, isAuthorizer, isAdmin } = await request.validateUsing(
       vine.compile(
         vine.object({
           email: vine.string().email().optional(),
@@ -541,11 +559,13 @@ export default class UserController {
         personalDataId = employee.personalDataId
       }
 
+      const password = Util.getCode()
       const user = await User.create(
         {
           email: resolvedEmail,
-          password: '12345678',
+          password: password,
           personalDataId: personalDataId,
+          isAdmin: isAdmin ?? false,
           isAuthorizer: isAuthorizer ?? false,
           createdAt: dateTime,
           updatedAt: dateTime,
@@ -639,22 +659,25 @@ export default class UserController {
       await user.useTransaction(trx).save()
       await trx.commit()
 
-      // const full_name = user.personalData ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}` : 'Usuario'
+      const full_name = user.personalData ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}` : 'Usuario'
 
-      // Commented out mailing code - remote server not prepared
-      /*
+
       try {
-        await mail.send((message) => {
+        await mail.sendLater((message) => {
           message
             .to(user.email)
-            .from(env.get('MAIL_FROM') || 'info@example.org')
-            .subject('SIG Platform: Your password')
-            .text(`Hello ${full_name}, your initial password is: 12345678`)
+            .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+            .subject('SIGMI Nuevo Usuario')
+            .htmlView('emails/user_password_recovery', {
+              full_name,
+              password,
+              time: dateTime.toISO()
+            })
         })
       } catch (error) {
         console.error('Failed to send email:', error)
       }
-      */
+
 
       return response.status(201).json({
         user,

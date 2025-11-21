@@ -10,19 +10,19 @@ export default defineConfig({
         smtp: transports.smtp({
             host: env.get('SMTP_HOST', ''),
             port: env.get('SMTP_PORT', ''),
-            secure: true, // Use SSL for port 465
+            secure: false, // Disable SSL for smtp4dev
 
-            auth: {
+            auth: env.get('SMTP_USERNAME') && env.get('SMTP_PASSWORD') ? {
                 type: 'login',
                 user: env.get('SMTP_USERNAME', ''),
                 pass: env.get('SMTP_PASSWORD', '')
-            },
+            } : undefined, // Only use auth if credentials are provided
 
             tls: {
                 rejectUnauthorized: false // Allow self-signed certificates if needed
             },
 
-            ignoreTLS: false,
+            ignoreTLS: true, // Ignore TLS for smtp4dev
             requireTLS: false,
 
             pool: false,
