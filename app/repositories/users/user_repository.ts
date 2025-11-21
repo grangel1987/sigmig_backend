@@ -3,6 +3,7 @@ import Permission from "#models/permissions/permission"
 import User from "#models/users/user"
 import Menu from "#utils/Menu"
 import Util from "#utils/Util"
+import db from '@adonisjs/lucid/services/db'
 import { DateTime } from "luxon"
 
 interface BusinessItem {
@@ -29,7 +30,8 @@ interface UserData {
     typeIdentify: { id: number; text: string }
     identify: string
   }
-  businessUser: BusinessUser[]
+  businessUser?: BusinessUser[]
+  business?: any[]
 }
 
 export default class UserRepository {
@@ -91,7 +93,7 @@ export default class UserRepository {
     let permissionsGlobal: string[] = []
     let isSuperAdmin = false
 
-    data.businessUser.forEach((element) => {
+    data.businessUser?.forEach((element) => {
       permissionsGlobal = []
       const item: BusinessItem = {
         business_id: element.business.id,
@@ -135,7 +137,13 @@ export default class UserRepository {
       isSuperAdmin = false
     })
 
-    return { ...data, business: result }
+      // Match legacy behavior: modify data object and return result
+      ; (data as any).business = result
+    delete (data as any).personal_data_id
+    delete (data as any).verified
+    delete data.businessUser
+
+    return result
   }
 
   public static async findById(userId: number): Promise<User | null> {
@@ -146,35 +154,53 @@ export default class UserRepository {
       .first()
   }
 
-  public static async updateToken(_token: string, _userId: number) {
+  public static async updateToken(token: string, userId: number): Promise<boolean> {
+    // Match legacy implementation
+    const query = `
+      UPDATE tokens
+      SET token='${token}'
+      WHERE user_id=${userId} AND is_revoked=false
+      ORDER BY id DESC LIMIT 1`
+    await db.rawQuery(query)
     return true
-    /* await db.from('tokens')
-      .where('user_id', userId)
-      .where('is_revoked', false)
-      .orderBy('id', 'desc')
-      .limit(1)
-      .update({ token }) */
   }
 
-  public static async revokeOtherTokensOwner(_token: string, _userId: number) {
+  public static async revokeOtherTokensOwner(token: string, userId: number): Promise<boolean> {
+    // Match legacy implementation
+    const query = `
+      UPDATE tokens
+      SET is_revoked=true
+      WHERE user_id=${userId} AND token!='${token}' AND is_revoked=false`
+    await db.rawQuery(query)
     return true
-    /* await db.from('tokens')
-      .where('user_id', userId)
-      .where('token', '!=', token)
-      .where('is_revoked', false)
-      .update({ is_revoked: true }) */
   }
 
-  public static async findByArgs(args: string): Promise<User[]> {
-    const users = await User.query()
-      .preload('personalData', q => q.preload('typeIdentify').preload('city'))
-      .where('email', 'like', `%${args}%`)
-      .orWhereHas('personalData', q =>
-        q.where('names', 'like', `%${args}%`)
-          .orWhere('lastNameP', 'like', `%${args}%`)
-          .orWhere('lastNameM', 'like', `%${args}%`)
-          .orWhere('identify', 'like', `%${args}%`)
-      )
-    return users
+  public static async findByArgs(args: string): Promise<any[]> {
+    // Match legacy implementation using raw SQL for exact response format
+    const query = `
+      SELECT
+        users.id as user_id,
+        users.email,
+        personal_data.id as personal_data_id,
+        CONCAT(settings.text,' ',personal_data.identify) as identify,
+        CONCAT(personal_data.names,' ',personal_data.last_name_p,' ',personal_data.last_name_m) as full_name
+      FROM
+        users,
+        personal_data,
+        settings
+      WHERE
+        settings.id = personal_data.type_identify_id AND
+        users.personal_data_id = personal_data.id AND
+        users.enabled = true AND
+        (
+          users.email LIKE '%${args}%' OR
+          personal_data.names LIKE '%${args}%' OR
+          personal_data.last_name_p LIKE '%${args}%' OR
+          personal_data.last_name_m LIKE '%${args}%' OR
+          personal_data.identify LIKE '%${args}%'
+        )`
+
+    const result = await db.rawQuery(query)
+    return result[0] || []
   }
 }

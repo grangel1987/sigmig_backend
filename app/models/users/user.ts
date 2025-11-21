@@ -55,7 +55,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column({ serializeAs: null })
   public enabled: boolean
 
-  @column({ serializeAs: null })
+  @column()
   public isAdmin: boolean
 
   @column({ serializeAs: null })

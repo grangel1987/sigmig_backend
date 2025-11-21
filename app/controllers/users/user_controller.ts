@@ -101,13 +101,12 @@ export default class UserController {
             await UserRepository.revokeOtherTokensOwner(accessToken.token, user.id)
        */
       await UserRepository.addInfoLocation(dateTime, request.ip(), user.id)
-      const userData = await UserRepository.findDataCompleteUserByUserId(user.id)
-
+      // const userData = await UserRepository.findDataCompleteUserByUserId(user.id) // Removed to match legacy response
 
       return response.status(200).json({
         accessToken,
         refreshToken: refreshToken.toJSON().token,
-        userData,
+        // userData, // Removed to match legacy response
       })
     } catch (error) {
       console.error(error)
@@ -858,8 +857,8 @@ export default class UserController {
   }
 
   public async findByArgs({ request }: HttpContext) {
-    const { args } = request.all()
-    const users = await UserRepository.findByArgs(args)
+    const { text } = request.all()
+    const users = await UserRepository.findByArgs(text)
     return users
   }
 
@@ -1321,6 +1320,7 @@ export default class UserController {
 
   public async index({ response }: HttpContext) {
     const users = await User.query().preload('personalData', q => q.preload('typeIdentify').preload('city'))
+      .preload('businessUser', buQ => buQ.preload('business', bQ => bQ.select('id', 'name')))
     response.ok(users)
   }
 
@@ -1507,6 +1507,61 @@ export default class UserController {
       return response.status(500).json({
         ...MessageFrontEnd(
           user.code === code ? 'messages.code_expired' : 'messages.code_error',
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async show({ params, response, i18n }: HttpContext) {
+    try {
+      const userId = params.id
+
+      const user = await User.query()
+        .where('id', userId)
+        .where('enabled', true)
+        .preload('personalData', (personalDataQuery) => {
+          personalDataQuery.preload('city')
+          personalDataQuery.preload('typeIdentify')
+        })
+        .preload('businessUser', (businessUserQuery) => {
+          businessUserQuery.preload('business')
+          businessUserQuery.preload('businessUserRols', (rolsQuery) => {
+            rolsQuery.preload('rols', (rolQuery) => {
+              rolQuery.preload('rolsPermissions', (permissionsQuery) => {
+                permissionsQuery.preload('permissions')
+              })
+            })
+          })
+          businessUserQuery.preload('bussinessUserPermissions', (permissionsQuery) => {
+            permissionsQuery.preload('permissions')
+          })
+        })
+        .preload('selectedBusiness', (selectedBusinessQuery) => {
+          selectedBusinessQuery.preload('business')
+        })
+        .preload('position')
+        .preload('tokens')
+        .first()
+
+      if (!user) {
+        return response.status(404).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.user_not_found'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
+      }
+
+      return response.json({
+        success: true,
+        data: user,
+        message: i18n.formatMessage('messages.user_found')
+      })
+    } catch (error) {
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.error_occurred'),
           i18n.formatMessage('messages.error_title')
         ),
       })

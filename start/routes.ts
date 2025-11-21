@@ -16,7 +16,7 @@ const auth = middleware.auth()
 router.group(() => {
   router.group(() => {
     router.post("login", "#controllers/users/user_controller.login")
-    router.post("/client/login", "#controllers/users/user_controller.loginClient");
+    router.post("/client/login", "#controllers/users/user_controller.webClientLogin");
     router.post("/forgot-password", "#controllers/users/user_controller.forgotPassword");
     router.post("/change-password-forgot", "#controllers/users/user_controller.changePasswordForgot");
     router.get("/find/super/:business_id", "#controllers/users/user_controller.findSuperusers");
@@ -37,6 +37,7 @@ router.group(() => {
       router.post("/store-admin", "#controllers/users/user_controller.storeAdmin");
       router.post("/code/request", "#controllers/users/user_controller.storeCodeConfirm");
       router.post("/code/confirm/verify", "#controllers/users/user_controller.verifyCodeConfirm");
+      router.get("/show/:id", "#controllers/users/user_controller.show");
     }).middleware(auth)
     // Password recovery with random password (public, sends email)
     router.post("/recover-password", "#controllers/users/user_controller.recoverPassword");
