@@ -1359,6 +1359,7 @@ export default class UserController {
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,
+          isAdmin: true,
         },
         { client: trx }
       )
