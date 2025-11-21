@@ -55,7 +55,6 @@ export default class UserRepository {
       .where('id', userId)
       .where('enabled', true)
       .preload('personalData', (builder) => {
-        builder.select(['id', 'names', 'phone', 'last_name_p', 'last_name_m', 'type_identify_id', 'identify', 'city_id'])
         builder.preload('typeIdentify', (builder) => {
           builder.select(['id', 'text'])
         })
