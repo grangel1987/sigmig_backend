@@ -19,8 +19,8 @@ import crypto from 'node:crypto'
 import UserRepository from '../../repositories/users/user_repository.js'
 
 interface BusinessPayload {
-  business_id: number
-  rol_id: number
+  businessId: number
+  rolId: number
   permissions: number[]
 }
 
@@ -354,10 +354,15 @@ export default class UserController {
     if (email)
       userQ.where('email', email)
     if (!dev) userQ.where('code', code)
+
+
     const user = auth.user || await userQ
       .first()
 
     if (user) {
+      console.log(user.serialize());
+
+      log({ codeDateTime: user.codeDateTime?.toISO(), now: DateTime.now().toISO() })
       if (user.codeDateTime?.toISO()! >= DateTime.now().toISO()!) {
         try {
           user.password = new_password
@@ -511,7 +516,13 @@ export default class UserController {
       vine.compile(
         vine.object({
           email: vine.string().email().optional(),
-          business: vine.any(),
+          business: vine.array(
+            vine.object({
+              businessId: vine.number().positive(),
+              rolId: vine.number().positive().optional(),
+              permissions: vine.array(vine.number().positive())
+            })
+          ).optional(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
           isAdmin: vine.boolean().optional(),
           isAuthorizer: vine.boolean().optional(),
@@ -531,7 +542,7 @@ export default class UserController {
           ...MessageFrontEnd(i18n.formatMessage('messages.email_required'), i18n.formatMessage('messages.error_title')),
         })
       }
-      const businessArray: BusinessPayload[] = typeof business === 'string' ? JSON.parse(business) : business
+      const businessArray: BusinessPayload[] = business ? (typeof business === 'string' ? JSON.parse(business) : business) : []
 
       const existingUser = await User.findBy('email', resolvedEmail)
       if (existingUser) {
@@ -587,14 +598,14 @@ export default class UserController {
       for (const bus of businessArray) {
         const payloadBusinessUser = {
           userId: user.id,
-          businessId: bus.business_id,
+          businessId: bus.businessId,
         }
 
         const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
 
         const businessUserRol = {
           businessUserId: businessUser.id,
-          rolId: bus.rol_id,
+          rolId: bus.rolId || 0,
         }
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
@@ -628,6 +639,7 @@ export default class UserController {
         const payloadPersonalData = {
           ...rPersonalData,
           ...imageData,
+          email: resolvedEmail || user.email,
           birthDate: DateTime.fromJSDate(rPersonalData!.birthDate),
           phone: rPersonalData!.phone ?? null,
           createdAt: dateTime,
@@ -1360,13 +1372,19 @@ export default class UserController {
       vine.compile(
         vine.object({
           email: vine.string().email(),
-          business: vine.any(),
+          business: vine.array(
+            vine.object({
+              businessId: vine.number().positive(),
+              rolId: vine.number().positive().optional(),
+              permissions: vine.array(vine.number().positive())
+            })
+          ).optional(),
           personalData: personalDataSchema,
         })
       )
     )
     const createdFiles: string[] = []
-    const businessArray: BusinessPayload[] = typeof business === 'string' ? JSON.parse(business) : business
+    const businessArray: BusinessPayload[] = business ? (typeof business === 'string' ? JSON.parse(business) : business) : []
 
     try {
       const existingUser = await User.findBy('email', email)
@@ -1396,14 +1414,14 @@ export default class UserController {
       for (const bus of businessArray) {
         const payloadBusinessUser = {
           userId: user.id,
-          businessId: bus.business_id,
+          businessId: bus.businessId,
         }
 
         const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
 
         const businessUserRol = {
           businessUserId: businessUser.id,
-          rolId: bus.rol_id,
+          rolId: bus.rolId,
         }
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
