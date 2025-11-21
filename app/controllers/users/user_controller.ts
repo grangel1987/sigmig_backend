@@ -570,6 +570,7 @@ export default class UserController {
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,
+          verified: true
         },
         { client: trx }
       )
