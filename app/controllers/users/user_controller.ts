@@ -160,7 +160,7 @@ export default class UserController {
       .whereHas('businessUser', q =>
         q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
           .where('business_id', businessId)
-      )
+      ).orWhere('is_admin', true)
     const businessUsers = await q
 
 
