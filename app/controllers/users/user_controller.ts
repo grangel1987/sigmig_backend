@@ -325,16 +325,20 @@ export default class UserController {
     }
   }
 
-  public async changePasswordForgot({ request, response, i18n }: HttpContext) {
+  public async changePasswordForgot({ request, response, i18n, auth }: HttpContext) {
     const { email, code, new_password } = request.all()
     const dateTime = await Util.getDateTimes(request.ip())
     const dev = env.get('NODE_ENV') === 'development' || Boolean(request.header('Pwdsecret'))
+
+
     const userQ = User.query()
-      .where('email', email)
       .where('enabled', true)
       .where('verified', true)
+
+    if (email)
+      userQ.where('email', email)
     if (!dev) userQ.where('code', code)
-    const user = await userQ
+    const user = auth.user || await userQ
       .first()
 
     if (user) {
