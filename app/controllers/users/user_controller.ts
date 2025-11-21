@@ -636,7 +636,7 @@ export default class UserController {
       await user.useTransaction(trx).save()
       await trx.commit()
 
-      const full_name = user.personalData ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}` : 'Usuario'
+      // const full_name = user.personalData ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}` : 'Usuario'
 
       // Commented out mailing code - remote server not prepared
       /*

@@ -14,16 +14,17 @@ export default function registerShoppingShareListener() {
             // Try to render HTML using @adonisjs/view if available
             let html: string | null = null
             try {
-                const viewMod: any = await (Function('return import("@adonisjs/view/services")')() as Promise<any>).catch(() => null)
-                const view = viewMod?.default
-                if (view) {
-                    html = await view.render('emails/shopping_share', {
-                        full_name: payload.full_name,
-                        token: payload.token,
-                        // url: optional deep-link if available
-                    })
-                }
+                /*                 const viewMod: any = await (Function('return import("@adonisjs/view/services")')() as Promise<any>).catch(() => null)
+                                const view = viewMod?.default
+                                if (view) {
+                                    html = await view.render('emails/shopping_share', {
+                                        full_name: payload.full_name,
+                                        token: payload.token,
+                                        // url: optional deep-link if available
+                                    })
+                                } */
             } catch (error) {
+                html
                 logger.warn('shopping_share_listener: view render failed, will fallback to text', { error })
             }
 

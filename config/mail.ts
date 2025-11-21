@@ -8,14 +8,14 @@ export default defineConfig({
 
     mailers: {
         smtp: transports.smtp({
-            host: env.get('SMTP_HOST'),
-            port: env.get('SMTP_PORT'),
+            host: env.get('SMTP_HOST', ''),
+            port: env.get('SMTP_PORT', ''),
             secure: true, // Use SSL for port 465
 
             auth: {
                 type: 'login',
-                user: env.get('SMTP_USERNAME'),
-                pass: env.get('SMTP_PASSWORD')
+                user: env.get('SMTP_USERNAME', ''),
+                pass: env.get('SMTP_PASSWORD', '')
             },
 
             tls: {
