@@ -52,7 +52,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ serializeAs: null })
   public codeConfirmDateTime: DateTime | null
 
-  @column({ serializeAs: null })
+  @column()
   public enabled: boolean
 
   @column()
@@ -117,6 +117,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @belongsTo(() => Position, { foreignKey: 'positionId' })
   public position: BelongsTo<typeof Position>
+
+
 
   @computed()
   public get full_name() {

@@ -262,7 +262,6 @@ export default class UserController {
 
   public async forgotPassword({ request, response, i18n }: HttpContext) {
     const { email, /* methodSendCode */ } = request.all()
-    const dateTime = (await Util.getDateTimes(request.ip()))
 
     try {
       const user = await User.query()
@@ -270,16 +269,15 @@ export default class UserController {
         .where('enabled', true)
         .where('verified', true)
         .preload('personalData', (builder) => {
-          builder.select(['id', 'names', 'last_name_p', 'last_name_m'])
           builder.preload('typeIdentify').preload('city')
         })
         .first()
 
       if (user) {
+
         user.code = Util.getCode().toString()
-        user.codeDateTime = Util.getDateTimesAddHours(dateTime, 1)
+        user.codeDateTime = DateTime.now().plus({ hours: 1 })
         await user.save()
-        console.log(user.codeDateTime);
 
         /*         const full_name = user.personalData
                   ? `${user.personalData.names} ${user.personalData.last_name_p} ${user.personalData.last_name_m}`
@@ -342,7 +340,7 @@ export default class UserController {
       .first()
 
     if (user) {
-      if (user.codeDateTime?.toISO()! >= dateTime.toISO()!) {
+      if (user.codeDateTime?.toISO()! >= DateTime.now().toISO()!) {
         try {
           user.password = new_password
           user.code = null
@@ -1452,7 +1450,6 @@ export default class UserController {
 
   public async storeCodeConfirm({ request, response, i18n }: HttpContext) {
     const { email } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email() })))
-    const dateTime = await Util.getDateTimes(request.ip())
 
     try {
       const user = await User.findBy('email', email)
@@ -1466,7 +1463,7 @@ export default class UserController {
       }
 
       user.code = Util.getCode().toString()
-      user.codeDateTime = Util.getDateTimesAddHours(dateTime, 1)
+      user.codeDateTime = DateTime.now().plus({ hours: 1 })
       await user.save()
 
       return response.status(201).json({
