@@ -487,13 +487,14 @@ export default class UserController {
   public async store({ request, response, auth, i18n }: HttpContext) {
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
-    const { email, business, signature, employeeId, personalData } = await request.validateUsing(
+    const { email, business, signature, employeeId, personalData, isAuthorizer } = await request.validateUsing(
       vine.compile(
         vine.object({
           email: vine.string().email().optional(),
           business: vine.any(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
           isAdmin: vine.boolean().optional(),
+          isAuthorizer: vine.boolean().optional(),
           personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
           signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
         })
@@ -543,6 +544,7 @@ export default class UserController {
           email: resolvedEmail,
           password: '12345678',
           personalDataId: personalDataId,
+          isAuthorizer: isAuthorizer ?? false,
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,
@@ -1356,6 +1358,7 @@ export default class UserController {
         {
           email,
           password: '12345678',
+          isAuthorizer: true,
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,

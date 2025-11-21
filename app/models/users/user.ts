@@ -58,6 +58,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public isAdmin: boolean
 
+  @column()
+  public isAuthorizer: boolean
+
   @column({ serializeAs: null })
   public inApp: boolean
 
