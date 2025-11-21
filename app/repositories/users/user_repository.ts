@@ -3,7 +3,6 @@ import Permission from "#models/permissions/permission"
 import User from "#models/users/user"
 import Menu from "#utils/Menu"
 import Util from "#utils/Util"
-import db from '@adonisjs/lucid/services/db'
 import { DateTime } from "luxon"
 
 interface BusinessItem {
@@ -62,6 +61,7 @@ export default class UserRepository {
         builder.preload('typeIdentify', (builder) => {
           builder.select(['id', 'text'])
         })
+        builder.preload('city')
       })
       .preload('businessUser', (builder) => {
         builder.select(['id', 'user_id', 'business_id'])
@@ -165,23 +165,16 @@ export default class UserRepository {
       .update({ is_revoked: true }) */
   }
 
-  public static async findByArgs(args: string): Promise<any[]> {
-    const query = db.from('users')
-      .select(
-        'users.id as user_id',
-        'users.email',
-        'personal_data.id as personal_data_id',
-        db.raw("CONCAT(settings.text, ' ', personal_data.identify) as identify"),
-        db.raw("CONCAT(personal_data.names, ' ', personal_data.last_name_p, ' ', personal_data.last_name_m) as full_name")
+  public static async findByArgs(args: string): Promise<User[]> {
+    const users = await User.query()
+      .preload('personalData', q => q.preload('typeIdentify').preload('city'))
+      .where('email', 'like', `%${args}%`)
+      .orWhereHas('personalData', q =>
+        q.where('names', 'like', `%${args}%`)
+          .orWhere('lastNameP', 'like', `%${args}%`)
+          .orWhere('lastNameM', 'like', `%${args}%`)
+          .orWhere('identify', 'like', `%${args}%`)
       )
-      .join('personal_data', 'users.personal_data_id', 'personal_data.id')
-      .join('settings', 'personal_data.type_identify_id', 'settings.id')
-      .whereRaw(
-        `users.email LIKE ? OR personal_data.names LIKE ? OR personal_data.last_name_m LIKE ? OR personal_data.identify LIKE ?`,
-        [`%${args}%`, `%${args}%`, `%${args}%`, `%${args}%`]
-      )
-
-    const users = await query
     return users
   }
 }

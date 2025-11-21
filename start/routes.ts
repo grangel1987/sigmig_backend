@@ -27,6 +27,16 @@ router.group(() => {
       router.post("/reset-password", "#controllers/users/user_controller.resetPassword");
       // Dedicated change password (authenticated user supplies current & new password)
       router.post("/change-password", "#controllers/users/user_controller.changePasswordOwner");
+      router.post("/assign-to-employee", "#controllers/users/user_controller.assignUserToEmployee");
+      router.post("/remove-from-employee", "#controllers/users/user_controller.removeUserFromEmployee");
+      router.post("/store", "#controllers/users/user_controller.store");
+      router.post("/find-by-args", "#controllers/users/user_controller.findByArgs");
+      router.get("/find/modules", "#controllers/users/user_controller.findModules");
+      router.get("/find/permission/:module_id", "#controllers/users/user_controller.findPermission");
+      router.get("/user-admin", "#controllers/users/user_controller.index");
+      router.post("/store-admin", "#controllers/users/user_controller.storeAdmin");
+      router.post("/code/request", "#controllers/users/user_controller.storeCodeConfirm");
+      router.post("/code/confirm/verify", "#controllers/users/user_controller.verifyCodeConfirm");
     }).middleware(auth)
     // Password recovery with random password (public, sends email)
     router.post("/recover-password", "#controllers/users/user_controller.recoverPassword");

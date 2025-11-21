@@ -11,6 +11,8 @@ import { DateTime } from 'luxon'
 export default class BookingController {
     // Helper: Try to send emails using templates; no-op if packages not installed
     private async sendBookingEmails(payload: any, type: 'store' | 'update') {
+        // Commented out mailing code - remote server not prepared
+        /*
         try {
             // @ts-ignore - optional dependency
             const View = (await import('@adonisjs/view/services/view')).default
@@ -23,12 +25,12 @@ export default class BookingController {
             const subjectAdmin = 'Nueva reserva registrada'
 
             if (payload?.email) {
-                await Mail.send((message: any) => {
+                await Mail.sendLater((message: any) => {
                     message.to(payload.email).subject(subjectClient).html(clientHtml)
                 })
             }
             if (payload?.admin_email) {
-                await Mail.send((message: any) => {
+                await Mail.sendLater((message: any) => {
                     message.to(payload.admin_email).subject(subjectAdmin).html(adminHtml)
                 })
             }
@@ -36,6 +38,7 @@ export default class BookingController {
             // Mail/View likely not installed; swallow
             return
         }
+        */
     }
 
     // POST /booking/store

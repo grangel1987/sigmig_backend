@@ -19,8 +19,6 @@ export default class BusinessUser extends BaseModel {
   @column.dateTime({ serializeAs: null })
   public createdAt: DateTime
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updatedAt: DateTime
 
   @belongsTo(() => User, { foreignKey: 'userId' })
   public user: BelongsTo<typeof User>

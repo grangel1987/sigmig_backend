@@ -152,7 +152,7 @@ export default class UserController {
     })))
     const businessId = params.business_id
 
-    const q = User.query().preload('personalData')
+    const q = User.query().preload('personalData', q => q.preload('typeIdentify').preload('city'))
       .preload('businessUser', q =>
         q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
           .preload('business')
@@ -272,6 +272,7 @@ export default class UserController {
         .where('verified', true)
         .preload('personalData', (builder) => {
           builder.select(['id', 'names', 'last_name_p', 'last_name_m'])
+          builder.preload('typeIdentify').preload('city')
         })
         .first()
 
@@ -415,6 +416,7 @@ export default class UserController {
 
       await user.load('personalData', (builder) => {
         builder.select(['id', 'names', 'last_name_p', 'last_name_m'])
+        builder.preload('typeIdentify').preload('city')
       })
 
       /* 
@@ -630,8 +632,26 @@ export default class UserController {
         await employee.useTransaction(trx).save()
       }
 
+      await user.load('personalData', pQ => pQ.preload('typeIdentify').preload('city'))
       await user.useTransaction(trx).save()
       await trx.commit()
+
+      const full_name = user.personalData ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}` : 'Usuario'
+
+      // Commented out mailing code - remote server not prepared
+      /*
+      try {
+        await mail.send((message) => {
+          message
+            .to(user.email)
+            .from(env.get('MAIL_FROM') || 'info@example.org')
+            .subject('SIG Platform: Your password')
+            .text(`Hello ${full_name}, your initial password is: 12345678`)
+        })
+      } catch (error) {
+        console.error('Failed to send email:', error)
+      }
+      */
 
       return response.status(201).json({
         user,
@@ -974,7 +994,7 @@ export default class UserController {
         .where('email', email)
         .where('enabled', true)
         .where('verified', true)
-        .preload('personalData', q => q.select(['names', 'last_name_p', 'last_name_m']))
+        .preload('personalData', q => q.select(['names', 'last_name_p', 'last_name_m']).preload('typeIdentify').preload('city'))
         .first()
 
       if (!user) {
@@ -1120,6 +1140,7 @@ export default class UserController {
       user.signatureThumbShort = upload.url_thumb_short
       user.updatedAt = dateTime
       await user.save()
+      await user.load('personalData', q => q.preload('typeIdentify').preload('city'))
       if (oldShort) await Google.deleteFile(oldShort).catch(() => null)
       return response.ok({
         user,
@@ -1171,6 +1192,8 @@ export default class UserController {
       personalData.thumbShort = upload.url_thumb_short
       personalData.updatedAt = dateTime
       await personalData.save()
+      await personalData.load('typeIdentify')
+      await personalData.load('city')
       if (oldShort) await Google.deleteFile(oldShort).catch(() => null)
       return response.ok({
         personalData,
@@ -1229,9 +1252,6 @@ export default class UserController {
     }
   }
 
-  /**
-   * Delete personal data photo for a given user.
-   */
   public async deletePhoto({ request, response, i18n }: HttpContext) {
     const { params } = await request.validateUsing(
       vine.compile(
@@ -1271,6 +1291,222 @@ export default class UserController {
       return response.status(500).json({
         ...MessageFrontEnd(
           i18n.formatMessage('messages.delete_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async findModules({ response }: HttpContext) {
+    // Placeholder: return a list of modules
+    const modules = [
+      { id: 1, name: 'Users', description: 'User management' },
+      { id: 2, name: 'Business', description: 'Business management' },
+      // Add more as needed
+    ]
+    response.ok(modules)
+  }
+
+  public async findPermission({ request, response }: HttpContext) {
+    const { module_id } = await request.validateUsing(vine.compile(vine.object({ module_id: vine.number().positive() })))
+    // Placeholder: return permissions for the module
+    const permissions = [
+      { id: 1, key: 'user.create', description: 'Create users', type: 'user', module_id: 1 },
+      { id: 2, key: 'user.read', description: 'Read users', type: 'user', module_id: 1 },
+      { id: 3, key: 'business.create', description: 'Create business', type: 'business', module_id: 2 },
+      // Add more as needed
+    ].filter(p => p.module_id === module_id)
+    response.ok(permissions)
+  }
+
+  public async index({ response }: HttpContext) {
+    const users = await User.query().preload('personalData', q => q.preload('typeIdentify').preload('city'))
+    response.ok(users)
+  }
+
+  public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
+    // Similar to store, but for admin
+    const trx = await db.transaction()
+    const dateTime = await Util.getDateTimes(request.ip())
+    const { email, business, personalData } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email(),
+          business: vine.any(),
+          personalData: personalDataSchema,
+        })
+      )
+    )
+    const createdFiles: string[] = []
+    const businessArray: BusinessPayload[] = typeof business === 'string' ? JSON.parse(business) : business
+
+    try {
+      const existingUser = await User.findBy('email', email)
+      if (existingUser) {
+        await trx.rollback()
+        return response.status(422).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.existEmail'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
+      }
+
+      const user = await User.create(
+        {
+          email,
+          password: '12345678',
+          createdAt: dateTime,
+          updatedAt: dateTime,
+          enabled: true,
+        },
+        { client: trx }
+      )
+
+      for (const bus of businessArray) {
+        const payloadBusinessUser = {
+          userId: user.id,
+          businessId: bus.business_id,
+        }
+
+        const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
+
+        const businessUserRol = {
+          businessUserId: businessUser.id,
+          rolId: bus.rol_id,
+        }
+
+        await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+        const payloadPermission = bus.permissions.map((permId) => ({
+          businessUserId: businessUser.id,
+          permissionId: permId,
+        }))
+
+        await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
+      }
+
+      if (personalData) {
+        let imageData = {}
+        let createdFile: string | null = null
+        const { photo, ...rPersonalData } = personalData
+
+        if (photo) {
+          const resultUploadPhoto = await Google.uploadFile(photo, 'personal_data', 'image')
+          imageData = {
+            photo: resultUploadPhoto.url,
+            thumb: resultUploadPhoto.url_thumb,
+            photoShort: resultUploadPhoto.url_short,
+            thumbShort: resultUploadPhoto.url_thumb_short,
+          }
+          createdFile = resultUploadPhoto.url_short
+        }
+
+        const payloadPersonalData = {
+          ...rPersonalData,
+          ...imageData,
+          birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+          phone: rPersonalData.phone ?? null,
+          createdAt: dateTime,
+          updatedAt: dateTime,
+          createdBy: auth.user!.id,
+          updatedBy: auth.user!.id,
+        }
+
+        const resPersonalData = await PersonalData.create(payloadPersonalData, { client: trx })
+        user.personalDataId = resPersonalData.id
+        if (createdFile) createdFiles.push(createdFile)
+      }
+
+      await user.load('personalData', pQ => pQ.preload('typeIdentify').preload('city'))
+      await user.useTransaction(trx).save()
+      await trx.commit()
+
+      return response.status(201).json({
+        user,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.store_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      await trx.rollback()
+      console.error(error)
+      if (createdFiles.length) await Promise.all(createdFiles.map(file => Google.deleteFile(file)))
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.store_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async storeCodeConfirm({ request, response, i18n }: HttpContext) {
+    const { email } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email() })))
+    const dateTime = await Util.getDateTimes(request.ip())
+
+    try {
+      const user = await User.findBy('email', email)
+      if (!user) {
+        return response.status(404).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
+      }
+
+      user.code = Util.getCode().toString()
+      user.codeDateTime = Util.getDateTimesAddHours(dateTime, 1)
+      await user.save()
+
+      return response.status(201).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.codeSend_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async verifyCodeConfirm({ request, response, i18n }: HttpContext) {
+    const { email, code } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email(), code: vine.string() })))
+    const dateTime = await Util.getDateTimes(request.ip())
+    const user = await User.findBy('email', email)
+
+    if (!user) {
+      return response.status(404).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+
+    if (user.code === code && user.codeDateTime && user.codeDateTime.toISO()! >= dateTime.toISO()!) {
+      user.verified = true
+      user.code = null
+      user.codeDateTime = null
+      await user.save()
+      return response.status(201).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.user_verified'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } else {
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          user.code === code ? 'messages.code_expired' : 'messages.code_error',
           i18n.formatMessage('messages.error_title')
         ),
       })

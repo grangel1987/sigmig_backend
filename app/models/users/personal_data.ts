@@ -1,3 +1,4 @@
+import City from '#models/cities/City'
 import Setting from '#models/settings/setting'
 import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -68,6 +69,11 @@ export default class PersonalData extends BaseModel {
 
   @column()
   public updatedBy: number
+
+  @belongsTo(() => City)
+  declare city: BelongsTo<typeof City>
+
+
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
