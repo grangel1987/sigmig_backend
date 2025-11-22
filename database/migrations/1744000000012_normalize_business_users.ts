@@ -40,26 +40,7 @@ export default class extends BaseSchema {
             if (!hasUnique) table.unique(['business_id', 'user_id'])
         })
 
-        // Migrate old roles to new tables
-        this.defer(async (db) => {
-            // Get unique roles and create them in rols table
-            const rolesResult = await db.rawQuery(`SELECT DISTINCT rol FROM business_users WHERE rol IS NOT NULL AND rol != ''`)
-            for (const row of rolesResult[0]) {
-                const existing = await db.rawQuery(`SELECT id FROM rols WHERE name = ?`, [row.rol])
-                if (existing[0].length === 0) {
-                    await db.rawQuery(`INSERT INTO rols (name, description, is_system, enabled, created_by, updated_by, created_at, updated_at) VALUES (?, ?, 0, 1, 1, 1, NOW(), NOW())`, [row.rol, `Migrated role: ${row.rol}`])
-                }
-            }
-
-            // Insert into business_user_rols
-            await db.rawQuery(`
-                INSERT INTO business_user_rols (business_user_id, rol_id, signature)
-                SELECT bu.id, r.id, 0
-                FROM business_users bu
-                JOIN rols r ON r.name COLLATE utf8mb4_general_ci = bu.rol
-                WHERE bu.rol IS NOT NULL AND bu.rol != ''
-            `)
-        })
+        // Migration of roles is handled by the earlier migration 1744000000010
     }
 
     async down() {
