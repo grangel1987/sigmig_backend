@@ -7,22 +7,30 @@ import db from '@adonisjs/lucid/services/db'
 export default class BusinessEmployeeController {
     /** Move an employee from one business to another and cleanup schedules */
     public async changeBusiness({ request, response, i18n }: HttpContext) {
-        const { business_old_id, business_id, employee_id } = request.all()
+        const { default: vine } = await import('@vinejs/vine')
+        const schema = vine.compile(
+            vine.object({
+                businessOldId: vine.number(),
+                businessId: vine.number(),
+                employeeId: vine.number(),
+            })
+        )
+        const { businessOldId, businessId, employeeId } = await request.validateUsing(schema)
 
         try {
             const businessEmployee = await BusinessEmployee.query()
-                .where('business_id', business_old_id)
-                .where('employee_id', employee_id)
+                .where('business_id', businessOldId)
+                .where('employee_id', employeeId)
                 .orderBy('id', 'desc')
                 .first()
 
             if (businessEmployee) {
-                businessEmployee.businessId = business_id
+                businessEmployee.businessId = businessId
                 await businessEmployee.save()
 
                 await db.from('employee_schedule_works')
-                    .where('employee_id', employee_id)
-                    .where('business_id', business_old_id)
+                    .where('employee_id', employeeId)
+                    .where('business_id', businessOldId)
                     .delete()
 
                 return response.status(201).json({
@@ -40,6 +48,8 @@ export default class BusinessEmployeeController {
                 ),
             })
         } catch (error) {
+            console.log(error);
+
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),
@@ -51,12 +61,20 @@ export default class BusinessEmployeeController {
 
     /** Clone an employee-business link to another business with adjusted dates */
     public async addOtherBusiness({ request, response, i18n }: HttpContext) {
-        const { business_old_id, business_id, employee_id } = request.all()
+        const { default: vine } = await import('@vinejs/vine')
+        const schema = vine.compile(
+            vine.object({
+                businessOldId: vine.number(),
+                businessId: vine.number(),
+                employeeId: vine.number(),
+            })
+        )
+        const { businessOldId, businessId, employeeId } = await request.validateUsing(schema)
         const dateTime = await Util.getDateTimes(request.ip())
 
         const exists = await BusinessEmployee.query()
-            .where('business_id', business_id)
-            .where('employee_id', employee_id)
+            .where('business_id', businessId)
+            .where('employee_id', employeeId)
             .orderBy('id', 'desc')
             .first()
 
@@ -70,8 +88,8 @@ export default class BusinessEmployeeController {
         }
 
         const from = await BusinessEmployee.query()
-            .where('business_id', business_old_id)
-            .where('employee_id', employee_id)
+            .where('business_id', businessOldId)
+            .where('employee_id', employeeId)
             .orderBy('id', 'desc')
             .first()
 
@@ -87,7 +105,7 @@ export default class BusinessEmployeeController {
         try {
             const value: any = from.toJSON()
             delete value.id
-            value.business_id = business_id
+            value.business_id = businessId
             value.created_at = dateTime
             value.updated_at = dateTime
             // normalize dates similar to legacy Util.parseToMoment usage

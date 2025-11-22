@@ -16,7 +16,7 @@ const auth = middleware.auth()
 router.group(() => {
   router.group(() => {
     router.post("login", "#controllers/users/user_controller.login")
-    router.post("/client/login", "#controllers/users/user_controller.loginClient");
+    router.post("/client/login", "#controllers/users/user_controller.webClientLogin");
     router.post("/forgot-password", "#controllers/users/user_controller.forgotPassword");
     router.post("/change-password-forgot", "#controllers/users/user_controller.changePasswordForgot");
     router.get("/find/super/:business_id", "#controllers/users/user_controller.findSuperusers");
@@ -25,7 +25,25 @@ router.group(() => {
     router.group(() => {
       router.get("find-user-by-token", "#controllers/users/user_controller.findByToken")
       router.post("/reset-password", "#controllers/users/user_controller.resetPassword");
+      // Dedicated change password (authenticated user supplies current & new password)
+      router.post("/change-password", "#controllers/users/user_controller.changePasswordOwner");
+      router.post("/assign-to-employee", "#controllers/users/user_controller.assignUserToEmployee");
+      router.post("/remove-from-employee", "#controllers/users/user_controller.removeUserFromEmployee");
+      router.post("/store", "#controllers/users/user_controller.store");
+      router.post("/find-by-args", "#controllers/users/user_controller.findByArgs");
+      router.get("/find/modules", "#controllers/users/user_controller.findModules");
+      router.get("/find/permission/:module_id", "#controllers/users/user_controller.findPermission");
+      router.get("/user-admin", "#controllers/users/user_controller.index");
+      router.post("/store-admin", "#controllers/users/user_controller.storeAdmin");
+      router.post("/code/request", "#controllers/users/user_controller.storeCodeConfirm");
+      router.post("/code/confirm/verify", "#controllers/users/user_controller.verifyCodeConfirm");
+      router.get("/show/:id", "#controllers/users/user_controller.show");
+      router.put("/update-admin/:userId", "#controllers/users/user_controller.updateAdmin");
+      router.put("/toggle-status/:id", "#controllers/users/user_controller.toggleUserStatus");
+      router.post("/admin-reset-password", "#controllers/users/user_controller.adminResetPassword");
     }).middleware(auth)
+    // Password recovery with random password (public, sends email)
+    router.post("/recover-password", "#controllers/users/user_controller.recoverPassword");
   }).prefix('account')
 
   router.group(() => {
@@ -445,6 +463,67 @@ router.group(() => {
     .middleware(auth);
 
 
+  // Schedules
+  router.group(() => {
+    router.get("/", "#controllers/schedules/setting_schedule_controller.index");
+    router.get("/show/:schedule_id", "#controllers/schedules/setting_schedule_controller.show");
+    router.post("/store", "#controllers/schedules/setting_schedule_controller.store");
+    router.put("/update/:id", "#controllers/schedules/setting_schedule_controller.update");
+    router.put("/change-status/:id", "#controllers/schedules/setting_schedule_controller.changeStatus");
+    router.get("/select", "#controllers/schedules/setting_schedule_controller.select");
+  })
+    .prefix('schedule')
+    .middleware(auth)
+
+  // Legal Gratifications
+  router.group(() => {
+    router.get('/', '#controllers/legal_gratifications/setting_legal_gratification_controller.index')
+    router.post('/store', '#controllers/legal_gratifications/setting_legal_gratification_controller.store')
+    router.put('/update/:id', '#controllers/legal_gratifications/setting_legal_gratification_controller.update')
+    router.put('/change-status/:id', '#controllers/legal_gratifications/setting_legal_gratification_controller.changeStatus')
+    router.get('/select', '#controllers/legal_gratifications/setting_legal_gratification_controller.select')
+  }).prefix('setting-legal-gratification').middleware(auth)
+
+  // Business Employee legacy actions
+  router.group(() => {
+    router.post('/business/change', '#controllers/business/business_employee_controller.changeBusiness')
+    router.post('/business/add-other', '#controllers/business/business_employee_controller.addOtherBusiness')
+  }).prefix('business-employee').middleware(auth)
+
+  // Employee protected routes
+  router.group(() => {
+    router.post('/store', '#controllers/employees/employee_controller.store')
+    router.get('/:token/:business_id', '#controllers/employees/employee_controller.show')
+    router.put('/update/:id', '#controllers/employees/employee_controller.update')
+    router.post('/find-by-identify', '#controllers/employees/employee_controller.findByIdentify')
+    router.post('/find-by-id', '#controllers/employees/employee_controller.findById')
+    router.post('/find-by-name', '#controllers/employees/employee_controller.findByName')
+    router.post('/find-by-last-name-p', '#controllers/employees/employee_controller.findByLastNameP')
+    router.put('/delete/photo', '#controllers/employees/employee_controller.deletePhoto')
+    router.get('/count/active/:business_id', '#controllers/employees/employee_controller.countActive')
+    router.post('/report', '#controllers/employees/employee_controller.report')
+    router.post('/inactive', '#controllers/employees/employee_controller.inactive')
+    router.post('/reactive', '#controllers/employees/employee_controller.reactive')
+    router.post('/find/autocomplete', '#controllers/employees/employee_controller.findAutocomplete')
+    router.post('/find/permits', '#controllers/employees/employee_controller.findWorkPermits')
+    router.post('/permits/store', '#controllers/employees/employee_controller.storeWorkPermits')
+    router.put('/permits/update', '#controllers/employees/employee_controller.updateWorkPermits')
+    router.post('/permits/authorize', '#controllers/employees/employee_controller.autorizePermit')
+    router.post('/permits/delete-file', '#controllers/employees/employee_controller.deleteFilePermit')
+    router.post('/permits/delete-all', '#controllers/employees/employee_controller.deletePermit')
+    router.post('/find/license-health', '#controllers/employees/employee_controller.findLicensesHealth')
+    router.post('/store/license-health', '#controllers/employees/employee_controller.storeLicenseHealth')
+    router.put('/update/license-health/:id', '#controllers/employees/employee_controller.updateLicenseHealth')
+    router.delete('/delete/license-health/:id', '#controllers/employees/employee_controller.deleteLicenseHealth')
+    router.post('/access/find', '#controllers/employees/employee_controller.findAccess')
+    router.post('/access/find-by-empployee', '#controllers/employees/employee_controller.findAccessByEmployeeId')
+  }).prefix('employee').middleware(auth)
+
+  // Employee public routes (permits by token)
+  router.group(() => {
+    router.get('/permits/find-by-token/:token', '#controllers/employees/employee_controller.showWorkPermitByToken')
+  }).prefix('employee')
+
   // Clients (protected)
   router.group(() => {
     router.get('/', '#controllers/clients/client_controller.index')
@@ -469,6 +548,18 @@ router.group(() => {
     router.post('/find-by-token', '#controllers/client_requests/client_request_controller.findByToken')
     router.post('/find-by-client', '#controllers/client_requests/client_request_controller.findRequestByClientId')
   }).prefix('client-request')
+
+
+  // Users (protected)
+  router.group(() => {
+    router.get('/', '#controllers/users/user_controller.index')
+    router.post('/store', '#controllers/users/user_controller.store')
+    router.put('/update/:id', '#controllers/users/user_controller.update')
+    router.put('/update/signature/:id', '#controllers/users/user_controller.updateSignature')
+    router.put('/update/photo/:id', '#controllers/users/user_controller.updatePhoto')
+    router.delete('/delete/signature/:id', '#controllers/users/user_controller.deleteSignature')
+    router.delete('/delete/photo/:id', '#controllers/users/user_controller.deletePhoto')
+  }).prefix('user').middleware(auth)
 
 
   // Bugets (quotes)

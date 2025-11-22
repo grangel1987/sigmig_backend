@@ -39,14 +39,14 @@ export class Google {
 
 
 
-      url = await drive.use('gcs').getUrl(`${folder}/${fileName}.${extension}`);
+      url = await drive.use('gcs').getSignedUrl(`${folder}/${fileName}.${extension}`);
       url_short = `${folder}/${fileName}.${extension}`;
 
       if (thumbnail) {
         await gcsDrive
           .put(`${folder}/thumb_${fileName}.${extension}`, thumbnail, { visibility: 'public' })
         url_thumb = await gcsDrive
-          .getUrl(`${folder}/thumb_${fileName}.${extension}`);
+          .getSignedUrl(`${folder}/thumb_${fileName}.${extension}`);
         url_thumb_short = `${folder}/thumb_${fileName}.${extension}`;
       }
     }

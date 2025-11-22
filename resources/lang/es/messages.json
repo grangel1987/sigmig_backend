@@ -28,5 +28,6 @@
     "error_find_user_by_email": "No se encontró un usuario con el correo proporcionado.",
     "existEmail": "Ya existe una cuenta con este correo.",
     "existPersonalData": "Ya existe un usuario con estos datos personales.",
+    "exist_user_for_employee": "Este empleado ya tiene un usuario asociado.",
     "error_fetching_indicators": "Ocurrió un error al obtener los indicadores."
 }

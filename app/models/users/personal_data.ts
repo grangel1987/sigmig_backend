@@ -1,6 +1,7 @@
+import City from '#models/cities/City'
 import Setting from '#models/settings/setting'
 import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
-import type { BelongsTo, } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 // import TypeIdentify from '#models/type_identify'
 
@@ -24,10 +25,55 @@ export default class PersonalData extends BaseModel {
   public identify: string
 
   @column()
-  public createdBy: number | null
+  public stateCivilId: number
 
   @column()
-  public updatedBy: number | null
+  public sexId: number
+
+  // DB column birth_date (DATE)
+  @column.dateTime({ serialize: (value: DateTime) => value?.toISODate() })
+  public birthDate: DateTime
+
+  @column()
+  public nationalityId: number
+
+  @column()
+  public cityId: number
+
+  @column()
+  public address: string
+
+  @column()
+  public phone: string | null
+
+  @column()
+  public movil: string
+
+  @column()
+  public email: string
+
+  @column()
+  public photo: string | null
+
+  @column()
+  public thumb: string | null
+
+  @column()
+  public photoShort: string | null
+
+  @column()
+  public thumbShort: string | null
+
+  @column()
+  public createdBy: number
+
+  @column()
+  public updatedBy: number
+
+  @belongsTo(() => City)
+  declare city: BelongsTo<typeof City>
+
+
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

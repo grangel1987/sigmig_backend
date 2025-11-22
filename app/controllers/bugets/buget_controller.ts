@@ -3,98 +3,108 @@ import Business from '#models/business/business'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import { bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 import { log } from 'node:console'
 
 export default class BugetController {
   // Create a new buget (legacy parity)
   public async store({ request, response, auth, i18n }: HttpContext) {
+    // Expect camelCase input keys only
     const {
-      business_id,
-      currency_symbol,
+      businessId,
+      currencySymbol,
+      currencyId,
+      currencyValue,
+      clientDetails,
       client,
       products = [],
       items = [],
       banks = [],
       discount = 0,
       utility = 0,
-      client_details,
-      currency_id,
-      currency_value,
-    } = request.all()
+    } = await request.validateUsing(bugetStoreValidator)
 
     const trx = await db.transaction()
     try {
       const dateTime = await Util.getDateTimes(request.ip())
-      const business = await Business.query({ client: trx }).where('id', business_id).firstOrFail()
+      const business = await Business.query({ client: trx }).where('id', businessId).firstOrFail()
       const daysExpire = business.daysExpireBuget || 0
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
 
       // next nro
-      const last = await trx.from('bugets').where('business_id', business_id).orderBy('id', 'desc').limit(1)
+      const last = await trx.from('bugets').where('business_id', businessId).orderBy('id', 'desc').limit(1)
       const nro = last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1
 
       const payload = {
         nro: String(nro),
-        businessId: Number(business_id),
-        currencySymbol: currency_symbol ?? null,
-        currencyId: currency_id ?? null,
-        currencyValue: currency_value ?? null,
+        businessId: Number(businessId),
+        currencySymbol: currencySymbol ?? null,
+        currencyId: currencyId ?? null,
+        currencyValue: currencyValue ?? null,
         clientId: client?.id ?? null,
         discount: Number(discount) || 0,
         utility: Number(utility) || 0,
         createdAt: dateTime,
         updatedAt: dateTime,
-        createdBy: auth.user!.id,
-        updatedBy: auth.user!.id,
+        createdById: auth.user!.id,
+        updatedById: auth.user!.id,
         expireDate,
         enabled: true,
       }
 
       const buget = await Buget.create(payload, { client: trx })
 
-      // Normalize products to legacy DB columns
+      // Normalize products to model properties (camelCase)
       const productsRows = (products as any[]).map((p) => {
         const periodId = p?.period?.period ?? null
-        const productId = p?.id_ ?? p?.id
+        const productId = p?.id
         const countPerson = p?.countPerson
         const amount = p?.amountDefault ?? p?.amount
         return {
-          product_id: productId,
-          period_id: periodId,
+          productId: productId,
+          periodId: periodId,
           name: p?.name,
           amount,
           count: p?.count,
-          count_person: countPerson,
+          countPerson: countPerson,
           tax: p?.tax,
         }
       })
 
       const itemsRows = (items as any[]).map((it) => ({
-        item_id: it?.id,
-        with_title: !!it?.with_title,
+        itemId: it?.id,
+        withTitle: !!it?.withTitle,
         title: it?.title ?? null,
-        type_id: it?.type_id,
+        typeId: it?.typeId,
         value: it?.value,
       }))
 
-      const banksRows = (banks as any[]).map((b) => ({ accountId: typeof b === 'object' ? b?.account_id ?? b?.accountId : b }))
+      const banksRows = (banks as any[]).map((b) => ({ accountId: typeof b === 'object' ? b?.accountId : b }))
 
       await buget.related('products').createMany(productsRows, { client: trx })
       await buget.related('items').createMany(itemsRows, { client: trx })
       await buget.related('banks').createMany(banksRows, { client: trx })
 
-      if (client_details) {
-        const { cost_center, work, observation } = client_details
-        if (cost_center || work || observation) {
-          await buget.related('details').create({ costCenter: cost_center, work, observation }, { client: trx })
+      if (clientDetails) {
+        const { costCenter, work, observation } = clientDetails as any
+        if (costCenter || work || observation) {
+          await buget.related('details').create({ costCenter, work, observation }, { client: trx })
         }
       }
 
       await trx.commit()
+
+      await buget.load('createdBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      await buget.load('updatedBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
 
       return response.status(201).json({
         buget,
@@ -122,6 +132,14 @@ export default class BugetController {
     const now = dateTime
     const buget = await Buget.find(bugetId)
     if (!buget) return null
+
+
+    await buget.load('createdBy', (builder) => {
+      builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+    })
+    await buget.load('updatedBy', (builder) => {
+      builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+    })
 
     await buget.load('business', (q) => {
       q.select(['id', 'name', 'url', 'email', 'identify', 'days_expire_buget', 'type_identify_id', 'footer'])
@@ -163,8 +181,8 @@ export default class BugetController {
   }
   // Minimal find by number: returns array with a single record similar to legacy
   public async findByNro({ request }: HttpContext) {
-    const { business_id, number } = request.all()
-    const rows = await db.from('bugets').where('business_id', business_id).where('nro', number).limit(1)
+    const { businessId, number } = await request.validateUsing(bugetFindByNroValidator)
+    const rows = await db.from('bugets').where('business_id', businessId).where('nro', number).limit(1)
     const id = rows.length ? rows[0].id : 0
     if (!id) return []
     const buget = await db.from('bugets').where('id', id).first()
@@ -172,13 +190,14 @@ export default class BugetController {
   }
 
   public async findByNameClient({ request }: HttpContext) {
-    const { business_id, name } = request.all()
-    return await BugetRepository.findByNameClient(Number(business_id), String(name || ''))
+    const { businessId, name } = await request.validateUsing(bugetFindByNameClientValidator)
+    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''))
   }
 
   public async findByDate({ request }: HttpContext) {
-    const { business_id, date } = request.all()
-    return await BugetRepository.findByDate(Number(business_id), String(date))
+    const { businessId, date } = await request.validateUsing(bugetFindByDateValidator)
+    const dateSql = DateTime.fromJSDate(date).toSQLDate()!
+    return await BugetRepository.findByDate(Number(businessId), String(dateSql))
   }
 
   public async delete({ params, request, auth, response, i18n }: HttpContext) {
@@ -229,13 +248,18 @@ export default class BugetController {
   }
 
   public async report({ request }: HttpContext) {
-    const { date_initial, date_end, business_id } = request.all()
-    return await BugetRepository.report(String(date_initial), String(date_end), Number(business_id))
+    const { dateInitial, dateEnd, businessId } = await request.validateUsing(vine.compile(vine.object({
+      dateInitial: vine.date().optional(),
+      dateEnd: vine.date().optional(),
+      businessId: vine.number(),
+    })))
+
+    return await BugetRepository.report(businessId, dateInitial, dateEnd)
   }
 
   public async searchItems({ request }: HttpContext) {
-    const { type_id, category_id, params } = request.all()
-    const items = await BugetRepository.searchItems(type_id, category_id, params)
+    const { typeId, categoryId, params } = request.all()
+    const items = await BugetRepository.searchItems(typeId, categoryId, params)
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 
@@ -245,7 +269,17 @@ export default class BugetController {
     const trx = await db.transaction()
     try {
       const dateTime = await Util.getDateTimes(request.ip())
-      const { products = [], items = [], banks = [], discount, utility, client_details, currency_id, currency_value, currency_symbol } = request.all()
+      const {
+        products = [],
+        items = [],
+        banks = [],
+        discount,
+        utility,
+        clientDetails,
+        currencyId,
+        currencyValue,
+        currencySymbol,
+      } = await request.validateUsing(bugetUpdateValidator)
 
       const buget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
 
@@ -253,10 +287,10 @@ export default class BugetController {
         utility: Number(utility) || 0,
         discount: Number(discount) || 0,
         updatedAt: dateTime,
-        updatedBy: auth.user!.id,
-        currencySymbol: currency_symbol ?? null,
-        currencyId: currency_id ?? null,
-        currencyValue: currency_value ?? null,
+        updatedById: auth.user!.id,
+        currencySymbol: currencySymbol ?? null,
+        currencyId: currencyId ?? null,
+        currencyValue: currencyValue ?? null,
       })
       buget.useTransaction(trx)
       await buget.save()
@@ -264,29 +298,29 @@ export default class BugetController {
       // Normalize arrays
       const productsRows = (products as any[]).map((p) => {
         const periodId = p?.period?.period ?? null
-        const productId = p?.id_ ?? p?.id
+        const productId = p?.id
         const countPerson = p?.countPerson
         const amount = p?.amountDefault ?? p?.amount
         return {
-          product_id: productId,
-          period_id: periodId,
+          productId: productId,
+          periodId: periodId,
           name: p?.name,
           amount,
           count: p?.count,
-          count_person: countPerson,
+          countPerson: countPerson,
           tax: p?.tax,
         }
       })
 
       const itemsRows = (items as any[]).map((it) => ({
-        item_id: it?.id,
-        with_title: !!it?.with_title,
+        itemId: it?.id,
+        withTitle: !!it?.withTitle,
         title: it?.title ?? null,
-        type_id: it?.type_id,
+        typeId: it?.typeId,
         value: it?.value,
       }))
 
-      const banksRows = (banks as any[]).map((b) => ({ accountId: typeof b === 'object' ? b?.account_id ?? b?.accountId : b }))
+      const banksRows = (banks as any[]).map((b) => ({ accountId: typeof b === 'object' ? b?.accountId : b }))
 
       // Clear existing relations
       await trx.from('buget_products').where('buget_id', bugetId).delete()
@@ -299,12 +333,19 @@ export default class BugetController {
       await buget.related('items').createMany(itemsRows, { client: trx })
       await buget.related('banks').createMany(banksRows, { client: trx })
 
-      if (client_details) {
-        const { cost_center, work, observation } = client_details
-        if (cost_center || work || observation) {
-          await buget.related('details').create({ costCenter: cost_center, work, observation }, { client: trx })
+      if (clientDetails) {
+        const { costCenter, work, observation } = clientDetails as any
+        if (costCenter || work || observation) {
+          await buget.related('details').create({ costCenter, work, observation }, { client: trx })
         }
       }
+
+      await buget.load('createdBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      await buget.load('updatedBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
 
       await trx.commit()
       return response.status(201).json({
@@ -316,6 +357,9 @@ export default class BugetController {
       })
     } catch (error) {
       await trx.rollback()
+
+      console.log(error);
+
       return response.status(500).json(
         MessageFrontEnd(
           i18n.formatMessage('messages.udpate_error'),

@@ -4,11 +4,15 @@ import City from '#models/cities/City'
 import Country from '#models/countries/country'
 import Position from '#models/positions/position'
 import Setting from '#models/settings/setting'
+import PersonalData from '#models/users/personal_data'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { randomUUID } from 'crypto'
 import { DateTime } from 'luxon'
+import EmployeeCertificateHealth from './employee_certificate_health.js'
+import EmployeeEmergencyContact from './employee_emergency_contact.js'
+import EmployeeScheduleWork from './employee_schedule_work.js'
 
 export default class Employee extends BaseModel {
     @column({ isPrimary: true })
@@ -38,19 +42,31 @@ export default class Employee extends BaseModel {
     @column({ columnName: 'last_name_m' })
     public lastNameM: string
 
-    @column({ columnName: 'birth_date' })
+    @column.date({ columnName: 'birth_date' })
     public birthDate: DateTime | null
 
     @column({ columnName: 'state_civil_id' })
     public stateCivilId: number | null
 
-    @column({ columnName: 'admission_date' })
+    @column({ columnName: 'personal_data_id' })
+    public personalDataId: number | null
+
+    @hasMany(() => EmployeeCertificateHealth)
+    public certificateHealth: HasMany<typeof EmployeeCertificateHealth>
+
+    @hasMany(() => EmployeeScheduleWork)
+    public scheduleWork: HasMany<typeof EmployeeScheduleWork>
+
+    @hasMany(() => EmployeeEmergencyContact)
+    public emergencyContacts: HasMany<typeof EmployeeEmergencyContact>
+
+    @column.date({ columnName: 'admission_date' })
     public admissionDate: DateTime | null
 
-    @column({ columnName: 'contract_date' })
+    @column.date({ columnName: 'contract_date' })
     public contractDate: DateTime | null
 
-    @column({ columnName: 'settlement_date' })
+    @column.date({ columnName: 'settlement_date' })
     public settlementDate: DateTime | null
 
     @column({ columnName: 'city_id' })
@@ -105,6 +121,9 @@ export default class Employee extends BaseModel {
     @column({ columnName: 'updated_by' })
     public updatedById: number | null
 
+    @column({ columnName: 'user_id' })
+    public userId: number | null
+
     @column.dateTime({ autoCreate: true })
     public createdAt: DateTime
 
@@ -122,11 +141,21 @@ export default class Employee extends BaseModel {
     @belongsTo(() => User, { foreignKey: 'updatedById' })
     public updatedBy: BelongsTo<typeof User>
 
+    @belongsTo(() => User, { foreignKey: 'userId' })
+    public user: BelongsTo<typeof User>
+
+    @belongsTo(() => PersonalData, { foreignKey: 'personalDataId' })
+    public personalData: BelongsTo<typeof PersonalData>
+
     @hasMany(() => BusinessEmployee, { foreignKey: 'employeeId' })
     public business: HasMany<typeof BusinessEmployee>
 
     @belongsTo(() => Setting, { foreignKey: 'identifyTypeId' })
     public typeIdentify: BelongsTo<typeof Setting>
+
+    // Added missing relation for state civil setting (needed for legacy payload)
+    @belongsTo(() => Setting, { foreignKey: 'stateCivilId' })
+    public stateCivil: BelongsTo<typeof Setting>
 
     @belongsTo(() => City, { foreignKey: 'cityId' })
     public city: BelongsTo<typeof City>

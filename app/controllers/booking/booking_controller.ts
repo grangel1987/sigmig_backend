@@ -10,33 +10,36 @@ import { DateTime } from 'luxon'
 
 export default class BookingController {
     // Helper: Try to send emails using templates; no-op if packages not installed
-    private async sendBookingEmails(payload: any, type: 'store' | 'update') {
-        try {
-            // @ts-ignore - optional dependency
-            const View = (await import('@adonisjs/view/services/view')).default
-            // @ts-ignore - optional dependency
-            const Mail = (await import('@adonisjs/mail/services/main')).default
-
-            const clientHtml = await View.render(`emails/booking_${type}`, payload)
-            const adminHtml = await View.render('emails/booking_store_admin', payload)
-            const subjectClient = type === 'store' ? 'Registro de reserva' : 'Actualizacion de reserva'
-            const subjectAdmin = 'Nueva reserva registrada'
-
-            if (payload?.email) {
-                await Mail.send((message: any) => {
-                    message.to(payload.email).subject(subjectClient).html(clientHtml)
-                })
+    /*     private async sendBookingEmails(payload: any, type: 'store' | 'update') {
+            // Commented out mailing code - remote server not prepared
+         
+            try {
+                // @ts-ignore - optional dependency
+                const View = (await import('@adonisjs/view/services/view')).default
+                // @ts-ignore - optional dependency
+                const Mail = (await import('@adonisjs/mail/services/main')).default
+    
+                const clientHtml = await View.render(`emails/booking_${type}`, payload)
+                const adminHtml = await View.render('emails/booking_store_admin', payload)
+                const subjectClient = type === 'store' ? 'Registro de reserva' : 'Actualizacion de reserva'
+                const subjectAdmin = 'Nueva reserva registrada'
+    
+                if (payload?.email) {
+                    await Mail.sendLater((message: any) => {
+                        message.to(payload.email).subject(subjectClient).html(clientHtml)
+                    })
+                }
+                if (payload?.admin_email) {
+                    await Mail.sendLater((message: any) => {
+                        message.to(payload.admin_email).subject(subjectAdmin).html(adminHtml)
+                    })
+                }
+            } catch (err) {
+                // Mail/View likely not installed; swallow
+                return
             }
-            if (payload?.admin_email) {
-                await Mail.send((message: any) => {
-                    message.to(payload.admin_email).subject(subjectAdmin).html(adminHtml)
-                })
-            }
-        } catch (err) {
-            // Mail/View likely not installed; swallow
-            return
-        }
-    }
+          
+        } */
 
     // POST /booking/store
     public async store({ request, response, i18n }: HttpContext) {
@@ -64,7 +67,7 @@ export default class BookingController {
                 type: b.type || '',
                 monthQuantity: Number(b.monthQuantity || 0),
                 attended: false,
-            } as any, { client: trx })
+            }, { client: trx })
             // Ensure subsequent related operations use same transaction
             bk.useTransaction(trx)
 
@@ -122,14 +125,14 @@ export default class BookingController {
                 booking: bk.toJSON(),
                 admin_email: undefined,
             }
-
+            payloadEmail
             try {
                 await bk.load('client', (builder) => builder.preload('city'))
                 payloadEmail.email = bk.client?.email
                 payloadEmail.full_name = bk.client?.name
             } catch { }
 
-            await this.sendBookingEmails(payloadEmail, 'store')
+            // await this.sendBookingEmails(payloadEmail, 'store')
 
             return response.status(201).json({
                 bk,
@@ -263,8 +266,8 @@ export default class BookingController {
                 await booking.load('client')
                 payloadEmail.full_name = booking.client?.name
             } catch { }
-            await this.sendBookingEmails(payloadEmail, 'update')
-
+            // await this.sendBookingEmails(payloadEmail, 'update')
+            payloadEmail
             return response.status(201).json(
                 MessageFrontEnd(
                     i18n.formatMessage('messages.update_ok'),

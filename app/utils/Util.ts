@@ -37,12 +37,21 @@ export default new class Util {
       : dt.toFormat(`dd${separator}MM${separator}yyyy`);
   }
 
-  parseDateSingle(date: string): string {
-    if (!date || date.length < 8) return '';
-    const day = date.substring(0, 2);
-    const month = date.substring(3, 5);
-    const year = date.substring(6);
-    return `${year}-${month}-${day}`;
+  parseDateSingle(date: string | null | DateTime | Date): string {
+
+    if (typeof date === 'string') {
+      if (!date || date.length < 8) return '';
+      const day = date.substring(0, 2);
+      const month = date.substring(3, 5);
+      const year = date.substring(6);
+      return `${year}-${month}-${day}`;
+    } else if (date instanceof DateTime) {
+      if (!date.isValid) return '';
+      return date.toFormat('yyyy-MM-dd');
+    } else if (date instanceof Date) {
+      return DateTime.fromJSDate(date).toFormat('yyyy-MM-dd');
+    }
+    return '';
   }
 
   parseDateFormatFriendly(

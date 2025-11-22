@@ -3,6 +3,7 @@ import CostCenterRepository from '#repositories/cost_centers/cost_center_reposit
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
+import console from 'console'
 import { DateTime } from 'luxon'
 
 type MessageFrontEnd = {
@@ -159,10 +160,12 @@ export default class CostCenterController {
   }
 
   public async select({ request }: HttpContext) {
+    const { params } = await request.validateUsing(vine.compile(vine.object({
+      params: vine.object({ business_id: vine.number().positive() })
+    })))
     try {
-      const { businessId } = await request.validateUsing(vine.compile(vine.object({
-        businessId: vine.number().positive()
-      })))
+
+      const businessId = params.business_id
       const costCenters = await CostCenterRepository.select(businessId)
 
       const result = costCenters.map((costCenter) => ({
@@ -172,6 +175,8 @@ export default class CostCenterController {
 
       return result
     } catch (error) {
+      console.log(error);
+
       throw new Exception('Failed to fetch cost centers for select')
     }
   }

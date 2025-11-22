@@ -28,5 +28,6 @@
     "error_find_user_by_email": "No user found with the provided email.",
     "existEmail": "An account with this email already exists.",
     "existPersonalData": "A user with this personal data already exists.",
+    "exist_user_for_employee": "This employee already has a linked user.",
     "error_fetching_indicators": "There was an error fetching indicators."
 }

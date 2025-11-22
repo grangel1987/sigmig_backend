@@ -14,7 +14,7 @@ export default class SettingIsapre extends BaseModel {
   public code: string
 
   @column()
-  public type: string
+  public type: number
 
   @column()
   public value: number

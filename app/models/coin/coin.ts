@@ -10,6 +10,9 @@ export default class Coin extends BaseModel {
   @column()
   public name: string
 
+  @column()
+  public symbol: string
+
   @column({ columnName: 'created_by' })
   public createdById: number | null
 
@@ -32,8 +35,8 @@ export default class Coin extends BaseModel {
   public updatedBy: BelongsTo<typeof User>
 
   @beforeCreate()
-  public static async setEnabled(coin: Coin) {
-    coin.enabled = true
+  public static async ensureDefaults(coin: Coin) {
+    if (coin.enabled === undefined) coin.enabled = false
   }
 
   public serialize() {

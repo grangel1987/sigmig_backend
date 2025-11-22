@@ -27,15 +27,19 @@ export default class EmployeeRepository {
             employees.thumb,
             employees.token,
             settings.text,
-            employees.birth_date
-        FROM
-            employees,
-            business_employees,
-            settings
+            employees.birth_date,
+            cities.id AS city_id,
+            cities.name AS city_name,
+            cities.country_id AS city_country_id,
+            countries.id AS country_id,
+            countries.name AS country_name
+        FROM employees
+        INNER JOIN business_employees ON employees.id = business_employees.employee_id
+        INNER JOIN settings ON settings.id = employees.identify_type_id
+        LEFT JOIN cities ON cities.id = employees.city_id
+        LEFT JOIN countries ON countries.id = cities.country_id
         WHERE
-            employees.id = business_employees.employee_id AND
-            business_employees.business_id=${businessId} AND
-            settings.id = employees.identify_type_id AND
+            business_employees.business_id = ${businessId} AND
             employees.names LIKE "%${name}%"`;
 
         const result = await db.rawQuery(query)
@@ -57,15 +61,19 @@ export default class EmployeeRepository {
             employees.thumb,
             employees.token,
             settings.text,
-            employees.birth_date
-        FROM
-            employees,
-            business_employees,
-            settings
+            employees.birth_date,
+            cities.id AS city_id,
+            cities.name AS city_name,
+            cities.country_id AS city_country_id,
+            countries.id AS country_id,
+            countries.name AS country_name
+        FROM employees
+        INNER JOIN business_employees ON employees.id = business_employees.employee_id
+        INNER JOIN settings ON settings.id = employees.identify_type_id
+        LEFT JOIN cities ON cities.id = employees.city_id
+        LEFT JOIN countries ON countries.id = cities.country_id
         WHERE
-            employees.id = business_employees.employee_id AND
-            business_employees.business_id=${businessId} AND
-            settings.id = employees.identify_type_id AND
+            business_employees.business_id = ${businessId} AND
             employees.last_name_p LIKE "%${lastNameP}%"`;
 
         const result = await db.rawQuery(query)
@@ -99,5 +107,45 @@ export default class EmployeeRepository {
 
         const result = await db.rawQuery(query)
         return result[0] as EmployeeReportRow[]
+    }
+
+    /** Autocomplete search across names / last names / identify (parameterized) */
+    public static async findAutocomplete(businessId: number, value?: string, limit = 20) {
+        // Base SQL with optional filter fragments injected safely via bindings
+        let sql = `
+        SELECT
+            employees.id,
+            business_employees.business_id,
+            business_employees.enabled,
+            employees.identify_type_id,
+            employees.identify,
+            employees.names,
+            employees.last_name_p,
+            employees.last_name_m,
+            employees.photo,
+            employees.thumb,
+            employees.token,
+            settings.text
+        FROM employees
+        INNER JOIN business_employees ON employees.id = business_employees.employee_id
+        INNER JOIN settings ON settings.id = employees.identify_type_id
+        WHERE business_employees.business_id = ?
+        `
+        const bindings: any[] = [businessId]
+        if (value && value.trim().length) {
+            // Add flexible OR conditions for multiple textual columns
+            sql += ` AND (
+                employees.names LIKE ? OR
+                employees.last_name_p LIKE ? OR
+                employees.last_name_m LIKE ? OR
+                employees.identify LIKE ?
+            )`
+            const like = `%${value.trim()}%`
+            bindings.push(like, like, like, like)
+        }
+        sql += ' ORDER BY employees.names ASC LIMIT ?'
+        bindings.push(limit)
+        const result = await db.rawQuery(sql, bindings)
+        return result[0]
     }
 }
