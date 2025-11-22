@@ -1766,33 +1766,10 @@ export default class UserController {
 
   public async show({ params, response, i18n }: HttpContext) {
     try {
-      const userId = params.id
-
       const user = await User.query()
-        .where('id', userId)
-        .where('enabled', true)
-        .preload('personalData', (personalDataQuery) => {
-          personalDataQuery.preload('city')
-          personalDataQuery.preload('typeIdentify')
-        })
-        .preload('businessUser', (businessUserQuery) => {
-          businessUserQuery.preload('business')
-          businessUserQuery.preload('businessUserRols', (rolsQuery) => {
-            rolsQuery.preload('rols', (rolQuery) => {
-              rolQuery.preload('rolsPermissions', (permissionsQuery) => {
-                permissionsQuery.preload('permissions')
-              })
-            })
-          })
-          businessUserQuery.preload('bussinessUserPermissions', (permissionsQuery) => {
-            permissionsQuery.preload('permissions')
-          })
-        })
-        .preload('selectedBusiness', (selectedBusinessQuery) => {
-          selectedBusinessQuery.preload('business')
-        })
-        .preload('position')
-        .preload('tokens')
+        .where('id', params.id)
+        .preload('personalData', q => q.preload('typeIdentify').preload('city'))
+        .preload('businessUser', buQ => buQ.preload('business', bQ => bQ.select('id', 'name')))
         .first()
 
       if (!user) {
@@ -1813,6 +1790,58 @@ export default class UserController {
       return response.status(500).json({
         ...MessageFrontEnd(
           i18n.formatMessage('messages.error_occurred'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async enableUser({ params, response, i18n }: HttpContext) {
+    const dateTime = DateTime.now()
+
+    try {
+      const user = await User.findOrFail(params.id)
+      user.enabled = true
+      user.updatedAt = dateTime
+      await user.save()
+
+      return response.status(200).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.user_enabled'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
+  public async disableUser({ params, response, i18n }: HttpContext) {
+    const dateTime = DateTime.now()
+
+    try {
+      const user = await User.findOrFail(params.id)
+      user.enabled = false
+      user.updatedAt = dateTime
+      await user.save()
+
+      return response.status(200).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.user_disabled'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
           i18n.formatMessage('messages.error_title')
         ),
       })
