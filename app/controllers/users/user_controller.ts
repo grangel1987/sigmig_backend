@@ -1544,9 +1544,21 @@ export default class UserController {
     response.ok(permissions)
   }
 
-  public async index({ response }: HttpContext) {
-    const users = await User.query().preload('personalData', q => q.preload('typeIdentify').preload('city'))
+  public async index({ request, response }: HttpContext) {
+    const { page, perPage } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          page: vine.number().positive().optional(),
+          perPage: vine.number().positive().optional(),
+        })
+      )
+    )
+
+    const query = User.query()
+      .preload('personalData', q => q.preload('typeIdentify').preload('city'))
       .preload('businessUser', buQ => buQ.preload('business', bQ => bQ.select('id', 'name')))
+
+    const users = page ? await query.paginate(page, perPage ?? 10) : await query
     response.ok(users)
   }
 

@@ -3,14 +3,25 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { settingLegalGratificationStoreValidator, settingLegalGratificationUpdateValidator } from '#validators/setting_legal_gratification'
 import { HttpContext } from '@adonisjs/core/http'
+import vine from '@vinejs/vine'
 
 export default class SettingLegalGratificationController {
-    async index({ }: HttpContext) {
+    async index({ request }: HttpContext) {
+        const { page, perPage } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    page: vine.number().positive().optional(),
+                    perPage: vine.number().positive().optional(),
+                })
+            )
+        )
+
         try {
-            const legalGrts = await SettingLegalGratification.query()
+            const query = SettingLegalGratification.query()
                 .preload('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
                 .preload('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
-            return legalGrts
+
+            return page ? query.paginate(page, perPage ?? 10) : query
         } catch (error) {
             console.error(error)
             return []
