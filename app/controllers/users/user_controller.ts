@@ -520,7 +520,7 @@ export default class UserController {
             vine.object({
               businessId: vine.number().positive(),
               rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive())
+              permissions: vine.array(vine.number().positive()).optional()
             })
           ).optional(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
@@ -610,12 +610,13 @@ export default class UserController {
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
-        const payloadPermission = bus.permissions.map((permId) => ({
+        const payloadPermission = bus.permissions?.map((permId) => ({
           businessUserId: businessUser.id,
           permissionId: permId,
         }))
 
-        await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
+        if (payloadPermission?.length)
+          await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
       }
 
       if (!personalDataId && personalData) {
@@ -1549,8 +1550,8 @@ export default class UserController {
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
-              rolId: vine.number().positive(),
-              permissions: vine.array(vine.number().positive())
+              rolId: vine.number().positive().optional(),
+              permissions: vine.array(vine.number().positive()).optional()
             })
           ).optional(),
           personalData: personalDataSchema,
@@ -1595,7 +1596,7 @@ export default class UserController {
 
         const businessUserRol = {
           businessUserId: businessUser.id,
-          rolId: bus.rolId,
+          rolId: bus.rolId || 0,
         }
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
@@ -1605,7 +1606,8 @@ export default class UserController {
           permissionId: permId,
         }))
 
-        await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
+        if (payloadPermission?.length)
+          await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
       }
 
       if (personalData) {
