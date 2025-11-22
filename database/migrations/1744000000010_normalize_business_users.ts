@@ -3,6 +3,18 @@ import db from '@adonisjs/lucid/services/db'
 
 export default class EnhancedNormalizeBusinessUsers extends BaseSchema {
     async up() {
+        // Alter business_user_permissions to new structure if needed
+        const hasOldPermStructure = await this.schema.hasColumn('business_user_permissions', 'business_user_rol_id')
+        if (hasOldPermStructure) {
+            this.schema.alterTable('business_user_permissions', (table) => {
+                table.dropColumn('business_user_rol_id')
+                table.dropColumn('permission')
+                table.integer('business_user_id').notNullable()
+                table.integer('permission_id').notNullable()
+                table.boolean('signature').defaultTo(false)
+            })
+        }
+
         // First, ensure the business_users table has the correct structure
         const hasOldColumns = await this.schema.hasColumn('business_users', 'rol_id')
 
@@ -109,7 +121,7 @@ export default class EnhancedNormalizeBusinessUsers extends BaseSchema {
         // This is a simplified migration - you might need to adjust based on your actual permission format
         const usersWithPermissions = await trx
             .from('business_users')
-            .select('user_id', 'permissions')
+            .select('id', 'user_id', 'permissions')
             .whereNotNull('permissions')
             .where('permissions', '!=', '')
 
@@ -149,7 +161,7 @@ export default class EnhancedNormalizeBusinessUsers extends BaseSchema {
                     // Add to business_user_permissions
                     if (permission) {
                         await trx.table('business_user_permissions').insert({
-                            business_user_id: user.user_id,
+                            business_user_id: user.id,
                             permission_id: permission.id,
                             signature: false
                         })
