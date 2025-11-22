@@ -1629,6 +1629,7 @@ export default class UserController {
         const payloadPersonalData = {
           ...rPersonalData,
           ...imageData,
+          email: personalData.email || user.email,
           birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
           phone: rPersonalData.phone ?? null,
           createdAt: dateTime,
