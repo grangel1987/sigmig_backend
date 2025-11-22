@@ -1544,7 +1544,7 @@ export default class UserController {
   public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
     // Similar to store, but for admin
     const dateTime = await Util.getDateTimes(request.ip())
-    const { email, business, personalData } = await request.validateUsing(
+    const { email, business, personalData, signature } = await request.validateUsing(
       vine.compile(
         vine.object({
           email: vine.string().email(),
@@ -1556,6 +1556,7 @@ export default class UserController {
             })
           ).optional(),
           personalData: personalDataSchema,
+          signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
         })
       )
     )
@@ -1589,6 +1590,16 @@ export default class UserController {
         { client: trx }
       )
 
+      if (signature) {
+        const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
+        user.signature = resultUpload.url
+        user.signatureShort = resultUpload.url_short
+        user.signatureThumb = resultUpload.url_thumb
+        user.signatureThumbShort = resultUpload.url_thumb_short
+        await user.useTransaction(trx).save()
+        createdFiles.push(resultUpload.url_short)
+      }
+
       for (const bus of businessArray) {
         const payloadBusinessUser = {
           userId: user.id,
@@ -1604,7 +1615,7 @@ export default class UserController {
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
-        const payloadPermission = bus.permissions.map((permId) => ({
+        const payloadPermission = bus.permissions?.map((permId) => ({
           businessUserId: businessUser.id,
           permissionId: permId,
         }))
