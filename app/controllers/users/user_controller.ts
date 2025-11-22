@@ -17,7 +17,6 @@ import { DateTime } from 'luxon'
 import { log } from 'node:console'
 import crypto from 'node:crypto'
 import UserRepository from '../../repositories/users/user_repository.js'
-import user from '#models/users/user'
 
 interface BusinessPayload {
   businessId: number
@@ -1004,7 +1003,10 @@ export default class UserController {
       await user.save()
       await trx.commit()
 
-      await user.load('personalData', pQ => pQ.preload('typeIdentify').preload('city'))
+      await user.load('personalData')
+
+      if (user.personalData.cityId)
+        await user.personalData.load('city')
 
       return response.status(200).json({
         user,
