@@ -20,8 +20,8 @@ import UserRepository from '../../repositories/users/user_repository.js'
 
 interface BusinessPayload {
   businessId: number
-  rolId: number
-  permissions: number[]
+  rolId?: number
+  permissions?: number[]
 }
 
 // PersonalData payload validated inline in handlers to match the model
@@ -610,7 +610,7 @@ export default class UserController {
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
-        const payloadPermission = bus.permissions?.map((permId) => ({
+        const payloadPermission = (bus.permissions || []).map((permId) => ({
           businessUserId: businessUser.id,
           permissionId: permId,
         }))
@@ -935,7 +935,7 @@ export default class UserController {
 
           await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
-          const payloadPermission = bus.permissions?.map((permId) => ({
+          const payloadPermission = (bus.permissions || []).map((permId) => ({
             businessUserId: businessUser.id,
             permissionId: permId,
           }))
@@ -1615,7 +1615,7 @@ export default class UserController {
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
-        const payloadPermission = bus.permissions?.map((permId) => ({
+        const payloadPermission = (bus.permissions || []).map((permId) => ({
           businessUserId: businessUser.id,
           permissionId: permId,
         }))
