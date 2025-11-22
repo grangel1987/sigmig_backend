@@ -1541,7 +1541,6 @@ export default class UserController {
 
   public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
     // Similar to store, but for admin
-    const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
     const { email, business, personalData } = await request.validateUsing(
       vine.compile(
@@ -1560,6 +1559,7 @@ export default class UserController {
     )
     const createdFiles: string[] = []
     const businessArray: BusinessPayload[] = business ? (typeof business === 'string' ? JSON.parse(business) : business) : []
+    const trx = await db.transaction()
 
     try {
       const existingUser = await User.findBy('email', email)
@@ -1573,10 +1573,11 @@ export default class UserController {
         })
       }
 
+      const password = Util.getCode()
       const user = await User.create(
         {
           email,
-          password: '12345678',
+          password: password,
           isAuthorizer: true,
           createdAt: dateTime,
           updatedAt: dateTime,
@@ -1646,6 +1647,18 @@ export default class UserController {
       await user.load('personalData', pQ => pQ.preload('typeIdentify').preload('city'))
       await user.useTransaction(trx).save()
       await trx.commit()
+
+      await mail.sendLater((message) => {
+        message
+          .to(user.email)
+          .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+          .subject('SIGMI Nuevo Usuario')
+          .htmlView('emails/user_password_recovery', {
+            full_name: user.personalData.fullName,
+            password: password,
+            time: dateTime.toISO()
+          })
+      })
 
       return response.status(201).json({
         user,
