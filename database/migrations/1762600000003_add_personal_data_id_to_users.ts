@@ -1,7 +1,7 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
-export default class AddPersonalDataIdToEmployees extends BaseSchema {
-    protected tableName = 'employees'
+export default class AddPersonalDataIdToUsers extends BaseSchema {
+    protected tableName = 'users'
 
     public async up() {
         const exists = await this.schema.hasColumn(this.tableName, 'personal_data_id')

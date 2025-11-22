@@ -26,7 +26,7 @@ export default class extends BaseSchema {
         if (!hasTk) {
             this.schema.createTable('tokens', (table) => {
                 table.increments('id').primary()
-                table.bigInteger('user_id').unsigned().nullable().references('id').inTable('users').onDelete('CASCADE')
+                table.bigInteger('user_id').nullable().references('id').inTable('users').onDelete('CASCADE')
                 table.string('token', 255).notNullable()
                 table.string('type', 80).notNullable()
                 table.boolean('is_revoked').defaultTo(false)
