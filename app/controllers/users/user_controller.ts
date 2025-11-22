@@ -863,7 +863,7 @@ export default class UserController {
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
-              rolId: vine.number().positive(),
+              rolId: vine.number().positive().optional(),
               permissions: vine.array(vine.number().positive()).optional()
             })
           ).optional(),
