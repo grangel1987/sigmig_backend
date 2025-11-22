@@ -17,6 +17,7 @@ import { DateTime } from 'luxon'
 import { log } from 'node:console'
 import crypto from 'node:crypto'
 import UserRepository from '../../repositories/users/user_repository.js'
+import user from '#models/users/user'
 
 interface BusinessPayload {
   businessId: number
@@ -859,26 +860,27 @@ export default class UserController {
     const dateTime = await Util.getDateTimes(request.ip())
     const createdFiles: string[] = []
 
-    try {
-      const { params, email, business, personalData, isAdmin, isAuthorizer, signature } = await request.validateUsing(
-        vine.compile(
-          vine.object({
-            params: vine.object({ userId: vine.number().positive() }),
-            email: vine.string().email().optional(),
-            business: vine.array(
-              vine.object({
-                businessId: vine.number().positive(),
-                rolId: vine.number().positive(),
-                permissions: vine.array(vine.number().positive())
-              })
-            ).optional(),
-            personalData: personalDataSchema.optional(),
-            isAdmin: vine.boolean().optional(),
-            isAuthorizer: vine.boolean().optional(),
-            signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
-          })
-        )
+    const { params, email, business, personalData, isAdmin, isAuthorizer, signature } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          params: vine.object({ userId: vine.number().positive() }),
+          email: vine.string().email().optional(),
+          business: vine.array(
+            vine.object({
+              businessId: vine.number().positive(),
+              rolId: vine.number().positive().optional(),
+              permissions: vine.array(vine.number().positive())
+            })
+          ).optional(),
+          personalData: personalDataSchema.optional(),
+          isAdmin: vine.boolean().optional(),
+          isAuthorizer: vine.boolean().optional(),
+          signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
+        })
       )
+    )
+
+    try {
 
       const user = await User.findOrFail(params.userId)
       user.useTransaction(trx)
@@ -927,7 +929,7 @@ export default class UserController {
 
           const businessUserRol = {
             businessUserId: businessUser.id,
-            rolId: bus.rolId,
+            rolId: bus.rolId || 0,
           }
 
           await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
