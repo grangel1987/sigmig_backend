@@ -713,23 +713,23 @@ export default class UserController {
   }
 
   public async update({ request, response, auth, i18n }: HttpContext) {
+    const { params, email, signature, employeeId, personalData } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          params: vine.object({ id: vine.number().positive() }),
+          email: vine.string().email().optional(),
+          business: vine.any().optional(),
+          employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
+          personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
+          signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
+        })
+      )
+    )
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
     const createdFiles: string[] = []
 
     try {
-      const { params, email, signature, employeeId, personalData } = await request.validateUsing(
-        vine.compile(
-          vine.object({
-            params: vine.object({ id: vine.number().positive() }),
-            email: vine.string().email().optional(),
-            business: vine.any().optional(),
-            employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
-            personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
-            signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
-          })
-        )
-      )
 
       const user = await User.findOrFail(params.id)
       user.useTransaction(trx)
@@ -855,10 +855,6 @@ export default class UserController {
   }
 
   public async updateAdmin({ request, response, auth, i18n }: HttpContext) {
-    const trx = await db.transaction()
-    const dateTime = await Util.getDateTimes(request.ip())
-    const createdFiles: string[] = []
-
     const { params, email, business, personalData, isAdmin, isAuthorizer, signature } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -867,8 +863,8 @@ export default class UserController {
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
-              rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive())
+              rolId: vine.number().positive(),
+              permissions: vine.array(vine.number().positive()).optional()
             })
           ).optional(),
           personalData: personalDataSchema.optional(),
@@ -878,6 +874,9 @@ export default class UserController {
         })
       )
     )
+    const trx = await db.transaction()
+    const dateTime = await Util.getDateTimes(request.ip())
+    const createdFiles: string[] = []
 
     try {
 
@@ -933,12 +932,13 @@ export default class UserController {
 
           await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
-          const payloadPermission = bus.permissions.map((permId) => ({
+          const payloadPermission = bus.permissions?.map((permId) => ({
             businessUserId: businessUser.id,
             permissionId: permId,
           }))
 
-          await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
+          if (payloadPermission?.length)
+            await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
         }
       }
 
@@ -1549,7 +1549,7 @@ export default class UserController {
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
-              rolId: vine.number().positive().optional(),
+              rolId: vine.number().positive(),
               permissions: vine.array(vine.number().positive())
             })
           ).optional(),
