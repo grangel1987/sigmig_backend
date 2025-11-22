@@ -18,15 +18,14 @@ export default class extends BaseSchema {
         // Remove duplicates before adding unique
         if (!hasUnique) {
             await db.rawQuery(`
-            DELETE bu1 FROM business_users bu1
-            INNER JOIN business_users bu2
-            WHERE bu1.business_id = bu2.business_id
-              AND bu1.user_id = bu2.user_id
-              AND bu1.id < bu2.id
+            DELETE FROM business_users
+            WHERE id NOT IN (
+              SELECT MAX(id)
+              FROM (SELECT * FROM business_users) AS temp
+              GROUP BY business_id, user_id
+            )
           `)
-        }
-
-        // Ensure clean pivot table (assumes old version had extra columns like rol/permissions)
+        }        // Ensure clean pivot table (assumes old version had extra columns like rol/permissions)
         this.schema.alterTable('business_users', (table) => {
             if (hasRol) table.string('rol').nullable().alter() // Make rol optional instead of dropping
             if (hasPermissions) table.dropColumn('permissions')
