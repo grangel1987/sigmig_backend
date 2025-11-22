@@ -854,6 +854,176 @@ export default class UserController {
     }
   }
 
+  public async updateAdmin({ request, response, auth, i18n }: HttpContext) {
+    const trx = await db.transaction()
+    const dateTime = await Util.getDateTimes(request.ip())
+    const createdFiles: string[] = []
+
+    try {
+      const { params, email, business, personalData, isAdmin, isAuthorizer, signature } = await request.validateUsing(
+        vine.compile(
+          vine.object({
+            params: vine.object({ userId: vine.number().positive() }),
+            email: vine.string().email().optional(),
+            business: vine.array(
+              vine.object({
+                businessId: vine.number().positive(),
+                rolId: vine.number().positive(),
+                permissions: vine.array(vine.number().positive())
+              })
+            ).optional(),
+            personalData: personalDataSchema.optional(),
+            isAdmin: vine.boolean().optional(),
+            isAuthorizer: vine.boolean().optional(),
+            signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
+          })
+        )
+      )
+
+      const user = await User.findOrFail(params.userId)
+      user.useTransaction(trx)
+
+      // Update email if provided
+      if (email && email !== user.email) {
+        const existingUser = await User.findBy('email', email)
+        if (existingUser && existingUser.id !== user.id) {
+          await trx.rollback()
+          return response.status(422).json({
+            ...MessageFrontEnd(
+              i18n.formatMessage('messages.existEmail'),
+              i18n.formatMessage('messages.error_title')
+            ),
+          })
+        }
+        user.email = email
+      }
+
+      // Update admin flags
+      if (isAdmin !== undefined) user.isAdmin = isAdmin
+      if (isAuthorizer !== undefined) user.isAuthorizer = isAuthorizer
+
+      // Handle signature upload
+      if (signature) {
+        const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
+        user.signature = resultUpload.url
+        user.signatureShort = resultUpload.url_short
+        user.signatureThumb = resultUpload.url_thumb
+        user.signatureThumbShort = resultUpload.url_thumb_short
+        createdFiles.push(resultUpload.url_short)
+      }
+
+      // Update business assignments if provided
+      if (business && business.length > 0) {
+        // Remove existing business assignments
+        await user.related('businessUser').query().delete()
+
+        for (const bus of business) {
+          const payloadBusinessUser = {
+            userId: user.id,
+            businessId: bus.businessId,
+          }
+
+          const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
+
+          const businessUserRol = {
+            businessUserId: businessUser.id,
+            rolId: bus.rolId,
+          }
+
+          await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+          const payloadPermission = bus.permissions.map((permId) => ({
+            businessUserId: businessUser.id,
+            permissionId: permId,
+          }))
+
+          await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
+        }
+      }
+
+      // Update personal data if provided
+      if (personalData) {
+        let imageData = {}
+        let createdFile: string | null = null
+        const { photo, ...rPersonalData } = personalData
+
+        if (photo) {
+          const resultUploadPhoto = await Google.uploadFile(photo, 'personal_data', 'image')
+          imageData = {
+            photo: resultUploadPhoto.url,
+            thumb: resultUploadPhoto.url_thumb,
+            photoShort: resultUploadPhoto.url_short,
+            thumbShort: resultUploadPhoto.url_thumb_short,
+          }
+          createdFile = resultUploadPhoto.url_short
+        }
+
+        if (user.personalDataId) {
+          // Update existing personal data
+          const pd = await PersonalData.findOrFail(user.personalDataId)
+          pd.useTransaction(trx)
+          pd.names = rPersonalData.names
+          pd.lastNameP = rPersonalData.lastNameP
+          pd.lastNameM = rPersonalData.lastNameM
+          pd.typeIdentifyId = rPersonalData.typeIdentifyId
+          pd.identify = rPersonalData.identify
+          pd.stateCivilId = rPersonalData.stateCivilId
+          pd.sexId = rPersonalData.sexId
+          pd.birthDate = DateTime.fromJSDate(rPersonalData.birthDate)
+          pd.nationalityId = rPersonalData.nationalityId
+          pd.cityId = rPersonalData.cityId
+          pd.address = rPersonalData.address
+          pd.phone = rPersonalData.phone ?? user.email
+          pd.movil = rPersonalData.movil
+          pd.email = rPersonalData.email ?? user.email
+          Object.assign(pd, imageData)
+          pd.updatedAt = dateTime
+          pd.updatedBy = auth.user!.id
+          await pd.save()
+        } else {
+          // Create new personal data
+          const payloadPersonalData = {
+            ...rPersonalData,
+            ...imageData,
+            birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+            phone: rPersonalData.phone ?? null,
+            createdAt: dateTime,
+            updatedAt: dateTime,
+            createdBy: auth.user!.id,
+            updatedBy: auth.user!.id,
+          }
+          const resPersonalData = await PersonalData.create(payloadPersonalData, { client: trx })
+          user.personalDataId = resPersonalData.id
+        }
+        if (createdFile) createdFiles.push(createdFile)
+      }
+
+      user.updatedAt = dateTime
+      await user.save()
+      await trx.commit()
+
+      await user.load('personalData', pQ => pQ.preload('typeIdentify').preload('city'))
+
+      return response.status(200).json({
+        user,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      await trx.rollback()
+      console.error(error)
+      if (createdFiles.length) await Promise.all(createdFiles.map(file => Google.deleteFile(file)))
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
+
   public async verifiedUser({ request, response, i18n }: HttpContext) {
     const { email, code } = request.all()
     const dateTime = await Util.getDateTimes(request.ip())

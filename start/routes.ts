@@ -38,6 +38,7 @@ router.group(() => {
       router.post("/code/request", "#controllers/users/user_controller.storeCodeConfirm");
       router.post("/code/confirm/verify", "#controllers/users/user_controller.verifyCodeConfirm");
       router.get("/show/:id", "#controllers/users/user_controller.show");
+      router.put("/update-admin/:userId", "#controllers/users/user_controller.updateAdmin");
     }).middleware(auth)
     // Password recovery with random password (public, sends email)
     router.post("/recover-password", "#controllers/users/user_controller.recoverPassword");
