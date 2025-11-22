@@ -1796,46 +1796,22 @@ export default class UserController {
     }
   }
 
-  public async enableUser({ params, response, i18n }: HttpContext) {
+  public async toggleUserStatus({ params, response, i18n }: HttpContext) {
     const dateTime = DateTime.now()
 
     try {
       const user = await User.findOrFail(params.id)
-      user.enabled = true
+      const wasEnabled = user.enabled
+      user.enabled = !user.enabled
       user.updatedAt = dateTime
       await user.save()
 
       return response.status(200).json({
         ...MessageFrontEnd(
-          i18n.formatMessage('messages.user_enabled'),
+          i18n.formatMessage(wasEnabled ? 'messages.user_disabled' : 'messages.user_enabled'),
           i18n.formatMessage('messages.ok_title')
         ),
-      })
-    } catch (error) {
-      console.error(error)
-      return response.status(500).json({
-        ...MessageFrontEnd(
-          i18n.formatMessage('messages.update_error'),
-          i18n.formatMessage('messages.error_title')
-        ),
-      })
-    }
-  }
-
-  public async disableUser({ params, response, i18n }: HttpContext) {
-    const dateTime = DateTime.now()
-
-    try {
-      const user = await User.findOrFail(params.id)
-      user.enabled = false
-      user.updatedAt = dateTime
-      await user.save()
-
-      return response.status(200).json({
-        ...MessageFrontEnd(
-          i18n.formatMessage('messages.user_disabled'),
-          i18n.formatMessage('messages.ok_title')
-        ),
+        enabled: user.enabled
       })
     } catch (error) {
       console.error(error)
