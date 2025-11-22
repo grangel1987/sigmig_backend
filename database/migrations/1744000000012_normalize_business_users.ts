@@ -10,15 +10,15 @@ export default class extends BaseSchema {
             table.dropColumn('position_id') // If exists
             table.boolean('selected').defaultTo(false).alter() // Ensure it exists
             table.unique(['business_id', 'user_id'])
-            table.foreign('business_id').references('id').inTable('businesses').onDelete('CASCADE')
-            table.foreign('user_id').references('id').inTable('users').onDelete('CASCADE')
         })
 
         // Migrate old roles to new tables (adjust if your old table name differs)
-        this.raw(`
-      INSERT INTO business_user_rols (business_id, user_id, rol)
-      SELECT business_id, user_id, rol FROM business_users WHERE rol IS NOT NULL AND rol != ''
-    `)
+        this.defer(async (db) => {
+            await db.rawQuery(`
+              INSERT INTO business_user_rols (business_id, user_id, rol)
+              SELECT business_id, user_id, rol FROM business_users WHERE rol IS NOT NULL AND rol != ''
+            `)
+        })
     }
 
     async down() {
