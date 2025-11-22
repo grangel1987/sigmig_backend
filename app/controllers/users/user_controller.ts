@@ -1644,7 +1644,8 @@ export default class UserController {
         if (createdFile) createdFiles.push(createdFile)
       }
 
-      await user.load('personalData', pQ => pQ.preload('typeIdentify').preload('city'))
+      await user.load('personalData', pQ => pQ.preload('typeIdentify'))
+      if (user.personalData?.cityId) await user.personalData.load('city')
       await user.useTransaction(trx).save()
       await trx.commit()
 
