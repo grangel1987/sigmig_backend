@@ -126,4 +126,41 @@ export default class CoinController {
     public async select() {
         return CoinRepository.select()
     }
+
+    /** Change status (toggle enabled) */
+    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+        const dateTime = DateTime.local()
+
+        try {
+            const coin = await Coin.findOrFail(params.id)
+            coin.enabled = !coin.enabled
+            coin.updatedById = auth.user!.id
+            coin.updatedAt = dateTime
+            await coin.save()
+
+            await coin.load('createdBy', (b) => {
+                b.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            await coin.load('updatedBy', (b) => {
+                b.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+
+            return response.status(200).json({
+                coin,
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.update_ok'),
+                    i18n.formatMessage('messages.ok_title')
+                ),
+            })
+        } catch (error) {
+            return response.status(500).json(
+                MessageFrontEnd(
+                    i18n.formatMessage('messages.update_error'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            )
+        }
+    }
 }
