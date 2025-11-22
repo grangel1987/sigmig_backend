@@ -84,9 +84,9 @@ export default class extends BaseSchema {
     // Add new fields to users table
     this.schema.alterTable('users', (table) => {
       if (!hasPersonalDataId) table.integer('personal_data_id').nullable().unsigned().references('id').inTable('personal_data').onDelete('RESTRICT')
-      if (!hasSignature) table.string('signature', 250).nullable()
+      if (!hasSignature) table.text('signature').nullable()
       if (!hasSignatureShort) table.string('signature_short', 250).nullable()
-      if (!hasSignatureThumb) table.string('signature_thumb', 250).nullable()
+      if (!hasSignatureThumb) table.text('signature_thumb').nullable()
       if (!hasSignatureThumbShort) table.string('signature_thumb_short', 250).nullable()
       if (!hasIsAuthorizer) table.boolean('is_authorizer').defaultTo(false)
     })

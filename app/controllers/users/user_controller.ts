@@ -668,8 +668,8 @@ export default class UserController {
         employee.userId = user.id
         await employee.useTransaction(trx).save()
       }
-
-      if (user.personalData.cityId)
+      await user.load('personalData')
+      if (user.personalData?.cityId)
         await user.personalData.load('city')
 
       await user.useTransaction(trx).save()
@@ -1662,7 +1662,7 @@ export default class UserController {
       await user.useTransaction(trx).save()
       await trx.commit()
 
-      await mail.sendLater((message) => {
+      await mail.send((message) => {
         message
           .to(user.email)
           .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
