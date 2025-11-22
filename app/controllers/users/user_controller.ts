@@ -1847,4 +1847,74 @@ export default class UserController {
       })
     }
   }
+
+  public async adminResetPassword({ request, response, auth, i18n }: HttpContext) {
+    const { userId } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          userId: vine.number().positive(),
+        })
+      )
+    )
+    const dateTime = DateTime.now()
+
+    // Check if current user is admin
+    if (!auth.user!.isAdmin) {
+      return response.status(403).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.no_permission'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+
+    try {
+      const user = await User.findOrFail(userId)
+
+      // Generate a secure random password (12 chars alphanumeric)
+      const raw = crypto.randomBytes(16).toString('base64')
+      const tempPassword = raw.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12)
+      // Ensure minimum length
+      const finalPassword = tempPassword.length < 10 ? tempPassword + crypto.randomBytes(4).toString('hex').slice(0, 2) : tempPassword
+
+      user.password = finalPassword
+      user.updatedAt = dateTime
+      await user.save()
+
+      // Load personal data for email
+      await user.load('personalData')
+      const full_name = user.personalData ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}` : 'Usuario'
+
+      try {
+        await mail.sendLater((message) => {
+          message
+            .to(user.email)
+            .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+            .subject('SIGMI - Contraseña Restablecida')
+            .htmlView('emails/user_password_recovery', {
+              full_name,
+              password: finalPassword,
+              time: dateTime.toISO()
+            })
+        })
+      } catch (error) {
+        console.error('Failed to send email:', error)
+      }
+
+      return response.status(200).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.password_reset_success'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
+  }
 }

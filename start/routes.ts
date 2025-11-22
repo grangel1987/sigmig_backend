@@ -41,6 +41,7 @@ router.group(() => {
       router.put("/update-admin/:userId", "#controllers/users/user_controller.updateAdmin");
       router.put("/enable/:id", "#controllers/users/user_controller.enableUser");
       router.put("/disable/:id", "#controllers/users/user_controller.disableUser");
+      router.post("/admin-reset-password", "#controllers/users/user_controller.adminResetPassword");
     }).middleware(auth)
     // Password recovery with random password (public, sends email)
     router.post("/recover-password", "#controllers/users/user_controller.recoverPassword");
