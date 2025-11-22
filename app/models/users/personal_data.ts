@@ -31,7 +31,7 @@ export default class PersonalData extends BaseModel {
   public sexId: number
 
   // DB column birth_date (DATE)
-  @column.dateTime({ serialize: (value: DateTime) => value.toISODate() })
+  @column.dateTime({ serialize: (value: DateTime) => value?.toISODate() })
   public birthDate: DateTime
 
   @column()

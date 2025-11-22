@@ -669,7 +669,9 @@ export default class UserController {
         await employee.useTransaction(trx).save()
       }
 
-      await user.load('personalData', pQ => pQ.preload('typeIdentify').preload('city'))
+      if (user.personalData.cityId)
+        await user.personalData.load('city')
+
       await user.useTransaction(trx).save()
       await trx.commit()
 
