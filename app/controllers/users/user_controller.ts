@@ -186,13 +186,13 @@ export default class UserController {
   }
 
   public async changePasswordOwner({ request, response, auth, i18n }: HttpContext) {
-    const { current_password, new_password } = request.all()
+    const { current_password, newPassword } = request.all()
     const dateTime = await Util.getDateTimes(request.ip())
     const user = await auth.use('jwt').authenticate()
 
     if (await user.verifyPassword(current_password)) {
       try {
-        user.password = new_password
+        user.password = newPassword
         user.updatedAt = dateTime
         await user.save()
 
@@ -342,7 +342,16 @@ export default class UserController {
   }
 
   public async changePasswordForgot({ request, response, i18n, auth }: HttpContext) {
-    const { email, code, new_password } = request.all()
+    // const isDev = env.get('NODE_ENV') === 'development' || Boolean(request.header('Pwdsecret'))
+    const { email, code, newPassword } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+          code: vine.string().trim().minLength(4),
+          newPassword: vine.string().trim().minLength(8),
+        })
+      )
+    )
     const dateTime = await Util.getDateTimes(request.ip())
     const dev = env.get('NODE_ENV') === 'development' || Boolean(request.header('Pwdsecret'))
 
@@ -365,7 +374,7 @@ export default class UserController {
       log({ codeDateTime: user.codeDateTime?.toISO(), now: DateTime.now().toISO() })
       if (user.codeDateTime?.toISO()! >= DateTime.now().toISO()!) {
         try {
-          user.password = new_password
+          user.password = newPassword
           user.code = null
           user.codeDateTime = null
           user.updatedAt = dateTime
@@ -1585,6 +1594,7 @@ export default class UserController {
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,
+          verified: true,
           isAdmin: true,
         },
         { client: trx }
