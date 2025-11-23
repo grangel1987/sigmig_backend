@@ -896,7 +896,7 @@ export default class EmployeeController {
             .where('id', employeeId)
             .preload('personalData', (pd) => {
                 pd
-                    .preload('typeIdentify', (ti) => ti.select(['id', 'name']))
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                     .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
                     .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
                     .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
