@@ -815,8 +815,7 @@ export default class EmployeeController {
         const employee = await Employee.query()
             .where('token', token)
             .preload('personalData', (pd) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id', 'city_id', 'nationality_id', 'state_civil_id', 'sex_id'])
-                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                     .preload('city', (cityQ) => {
                         cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name']))
                     })
