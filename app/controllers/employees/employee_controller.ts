@@ -860,9 +860,10 @@ export default class EmployeeController {
     public async findByIdentify({ request, response }: HttpContext) {
         const { identify, typeIdentify, businessId } = await request.validateUsing(employeeFindByIdentifyValidator)
         const row = await Employee.query()
-            .where('identify', String(identify).trim())
-            .where('identify_type_id', typeIdentify)
-            .select(['id', 'identify_type_id', 'identify', 'names', 'last_name_p', 'last_name_m', 'birth_date', 'personal_data_id'])
+            .whereHas('personalData', (pdQ) => {
+                pdQ.where('identify', String(identify).trim())
+                    .where('type_identify_id', typeIdentify)
+            })
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                 b.select(['id', 'enabled', 'employee_id', 'business_id'])
@@ -908,25 +909,18 @@ export default class EmployeeController {
     }
 
     public async findByName({ request, response }: HttpContext) {
-        const { name, businessId } = await request.validateUsing(employeeFindByNameValidator)
-        const rows = await EmployeeRepository.findByName(businessId, name)
-        if (!rows || !rows.length) return response.ok([])
-        const employeeIds = rows.map((r: any) => r.id)
+        const { name } = await request.validateUsing(employeeFindByNameValidator)
         const employees = await Employee.query()
-            .whereIn('id', employeeIds)
-            .select(['id', 'personal_data_id'])
+            .whereHas('personalData', (pdQ) => {
+                pdQ.where('names', 'like', `%${name}%`)
+            })
             .preload('personalData', (pd: any) => {
                 pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
                     .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
             })
-        const personalDataById: Record<number, any> = {}
-        for (const e of employees) {
+        const list = employees.map((e) => {
+            const base = this.mapSearchEmployee(e.toJSON())
             const pd = (e as any).personalData
-            if (pd) personalDataById[e.id] = pd
-        }
-        const list = (rows as any[]).map((r) => {
-            const base = this.mapRepoEmployeeSearch(r as any)
-            const pd = personalDataById[r.id]
             if (pd) {
                 base.personalData = {
                     id: pd.id,
@@ -944,25 +938,18 @@ export default class EmployeeController {
     }
 
     public async findByLastNameP({ request, response }: HttpContext) {
-        const { lastNameP, businessId } = await request.validateUsing(employeeFindByLastNamePValidator)
-        const rows = await EmployeeRepository.findByLastNameP(businessId, lastNameP)
-        if (!rows || !rows.length) return response.ok([])
-        const employeeIds = rows.map((r: any) => r.id)
+        const { lastNameP } = await request.validateUsing(employeeFindByLastNamePValidator)
         const employees = await Employee.query()
-            .whereIn('id', employeeIds)
-            .select(['id', 'personal_data_id'])
+            .whereHas('personalData', (pdQ) => {
+                pdQ.where('last_name_p', 'like', `%${lastNameP}%`)
+            })
             .preload('personalData', (pd: any) => {
                 pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
                     .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
             })
-        const personalDataById: Record<number, any> = {}
-        for (const e of employees) {
+        const list = employees.map((e) => {
+            const base = this.mapSearchEmployee(e.toJSON())
             const pd = (e as any).personalData
-            if (pd) personalDataById[e.id] = pd
-        }
-        const list = (rows as any[]).map((r) => {
-            const base = this.mapRepoEmployeeSearch(r as any)
-            const pd = personalDataById[r.id]
             if (pd) {
                 base.personalData = {
                     id: pd.id,

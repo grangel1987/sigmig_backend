@@ -4,7 +4,7 @@ export interface EmployeeReportRow {
     id: number
     token: string | null
     type_identify: string
-    identify: string
+    identify: string | null
     names: string
     last_name_p: string
     last_name_m: string
@@ -12,94 +12,24 @@ export interface EmployeeReportRow {
 }
 
 export default class EmployeeRepository {
-    public static async findByName(businessId: number, name: string) {
-        const query = `
-        SELECT
-            employees.id,
-            business_employees.business_id,
-            business_employees.enabled,
-            employees.identify_type_id,
-            employees.identify,
-            employees.names,
-            employees.last_name_p,
-            employees.last_name_m,
-            employees.photo,
-            employees.thumb,
-            employees.token,
-            settings.text,
-            employees.birth_date,
-            cities.id AS city_id,
-            cities.name AS city_name,
-            cities.country_id AS city_country_id,
-            countries.id AS country_id,
-            countries.name AS country_name
-        FROM employees
-        INNER JOIN business_employees ON employees.id = business_employees.employee_id
-        INNER JOIN settings ON settings.id = employees.identify_type_id
-        LEFT JOIN cities ON cities.id = employees.city_id
-        LEFT JOIN countries ON countries.id = cities.country_id
-        WHERE
-            business_employees.business_id = ${businessId} AND
-            employees.names LIKE "%${name}%"`;
-
-        const result = await db.rawQuery(query)
-        return result[0]
-    }
-
-    public static async findByLastNameP(businessId: number, lastNameP: string) {
-        const query = `
-        SELECT
-            employees.id,
-            business_employees.business_id,
-            business_employees.enabled,
-            employees.identify_type_id,
-            employees.identify,
-            employees.names,
-            employees.last_name_p,
-            employees.last_name_m,
-            employees.photo,
-            employees.thumb,
-            employees.token,
-            settings.text,
-            employees.birth_date,
-            cities.id AS city_id,
-            cities.name AS city_name,
-            cities.country_id AS city_country_id,
-            countries.id AS country_id,
-            countries.name AS country_name
-        FROM employees
-        INNER JOIN business_employees ON employees.id = business_employees.employee_id
-        INNER JOIN settings ON settings.id = employees.identify_type_id
-        LEFT JOIN cities ON cities.id = employees.city_id
-        LEFT JOIN countries ON countries.id = cities.country_id
-        WHERE
-            business_employees.business_id = ${businessId} AND
-            employees.last_name_p LIKE "%${lastNameP}%"`;
-
-        const result = await db.rawQuery(query)
-        return result[0]
-    }
-
     public static async report(condition: number, expireDate: string | null, costCenterId: number | null, businessId: number) {
         const query = `
         SELECT
             employees.id,
             employees.token,
             settings.text AS type_identify,
-            employees.identify,
-            employees.names,
-            employees.last_name_p,
-            employees.last_name_m,
+            personal_data.identify,
+            personal_data.names,
+            personal_data.last_name_p,
+            personal_data.last_name_m,
             business_employees.enabled
         FROM
-            employees,
-            settings,
-            business_employees
+            employees
+        INNER JOIN personal_data ON employees.personal_data_id = personal_data.id
+        INNER JOIN settings ON personal_data.type_identify_id = settings.id
+        INNER JOIN business_employees ON employees.id = business_employees.employee_id
         WHERE
-            employees.identify_type_id = settings.id AND
-            employees.id = business_employees.employee_id AND
             business_employees.business_id=${businessId}
-
             ${condition === 1 ? ` AND business_employees.enabled=true` : ``}
             ${condition === 2 ? ` AND business_employees.enabled=false` : ``}
             ${expireDate ? `AND business_employees.settlement_date='${expireDate}'` : ``}
@@ -117,33 +47,34 @@ export default class EmployeeRepository {
             employees.id,
             business_employees.business_id,
             business_employees.enabled,
-            employees.identify_type_id,
-            employees.identify,
-            employees.names,
-            employees.last_name_p,
-            employees.last_name_m,
-            employees.photo,
-            employees.thumb,
+            personal_data.type_identify_id,
+            personal_data.identify,
+            personal_data.names,
+            personal_data.last_name_p,
+            personal_data.last_name_m,
+            personal_data.photo,
+            personal_data.thumb,
             employees.token,
             settings.text
         FROM employees
+        INNER JOIN personal_data ON employees.personal_data_id = personal_data.id
+        INNER JOIN settings ON personal_data.type_identify_id = settings.id
         INNER JOIN business_employees ON employees.id = business_employees.employee_id
-        INNER JOIN settings ON settings.id = employees.identify_type_id
         WHERE business_employees.business_id = ?
         `
         const bindings: any[] = [businessId]
         if (value && value.trim().length) {
             // Add flexible OR conditions for multiple textual columns
             sql += ` AND (
-                employees.names LIKE ? OR
-                employees.last_name_p LIKE ? OR
-                employees.last_name_m LIKE ? OR
-                employees.identify LIKE ?
+                personal_data.names LIKE ? OR
+                personal_data.last_name_p LIKE ? OR
+                personal_data.last_name_m LIKE ? OR
+                personal_data.identify LIKE ?
             )`
             const like = `%${value.trim()}%`
             bindings.push(like, like, like, like)
         }
-        sql += ' ORDER BY employees.names ASC LIMIT ?'
+        sql += ' ORDER BY personal_data.names ASC LIMIT ?'
         bindings.push(limit)
         const result = await db.rawQuery(sql, bindings)
         return result[0]
