@@ -6,6 +6,7 @@ import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import Hash from '@adonisjs/core/services/hash'
 
 import BusinessUser from '#models/business/business_user'
+import Employee from '#models/employees/employee'
 import Position from '#models/positions/position'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { compose } from '@adonisjs/core/helpers'
@@ -64,12 +65,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column({ serializeAs: null })
   public inApp: boolean
 
-  @column()
-  public clientId: number
-
-  @column()
-  public employeeId: number
-
   @column({ serializeAs: null })
   public lastLoginAt: DateTime | null
 
@@ -117,6 +112,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @belongsTo(() => Position, { foreignKey: 'positionId' })
   public position: BelongsTo<typeof Position>
+
+  @hasMany(() => Employee, { foreignKey: 'employeeId' })
+  public employee: HasMany<typeof Employee>
 
 
 

@@ -85,6 +85,7 @@ export default class ShoppingController {
                 await shopping.load('authorizer', (b) => {
                     b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                     b.preload('personalData')
+                    b.preload('employee', (emp) => emp.preload('position'))
                 })
             }
 
@@ -152,6 +153,7 @@ export default class ShoppingController {
                 await updatedShop.load('authorizer', (b) => {
                     b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                     b.preload('personalData')
+                    b.preload('employee', (emp) => emp.preload('position'))
                 })
             }
 
@@ -258,6 +260,7 @@ export default class ShoppingController {
             await shop.load('authorizer', (b) => {
                 b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                 b.preload('personalData')
+                b.preload('employee', (emp) => emp.preload('position'))
             })
         }
 
@@ -369,6 +372,7 @@ export default class ShoppingController {
             await shop.load('authorizer', (b) => {
                 b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                 b.preload('personalData')
+                b.preload('employee', (emp) => emp.preload('position'))
             })
         }
 
