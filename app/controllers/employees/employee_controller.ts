@@ -278,28 +278,29 @@ export default class EmployeeController {
             const authorization = request.file('authorization')
 
             const employeeData: any = {
-                identifyTypeId: payload.typeIdentifyId,
-                identify: payload.identify,
-                names: payload.names,
-                lastNameP: payload.lastNameP,
-                lastNameM: payload.lastNameM,
-                stateCivilId: payload.stateCivil ?? null,
-                sexId: payload.sexId,
-                birthDate: payload.birthDate ? DateTime.fromISO(payload.birthDate) : null,
-                nationalityId: payload.nationalityId,
-                cityId: payload.cityId,
-                address: payload.address,
-                phone: payload.phone ?? null,
-                movil: payload.movil,
-                email: payload.email,
+                /*                 identifyTypeId: payload.typeIdentifyId,
+                                identify: payload.identify,
+                                names: payload.names,
+                                lastNameP: payload.lastNameP,
+                                lastNameM: payload.lastNameM,
+                                stateCivilId: payload.stateCivil ?? null,
+                                sexId: payload.sexId,
+                                birthDate: payload.birthDate ? DateTime.fromISO(payload.birthDate) : null,
+                                nationalityId: payload.nationalityId,
+                                cityId: payload.cityId,
+                                address: payload.address,
+                                phone: payload.phone ?? null,
+                                movil: payload.movil,
+                                email: payload.email, */
                 createdById: authUserId,
                 updatedById: authUserId,
                 createdAt: currentTime,
                 updatedAt: currentTime,
             }
 
+
+
             const businessEmployeeData: any = {
-                userId: payload.userId,
                 enabled: payload.enabled || false,
                 businessId: payload.businessId,
                 afpId: payload.afpId ?? 0,

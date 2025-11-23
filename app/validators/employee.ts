@@ -4,21 +4,7 @@ import vine from '@vinejs/vine'
 export const employeeStoreValidator = vine.compile(
     vine.object({
         enabled: vine.boolean().optional(),
-        // All identity fields shared with personalData are now optional (mutual exclusivity with personalData/personalDataId)
-        typeIdentifyId: vine.number().positive().optional(),
-        identify: vine.string().trim().minLength(3).optional(),
-        names: vine.string().trim().minLength(1).optional(),
-        lastNameP: vine.string().trim().minLength(1).optional(),
-        lastNameM: vine.string().trim().minLength(1).optional(),
-        stateCivil: vine.number().optional(),
-        sexId: vine.number().positive().optional(),
-        birthDate: vine.string().trim().optional(), // ISO or yyyy-MM-dd expected
-        nationalityId: vine.number().positive().optional(),
-        cityId: vine.number().positive().optional(),
-        address: vine.string().optional(),
-        phone: vine.string().optional(),
-        movil: vine.string().optional(),
-        email: vine.string().email().optional(),
+        // All identity fields now live in personalData, not Employee
         businessId: vine.number().positive(),
         afpId: vine.number().optional(),
         afpPercentage: vine.number().optional(),
