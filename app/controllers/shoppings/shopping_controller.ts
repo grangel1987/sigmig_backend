@@ -151,7 +151,8 @@ export default class ShoppingController {
         const dateTime = await Util.getDateTimes('')
 
         const authUser = auth.getUserOrFail()
-        if (!authUser.isAuthorizer)
+        const shop = await Shopping.findOrFail(id)
+        if (!authUser.isAuthorizer || shop.authorizerId !== authUser.id)
             return response.status(403)
                 .json(MessageFrontEnd(
                     i18n.formatMessage('messages.no_authorizer_permission'),
@@ -160,9 +161,7 @@ export default class ShoppingController {
         try {
 
 
-            const shop = await Shopping.findOrFail(id)
             shop.isAuthorized = true
-            shop.authorizerId = authUser.id
             shop.authorizerAt = dateTime
             await shop.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
