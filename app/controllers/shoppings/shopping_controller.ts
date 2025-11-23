@@ -175,7 +175,7 @@ export default class ShoppingController {
 
         const authUser = auth.getUserOrFail()
         const shop = await Shopping.findOrFail(id)
-        if (!authUser.isAuthorizer || shop.authorizerId !== authUser.id)
+        if ((!authUser.isAuthorizer || shop.authorizerId !== authUser.id) && !authUser.isAdmin)
             return response.status(403)
                 .json(MessageFrontEnd(
                     i18n.formatMessage('messages.no_authorizer_permission'),
