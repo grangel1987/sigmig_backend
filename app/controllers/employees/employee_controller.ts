@@ -30,7 +30,7 @@ import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
-    return arr.reduce((acc: any, item: any) => {
+    return arr.reduce((acc: any, item) => {
         const composite = keys.map(k => item[k]).join('__')
         if (!acc[composite]) acc[composite] = []
         acc[composite].push(item)
@@ -770,7 +770,18 @@ export default class EmployeeController {
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                 })
             })
-            await employee.load('personalData')
+            await employee.load('personalData', (pd) => {
+                pd.select([
+                    'id', 'names', 'last_name_p', 'last_name_m', 'type_identify_id', 'identify',
+                    'state_civil_id', 'sex_id', 'birth_date', 'nationality_id', 'city_id',
+                    'address', 'phone', 'movil', 'email', 'photo', 'thumb', 'photo_short', 'thumb_short'
+                ])
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                    .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
+                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
+            })
             await employee.load('certificateHealth')
             await employee.load('emergencyContacts', (b) => {
                 b.preload('relationship', (rb) => rb.select(['id', 'country_id', 'key_id', 'text', 'value', 'enabled', 'created_by', 'updated_by', 'created_at', 'updated_at']))
@@ -885,11 +896,17 @@ export default class EmployeeController {
         const { employeeId, businessId } = await request.validateUsing(employeeFindByIdValidator)
         const employee = await Employee.query()
             .where('id', employeeId)
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => {
-                        ti.select(['id', 'name'])
-                    })
+            .preload('personalData', (pd) => {
+                pd.select([
+                    'id', 'names', 'last_name_p', 'last_name_m', 'type_identify_id', 'identify',
+                    'state_civil_id', 'sex_id', 'birth_date', 'nationality_id', 'city_id',
+                    'address', 'phone', 'movil', 'email', 'photo', 'thumb', 'photo_short', 'thumb_short'
+                ])
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'name']))
+                    .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
+                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .preload('business', (b) => {
                 b.where('business_id', businessId)
@@ -914,9 +931,9 @@ export default class EmployeeController {
             .whereHas('personalData', (pdQ) => {
                 pdQ.where('names', 'like', `%${name}%`)
             })
-            .preload('personalData', (pd: any) => {
+            .preload('personalData', (pd) => {
                 pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'text']))
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
         const list = employees.map((e) => {
             const base = this.mapSearchEmployee(e.toJSON())
@@ -943,9 +960,9 @@ export default class EmployeeController {
             .whereHas('personalData', (pdQ) => {
                 pdQ.where('last_name_p', 'like', `%${lastNameP}%`)
             })
-            .preload('personalData', (pd: any) => {
+            .preload('personalData', (pd) => {
                 pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'text']))
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
         const list = employees.map((e) => {
             const base = this.mapSearchEmployee(e.toJSON())
@@ -981,9 +998,9 @@ export default class EmployeeController {
         const employees = await Employee.query()
             .whereIn('id', employeeIds)
             .select(['id', 'personal_data_id'])
-            .preload('personalData', (pd: any) => {
+            .preload('personalData', (pd) => {
                 pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'text']))
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
         const personalDataById: Record<number, any> = {}
         for (const e of employees) {
@@ -1408,6 +1425,7 @@ export default class EmployeeController {
         }
         if (workId && workId > 0) {
             const ds = dateStart ?? dateTime.toFormat('yyyy-LL-dd')
+
             const de = dateEnd ?? ds
             return EmployeeAccessRepository.findAccessByWorkId(workId, ds, de)
         }
