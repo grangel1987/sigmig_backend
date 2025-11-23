@@ -650,8 +650,8 @@ export default class UserController {
           ...rPersonalData,
           ...imageData,
           email: resolvedEmail || user.email,
-          birthDate: DateTime.fromJSDate(rPersonalData!.birthDate),
-          phone: rPersonalData!.phone ?? null,
+          birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
+          phone: rPersonalData.phone ?? null,
           createdAt: dateTime,
           updatedAt: dateTime,
           createdBy: auth.user!.id,
@@ -806,16 +806,16 @@ export default class UserController {
             pd.names = rPersonalData.names
             pd.lastNameP = rPersonalData.lastNameP
             pd.lastNameM = rPersonalData.lastNameM
-            pd.typeIdentifyId = rPersonalData.typeIdentifyId
-            pd.identify = rPersonalData.identify
-            pd.stateCivilId = rPersonalData.stateCivilId
-            pd.sexId = rPersonalData.sexId
-            pd.birthDate = DateTime.fromJSDate(rPersonalData.birthDate)
-            pd.nationalityId = rPersonalData.nationalityId
-            pd.cityId = rPersonalData.cityId
-            pd.address = rPersonalData.address
+            pd.typeIdentifyId = rPersonalData.typeIdentifyId ?? null
+            pd.identify = rPersonalData.identify ?? null
+            pd.stateCivilId = rPersonalData.stateCivilId ?? null
+            pd.sexId = rPersonalData.sexId ?? null
+            pd.birthDate = rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null
+            pd.nationalityId = rPersonalData.nationalityId ?? null
+            pd.cityId = rPersonalData.cityId ?? null
+            pd.address = rPersonalData.address ?? null
             pd.phone = rPersonalData.phone ?? user.email
-            pd.movil = rPersonalData.movil
+            pd.movil = rPersonalData.movil ?? null
             pd.email = rPersonalData.email ?? user.email
             Object.assign(pd, imageData)
             pd.updatedAt = dateTime
@@ -826,7 +826,7 @@ export default class UserController {
             const payloadPersonalData = {
               ...rPersonalData,
               ...imageData,
-              birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+              birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
               phone: rPersonalData.phone ?? null,
               createdAt: dateTime,
               updatedAt: dateTime,
@@ -978,16 +978,16 @@ export default class UserController {
           pd.names = rPersonalData.names
           pd.lastNameP = rPersonalData.lastNameP
           pd.lastNameM = rPersonalData.lastNameM
-          pd.typeIdentifyId = rPersonalData.typeIdentifyId
-          pd.identify = rPersonalData.identify
-          pd.stateCivilId = rPersonalData.stateCivilId
-          pd.sexId = rPersonalData.sexId
-          pd.birthDate = DateTime.fromJSDate(rPersonalData.birthDate)
-          pd.nationalityId = rPersonalData.nationalityId
-          pd.cityId = rPersonalData.cityId
-          pd.address = rPersonalData.address
+          pd.typeIdentifyId = rPersonalData.typeIdentifyId ?? null
+          pd.identify = rPersonalData.identify ?? null
+          pd.stateCivilId = rPersonalData.stateCivilId ?? null
+          pd.sexId = rPersonalData.sexId ?? null
+          pd.birthDate = rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null
+          pd.nationalityId = rPersonalData.nationalityId ?? null
+          pd.cityId = rPersonalData.cityId ?? null
+          pd.address = rPersonalData.address ?? null
           pd.phone = rPersonalData.phone ?? user.email
-          pd.movil = rPersonalData.movil
+          pd.movil = rPersonalData.movil ?? null
           pd.email = rPersonalData.email ?? user.email
           Object.assign(pd, imageData)
           pd.updatedAt = dateTime
@@ -998,7 +998,7 @@ export default class UserController {
           const payloadPersonalData = {
             ...rPersonalData,
             ...imageData,
-            birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+            birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
             phone: rPersonalData.phone ?? null,
             createdAt: dateTime,
             updatedAt: dateTime,
@@ -1666,7 +1666,7 @@ export default class UserController {
           ...rPersonalData,
           ...imageData,
           email: personalData.email || user.email,
-          birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+          birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
           phone: rPersonalData.phone ?? null,
           createdAt: dateTime,
           updatedAt: dateTime,

@@ -68,6 +68,13 @@ export default class Employee extends BaseModel {
     @column({ columnName: 'user_id' })
     public userId: number | null
 
+    // Restore auditing user references (were erroneously removed)
+    @column({ columnName: 'created_by' })
+    public createdById: number | null
+
+    @column({ columnName: 'updated_by' })
+    public updatedById: number | null
+
     @column.dateTime({ autoCreate: true })
     public createdAt: DateTime
 
@@ -84,6 +91,12 @@ export default class Employee extends BaseModel {
 
     @belongsTo(() => PersonalData, { foreignKey: 'personalDataId' })
     public personalData: BelongsTo<typeof PersonalData>
+
+    @belongsTo(() => User, { foreignKey: 'createdById' })
+    public createdBy: BelongsTo<typeof User>
+
+    @belongsTo(() => User, { foreignKey: 'updatedById' })
+    public updatedBy: BelongsTo<typeof User>
 
     @hasMany(() => BusinessEmployee, { foreignKey: 'employeeId' })
     public business: HasMany<typeof BusinessEmployee>

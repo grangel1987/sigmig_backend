@@ -381,7 +381,7 @@ export default class EmployeeController {
                     const payloadPersonalData = {
                         ...pdData,
                         ...imageData,
-                        birthDate: DateTime.fromJSDate(pdData.birthDate)!,
+                        birthDate: pdData.birthDate ? DateTime.fromJSDate(pdData.birthDate) : null,
                         phone: pdData.phone ?? null,
                         createdAt: currentTime,
                         updatedAt: currentTime,
@@ -485,17 +485,13 @@ export default class EmployeeController {
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                 })
             })
-            await employee.load('stateCivil', (b) => b.select(['id', 'text']))
-            await employee.load('nationality', (b) => b.select(['id', 'name', 'nationality']))
-            await employee.load('sexes', (b) => b.select(['id', 'text']))
+            // Replaced legacy direct relations with personalData preload
+            await employee.load('personalData')
             await employee.load('certificateHealth')
             await employee.load('emergencyContacts', (b) => {
                 b.preload('relationship', (rb) => rb.select(['id', 'country_id', 'key_id', 'text', 'value', 'enabled', 'created_by', 'updated_by', 'created_at', 'updated_at']))
             })
-            await employee.load('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
+            // City & country now accessible via personalData if needed
             await employee.load('scheduleWork', (b) => {
                 b.preload('schedule')
                 b.preload('work')
@@ -773,17 +769,12 @@ export default class EmployeeController {
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                 })
             })
-            await employee.load('stateCivil', (b) => b.select(['id', 'text']))
-            await employee.load('nationality', (b) => b.select(['id', 'name', 'nationality']))
-            await employee.load('sexes', (b) => b.select(['id', 'text']))
+            await employee.load('personalData')
             await employee.load('certificateHealth')
             await employee.load('emergencyContacts', (b) => {
                 b.preload('relationship', (rb) => rb.select(['id', 'country_id', 'key_id', 'text', 'value', 'enabled', 'created_by', 'updated_by', 'created_at', 'updated_at']))
             })
-            await employee.load('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
+            // City & country now accessible via personalData if needed
             await employee.load('scheduleWork', (b) => {
                 b.preload('schedule')
                 b.preload('work')
@@ -811,11 +802,15 @@ export default class EmployeeController {
         const businessId = Number(params.business_id)
         const employee = await Employee.query()
             .where('token', token)
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => {
-                        ti.select(['id', 'name'])
+            .preload('personalData', (pd) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id', 'city_id', 'nationality_id', 'state_civil_id', 'sex_id'])
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                    .preload('city', (cityQ) => {
+                        cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name']))
                     })
+                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .preload('createdBy', (builder) => {
                 builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
@@ -823,13 +818,6 @@ export default class EmployeeController {
             .preload('updatedBy', (builder) => {
                 builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })
-            .preload('typeIdentify', (b) => b.select(['id', 'text']))
-            .preload('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
-            .preload('nationality', (b) => b.select(['id', 'name', 'nationality']))
-            .preload('sexes', (b) => b.select(['id', 'text']))
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                     .where('enabled', true)
@@ -878,14 +866,13 @@ export default class EmployeeController {
                 b.where('business_id', businessId)
                 b.select(['id', 'enabled', 'employee_id', 'business_id'])
             })
-            .preload('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
-            .preload('typeIdentify', (b) => b.select(['id', 'text']))
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            .preload('personalData', (pd) => {
+                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id', 'city_id', 'nationality_id', 'state_civil_id', 'sex_id'])
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                    .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
+                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .first()
         const list = row ? [this.mapSearchEmployee(row.toJSON())] : []
@@ -901,10 +888,6 @@ export default class EmployeeController {
                     .preload('typeIdentify', (ti: any) => {
                         ti.select(['id', 'name'])
                     })
-            })
-            .preload('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
             })
             .preload('business', (b) => {
                 b.where('business_id', businessId)
@@ -1158,9 +1141,12 @@ export default class EmployeeController {
             const employee = await Employee.find(payload.employeeId)
             const authorizer = await User.find(payload.authorizerId)
             if (employee && authorizer) {
+                try { await employee.load('personalData') } catch { }
+                const pd: any = (employee as any).personalData || {}
+                const fullName = [pd.names, pd.last_name_p, pd.last_name_m].filter(Boolean).join(' ').trim()
                 emitter.emit('new::employeePermitStore', {
-                    email: (employee as any).email,
-                    full_name: `${employee.names} ${(employee as any).lastNameP || (employee as any).last_name_p || ''} ${(employee as any).lastNameM || (employee as any).last_name_m || ''}`.trim(),
+                    email: pd.email,
+                    full_name: fullName,
                     token: permit.token,
                 })
                 emitter.emit('new::employeePermitStoreAuthorizer', {
@@ -1184,7 +1170,7 @@ export default class EmployeeController {
         const token = params.token
         const permit = await EmployeePermit.query()
             .where('token', token)
-            .preload('employee', (b) => b.preload('typeIdentify'))
+            .preload('employee', (b) => b.preload('personalData'))
             .preload('business', (b) => b.select(['id', 'identify', 'name', 'url', 'url_thumb', 'email', 'phone']))
             .preload('authorizer', (b) => b.select(['id', 'identify', 'type_identify_id']))
             .first()
