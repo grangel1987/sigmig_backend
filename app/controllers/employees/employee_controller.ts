@@ -434,7 +434,7 @@ export default class EmployeeController {
                     })
                 }
                 if (contacts.length) {
-                    await employee.related('emergencyContacts').createMany(contacts as any, { client: trx })
+                    await employee.related('emergencyContacts').createMany(contacts, { client: trx })
                 }
             }
 
@@ -452,7 +452,7 @@ export default class EmployeeController {
                 })
             }
             if (normalizedScheduleWork.length) {
-                await employee.related('scheduleWork').createMany(normalizedScheduleWork as any, { client: trx })
+                await employee.related('scheduleWork').createMany(normalizedScheduleWork, { client: trx })
             }
             // (contacts metadata already set during mapping)
 
@@ -524,16 +524,16 @@ export default class EmployeeController {
         const trx = await db.transaction()
         const { employeeUpdateValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeUpdateValidator)
-        const { userId, personalData } = payload as any
+        const { userId, personalData } = payload
         const createdFiles: string[] = []
         try {
             // Nested collections are arrays of objects now
-            const hasScheduleWork = (payload as any).scheduleWork !== undefined
-            const hasCertificateHealth = (payload as any).certificateHealth !== undefined
-            const hasContactsEmergency = (payload as any).contactsEmergency !== undefined
-            const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork && Array.isArray((payload as any).scheduleWork) ? (payload as any).scheduleWork : []
-            const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth && Array.isArray((payload as any).certificateHealth) ? (payload as any).certificateHealth : []
-            const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency && Array.isArray((payload as any).contactsEmergency) ? (payload as any).contactsEmergency : []
+            const hasScheduleWork = payload.scheduleWork !== undefined
+            const hasCertificateHealth = payload.certificateHealth !== undefined
+            const hasContactsEmergency = payload.contactsEmergency !== undefined
+            const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork && Array.isArray(payload.scheduleWork) ? payload.scheduleWork : []
+            const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth && Array.isArray(payload.certificateHealth) ? payload.certificateHealth : []
+            const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency && Array.isArray(payload.contactsEmergency) ? payload.contactsEmergency : []
             const employee = await Employee.find(employeeId)
             if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
 
@@ -561,18 +561,19 @@ export default class EmployeeController {
 
             const newAuthorization = request.file('authorization')
             if (newAuthorization) {
-                if ((employee as any).authorization_mirror_short) {
-                    try { await Google.deleteFile((employee as any).authorization_mirror_short); } catch { }
-                    if ((employee as any).thumb_authorization_mirror_short) { try { await Google.deleteFile((employee as any).thumb_authorization_mirror_short); } catch { } }
-                    Object.assign(employee, { authorization_mirror: null, authorization_mirror_short: null, thumb_authorization_mirror: null, thumb_authorization_mirror_short: null })
+                if (employee.authorizationMirrorShort) {
+                    try { await Google.deleteFile(employee.authorizationMirrorShort); } catch { }
+                    if (employee.thumbAuthorizationMirrorShort) { try { await Google.deleteFile(employee.thumbAuthorizationMirrorShort); } catch { } }
+                    employee.authorizationMirror = null
+                    employee.authorizationMirrorShort = null
+                    employee.thumbAuthorizationMirror = null
+                    employee.thumbAuthorizationMirrorShort = null
                 }
                 const uploadedA = await Google.uploadFile(newAuthorization, 'admin/authorizations')
-                Object.assign(employee, {
-                    authorization_mirror: uploadedA.url,
-                    authorization_mirror_short: uploadedA.url_short,
-                    thumb_authorization_mirror: uploadedA.url_thumb,
-                    thumb_authorization_mirror_short: uploadedA.url_thumb_short,
-                })
+                employee.authorizationMirror = uploadedA.url
+                employee.authorizationMirrorShort = uploadedA.url_short
+                employee.thumbAuthorizationMirror = uploadedA.url_thumb
+                employee.thumbAuthorizationMirrorShort = uploadedA.url_thumb_short
                 if (uploadedA.url_short) createdFiles.push(uploadedA.url_short)
             }
 
@@ -605,9 +606,9 @@ export default class EmployeeController {
                             existingPd.merge({
                                 ...pdData,
                                 ...imageData,
-                                birthDate: DateTime.fromJSDate(pdData.birthDate),
+                                birthDate: pdData.birthDate ? DateTime.fromJSDate(pdData.birthDate) : null,
                                 phone: pdData.phone ?? null,
-                                updatedAt: currentTime,
+                                updatedAt: DateTime.now(),
                                 updatedBy: auth.user!.id,
                             })
                             await existingPd.save()
@@ -616,10 +617,10 @@ export default class EmployeeController {
                         const payloadPersonalData = {
                             ...pdData,
                             ...imageData,
-                            birthDate: DateTime.fromJSDate(pdData.birthDate),
+                            birthDate: pdData.birthDate ? DateTime.fromJSDate(pdData.birthDate) : null,
                             phone: pdData.phone ?? null,
-                            createdAt: currentTime,
-                            updatedAt: currentTime,
+                            createdAt: DateTime.now(),
+                            updatedAt: DateTime.now(),
                             createdBy: auth.user!.id,
                             updatedBy: auth.user!.id,
                         }
@@ -719,7 +720,7 @@ export default class EmployeeController {
                     })
                 }
                 if (contacts.length) {
-                    await employee.related('emergencyContacts').createMany(contacts as any, { client: trx })
+                    await employee.related('emergencyContacts').createMany(contacts, { client: trx })
                 }
             }
 
@@ -739,7 +740,7 @@ export default class EmployeeController {
                     })
                 }
                 if (normalizedScheduleWork.length) {
-                    await employee.related('scheduleWork').createMany(normalizedScheduleWork as any, { client: trx })
+                    await employee.related('scheduleWork').createMany(normalizedScheduleWork, { client: trx })
                 }
             }
 
@@ -972,12 +973,19 @@ export default class EmployeeController {
         const employee = await Employee.find(employeeId)
         if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
 
+        await employee.load('personalData')
+        const pd = employee.personalData
+        if (!pd) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
+
         // Delete stored files if present
-        if ((employee as any).photo_short) { try { await Google.deleteFile((employee as any).photo_short) } catch { } }
-        if ((employee as any).thumb_short) { try { await Google.deleteFile((employee as any).thumb_short) } catch { } }
-        employee.updatedAt = dateTime
-        Object.assign(employee, { photo: null, photo_short: null, thumb: null, thumb_short: null })
-        await employee.save()
+        if (pd.photoShort) { try { await Google.deleteFile(pd.photoShort) } catch { } }
+        if (pd.thumbShort) { try { await Google.deleteFile(pd.thumbShort) } catch { } }
+        pd.photo = null
+        pd.photoShort = null
+        pd.thumb = null
+        pd.thumbShort = null
+        pd.updatedAt = dateTime
+        await pd.save()
 
         return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.delete_ok'), i18n.formatMessage('messages.ok_title')))
     }
@@ -1010,8 +1018,8 @@ export default class EmployeeController {
             const businessEmployee = await BusinessEmployee.find(businessEmployeeId)
             if (!businessEmployee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
             businessEmployee.enabled = false
-                ; (businessEmployee as any).inactive_at = dateTime
-                ; (businessEmployee as any).inactive_by = auth.user!.id
+            businessEmployee.inactiveAt = dateTime
+            businessEmployee.inactiveBy = auth.user!.id
             await businessEmployee.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.inactive_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
@@ -1028,8 +1036,8 @@ export default class EmployeeController {
             const businessEmployee = await BusinessEmployee.find(businessEmployeeId)
             if (!businessEmployee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
             businessEmployee.enabled = true
-                ; (businessEmployee as any).inactive_at = null
-                ; (businessEmployee as any).inactive_by = null
+            businessEmployee.inactiveAt = null
+            businessEmployee.inactiveBy = null
             await businessEmployee.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.reactive_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
@@ -1087,16 +1095,16 @@ export default class EmployeeController {
             const authorizer = await User.find(payload.authorizerId)
             if (employee && authorizer) {
                 try { await employee.load('personalData') } catch { }
-                const pd: any = (employee as any).personalData || {}
-                const fullName = [pd.names, pd.last_name_p, pd.last_name_m].filter(Boolean).join(' ').trim()
+                const pd = employee.personalData
+                const fullName = pd ? [pd.names, pd.lastNameP, pd.lastNameM].filter(Boolean).join(' ').trim() : ''
                 await emitter.emit('new::employeePermitStore', {
-                    email: pd.email,
+                    email: pd?.email,
                     fullName: fullName,
                     token: permit.token,
                 })
                 await emitter.emit('new::employeePermitStoreAuthorizer', {
                     email: authorizer.email,
-                    fullName: (authorizer as any).full_name,
+                    fullName: authorizer.full_name,
                     token: permit.token,
                 })
             }
@@ -1158,16 +1166,16 @@ export default class EmployeeController {
             const authorizer = await User.find(payload.authorizerId)
             if (employee && authorizer) {
                 try { await employee.load('personalData') } catch { }
-                const pd: any = (employee as any).personalData || {}
-                const fullName = [pd.names, pd.last_name_p, pd.last_name_m].filter(Boolean).join(' ').trim()
+                const pd = employee.personalData
+                const fullName = pd ? [pd.names, pd.lastNameP, pd.lastNameM].filter(Boolean).join(' ').trim() : ''
                 await emitter.emit('new::employeePermitStore', {
-                    email: pd.email,
+                    email: pd?.email,
                     fullName: fullName,
                     token: permit.token,
                 })
                 await emitter.emit('new::employeePermitStoreAuthorizer', {
                     email: authorizer.email,
-                    fullName: (authorizer as any).full_name,
+                    fullName: authorizer.full_name,
                     token: permit.token,
                 })
             }
