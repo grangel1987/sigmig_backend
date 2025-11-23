@@ -1,4 +1,5 @@
 import City from '#models/cities/City'
+import Country from '#models/countries/country'
 import Setting from '#models/settings/setting'
 import User from '#models/users/user'
 import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
@@ -90,8 +91,8 @@ export default class PersonalData extends BaseModel {
   @belongsTo(() => Setting, { foreignKey: 'sexId' })
   public sex: BelongsTo<typeof Setting>
 
-  @belongsTo(() => Setting, { foreignKey: 'nationalityId' })
-  public nationality: BelongsTo<typeof Setting>
+  @belongsTo(() => Country, { foreignKey: 'nationalityId' })
+  public nationality: BelongsTo<typeof Country>
 
   @belongsTo(() => User, { foreignKey: 'createdBy' })
   public createdByUser: BelongsTo<typeof User>
