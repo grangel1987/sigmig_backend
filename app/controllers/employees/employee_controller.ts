@@ -275,7 +275,7 @@ export default class EmployeeController {
             const currentTime = await Util.getDateTimes(request.ip())
             // Debug: nested collections received (disabled in production)
 
-            const authorization = request.file('authorization')
+            const authorization = request.file('authorization', { size: '5mb' })
 
             const employeeData: any = {
                 /*                 identifyTypeId: payload.typeIdentifyId,
@@ -559,7 +559,7 @@ export default class EmployeeController {
             // Handle new photo / authorization uploads & remove old if needed
 
 
-            const newAuthorization = request.file('authorization')
+            const newAuthorization = request.file('authorization', { size: '5mb' })
             if (newAuthorization) {
                 if (employee.authorizationMirrorShort) {
                     try { await Google.deleteFile(employee.authorizationMirrorShort); } catch { }
@@ -1048,10 +1048,10 @@ export default class EmployeeController {
     public async findWorkPermits({ request, auth }: HttpContext) {
         const { employeeId, businessId } = await request.validateUsing(employeeFindWorkPermitsValidator)
         const permits = await EmployeePermit.query().where('employee_id', employeeId).where('business_id', businessId).orderBy('id', 'desc')
+        const authUserId = auth.user!.id
         const result = permits.map((p) => {
-            const json = p.toJSON()
-                ; (json as any).is_authorizer = json.authorizer_id === auth.user!.id
-            return json
+            const is_authorizer = p.authorizerId === authUserId
+            return { ...p.serialize(), is_authorizer }
         })
         return result
     }
@@ -1060,7 +1060,7 @@ export default class EmployeeController {
         const dateTime = await Util.getDateTimes(request.ip())
         const { employeePermitStoreValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeePermitStoreValidator)
-
+        const authUserId = auth.user!.id
         try {
             const permitData: any = {
                 type: payload.type,
@@ -1073,12 +1073,12 @@ export default class EmployeeController {
                 authorized: false,
                 createdAt: dateTime,
                 updatedAt: dateTime,
-                createdBy: auth.user!.id,
-                updatedBy: auth.user!.id,
+                createdBy: authUserId,
+                updatedBy: authUserId,
             }
 
             // Handle file upload if present
-            const file = request.file('file', { extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp'], size: '5mb' })
+            const file = request.file('file', { extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp', 'doc', 'docx'], size: '5mb' })
             if (file) {
                 const uploaded = await Google.uploadFile(file, 'admin/permits')
                 Object.assign(permitData, {
@@ -1110,7 +1110,7 @@ export default class EmployeeController {
             }
 
             return response.status(201).json({
-                permit,
+                permit: { ...permit, is_authorizer: permit.authorizerId === authUserId },
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
             })
         } catch (error) {
@@ -1127,6 +1127,7 @@ export default class EmployeeController {
         try {
             const permit = await EmployeePermit.findOrFail(payload.permitId)
 
+            const authUserId = auth.user!.id
             const permitData: any = {
                 type: payload.type,
                 dateStart: DateTime.fromJSDate(payload.dateStart),
@@ -1136,11 +1137,12 @@ export default class EmployeeController {
                 businessId: payload.businessId,
                 authorizerId: payload.authorizerId,
                 updatedAt: dateTime,
-                updatedBy: auth.user!.id,
+                updatedBy: authUserId,
             }
 
             // Handle file upload if present
-            const file = request.file('file',)
+            const file = request.file('file', { extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp', 'doc', 'docx'], size: '5mb' })
+
 
             let oldFileShort: string | null = null
             let oldThumbShort: string | null = null
@@ -1184,7 +1186,7 @@ export default class EmployeeController {
             if (oldThumbShort) try { await Google.deleteFile(oldThumbShort) } catch { }
 
             return response.status(200).json({
-                permit,
+                permit: { ...permit.serialize(), is_authorizer: permit.authorizerId === authUserId },
                 ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')),
             })
         } catch (error) {
