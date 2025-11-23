@@ -1056,17 +1056,17 @@ export default class EmployeeController {
         try {
             const permitData: any = {
                 type: payload.type,
-                date_start: payload.dateStart,
-                date_end: payload.dateEnd,
+                dateStart: DateTime.fromJSDate(payload.dateStart),
+                dateEnd: DateTime.fromJSDate(payload.dateEnd),
                 reason: payload.reason,
-                employee_id: payload.employeeId,
-                business_id: payload.businessId,
-                authorizer_id: payload.authorizerId,
+                employeeId: payload.employeeId,
+                businessId: payload.businessId,
+                authorizerId: payload.authorizerId,
                 authorized: false,
-                created_at: dateTime,
-                updated_at: dateTime,
-                created_by: auth.user!.id,
-                updated_by: auth.user!.id,
+                createdAt: dateTime,
+                updatedAt: dateTime,
+                createdBy: auth.user!.id,
+                updatedBy: auth.user!.id,
             }
 
             // Handle file upload if present
@@ -1075,9 +1075,9 @@ export default class EmployeeController {
                 const uploaded = await Google.uploadFile(file, 'admin/permits')
                 Object.assign(permitData, {
                     file: uploaded.url,
-                    file_short: uploaded.url_short,
+                    fileShort: uploaded.url_short,
                     thumb: uploaded.url_thumb,
-                    thumb_short: uploaded.url_thumb_short,
+                    thumbShort: uploaded.url_thumb_short,
                 })
             }
 
@@ -1091,12 +1091,12 @@ export default class EmployeeController {
                 const fullName = [pd.names, pd.last_name_p, pd.last_name_m].filter(Boolean).join(' ').trim()
                 await emitter.emit('new::employeePermitStore', {
                     email: pd.email,
-                    full_name: fullName,
+                    fullName: fullName,
                     token: permit.token,
                 })
                 await emitter.emit('new::employeePermitStoreAuthorizer', {
                     email: authorizer.email,
-                    full_name: (authorizer as any).full_name,
+                    fullName: (authorizer as any).full_name,
                     token: permit.token,
                 })
             }
@@ -1351,22 +1351,22 @@ export default class EmployeeController {
     public async findAccess({ request }: HttpContext) {
         let { condition, workId, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessValidator)
         const dateTime = await Util.getDateTimes(request.ip())
+        let pDateStart = dateStart ? DateTime.fromJSDate(dateStart) : null
+        let pDateEnd = dateEnd ? DateTime.fromJSDate(dateEnd) : null
         if (condition === 1) {
-            dateStart = dateTime.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateEnd = pDateStart
         } else if (condition === 2) {
             const prev = dateTime.minus({ days: 1 })
-            dateStart = prev.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateStart = prev
+            pDateEnd = pDateStart
         } else if (condition === 3) {
-            dateStart = dateTime.startOf('month').toFormat('yyyy-LL-dd')
-            dateEnd = dateTime.endOf('month').toFormat('yyyy-LL-dd')
+            pDateStart = dateTime.startOf('month')
+            pDateEnd = dateTime.endOf('month')
         }
+        const finalDateStart = pDateStart ?? dateTime
+        const finalDateEnd = pDateEnd ?? finalDateStart
         if (workId && workId > 0) {
-            const ds = dateStart ?? dateTime.toFormat('yyyy-LL-dd')
-
-            const de = dateEnd ?? ds
-            return EmployeeAccessRepository.findAccessByWorkId(workId, ds, de)
+            return EmployeeAccessRepository.findAccessByWorkId(workId, finalDateStart.toFormat('yyyy-LL-dd'), finalDateEnd.toFormat('yyyy-LL-dd'))
         }
         return []
     }
@@ -1374,20 +1374,22 @@ export default class EmployeeController {
     public async findAccessByEmployeeId({ request }: HttpContext) {
         let { employeeId, condition, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessByEmployeeIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
+
+        let pDateStart = dateStart ? DateTime.fromJSDate(dateStart) : null
+        let pDateEnd = dateEnd ? DateTime.fromJSDate(dateEnd) : null
         if (condition === 1) {
-            dateStart = dateTime.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateEnd = pDateStart
         } else if (condition === 2) {
             const prev = dateTime.minus({ days: 1 })
-            dateStart = prev.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateStart = prev
+            pDateEnd = pDateStart
         } else if (condition === 3) {
-            dateStart = dateTime.startOf('month').toFormat('yyyy-LL-dd')
-            dateEnd = dateTime.endOf('month').toFormat('yyyy-LL-dd')
+            pDateStart = dateTime.startOf('month')
+            pDateEnd = dateTime.endOf('month')
         }
-        const ds = dateStart ?? dateTime.toFormat('yyyy-LL-dd')
-        const de = dateEnd ?? ds
-        const access = await EmployeeAccessRepository.findAccessByEmployeeId(employeeId, ds, de)
+        const finalDateStart = pDateStart ?? dateTime.toFormat('yyyy-LL-dd')
+        const finalDateEEnd = pDateEnd ?? finalDateStart
+        const access = await EmployeeAccessRepository.findAccessByEmployeeId(employeeId, finalDateStart.toString(), finalDateEEnd.toString())
         const grouped = groupBy(access, ['date'])
         return grouped
     }

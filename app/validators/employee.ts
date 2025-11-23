@@ -168,8 +168,8 @@ export const employeeUpdateValidator = vine.compile(
 export const employeePermitStoreValidator = vine.compile(
     vine.object({
         type: vine.string().trim(),
-        dateStart: vine.string().trim(),
-        dateEnd: vine.string().trim(),
+        dateStart: vine.date(),
+        dateEnd: vine.date(),
         reason: vine.string().trim(),
         employeeId: vine.number().positive(),
         businessId: vine.number().positive(),
@@ -322,8 +322,8 @@ export const employeeFindAccessValidator = vine.compile(
     vine.object({
         condition: vine.number().positive(),
         workId: vine.number().optional(),
-        dateStart: vine.string().optional(),
-        dateEnd: vine.string().optional(),
+        dateStart: vine.date().optional(),
+        dateEnd: vine.date().optional(),
     })
 )
 
@@ -331,7 +331,7 @@ export const employeeFindAccessByEmployeeIdValidator = vine.compile(
     vine.object({
         employeeId: vine.number().positive(),
         condition: vine.number().positive(),
-        dateStart: vine.string().optional(),
-        dateEnd: vine.string().optional(),
+        dateStart: vine.date().optional(),
+        dateEnd: vine.date().optional(),
     })
 )
