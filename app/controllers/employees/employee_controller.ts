@@ -880,12 +880,11 @@ export default class EmployeeController {
                 b.select(['id', 'enabled', 'employee_id', 'business_id'])
             })
             .preload('personalData', (pd) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id', 'city_id', 'nationality_id', 'state_civil_id', 'sex_id'])
-                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
-                    .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
-                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
-                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
-                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                // .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
+                // .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                // .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                // .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .first()
         const list = row ? [this.mapSearchEmployee(row.toJSON())] : []
@@ -897,11 +896,7 @@ export default class EmployeeController {
         const employee = await Employee.query()
             .where('id', employeeId)
             .preload('personalData', (pd) => {
-                pd.select([
-                    'id', 'names', 'last_name_p', 'last_name_m', 'type_identify_id', 'identify',
-                    'state_civil_id', 'sex_id', 'birth_date', 'nationality_id', 'city_id',
-                    'address', 'phone', 'movil', 'email', 'photo', 'thumb', 'photo_short', 'thumb_short'
-                ])
+                pd
                     .preload('typeIdentify', (ti) => ti.select(['id', 'name']))
                     .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
                     .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
@@ -932,8 +927,7 @@ export default class EmployeeController {
                 pdQ.where('names', 'like', `%${name}%`)
             })
             .preload('personalData', (pd) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
         const list = employees.map((e) => {
             const base = this.mapSearchEmployee(e.toJSON())
@@ -961,8 +955,7 @@ export default class EmployeeController {
                 pdQ.where('last_name_p', 'like', `%${lastNameP}%`)
             })
             .preload('personalData', (pd) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
         const list = employees.map((e) => {
             const base = this.mapSearchEmployee(e.toJSON())
@@ -999,8 +992,7 @@ export default class EmployeeController {
             .whereIn('id', employeeIds)
             .select(['id', 'personal_data_id'])
             .preload('personalData', (pd) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
         const personalDataById: Record<number, any> = {}
         for (const e of employees) {
