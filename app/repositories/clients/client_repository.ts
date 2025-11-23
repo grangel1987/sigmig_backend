@@ -29,6 +29,10 @@ export default class ClientRepository {
       .preload('typeIdentify')
       .preload('city')
       .preload('documentInvoice')
+      .preload('responsibles', (builder) => {
+        builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
+        builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+      })
       .first()
     return client
   }

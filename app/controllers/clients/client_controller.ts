@@ -158,7 +158,7 @@ export default class ClientController {
                 }
             }
 
-            await trx.commit()
+            await client.load('documentInvoice')
             await client.load('createdBy', (builder) => {
                 builder
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -172,7 +172,15 @@ export default class ClientController {
             await client.load('typeIdentify', (builder) => builder.select(['id', 'text']))
             await client.load('city', (builder) => builder.select(['id', 'country_id']))
             await client.load('files')
+            await client.load('responsibles', (builder) => {
+                builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
+                builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+            })
             await client.load('documentInvoice')
+            await client.load('responsibles', (builder) => {
+                builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
+                builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+            })
 
             return response.status(201).json({
                 client,
@@ -353,6 +361,10 @@ export default class ClientController {
                     .select(['id', 'personal_data_id', 'email'])
             })
             await client.load('typeIdentify', (builder) => builder.select(['id', 'text']))
+            await client.load('responsibles', (builder) => {
+                builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
+                builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+            })
 
             return response.status(201).json({
                 client,
@@ -392,6 +404,10 @@ export default class ClientController {
                 builder.preload('country', (b) => b.select(['id', 'name']))
             })
             .preload('documentInvoice')
+            .preload('responsibles', (builder) => {
+                builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
+                builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+            })
             .first()
         return client
     }
@@ -422,6 +438,10 @@ export default class ClientController {
                     .select(['id', 'personal_data_id', 'email'])
             })
             await client.load('typeIdentify', (builder) => builder.select(['id', 'text']))
+            await client.load('responsibles', (builder) => {
+                builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
+                builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+            })
 
             return response.status(201).json({
                 client,
@@ -477,7 +497,8 @@ export default class ClientController {
                 builder.preload('country', (b) => b.select(['id', 'name']))
             })
             .preload('responsibles', (builder) => {
-                builder.preload('typeContact', (b) => b.select(['id', 'text']))
+                builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
+                builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
             })
             .preload('documentInvoice')
             .preload('files')
