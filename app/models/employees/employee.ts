@@ -21,17 +21,21 @@ export default class Employee extends BaseModel {
     @column()
     public token: string | null
 
-    @column()
-    public identifyTypeId: number
+    // Duplicated legacy identity/name fields removed in favor of personalData relation
+    // keep lightweight shadow properties (optional) if needed for serialization fallback
 
-    @column()
-    public identify: string
+    // Relationship reference only (no direct column after migration)
+    @column({ columnName: 'identify_type_id' })
+    public identifyTypeId?: number
 
-    @column()
-    public names: string
+    @column({ columnName: 'identify' })
+    public identify?: string
+
+    @column({ columnName: 'names' })
+    public names?: string
 
     @column({ columnName: 'last_name_p' })
-    public lastNameP: string
+    public lastNameP?: string
 
     @column({ columnName: 'position_id' })
     public positionId: number | null
@@ -40,13 +44,13 @@ export default class Employee extends BaseModel {
     public position: BelongsTo<typeof Position>
 
     @column({ columnName: 'last_name_m' })
-    public lastNameM: string
+    public lastNameM?: string
 
     @column.date({ columnName: 'birth_date' })
-    public birthDate: DateTime | null
+    public birthDate?: DateTime | null
 
     @column({ columnName: 'state_civil_id' })
-    public stateCivilId: number | null
+    public stateCivilId?: number | null
 
     @column({ columnName: 'personal_data_id' })
     public personalDataId: number | null
@@ -70,38 +74,38 @@ export default class Employee extends BaseModel {
     public settlementDate: DateTime | null
 
     @column({ columnName: 'city_id' })
-    public cityId: number | null
+    public cityId?: number | null
 
     @column({ columnName: 'nationality_id' })
-    public nationalityId: number | null
+    public nationalityId?: number | null
 
     @column({ columnName: 'sex_id' })
-    public sexId: number | null
+    public sexId?: number | null
 
-    @column()
-    public address: string
+    @column({ columnName: 'address' })
+    public address?: string
 
-    @column()
-    public phone: string | null
+    @column({ columnName: 'phone' })
+    public phone?: string | null
 
-    @column()
-    public movil: string
+    @column({ columnName: 'movil' })
+    public movil?: string
 
-    @column()
-    public email: string
+    @column({ columnName: 'email' })
+    public email?: string
 
-    // Media columns
-    @column()
-    public photo: string | null
+    // Media columns (will be dropped, kept optional for backward compatibility in code paths until cleanup)
+    @column({ columnName: 'photo' })
+    public photo?: string | null
 
-    @column()
-    public thumb: string | null
+    @column({ columnName: 'thumb' })
+    public thumb?: string | null
 
     @column({ columnName: 'photo_short' })
-    public photoShort: string | null
+    public photoShort?: string | null
 
     @column({ columnName: 'thumb_short' })
-    public thumbShort: string | null
+    public thumbShort?: string | null
 
     @column({ columnName: 'authorization_mirror' })
     public authorizationMirror: string | null
@@ -116,10 +120,10 @@ export default class Employee extends BaseModel {
     public thumbAuthorizationMirrorShort: string | null
 
     @column({ columnName: 'created_by' })
-    public createdById: number | null
+    public createdById?: number | null
 
     @column({ columnName: 'updated_by' })
-    public updatedById: number | null
+    public updatedById?: number | null
 
     @column({ columnName: 'user_id' })
     public userId: number | null
@@ -168,7 +172,12 @@ export default class Employee extends BaseModel {
 
     @computed()
     public get fullName(): string {
-        return `${this.names} ${this.lastNameP} ${this.lastNameM}`
+        // Prefer personalData values if relation is preloaded
+        if (this.personalData) {
+            const pd = this.personalData
+            return [pd.names, pd.lastNameP, pd.lastNameM].filter(Boolean).join(' ').trim()
+        }
+        return [this.names, this.lastNameP, this.lastNameM].filter(Boolean).join(' ').trim()
     }
 
     // scheduleWork -> TODO: requires SettingSchedule model not present in repo
