@@ -1018,7 +1018,7 @@ export default class EmployeeController {
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.inactive_error'), i18n.formatMessage('messages.error_title')))
         }
     }
-
+    //
     public async reactive({ request, response, i18n }: HttpContext) {
         const { businessEmployeeId } = await request.validateUsing(employeeBusinessEmployeeIdValidator)
         if (typeof businessEmployeeId !== 'number' || businessEmployeeId <= 0) {
