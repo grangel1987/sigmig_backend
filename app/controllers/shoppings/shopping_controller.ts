@@ -83,7 +83,7 @@ export default class ShoppingController {
             // Preload authorizer with personalData if authorizerId exists
             if (shopping.authorizerId) {
                 await shopping.load('authorizer', (b) => {
-                    b.select(['id', 'personal_data_id', 'email'])
+                    b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                     b.preload('personalData')
                 })
             }
@@ -150,7 +150,7 @@ export default class ShoppingController {
             // Preload authorizer with personalData if authorizerId exists
             if (updatedShop.authorizerId) {
                 await updatedShop.load('authorizer', (b) => {
-                    b.select(['id', 'personal_data_id', 'email'])
+                    b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                     b.preload('personalData')
                 })
             }
@@ -256,7 +256,7 @@ export default class ShoppingController {
         // Preload authorizer with personalData if authorizerId exists
         if (shop.authorizerId) {
             await shop.load('authorizer', (b) => {
-                b.select(['id', 'personal_data_id', 'email'])
+                b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                 b.preload('personalData')
             })
         }
@@ -367,7 +367,7 @@ export default class ShoppingController {
         // Preload authorizer with personalData if authorizerId exists
         if (shop.authorizerId) {
             await shop.load('authorizer', (b) => {
-                b.select(['id', 'personal_data_id', 'email'])
+                b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
                 b.preload('personalData')
             })
         }
