@@ -81,6 +81,14 @@ export default class ShoppingController {
 
             await trx.commit()
 
+            // Preload authorizer with personalData if authorizerId exists
+            if (shopping.authorizerId) {
+                await shopping.load('authorizer', (b) => {
+                    b.select(['id', 'personal_data_id', 'email'])
+                    b.preload('personalData')
+                })
+            }
+
             return response.status(201).json({
                 shopping,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
@@ -137,7 +145,21 @@ export default class ShoppingController {
             }
 
             await trx.commit()
-            return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')))
+
+            // Reload the shopping with preloads
+            const updatedShop = await Shopping.findOrFail(shopId)
+            // Preload authorizer with personalData if authorizerId exists
+            if (updatedShop.authorizerId) {
+                await updatedShop.load('authorizer', (b) => {
+                    b.select(['id', 'personal_data_id', 'email'])
+                    b.preload('personalData')
+                })
+            }
+
+            return response.status(201).json({
+                shopping: updatedShop,
+                ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title'))
+            })
         } catch (error) {
             await trx.rollback()
             console.error(error)
@@ -232,26 +254,32 @@ export default class ShoppingController {
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
 
+        // Preload authorizer with personalData if authorizerId exists
+        if (shop.authorizerId) {
+            await shop.load('authorizer', (b) => {
+                b.select(['id', 'personal_data_id', 'email'])
+                b.preload('personalData')
+            })
+        }
 
-
-        const authorizer = await
-            BusinessEmployee.query()
-                .join('employees', 'employees.id',
-                    'business_employees.employee_id'
-                )
-                .select([
-                    'business_employees.id as id',
-                    'employees.last_name_p',
-                    'employees.names',
-                    'employees.last_name_m',
-                    'business_employees.position_id',
-                ])
-                .preload('position', (b) => b.select(['id', 'name'])).first()
+        /*         const authorizer = await
+                    BusinessEmployee.query()
+                        .join('employees', 'employees.id',
+                            'business_employees.employee_id'
+                        )
+                        .select([
+                            'business_employees.id as id',
+                            'employees.last_name_p',
+                            'employees.names',
+                            'employees.last_name_m',
+                            'business_employees.position_id',
+                        ])
+                        .preload('position', (b) => b.select(['id', 'name'])).first() */
 
 
         // Convert to plain object and post-process
         const serialized: any = shop.toJSON()
-        serialized.authorizer = authorizer?.serialize()
+        // serialized.authorizer = authorizer?.serialize()
 
 
         if (Array.isArray(serialized.products)) {
@@ -337,7 +365,13 @@ export default class ShoppingController {
             b.preload('personalData')
         })
 
-
+        // Preload authorizer with personalData if authorizerId exists
+        if (shop.authorizerId) {
+            await shop.load('authorizer', (b) => {
+                b.select(['id', 'personal_data_id', 'email'])
+                b.preload('personalData')
+            })
+        }
 
         const authorizer = await
             BusinessEmployee.query()
@@ -359,7 +393,7 @@ export default class ShoppingController {
 
         // serialize and compute product totals (price * count + tax)
         const serialized: any = shop.toJSON()
-        serialized.authorizer = authorizer?.serialize()
+        // serialized.authorizer = authorizer?.serialize()
         if (Array.isArray(serialized.products)) {
             for (const p of serialized.products) {
                 const subtotal = Number(p.price) * Number(p.count)
