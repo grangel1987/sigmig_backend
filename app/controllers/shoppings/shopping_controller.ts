@@ -1,4 +1,3 @@
-import BusinessEmployee from '#models/business/business_employee'
 import Shopping from '#models/shoppings/shopping'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
@@ -372,21 +371,6 @@ export default class ShoppingController {
                 b.preload('personalData')
             })
         }
-
-        const authorizer = await
-            BusinessEmployee.query()
-                .join('employees', 'employees.id',
-                    'business_employees.employee_id'
-                )
-                .select([
-                    'business_employees.id as id',
-                    'employees.last_name_p',
-                    'employees.names',
-                    'employees.last_name_m',
-                    'business_employees.position_id',
-                ])
-                .preload('position', (b) => b.select(['id', 'name'])).first()
-
 
         // Convert to plain object and post-process
 
