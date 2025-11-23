@@ -29,5 +29,10 @@
     "existEmail": "An account with this email already exists.",
     "existPersonalData": "A user with this personal data already exists.",
     "exist_user_for_employee": "This employee already has a linked user.",
-    "error_fetching_indicators": "There was an error fetching indicators."
+    "error_fetching_indicators": "There was an error fetching indicators.",
+    "no_authorizer_permission": "You do not have permission to authorize purchases.",
+    "authorizer_ok": "Purchase authorized successfully.",
+    "authorizer_error": "There was an error authorizing the purchase.",
+    "email_send_ok": "Email sent successfully.",
+    "email_send_error": "There was an error sending the email."
 }

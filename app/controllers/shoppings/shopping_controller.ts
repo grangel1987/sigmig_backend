@@ -141,7 +141,7 @@ export default class ShoppingController {
         } catch (error) {
             await trx.rollback()
             console.error(error)
-            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.udpate_error'), i18n.formatMessage('messages.error_title')))
+            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
         }
     }
 
@@ -149,10 +149,20 @@ export default class ShoppingController {
     public async authorizer({ request, auth, response, i18n }: HttpContext) {
         const { id } = await request.validateUsing(vine.compile(vine.object({ id: vine.number().positive() })))
         const dateTime = await Util.getDateTimes('')
+
+        const authUser = auth.getUserOrFail()
+        if (!authUser.isAuthorizer)
+            return response.status(403)
+                .json(MessageFrontEnd(
+                    i18n.formatMessage('messages.no_authorizer_permission'),
+                    i18n.formatMessage('messages.error_title')
+                ))
         try {
+
+
             const shop = await Shopping.findOrFail(id)
             shop.isAuthorized = true
-            shop.authorizerId = auth.user!.id
+            shop.authorizerId = authUser.id
             shop.authorizerAt = dateTime
             await shop.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
@@ -299,7 +309,7 @@ export default class ShoppingController {
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
             console.error(error)
-            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.udpate_error'), i18n.formatMessage('messages.error_title')))
+            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
         }
     }
 

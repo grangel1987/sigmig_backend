@@ -362,7 +362,7 @@ export default class BugetController {
 
       return response.status(500).json(
         MessageFrontEnd(
-          i18n.formatMessage('messages.udpate_error'),
+          i18n.formatMessage('messages.update_error'),
           i18n.formatMessage('messages.error_title')
         )
       )
