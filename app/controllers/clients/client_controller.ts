@@ -24,7 +24,7 @@ export default class ClientController {
                     builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
                     builder.preload('typeContact', (b) => b.select(['id', 'text']))
                 })
-                .preload('typeIdentify', (builder) => builder.select(['id', 'text', 'client_contact_type_id']))
+                .preload('typeIdentify', (builder) => builder.select(['id', 'text']))
                 .preload('createdBy', (builder) => {
                     builder
 
@@ -288,7 +288,7 @@ export default class ClientController {
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
                     .select(['id', 'personal_data_id', 'email'])
             })
-            await client.load('typeIdentify', (builder) => builder.select(['id', 'text', 'client_contact_type_id']))
+            await client.load('typeIdentify', (builder) => builder.select(['id', 'text']))
             await client.load('city', (builder) => builder.select(['id', 'country_id']))
 
 
@@ -444,7 +444,7 @@ export default class ClientController {
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
                     .select(['id', 'personal_data_id', 'email'])
             })
-            await client.load('typeIdentify', (builder) => builder.select(['id', 'text', 'client_contact_type_id']))
+            await client.load('typeIdentify', (builder) => builder.select(['id', 'text',]))
             await client.load('responsibles', (builder) => {
                 builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email', 'client_contact_type_id'])
                 builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
