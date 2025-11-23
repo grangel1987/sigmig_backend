@@ -43,17 +43,16 @@ export default class Client extends BaseModel {
     @column()
     public enabled: boolean
 
-    // Media (photo) fields
-    @column()
+    @column({})
     public url: string | null
 
-    @column({ columnName: 'url_short' })
+    @column({ columnName: 'url_short', })
     public urlShort: string | null
 
-    @column({ columnName: 'url_thumb' })
+    @column({ columnName: 'url_thumb', })
     public urlThumb: string | null
 
-    @column({ columnName: 'url_thumb_short' })
+    @column({ columnName: 'url_thumb_short', })
     public urlThumbShort: string | null
 
     @column({ columnName: 'created_by' })

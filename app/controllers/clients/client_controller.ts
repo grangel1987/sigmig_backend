@@ -18,6 +18,7 @@ export default class ClientController {
                 .preload('city', (builder) => {
                     builder.select(['id', 'country_id'])
                 })
+                .preload('documentInvoice')
                 .preload('responsibles', (builder) => {
                     builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email'])
                     builder.preload('typeIdentify', (b) => b.select(['id', 'text']))

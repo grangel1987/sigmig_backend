@@ -28,6 +28,7 @@ export default class ClientRepository {
       .where('email', email)
       .preload('typeIdentify')
       .preload('city')
+      .preload('documentInvoice')
       .first()
     return client
   }
