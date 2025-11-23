@@ -1070,7 +1070,7 @@ export default class EmployeeController {
             }
 
             // Handle file upload if present
-            const file = request.file('file')
+            const file = request.file('file', { extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp'], size: '5mb' })
             if (file) {
                 const uploaded = await Google.uploadFile(file, 'admin/permits')
                 Object.assign(permitData, {
@@ -1132,11 +1132,16 @@ export default class EmployeeController {
             }
 
             // Handle file upload if present
-            const file = request.file('file')
+            const file = request.file('file',)
+
+            let oldFileShort: string | null = null
+            let oldThumbShort: string | null = null
             if (file) {
                 // Delete old files if exist
-                if (permit.fileShort) { try { await Google.deleteFile(permit.fileShort) } catch { } }
-                if (permit.thumbShort) { try { await Google.deleteFile(permit.thumbShort) } catch { } }
+                if (file) {
+                    if (permit.fileShort) oldFileShort = permit.fileShort
+                    if (permit.thumbShort) oldThumbShort = permit.thumbShort
+                }
                 const uploaded = await Google.uploadFile(file, 'admin/permits')
                 Object.assign(permitData, {
                     file: uploaded.url,
@@ -1166,6 +1171,9 @@ export default class EmployeeController {
                     token: permit.token,
                 })
             }
+
+            if (oldFileShort) try { await Google.deleteFile(oldFileShort) } catch { }
+            if (oldThumbShort) try { await Google.deleteFile(oldThumbShort) } catch { }
 
             return response.status(200).json({
                 permit,
