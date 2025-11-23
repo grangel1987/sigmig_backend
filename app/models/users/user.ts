@@ -56,10 +56,10 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public enabled: boolean
 
-  @column()
+  @column({ columnName: 'is_admin' })
   public isAdmin: boolean
 
-  @column()
+  @column({ columnName: 'is_authorizer' })
   public isAuthorizer: boolean
 
   @column({ serializeAs: null })

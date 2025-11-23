@@ -177,13 +177,15 @@ export default class ShoppingController {
         const shop = await Shopping.findOrFail(id)
         if (shop.authorizerId !== authUser.id && !authUser.isAdmin)
             return response.status(403)
-                .json(MessageFrontEnd(
-                    i18n.formatMessage('messages.no_authorizer_permission'),
-                    i18n.formatMessage('messages.error_title')
-                ))
+                .json({
+                    isAdmin: authUser.isAdmin,
+                    canAuthorize: shop.authorizerId === authUser.id,
+                    ...MessageFrontEnd(
+                        i18n.formatMessage('messages.no_authorizer_permission'),
+                        i18n.formatMessage('messages.error_title')
+                    )
+                })
         try {
-
-
             shop.isAuthorized = true
             shop.authorizerAt = dateTime
             await shop.save()
