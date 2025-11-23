@@ -870,7 +870,7 @@ export default class EmployeeController {
     /** Find employees by identify (uniform formatting, no 500 on empty) */
     public async findByIdentify({ request, response }: HttpContext) {
         const { identify, typeIdentify, businessId } = await request.validateUsing(employeeFindByIdentifyValidator)
-        const row = await Employee.query()
+        const employee = await Employee.query()
             .whereHas('personalData', (pdQ) => {
                 pdQ.where('identify', String(identify).trim())
                     .where('type_identify_id', typeIdentify)
@@ -887,8 +887,7 @@ export default class EmployeeController {
                 // .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .first()
-        const list = row ? [this.mapSearchEmployee(row.toJSON())] : []
-        return response.ok(list)
+        return response.ok(employee)
     }
 
     public async findById({ response, request }: HttpContext) {
@@ -929,23 +928,8 @@ export default class EmployeeController {
             .preload('personalData', (pd) => {
                 pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
-        const list = employees.map((e) => {
-            const base = this.mapSearchEmployee(e.toJSON())
-            const pd = (e as any).personalData
-            if (pd) {
-                base.personalData = {
-                    id: pd.id,
-                    names: pd.names,
-                    last_name_p: pd.last_name_p,
-                    last_name_m: pd.last_name_m,
-                    identify: pd.identify,
-                    type_identify_id: pd.type_identify_id,
-                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, text: pd.typeIdentify.text } : null,
-                }
-            }
-            return base
-        })
-        return response.ok(list)
+
+        response.ok(employees)
     }
 
     public async findByLastNameP({ request, response }: HttpContext) {
@@ -957,23 +941,8 @@ export default class EmployeeController {
             .preload('personalData', (pd) => {
                 pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
-        const list = employees.map((e) => {
-            const base = this.mapSearchEmployee(e.toJSON())
-            const pd = (e as any).personalData
-            if (pd) {
-                base.personalData = {
-                    id: pd.id,
-                    names: pd.names,
-                    last_name_p: pd.last_name_p,
-                    last_name_m: pd.last_name_m,
-                    identify: pd.identify,
-                    type_identify_id: pd.type_identify_id,
-                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, text: pd.typeIdentify.text } : null,
-                }
-            }
-            return base
-        })
-        return response.ok(list)
+
+        response.ok(employees)
     }
 
     /** Autocomplete endpoint combining name/last name/identify partial matching */
@@ -994,28 +963,8 @@ export default class EmployeeController {
             .preload('personalData', (pd) => {
                 pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
-        const personalDataById: Record<number, any> = {}
-        for (const e of employees) {
-            const pd = (e as any).personalData
-            if (pd) personalDataById[e.id] = pd
-        }
-        const list = (rows as any[]).map((r) => {
-            const base = this.mapRepoEmployeeSearch(r as any)
-            const pd = personalDataById[r.id]
-            if (pd) {
-                base.personalData = {
-                    id: pd.id,
-                    names: pd.names,
-                    last_name_p: pd.last_name_p,
-                    last_name_m: pd.last_name_m,
-                    identify: pd.identify,
-                    type_identify_id: pd.type_identify_id,
-                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
-                }
-            }
-            return base
-        })
-        return response.ok(list)
+
+        return response.ok(employees)
     }
 
     public async deletePhoto({ request, response, i18n }: HttpContext) {
