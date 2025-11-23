@@ -945,7 +945,7 @@ export default class EmployeeController {
             })
             .preload('personalData', (pd: any) => {
                 pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'text']))
             })
         const list = employees.map((e) => {
             const base = this.mapSearchEmployee(e.toJSON())
@@ -958,7 +958,7 @@ export default class EmployeeController {
                     last_name_m: pd.last_name_m,
                     identify: pd.identify,
                     type_identify_id: pd.type_identify_id,
-                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
+                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, text: pd.typeIdentify.text } : null,
                 }
             }
             return base
@@ -983,7 +983,7 @@ export default class EmployeeController {
             .select(['id', 'personal_data_id'])
             .preload('personalData', (pd: any) => {
                 pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'text']))
             })
         const personalDataById: Record<number, any> = {}
         for (const e of employees) {
