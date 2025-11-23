@@ -1293,14 +1293,14 @@ export default class UserController {
         })
       }
 
-      if (user.clientId <= 0 && user.clientId !== -1) {
-        return response.status(500).json({
-          ...MessageFrontEnd(
-            i18n.formatMessage('messages.user_error'),
-            i18n.formatMessage('messages.error_title')
-          ),
-        })
-      }
+      /*       if (user.clientId <= 0 && user.clientId !== -1) {
+              return response.status(500).json({
+                ...MessageFrontEnd(
+                  i18n.formatMessage('messages.user_error'),
+                  i18n.formatMessage('messages.error_title')
+                ),
+              })
+            } */
 
       if (!(await user.verifyPassword(password))) {
         return response.status(500).json({

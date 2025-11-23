@@ -1194,7 +1194,9 @@ export default class EmployeeController {
         try {
             if (permit.authorizerId) {
                 const authorizer = await User.find(permit.authorizerId)
-                const authorizerEmployeeId = authorizer?.employeeId
+                const authorizerEmployee = await authorizer?.related('employee').query().where('business_id', permit.businessId).first()
+                const authorizerEmployeeId = authorizerEmployee?.id
+
                 if (authorizerEmployeeId) {
                     const be = await BusinessEmployee.query()
                         .where('business_id', permit.businessId)
