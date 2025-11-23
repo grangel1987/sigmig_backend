@@ -1111,6 +1111,72 @@ export default class EmployeeController {
         }
     }
 
+    public async updateWorkPermits({ request, response, auth, i18n }: HttpContext) {
+        const dateTime = await Util.getDateTimes(request.ip())
+        const { employeePermitUpdateValidator } = await import('#validators/employee')
+        const payload = await request.validateUsing(employeePermitUpdateValidator)
+
+        try {
+            const permit = await EmployeePermit.findOrFail(payload.permitId)
+
+            const permitData: any = {
+                type: payload.type,
+                dateStart: DateTime.fromJSDate(payload.dateStart),
+                dateEnd: DateTime.fromJSDate(payload.dateEnd),
+                reason: payload.reason,
+                employeeId: payload.employeeId,
+                businessId: payload.businessId,
+                authorizerId: payload.authorizerId,
+                updatedAt: dateTime,
+                updatedBy: auth.user!.id,
+            }
+
+            // Handle file upload if present
+            const file = request.file('file')
+            if (file) {
+                // Delete old files if exist
+                if (permit.fileShort) { try { await Google.deleteFile(permit.fileShort) } catch { } }
+                if (permit.thumbShort) { try { await Google.deleteFile(permit.thumbShort) } catch { } }
+                const uploaded = await Google.uploadFile(file, 'admin/permits')
+                Object.assign(permitData, {
+                    file: uploaded.url,
+                    fileShort: uploaded.url_short,
+                    thumb: uploaded.url_thumb,
+                    thumbShort: uploaded.url_thumb_short,
+                })
+            }
+
+            permit.merge(permitData)
+            await permit.save()
+
+            const employee = await Employee.find(payload.employeeId)
+            const authorizer = await User.find(payload.authorizerId)
+            if (employee && authorizer) {
+                try { await employee.load('personalData') } catch { }
+                const pd: any = (employee as any).personalData || {}
+                const fullName = [pd.names, pd.last_name_p, pd.last_name_m].filter(Boolean).join(' ').trim()
+                await emitter.emit('new::employeePermitStore', {
+                    email: pd.email,
+                    fullName: fullName,
+                    token: permit.token,
+                })
+                await emitter.emit('new::employeePermitStoreAuthorizer', {
+                    email: authorizer.email,
+                    fullName: (authorizer as any).full_name,
+                    token: permit.token,
+                })
+            }
+
+            return response.status(200).json({
+                permit,
+                ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')),
+            })
+        } catch (error) {
+            console.error(error)
+            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
+        }
+    }
+
     public async showWorkPermitByToken({ params }: HttpContext) {
         const token = params.token
         const permit = await EmployeePermit.query()

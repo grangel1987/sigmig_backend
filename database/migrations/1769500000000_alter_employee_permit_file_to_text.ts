@@ -7,7 +7,7 @@ export default class AlterEmployeePermitFileToText extends BaseSchema {
         await this.schema.alterTable(this.tableName, (table) => {
             table.text('file').nullable().alter()
         })
-    }
+    } bnb
 
     public async down() {
         await this.schema.alterTable(this.tableName, (table) => {

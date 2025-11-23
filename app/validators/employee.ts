@@ -178,6 +178,20 @@ export const employeePermitStoreValidator = vine.compile(
     })
 )
 
+export const employeePermitUpdateValidator = vine.compile(
+    vine.object({
+        permitId: vine.number().positive(),
+        type: vine.string().trim(),
+        dateStart: vine.date(),
+        dateEnd: vine.date(),
+        reason: vine.string().trim(),
+        employeeId: vine.number().positive(),
+        businessId: vine.number().positive(),
+        authorizerId: vine.number().positive(),
+        file: vine.file().optional(),
+    })
+)
+
 export const employeeLicenseHealthStoreValidator = vine.compile(
     vine.object({
         employeeId: vine.number().positive(),
