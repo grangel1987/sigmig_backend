@@ -26,8 +26,6 @@ export default class DropDuplicateEmployeeFields extends BaseSchema {
         'thumb',
         'photo_short',
         'thumb_short',
-        'created_by',
-        'updated_by',
     ]
 
     public async up() {
