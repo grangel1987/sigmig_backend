@@ -182,80 +182,80 @@ export default class EmployeeController {
         return data
     }
 
-    // Helper for search endpoints (lightweight mapping)
-    private mapSearchEmployee(obj: any): any {
-        const out: any = { ...obj }
-        const bd = this.toDt(out.birth_date)
-        if (bd) {
-            out.birth_date_format = bd.toFormat('yyyy-LL-dd')
-            out.birth_date = bd.toFormat('dd/MM/yyyy')
-            out.age = Math.trunc(DateTime.now().diff(bd, 'years').years)
-        } else {
-            out.birth_date_format = null
-            out.age = null
-        }
-        if (out.business?.length > 0 && out.business[0]?.enabled !== undefined) {
-            out.enabled = out.business[0].enabled
-        }
-        if (out.city && out.city.country && out.city.country.id && out.city.country_id === undefined) {
-            out.city.country_id = out.city.country.id
-        }
-        if (out.full_name) delete out.full_name
-        return out
-    }
-
-    // Row type returned by raw repository search queries
-    private mapRepoEmployeeSearch(row: {
-        id: number
-        business_id: number
-        enabled: boolean | 0 | 1
-        identify_type_id: number
-        identify: string
-        names: string
-        last_name_p: string
-        last_name_m: string
-        photo?: string | null
-        thumb?: string | null
-        token?: string | null
-        text: string
-        birth_date?: string | Date | null
-        city_id?: number | null
-        city_name?: string | null
-        city_country_id?: number | null
-        country_id?: number | null
-        country_name?: string | null
-        [k: string]: unknown
-    }) {
-        const out: any = { ...row }
-        // Build typed identify object expected by clients
-        out.typeIdentify = { id: row.identify_type_id, text: row.text }
-
-        // Date normalization: prefer birth_date, fallback to birth_day
-        const dt = this.toDt(row.birth_date)
-        if (dt) {
-            out.birth_date_format = dt.toFormat('yyyy-LL-dd')
-            out.birth_date = dt.toFormat('dd/MM/yyyy')
-            out.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
-        } else {
-            out.birth_date_format = null
-            out.age = null
-        }
-
-        // Compose city object if pieces are present
-        if (row.city_id || row.city_name || row.city_country_id) {
-            out.city = {
-                id: row.city_id ?? null,
-                name: row.city_name ?? null,
-                country_id: row.city_country_id ?? null,
-                country: row.country_id || row.country_name
-                    ? { id: row.country_id ?? null, name: row.country_name ?? null }
-                    : undefined,
+    /*     // Helper for search endpoints (lightweight mapping)
+        private mapSearchEmployee(obj: any): any {
+            const out: any = { ...obj }
+            const bd = this.toDt(out.birth_date)
+            if (bd) {
+                out.birth_date_format = bd.toFormat('yyyy-LL-dd')
+                out.birth_date = bd.toFormat('dd/MM/yyyy')
+                out.age = Math.trunc(DateTime.now().diff(bd, 'years').years)
+            } else {
+                out.birth_date_format = null
+                out.age = null
             }
+            if (out.business?.length > 0 && out.business[0]?.enabled !== undefined) {
+                out.enabled = out.business[0].enabled
+            }
+            if (out.city && out.city.country && out.city.country.id && out.city.country_id === undefined) {
+                out.city.country_id = out.city.country.id
+            }
+            if (out.full_name) delete out.full_name
+            return out
         }
-        // Legacy cleanup
-        if (out.full_name) delete out.full_name
-        return out
-    }
+    
+        // Row type returned by raw repository search queries
+        private mapRepoEmployeeSearch(row: {
+            id: number
+            business_id: number
+            enabled: boolean | 0 | 1
+            identify_type_id: number
+            identify: string
+            names: string
+            last_name_p: string
+            last_name_m: string
+            photo?: string | null
+            thumb?: string | null
+            token?: string | null
+            text: string
+            birth_date?: string | Date | null
+            city_id?: number | null
+            city_name?: string | null
+            city_country_id?: number | null
+            country_id?: number | null
+            country_name?: string | null
+            [k: string]: unknown
+        }) {
+            const out: any = { ...row }
+            // Build typed identify object expected by clients
+            out.typeIdentify = { id: row.identify_type_id, text: row.text }
+    
+            // Date normalization: prefer birth_date, fallback to birth_day
+            const dt = this.toDt(row.birth_date)
+            if (dt) {
+                out.birth_date_format = dt.toFormat('yyyy-LL-dd')
+                out.birth_date = dt.toFormat('dd/MM/yyyy')
+                out.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
+            } else {
+                out.birth_date_format = null
+                out.age = null
+            }
+    
+            // Compose city object if pieces are present
+            if (row.city_id || row.city_name || row.city_country_id) {
+                out.city = {
+                    id: row.city_id ?? null,
+                    name: row.city_name ?? null,
+                    country_id: row.city_country_id ?? null,
+                    country: row.country_id || row.country_name
+                        ? { id: row.country_id ?? null, name: row.country_name ?? null }
+                        : undefined,
+                }
+            }
+            // Legacy cleanup
+            if (out.full_name) delete out.full_name
+            return out
+        } */
     /** Create a new employee with related business link and nested collections */
     public async store({ request, response, auth, i18n }: HttpContext) {
         const { employeeStoreValidator } = await import('#validators/employee')
