@@ -404,7 +404,7 @@ export default class ShoppingController {
                 full_name: shop.provider.name,
                 token: shop.token ?? '',
             }
-            await emitter.emit('new::shoppingShare', payloadEmail)
+            await await emitter.emit('new::shoppingShare', payloadEmail)
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
             console.error(error)

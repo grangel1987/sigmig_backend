@@ -295,7 +295,7 @@ export default class UserController {
                         }
                 
                         if (methodSendCode === 'email') {
-                          emitter.emit('new::userForgotPasswordStore', userNotification)
+                          await emitter.emit('new::userForgotPasswordStore', userNotification)
                         } else if (methodSendCode === 'whatsapp') {
                           // Implement WhatsApp sending logic
                         }  */
@@ -457,7 +457,7 @@ export default class UserController {
         ? `${user.personalData.names} ${user.personalData.last_name_p} ${user.personalData.last_name_m}`
         : 'Sin Nombre'
 
-            emitter.emit('new::userAssignedToEmployee', {
+            await emitter.emit('new::userAssignedToEmployee', {
               title: 'Asignacion de usuario a empleado',
               body: 'Se ha realizado la asignacion de usuario a empleado, a continuacion usa el siguiente codigo para verificar tu usuario.',
               time: user.codeDateTime,
@@ -1121,7 +1121,7 @@ export default class UserController {
 
       const newUser = await User.create(payload)
       newUser
-      /*   emitter.emit('new::userEmailStore', {
+      /*   await emitter.emit('new::userEmailStore', {
           email: newUser.email,
           code_confirm: newUser.code,
         }) */
@@ -1245,11 +1245,11 @@ export default class UserController {
         ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}`
         : 'Usuario'
 
-      emitter.emit('new::userPasswordRecovered' as any, {
+      await emitter.emit('new::userPasswordRecovered', {
         email: user.email,
         full_name,
         password: finalPassword,
-        time: dateTime.toISO(),
+        time: dateTime.toISO()!,
       })
 
       return response.status(200).json({

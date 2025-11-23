@@ -1,5 +1,5 @@
 // Typed events for the AdonisJS emitter
-// Extend the global EventsList so emitter.emit() is type-safe
+// Extend the global EventsList so await emitter.emit() is type-safe
 declare module '@adonisjs/core/types' {
     interface EventsList {
         'new::shoppingShare': {
@@ -19,5 +19,11 @@ declare module '@adonisjs/core/types' {
         'new::clientRequestStore': { email: string;[key: string]: any }
         'new::userForgotPasswordStore': { email: string;[key: string]: any }
         'new::userAssignedToEmployee': { email: string;[key: string]: any }
+        'new::userPasswordRecovered': {
+            email: string;
+            full_name: string;
+            password: string;
+            time: string;
+        }
     }
 }

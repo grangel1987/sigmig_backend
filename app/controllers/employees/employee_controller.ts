@@ -1089,12 +1089,12 @@ export default class EmployeeController {
                 try { await employee.load('personalData') } catch { }
                 const pd: any = (employee as any).personalData || {}
                 const fullName = [pd.names, pd.last_name_p, pd.last_name_m].filter(Boolean).join(' ').trim()
-                emitter.emit('new::employeePermitStore', {
+                await emitter.emit('new::employeePermitStore', {
                     email: pd.email,
                     full_name: fullName,
                     token: permit.token,
                 })
-                emitter.emit('new::employeePermitStoreAuthorizer', {
+                await emitter.emit('new::employeePermitStoreAuthorizer', {
                     email: authorizer.email,
                     full_name: (authorizer as any).full_name,
                     token: permit.token,
@@ -1149,11 +1149,10 @@ export default class EmployeeController {
     public async autorizePermit({ request, response, auth, i18n }: HttpContext) {
         const { permitId } = await request.validateUsing(employeePermitIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
-        const permit = await EmployeePermit.find(permitId)
-        if (!permit) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
-        if (!(permit as any).authorized && permit.authorizerId === auth.user!.id) {
-            ; (permit as any).authorized = true
-                ; (permit as any).authorized_at = dateTime
+        const permit = await EmployeePermit.findOrFail(permitId)
+        if ((!permit.authorized && permit.authorizerId === auth.user!.id) || auth.getUserOrFail().isAdmin) {
+            permit.authorized = true
+            permit.authorizedAt = dateTime
             await permit.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorized_ok'), i18n.formatMessage('messages.ok_title')))
         }
