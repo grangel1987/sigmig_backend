@@ -7,7 +7,6 @@ import Hash from '@adonisjs/core/services/hash'
 
 import BusinessUser from '#models/business/business_user'
 import Employee from '#models/employees/employee'
-import Position from '#models/positions/position'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { compose } from '@adonisjs/core/helpers'
 import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany, hasOne } from '@adonisjs/lucid/orm'
@@ -86,9 +85,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
   public updatedAt: DateTime
 
-  @column({ columnName: 'position_id' })
-  public positionId: number | null
-
   @belongsTo(() => PersonalData)
   public personalData: BelongsTo<typeof PersonalData>
 
@@ -110,10 +106,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @hasOne(() => BusinessUser, { onQuery: (bQ) => bQ.where('selected', 1) })
   declare selectedBusiness: HasOne<typeof BusinessUser>
 
-  @belongsTo(() => Position, { foreignKey: 'positionId' })
-  public position: BelongsTo<typeof Position>
 
-  @hasMany(() => Employee, { foreignKey: 'employeeId' })
+  @hasMany(() => Employee)
   public employee: HasMany<typeof Employee>
 
 
