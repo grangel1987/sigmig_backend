@@ -50,7 +50,7 @@ export default class BugetRepository {
 
         return await Buget.query()
             .where('business_id', businessId)
-            .where('DATE(date)', date)
+            .whereRaw('DATE(created_at) = ?', [date])
             .preload('client', q =>
                 q.preload('city')
                     .preload('typeIdentify')
