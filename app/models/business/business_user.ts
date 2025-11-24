@@ -20,7 +20,7 @@ export default class BusinessUser extends BaseModel {
   public isSuper: boolean
 
   @column()
-  public authorizer: number
+  public isAuthorizer: number
 
   @column.dateTime({ serializeAs: null })
   public createdAt: DateTime

@@ -963,7 +963,7 @@ export default class UserController {
             if (businessUser) {
               // Update existing
               businessUser.isSuper = isAdmin
-              businessUser.authorizer = isAuth
+              businessUser.isAuthorizer = isAuth
               await businessUser.useTransaction(trx).save()
             } else {
               // Create new
@@ -971,7 +971,7 @@ export default class UserController {
                 userId: user.id,
                 businessId: bus.businessId,
                 isSuper: isAdmin,
-                authorizer: isAuth,
+                isAuthorizer: isAuth,
               }, { client: trx })
             }
 
@@ -994,7 +994,7 @@ export default class UserController {
             if (businessUser) {
               // Update existing
               businessUser.isSuper = bus.isSuper || false
-              businessUser.authorizer = bus.isAuthorizer ? 1 : 0
+              businessUser.isAuthorizer = bus.isAuthorizer ? 1 : 0
               await businessUser.useTransaction(trx).save()
             } else {
               // Create new
@@ -1002,7 +1002,7 @@ export default class UserController {
                 userId: user.id,
                 businessId: bus.businessId,
                 isSuper: bus.isSuper || false,
-                authorizer: bus.isAuthorizer ? 1 : 0,
+                isAuthorizer: bus.isAuthorizer ? 1 : 0,
               }, { client: trx })
             }
 
