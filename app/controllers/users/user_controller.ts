@@ -879,7 +879,7 @@ export default class UserController {
               permissions: vine.array(vine.number().positive()).optional()
             })
           ).optional(),
-          personalData: personalDataSchema.optional(),
+          personalData: personalDataPartialSchema.optional(),
           isAdmin: vine.boolean().optional(),
           isAuthorizer: vine.boolean().optional(),
           signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
@@ -975,9 +975,9 @@ export default class UserController {
           // Update existing personal data
           const pd = await PersonalData.findOrFail(user.personalDataId)
           pd.useTransaction(trx)
-          pd.names = rPersonalData.names
-          pd.lastNameP = rPersonalData.lastNameP
-          pd.lastNameM = rPersonalData.lastNameM
+          pd.names = rPersonalData.names || pd.names
+          pd.lastNameP = rPersonalData.lastNameP || pd.lastNameP
+          pd.lastNameM = rPersonalData.lastNameM || pd.lastNameM
           pd.typeIdentifyId = rPersonalData.typeIdentifyId ?? null
           pd.identify = rPersonalData.identify ?? null
           pd.stateCivilId = rPersonalData.stateCivilId ?? null
