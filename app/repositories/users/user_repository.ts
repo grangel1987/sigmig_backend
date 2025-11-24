@@ -61,7 +61,7 @@ export default class UserRepository {
         builder.preload('city')
       })
       .preload('businessUser', (builder) => {
-        builder.select(['id', 'user_id', 'business_id'])
+        builder.select(['id', 'user_id', 'business_id', 'is_super', 'is_authorizer'])
         builder.preload('business', (builder) => {
           builder.select(['id', 'name'])
         })
@@ -82,7 +82,7 @@ export default class UserRepository {
         })
       })
       .preload('selectedBusiness', (builder) => {
-        builder.select(['id', 'user_id', 'business_id'])
+        builder.select(['id', 'user_id', 'business_id', 'is_super', 'is_authorizer'])
         builder.preload('business', (builder) => {
           builder.select(['id', 'name'])
         })

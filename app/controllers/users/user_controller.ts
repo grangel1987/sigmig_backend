@@ -1100,6 +1100,7 @@ export default class UserController {
       await trx.commit()
 
       await user.load('personalData')
+      await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
 
       if (user.personalData.cityId) await user.personalData.load('city')
       if (user.personalData.nationalityId) await user.personalData.load('nationality')
@@ -1644,7 +1645,8 @@ export default class UserController {
 
     const query = User.query()
       .preload('personalData', q => q.preload('typeIdentify').preload('city'))
-      .preload('businessUser', buQ => buQ.preload('business', bQ => bQ.select('id', 'name')))
+      .preload('businessUser', buQ =>
+        buQ.preload('business', bQ => bQ.select('id', 'name',)))
 
     const users = page ? await query.paginate(page, perPage ?? 10) : await query
     response.ok(users)
@@ -1796,9 +1798,15 @@ export default class UserController {
         if (createdFile) createdFiles.push(createdFile)
       }
 
+
+
+      await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
       await user.load('personalData', pQ => pQ.preload('typeIdentify'))
+
       if (user.personalData?.cityId) await user.personalData.load('city')
+
       await user.useTransaction(trx).save()
+
       await trx.commit()
 
       await mail.sendLater((message) => {
