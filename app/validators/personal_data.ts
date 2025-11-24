@@ -7,7 +7,7 @@ import vine from '@vinejs/vine'
 // Address is TEXT -> make optional (can be empty) but allow large content.
 // birthDate is DATE nullable -> optional.
 export const personalDataSchema = vine.object({
-    email: vine.string().email().maxLength(191),
+    email: vine.string().email().maxLength(191).optional(),
     names: vine.string().maxLength(100),
     lastNameP: vine.string().maxLength(100),
     lastNameM: vine.string().maxLength(100),
