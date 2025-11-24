@@ -6,7 +6,7 @@ import env from '#start/env'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
-import { personalDataSchema } from '#validators/personal_data'
+import { personalDataPartialSchema, personalDataSchema } from '#validators/personal_data'
 import { HttpContext, Response } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import hash from '@adonisjs/core/services/hash'
@@ -732,7 +732,7 @@ export default class UserController {
           email: vine.string().email().optional(),
           business: vine.any().optional(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
-          personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
+          personalData: personalDataPartialSchema.optional().requiredIfMissing('employeeId'),
           signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
         })
       )
@@ -803,9 +803,9 @@ export default class UserController {
             // Update existing personal data
             const pd = await PersonalData.findOrFail(user.personalDataId)
             pd.useTransaction(trx)
-            pd.names = rPersonalData.names
-            pd.lastNameP = rPersonalData.lastNameP
-            pd.lastNameM = rPersonalData.lastNameM
+            pd.names = rPersonalData.names || pd.names
+            pd.lastNameP = rPersonalData.lastNameP || pd.lastNameP
+            pd.lastNameM = rPersonalData.lastNameM || pd.lastNameM
             pd.typeIdentifyId = rPersonalData.typeIdentifyId ?? null
             pd.identify = rPersonalData.identify ?? null
             pd.stateCivilId = rPersonalData.stateCivilId ?? null
@@ -817,9 +817,9 @@ export default class UserController {
             pd.phone = rPersonalData.phone ?? user.email
             pd.movil = rPersonalData.movil ?? null
             pd.email = rPersonalData.email ?? user.email
-            Object.assign(pd, imageData)
             pd.updatedAt = dateTime
             pd.updatedBy = auth.user!.id
+            Object.assign(pd, imageData)
             await pd.save()
           } else {
             // Create new personal data
