@@ -678,8 +678,14 @@ export default class UserController {
         await employee.useTransaction(trx).save()
       }
 
-      if (user.personalData.cityId)
-        await user.personalData.load('city')
+      await user.load('personalData')
+
+      if (user.personalData.cityId) await user.personalData.load('city')
+      if (user.personalData.nationalityId) await user.personalData.load('nationality')
+      if (user.personalData.sexId) await user.personalData.load('sex')
+      if (user.personalData.stateCivilId) await user.personalData.load('stateCivil')
+      if (user.personalData.typeIdentifyId) await user.personalData.load('typeIdentify')
+
 
       await user.useTransaction(trx).save()
       await trx.commit()
@@ -1017,8 +1023,12 @@ export default class UserController {
 
       await user.load('personalData')
 
-      if (user.personalData.cityId)
-        await user.personalData.load('city')
+      if (user.personalData.cityId) await user.personalData.load('city')
+      if (user.personalData.nationalityId) await user.personalData.load('nationality')
+      if (user.personalData.sexId) await user.personalData.load('sex')
+      if (user.personalData.stateCivilId) await user.personalData.load('stateCivil')
+      if (user.personalData.typeIdentifyId) await user.personalData.load('typeIdentify')
+
 
       return response.status(200).json({
         user,
