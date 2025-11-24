@@ -175,26 +175,37 @@ export default class ShoppingController {
 
         const authUser = auth.getUserOrFail()
         const shop = await Shopping.findOrFail(id)
-        if (shop.authorizerId !== authUser.id && !authUser.isAdmin)
-            return response.status(403)
-                .json({
-                    isAdmin: authUser.isAdmin,
-                    canAuthorize: shop.authorizerId === authUser.id,
-                    ...MessageFrontEnd(
-                        i18n.formatMessage('messages.no_authorizer_permission'),
-                        i18n.formatMessage('messages.error_title')
-                    )
-                })
+
         try {
-            shop.isAuthorized = true
-            shop.authorizerAt = dateTime
-            await shop.save()
-            return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
+            const isPAuthorizer = shop.authorizerId === auth.user!.id
+            const isAdmin = authUser.isAdmin
+            const activeBUsr = isPAuthorizer || isAdmin
+                ? null
+                : await authUser.related('businessUser').query().where('business_id', shop.businessId).first()
+
+
+            if (isPAuthorizer || isAdmin || activeBUsr?.isSuper) {
+                shop.isAuthorized = true
+                shop.authorizerAt = dateTime
+                await shop.save()
+                return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
+            }
+            else
+                return response.status(403)
+                    .json({
+                        isAdmin: authUser.isAdmin,
+                        canAuthorize: shop.authorizerId === authUser.id,
+                        ...MessageFrontEnd(
+                            i18n.formatMessage('messages.no_authorizer_permission'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    })
         } catch (error) {
             console.error(error)
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_error'), i18n.formatMessage('messages.error_title')))
         }
     }
+
 
     /** Find shopping by business and number */
     public async findByNro({ request }: HttpContext) {

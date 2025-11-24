@@ -1,3 +1,4 @@
+import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import Employee from '#models/employees/employee'
 import PersonalData from '#models/users/personal_data'
@@ -22,6 +23,8 @@ interface BusinessPayload {
   businessId: number
   rolId?: number
   permissions?: number[]
+  isSuper?: boolean
+  isAuthorizer?: boolean
 }
 
 // PersonalData payload validated inline in handlers to match the model
@@ -155,12 +158,13 @@ export default class UserController {
 
     const q = User.query().preload('personalData', q => q.preload('typeIdentify').preload('city'))
       .preload('businessUser', q =>
-        q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
-          .preload('business')
+        q.where('is_super', true)
+          .orWhereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
           .where('business_id', businessId)
       )
       .whereHas('businessUser', q =>
-        q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
+        q.where('is_super', true)
+          .orWhereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
           .where('business_id', businessId)
       ).orWhere('is_admin', true)
     const businessUsers = await q
@@ -536,7 +540,9 @@ export default class UserController {
             vine.object({
               businessId: vine.number().positive(),
               rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive()).optional()
+              permissions: vine.array(vine.number().positive()).optional(),
+              isSuper: vine.boolean().optional(),
+              isAuthorizer: vine.boolean().optional()
             })
           ).optional(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
@@ -615,6 +621,8 @@ export default class UserController {
         const payloadBusinessUser = {
           userId: user.id,
           businessId: bus.businessId,
+          isSuper: bus.isSuper || false,
+          authorizer: bus.isAuthorizer ? 1 : 0,
         }
 
         const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
@@ -889,7 +897,9 @@ export default class UserController {
             vine.object({
               businessId: vine.number().positive(),
               rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive()).optional()
+              permissions: vine.array(vine.number().positive()).optional(),
+              isSuper: vine.boolean().optional(),
+              isAuthorizer: vine.boolean().optional()
             })
           ).optional(),
           personalData: personalDataPartialSchema.optional(),
@@ -939,31 +949,92 @@ export default class UserController {
 
       // Update business assignments if provided
       if (business && business.length > 0) {
-        // Remove existing business assignments
-        await user.related('businessUser').query().delete()
+        // Handle business user updates/creation
+        if (user.isAdmin !== undefined) {
+          // For admin users, ensure they have access to ALL provided businesses with admin privileges
+          for (const bus of business) {
+            let businessUser = await BusinessUser.query()
+              .where('userId', user.id)
+              .where('businessId', bus.businessId)
+              .first()
 
-        for (const bus of business) {
-          const payloadBusinessUser = {
-            userId: user.id,
-            businessId: bus.businessId,
+            const isAdmin = Boolean(user.isAdmin)
+            const isAuth = user.isAdmin ? 1 : 0
+            if (businessUser) {
+              // Update existing
+              businessUser.isSuper = isAdmin
+              businessUser.authorizer = isAuth
+              await businessUser.useTransaction(trx).save()
+            } else {
+              // Create new
+              businessUser = await BusinessUser.create({
+                userId: user.id,
+                businessId: bus.businessId,
+                isSuper: isAdmin,
+                authorizer: isAuth,
+              }, { client: trx })
+            }
+
+            // Update/create role
+            await businessUser.related('businessUserRols').query().delete()
+            const businessUserRol = {
+              businessUserId: businessUser.id,
+              rolId: 1, // Default admin role
+            }
+            await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
           }
+        } else {
+          // For non-admin users, update/create for each provided business
+          for (const bus of business) {
+            let businessUser = await BusinessUser.query()
+              .where('userId', user.id)
+              .where('businessId', bus.businessId)
+              .first()
 
-          const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
+            if (businessUser) {
+              // Update existing
+              businessUser.isSuper = bus.isSuper || false
+              businessUser.authorizer = bus.isAuthorizer ? 1 : 0
+              await businessUser.useTransaction(trx).save()
+            } else {
+              // Create new
+              businessUser = await BusinessUser.create({
+                userId: user.id,
+                businessId: bus.businessId,
+                isSuper: bus.isSuper || false,
+                authorizer: bus.isAuthorizer ? 1 : 0,
+              }, { client: trx })
+            }
 
-          const businessUserRol = {
-            businessUserId: businessUser.id,
-            rolId: bus.rolId || 0,
+            // Update role
+            await businessUser.related('businessUserRols').query().delete()
+            const businessUserRol = {
+              businessUserId: businessUser.id,
+              rolId: bus.rolId || 0,
+            }
+            await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+            // Update permissions
+            await businessUser.related('bussinessUserPermissions').query().delete()
+            const payloadPermission = (bus.permissions || []).map((permId) => ({
+              businessUserId: businessUser.id,
+              permissionId: permId,
+            }))
+
+            if (payloadPermission?.length)
+              await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
           }
+        }
 
-          await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
-
-          const payloadPermission = (bus.permissions || []).map((permId) => ({
-            businessUserId: businessUser.id,
-            permissionId: permId,
-          }))
-
-          if (payloadPermission?.length)
-            await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
+        // Remove businessUsers not included in the provided array
+        const providedBusinessIds = business.map(b => b.businessId)
+        const businessUsersToDelete = await BusinessUser.query()
+          .where('userId', user.id)
+          .whereNotIn('businessId', providedBusinessIds)
+        for (const bu of businessUsersToDelete) {
+          await bu.related('businessUserRols').query().delete()
+          await bu.related('bussinessUserPermissions').query().delete()
+          await bu.useTransaction(trx).delete()
         }
       }
 
@@ -1590,7 +1661,9 @@ export default class UserController {
             vine.object({
               businessId: vine.number().positive(),
               rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive()).optional()
+              permissions: vine.array(vine.number().positive()).optional(),
+              isSuper: vine.boolean().optional(),
+              isAuthorizer: vine.boolean().optional(),
             })
           ).optional(),
           personalData: personalDataSchema,
@@ -1599,7 +1672,6 @@ export default class UserController {
       )
     )
     const createdFiles: string[] = []
-    const businessArray: BusinessPayload[] = business ? (typeof business === 'string' ? JSON.parse(business) : business) : []
     const trx = await db.transaction()
 
     try {
@@ -1639,28 +1711,56 @@ export default class UserController {
         createdFiles.push(resultUpload.url_short)
       }
 
-      for (const bus of businessArray) {
-        const payloadBusinessUser = {
-          userId: user.id,
-          businessId: bus.businessId,
+      // Handle business user creation
+      if (user.isAdmin) {
+        // For admin users, create businessUser entries for ALL businesses
+        const allBusinesses = await Business.query().select('id').exec()
+
+        for (const business of allBusinesses) {
+          const payloadBusinessUser = {
+            userId: user.id,
+            businessId: business.id,
+            isSuper: true,
+            authorizer: 1, // true = 1
+          }
+
+          const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
+
+          // Create default role for admin users
+          const businessUserRol = {
+            businessUserId: businessUser.id,
+            rolId: 1, // Default admin role
+          }
+
+          await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
         }
+      } else if (business) {
+        // For non-admin users, process the provided business array
+        for (const bus of business) {
+          const payloadBusinessUser = {
+            userId: user.id,
+            businessId: bus.businessId,
+            isSuper: bus.isSuper || false,
+            authorizer: bus.isAuthorizer ? 1 : 0,
+          }
 
-        const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
+          const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
 
-        const businessUserRol = {
-          businessUserId: businessUser.id,
-          rolId: bus.rolId || 0,
+          const businessUserRol = {
+            businessUserId: businessUser.id,
+            rolId: bus.rolId || 0,
+          }
+
+          await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+          const payloadPermission = (bus.permissions || []).map((permId) => ({
+            businessUserId: businessUser.id,
+            permissionId: permId,
+          }))
+
+          if (payloadPermission?.length)
+            await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
         }
-
-        await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
-
-        const payloadPermission = (bus.permissions || []).map((permId) => ({
-          businessUserId: businessUser.id,
-          permissionId: permId,
-        }))
-
-        if (payloadPermission?.length)
-          await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
       }
 
       if (personalData) {

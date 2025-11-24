@@ -1234,7 +1234,14 @@ export default class EmployeeController {
         const { permitId } = await request.validateUsing(employeePermitIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         const permit = await EmployeePermit.findOrFail(permitId)
-        if ((!permit.authorized && permit.authorizerId === auth.user!.id) || auth.getUserOrFail().isAdmin) {
+        const authUser = auth.getUserOrFail()
+        const isPAuthorizer = permit.authorizerId === auth.user!.id
+        const isAdmin = authUser.isAdmin
+        const activeBUsr = isPAuthorizer || isAdmin
+            ? null
+            : await authUser.related('businessUser').query().where('business_id', permit.businessId).first()
+
+        if (isPAuthorizer || isAdmin || activeBUsr?.isSuper) {
             permit.authorized = true
             permit.authorizedAt = dateTime
             await permit.save()

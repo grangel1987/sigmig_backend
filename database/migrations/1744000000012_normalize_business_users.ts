@@ -10,8 +10,8 @@ export default class extends BaseSchema {
 
         const hasRol = await hasColumn('business_users', 'rol')
         const hasPermissions = await hasColumn('business_users', 'permissions')
-        const hasIsSuper = await hasColumn('business_users', 'is_super')
         const hasPositionId = await hasColumn('business_users', 'position_id')
+        const hasAuthorizer = await hasColumn('business_users', 'is_authorizer')
         const hasSelected = await hasColumn('business_users', 'selected')
         const hasUnique = (await db.rawQuery(`SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'business_users' AND CONSTRAINT_NAME = 'business_users_business_id_user_id_unique' AND CONSTRAINT_TYPE = 'UNIQUE'`))[0].length > 0
 
@@ -29,8 +29,12 @@ export default class extends BaseSchema {
         this.schema.alterTable('business_users', (table) => {
             if (hasRol) table.string('rol').nullable().alter() // Make rol optional instead of dropping
             if (hasPermissions) table.dropColumn('permissions')
-            if (hasIsSuper) table.dropColumn('is_super')
+            // Keep is_super and authorizer fields - do not drop
+            if (!hasAuthorizer) {
+                table.tinyint('is_authorizer').defaultTo(0)
+            }
             if (hasPositionId) table.dropColumn('position_id')
+
             if (hasSelected) {
                 table.boolean('selected').defaultTo(false).alter()
             } else {

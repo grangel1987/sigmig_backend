@@ -16,6 +16,12 @@ export default class BusinessUser extends BaseModel {
   @column()
   public businessId: number
 
+  @column()
+  public isSuper: boolean
+
+  @column()
+  public authorizer: number
+
   @column.dateTime({ serializeAs: null })
   public createdAt: DateTime
 
