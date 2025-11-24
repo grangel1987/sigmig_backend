@@ -1,12 +1,81 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Solicitud de cliente</title>
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitud de cliente - SIGMI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border: 1px solid #dddddd;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #333333;
+      margin-bottom: 20px;
+    }
+    p {
+      color: #555555;
+      line-height: 1.6;
+      margin: 10px 0;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #888888;
+      border-top: 1px solid #eeeeee;
+      padding-top: 10px;
+    }
+    .footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .content-block {
+      padding: 10px 0;
+    }
+    .powered-by {
+      text-align: center;
+      font-size: 12px;
+      color: #888888;
+    }
+    .powered-by a {
+      color: #007bff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
     <h2>Nueva solicitud</h2>
     <p>Hola {{ client_name ?? 'cliente' }}, hemos recibido tu solicitud.</p>
     <p>Detalle: {{ detail ?? '—' }}</p>
-  </body>
+            <!-- START FOOTER -->
+            <div class="footer">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td class="content-block">
+                    <!-- <span class="apple-link">Company Inc, 3 Abbey Road, San Francisco CA 94102</span>
+                    <br> Don't like these emails? <a href="#">Unsubscribe</a>. -->
+                  </td>
+                </tr>
+                <tr>
+                  <td class="content-block powered-by">
+                     <a href="https://www.serviciosgenessis.com/" target="_blank">SIG PLATFORM</a>.
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <!-- END FOOTER -->
+  </div>
+</body>
 </html>
