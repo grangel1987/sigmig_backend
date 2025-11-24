@@ -186,11 +186,18 @@ export default class UserController {
   }
 
   public async changePasswordOwner({ request, response, auth, i18n }: HttpContext) {
-    const { current_password, newPassword } = request.all()
+    const { currentPassword, newPassword } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          currentPassword: vine.string().minLength(1),
+          newPassword: vine.string().minLength(8),
+        })
+      )
+    )
     const dateTime = await Util.getDateTimes(request.ip())
     const user = await auth.use('jwt').authenticate()
 
-    if (await user.verifyPassword(current_password)) {
+    if (await user.verifyPassword(currentPassword)) {
       try {
         user.password = newPassword
         user.updatedAt = dateTime
