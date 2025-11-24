@@ -1,5 +1,5 @@
-import { personalDataSchema } from '#validators/personal_data'
 import vine from '@vinejs/vine'
+import { employeePersonalDataSchema } from './personal_data.js'
 
 export const employeeStoreValidator = vine.compile(
     vine.object({
@@ -71,7 +71,7 @@ export const employeeStoreValidator = vine.compile(
             )
             .optional(),
         userId: vine.number().positive().exists({ table: 'users', column: 'id' }).optional().requiredIfMissing('personalData'),
-        personalData: personalDataSchema.optional().requiredIfMissing('userId'),
+        personalData: employeePersonalDataSchema.optional().requiredIfMissing('userId'),
     })
 )
 
@@ -161,7 +161,7 @@ export const employeeUpdateValidator = vine.compile(
             )
             .optional(),
         userId: vine.number().positive().exists({ table: 'users', column: 'id' }).optional().requiredIfMissing('personalData'),
-        personalData: personalDataSchema.optional().requiredIfMissing('userId'),
+        personalData: employeePersonalDataSchema.optional().requiredIfMissing('userId'),
     })
 )
 

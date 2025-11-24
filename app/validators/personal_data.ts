@@ -24,6 +24,24 @@ export const personalDataSchema = vine.object({
     photo: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
 })
 
+export const employeePersonalDataSchema = vine.object({
+    email: vine.string().email().maxLength(191),
+    names: vine.string().maxLength(100),
+    lastNameP: vine.string().maxLength(100),
+    lastNameM: vine.string().maxLength(100),
+    typeIdentifyId: vine.number().positive().optional(),
+    identify: vine.string().maxLength(50).optional(),
+    stateCivilId: vine.number().positive().optional(),
+    sexId: vine.number().positive().optional(),
+    birthDate: vine.date().optional(),
+    nationalityId: vine.number().positive().optional(),
+    cityId: vine.number().positive().optional(),
+    address: vine.string().optional(),
+    phone: vine.string().maxLength(20).optional(),
+    movil: vine.string().maxLength(20).optional(),
+    photo: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
+})
+
 // If we need partial updates (PATCH) with all optional fields use a derived schema:
 export const personalDataPartialSchema = vine.object({
     email: vine.string().email().maxLength(191).optional(),
