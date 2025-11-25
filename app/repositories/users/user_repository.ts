@@ -61,7 +61,28 @@ export default class UserRepository {
         builder.preload('city')
       })
       .preload('businessUser', (builder) => {
-        builder.select(['id', 'user_id', 'business_id'])
+        builder.select(['id', 'user_id', 'business_id', 'is_super', 'is_authorizer'])
+        builder.preload('business', (builder) => {
+          builder.select(['id', 'name'])
+        })
+        builder.preload('businessUserRols', (builder) => {
+          builder.preload('rols', (rolBuilder) => {
+            rolBuilder.select(['id', 'name', 'description'])
+            rolBuilder.preload('rolsPermissions', (permBuilder) => {
+              permBuilder.preload('permissions', (permBuilder) => {
+                permBuilder.select(['id', 'key', 'description', 'type'])
+              })
+            })
+          })
+        })
+        builder.preload('bussinessUserPermissions', (builder) => {
+          builder.preload('permissions', (permBuilder) => {
+            permBuilder.select(['id', 'key', 'description', 'type'])
+          })
+        })
+      })
+      .preload('selectedBusiness', (builder) => {
+        builder.select(['id', 'user_id', 'business_id', 'is_super', 'is_authorizer'])
         builder.preload('business', (builder) => {
           builder.select(['id', 'name'])
         })

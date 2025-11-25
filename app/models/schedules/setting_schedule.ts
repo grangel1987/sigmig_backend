@@ -1,5 +1,5 @@
 import User from '#models/users/user'
-import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -14,39 +14,34 @@ export default class SettingSchedule extends BaseModel {
     public name: string
 
     @column({ columnName: 'work_days' })
-    public workDays: string | null
+    public workDays: number
 
     @column({ columnName: 'days_off' })
-    public daysOff: string | null
+    public daysOff: number
 
     @column()
-    public events: string | null
+    public events: string
 
     @column({ columnName: 'minutes_int' })
-    public minutesInt: number | null
+    public minutesInt: number
 
     @column({ columnName: 'minutes_out' })
-    public minutesOut: number | null
+    public minutesOut: number
 
     @column()
     public enabled: boolean
 
     @column({ columnName: 'created_by' })
-    public createdById: number | null
+    public createdById: number
 
     @column({ columnName: 'updated_by' })
-    public updatedById: number | null
+    public updatedById: number
 
     @column.dateTime({ autoCreate: true })
     public createdAt: DateTime
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     public updatedAt: DateTime
-
-    @beforeCreate()
-    public static async setEnabled(model: SettingSchedule) {
-        model.enabled = true
-    }
 
     @belongsTo(() => User, { foreignKey: 'createdById' })
     public createdBy: BelongsTo<typeof User>

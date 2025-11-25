@@ -1,9 +1,10 @@
 import City from '#models/cities/City'
+import Country from '#models/countries/country'
 import Setting from '#models/settings/setting'
+import User from '#models/users/user'
 import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
-// import TypeIdentify from '#models/type_identify'
 
 export default class PersonalData extends BaseModel {
   @column({ isPrimary: true })
@@ -12,42 +13,42 @@ export default class PersonalData extends BaseModel {
   @column()
   public names: string
 
-  @column()
+  @column({ columnName: 'last_name_p' })
   public lastNameP: string
 
-  @column()
+  @column({ columnName: 'last_name_m' })
   public lastNameM: string
 
-  @column()
-  public typeIdentifyId: number
+  @column({ columnName: 'type_identify_id' })
+  public typeIdentifyId: number | null
 
   @column()
-  public identify: string
+  public identify: string | null
+
+  @column({ columnName: 'state_civil_id' })
+  public stateCivilId: number | null
+
+  @column({ columnName: 'sex_id' })
+  public sexId: number | null
+
+  // birth_date is DATE (can be null)
+  @column.date({ columnName: 'birth_date' })
+  public birthDate: DateTime | null
+
+  @column({ columnName: 'nationality_id' })
+  public nationalityId: number | null
+
+  @column({ columnName: 'city_id' })
+  public cityId: number | null
 
   @column()
-  public stateCivilId: number
-
-  @column()
-  public sexId: number
-
-  // DB column birth_date (DATE)
-  @column.dateTime({ serialize: (value: DateTime) => value?.toISODate() })
-  public birthDate: DateTime
-
-  @column()
-  public nationalityId: number
-
-  @column()
-  public cityId: number
-
-  @column()
-  public address: string
+  public address: string | null
 
   @column()
   public phone: string | null
 
   @column()
-  public movil: string
+  public movil: string | null
 
   @column()
   public email: string
@@ -58,37 +59,60 @@ export default class PersonalData extends BaseModel {
   @column()
   public thumb: string | null
 
-  @column()
+  @column({ columnName: 'photo_short' })
   public photoShort: string | null
 
-  @column()
+  @column({ columnName: 'thumb_short' })
   public thumbShort: string | null
 
-  @column()
-  public createdBy: number
+  @column({ columnName: 'created_by' })
+  public createdBy: number | null
 
-  @column()
-  public updatedBy: number
+  @column({ columnName: 'updated_by' })
+  public updatedBy: number | null
 
-  @belongsTo(() => City)
-  declare city: BelongsTo<typeof City>
-
-
-
-  @column.dateTime({ autoCreate: true })
+  // timestamps
+  @column.dateTime({ autoCreate: true, columnName: 'created_at' })
   public createdAt: DateTime
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @column.dateTime({ autoCreate: true, autoUpdate: true, columnName: 'updated_at' })
   public updatedAt: DateTime
 
-  @belongsTo(() => Setting, {
-    foreignKey: 'typeIdentifyId',
-  })
+  /* Relations */
+  @belongsTo(() => City, { foreignKey: 'cityId' })
+  public city: BelongsTo<typeof City>
+
+  @belongsTo(() => Setting, { foreignKey: 'typeIdentifyId' })
   public typeIdentify: BelongsTo<typeof Setting>
 
+  @belongsTo(() => Setting, { foreignKey: 'stateCivilId' })
+  public stateCivil: BelongsTo<typeof Setting>
+
+  @belongsTo(() => Setting, { foreignKey: 'sexId' })
+  public sex: BelongsTo<typeof Setting>
+
+  @belongsTo(() => Country, { foreignKey: 'nationalityId' })
+  public nationality: BelongsTo<typeof Country>
+
+  @belongsTo(() => User, { foreignKey: 'createdBy' })
+  public createdByUser: BelongsTo<typeof User>
+
+  @belongsTo(() => User, { foreignKey: 'updatedBy' })
+  public updatedByUser: BelongsTo<typeof User>
 
   @computed()
   public get fullName(): string {
-    return `${this.names} ${this.lastNameP} ${this.lastNameM}`
+    return [this.names, this.lastNameP, this.lastNameM].filter(Boolean).join(' ').trim()
+  }
+
+  @computed()
+  public get age(): number | null {
+    if (!this.birthDate) return null
+    return Math.trunc(DateTime.now().diff(this.birthDate, 'years').years)
+  }
+
+  public static castDates(field: string, value: DateTime) {
+    if (field === 'birth_date') return value.toFormat('yyyy-LL-dd')
+    return value.toFormat('dd/MM/yyyy hh:mm:ss a')
   }
 }

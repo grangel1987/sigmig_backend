@@ -29,5 +29,10 @@
     "existEmail": "Ya existe una cuenta con este correo.",
     "existPersonalData": "Ya existe un usuario con estos datos personales.",
     "exist_user_for_employee": "Este empleado ya tiene un usuario asociado.",
-    "error_fetching_indicators": "Ocurrió un error al obtener los indicadores."
+    "error_fetching_indicators": "Ocurrió un error al obtener los indicadores.",
+    "no_authorizer_permission": "No tienes permisos para autorizar compras.",
+    "authorizer_ok": "Compra autorizada correctamente.",
+    "authorizer_error": "Ocurrió un error al autorizar la compra.",
+    "email_send_ok": "Correo enviado correctamente.",
+    "email_send_error": "Ocurrió un error al enviar el correo."
 }

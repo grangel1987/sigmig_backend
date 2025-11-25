@@ -4,15 +4,26 @@ import Util from '#utils/Util'
 import { settingScheduleStoreValidator, settingScheduleUpdateValidator } from '#validators/setting_schedule'
 import { HttpContext } from '@adonisjs/core/http'
 import Database from '@adonisjs/lucid/services/db'
+import vine from '@vinejs/vine'
 
 export default class SettingScheduleController {
     /** List schedules for selected business of current user */
-    async index({ auth }: HttpContext) {
+    async index({ request, auth }: HttpContext) {
+        const { page, perPage } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    page: vine.number().positive().optional(),
+                    perPage: vine.number().positive().optional(),
+                })
+            )
+        )
+
         const userId = auth.user!.id
         const business = await Database.from('business_users').where('selected', true).where('user_id', userId).first()
         const businessId = business?.business_id
         if (!businessId) return []
-        const schedules = await SettingSchedule.query()
+
+        const query = SettingSchedule.query()
             .where('business_id', businessId)
             .preload('createdBy', (b) => {
                 b.select(['id', 'personal_data_id', 'email']).preload('personalData')
@@ -20,7 +31,8 @@ export default class SettingScheduleController {
             .preload('updatedBy', (b) => {
                 b.select(['id', 'personal_data_id', 'email']).preload('personalData')
             })
-        return schedules
+
+        return page ? query.paginate(page, perPage ?? 10) : query
     }
 
     async show({ params }: HttpContext) {
@@ -53,11 +65,11 @@ export default class SettingScheduleController {
             const payload = {
                 businessId: businessId,
                 name,
-                workDays: workDays ?? null,
-                daysOff: daysOff ?? null,
-                minutesInt: minFlexIn ?? null,
-                minutesOut: minFlexOut ?? null,
-                events: eventsStr ?? null,
+                workDays: workDays ?? 0,
+                daysOff: daysOff ?? 0,
+                minutesInt: minFlexIn ?? 0,
+                minutesOut: minFlexOut ?? 0,
+                events: eventsStr ?? '',
                 createdAt: dateTime,
                 updatedAt: dateTime,
                 createdById: auth.user!.id,

@@ -224,10 +224,10 @@ export default class BusinessEmployee extends BaseModel {
 
 
     serializeExtras() {
-        const emp = this.employee
-        const last_name_m = emp ? emp.lastNameM : this.$extras.last_name_m
-        const last_name_p = emp ? emp.lastNameP : this.$extras.last_name_p
-        const names = emp ? emp.names : this.$extras.names
+        const empPersonalData = this.employee?.personalData
+        const last_name_m = empPersonalData ? empPersonalData.lastNameM : this.$extras.last_name_m
+        const last_name_p = empPersonalData ? empPersonalData.lastNameP : this.$extras.last_name_p
+        const names = empPersonalData ? empPersonalData.names : this.$extras.names
 
         const full_name = `${names || ''} ${last_name_p || ''} ${last_name_m || ''}`.trim()
         return {

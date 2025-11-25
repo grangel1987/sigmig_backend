@@ -28,6 +28,12 @@ export default class ClientRepository {
       .where('email', email)
       .preload('typeIdentify')
       .preload('city')
+      .preload('documentInvoice')
+      .preload('responsibles', (builder) => {
+        builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email', 'client_contact_type_id'])
+        builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+        builder.preload('typeContact', (b) => b.select(['id', 'text']))
+      })
       .first()
     return client
   }

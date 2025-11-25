@@ -1,3 +1,4 @@
+import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import Employee from '#models/employees/employee'
 import PersonalData from '#models/users/personal_data'
@@ -6,7 +7,7 @@ import env from '#start/env'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
-import { personalDataSchema } from '#validators/personal_data'
+import { personalDataPartialSchema, personalDataSchema } from '#validators/personal_data'
 import { HttpContext, Response } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import hash from '@adonisjs/core/services/hash'
@@ -22,6 +23,8 @@ interface BusinessPayload {
   businessId: number
   rolId?: number
   permissions?: number[]
+  isSuper?: boolean
+  isAuthorizer?: boolean
 }
 
 // PersonalData payload validated inline in handlers to match the model
@@ -155,12 +158,13 @@ export default class UserController {
 
     const q = User.query().preload('personalData', q => q.preload('typeIdentify').preload('city'))
       .preload('businessUser', q =>
-        q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
-          .preload('business')
+        q.where('is_super', true)
+          .orWhereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
           .where('business_id', businessId)
       )
       .whereHas('businessUser', q =>
-        q.whereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
+        q.where('is_super', true)
+          .orWhereHas('businessUserRols', bUQ => bUQ.where('id', SUPERUSER_ROLE_CURRENT_ID))
           .where('business_id', businessId)
       ).orWhere('is_admin', true)
     const businessUsers = await q
@@ -186,13 +190,20 @@ export default class UserController {
   }
 
   public async changePasswordOwner({ request, response, auth, i18n }: HttpContext) {
-    const { current_password, new_password } = request.all()
+    const { currentPassword, newPassword } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          currentPassword: vine.string().minLength(1),
+          newPassword: vine.string().minLength(8),
+        })
+      )
+    )
     const dateTime = await Util.getDateTimes(request.ip())
     const user = await auth.use('jwt').authenticate()
 
-    if (await user.verifyPassword(current_password)) {
+    if (await user.verifyPassword(currentPassword)) {
       try {
-        user.password = new_password
+        user.password = newPassword
         user.updatedAt = dateTime
         await user.save()
 
@@ -295,7 +306,7 @@ export default class UserController {
                         }
                 
                         if (methodSendCode === 'email') {
-                          emitter.emit('new::userForgotPasswordStore', userNotification)
+                          await emitter.emit('new::userForgotPasswordStore', userNotification)
                         } else if (methodSendCode === 'whatsapp') {
                           // Implement WhatsApp sending logic
                         }  */
@@ -342,7 +353,16 @@ export default class UserController {
   }
 
   public async changePasswordForgot({ request, response, i18n, auth }: HttpContext) {
-    const { email, code, new_password } = request.all()
+    // const isDev = env.get('NODE_ENV') === 'development' || Boolean(request.header('Pwdsecret'))
+    const { email, code, newPassword } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+          code: vine.string().trim().minLength(4),
+          newPassword: vine.string().trim().minLength(8),
+        })
+      )
+    )
     const dateTime = await Util.getDateTimes(request.ip())
     const dev = env.get('NODE_ENV') === 'development' || Boolean(request.header('Pwdsecret'))
 
@@ -365,7 +385,7 @@ export default class UserController {
       log({ codeDateTime: user.codeDateTime?.toISO(), now: DateTime.now().toISO() })
       if (user.codeDateTime?.toISO()! >= DateTime.now().toISO()!) {
         try {
-          user.password = new_password
+          user.password = newPassword
           user.code = null
           user.codeDateTime = null
           user.updatedAt = dateTime
@@ -448,7 +468,7 @@ export default class UserController {
         ? `${user.personalData.names} ${user.personalData.last_name_p} ${user.personalData.last_name_m}`
         : 'Sin Nombre'
 
-            emitter.emit('new::userAssignedToEmployee', {
+            await emitter.emit('new::userAssignedToEmployee', {
               title: 'Asignacion de usuario a empleado',
               body: 'Se ha realizado la asignacion de usuario a empleado, a continuacion usa el siguiente codigo para verificar tu usuario.',
               time: user.codeDateTime,
@@ -520,7 +540,9 @@ export default class UserController {
             vine.object({
               businessId: vine.number().positive(),
               rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive()).optional()
+              permissions: vine.array(vine.number().positive()).optional(),
+              isSuper: vine.boolean().optional(),
+              isAuthorizer: vine.boolean().optional()
             })
           ).optional(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
@@ -599,6 +621,8 @@ export default class UserController {
         const payloadBusinessUser = {
           userId: user.id,
           businessId: bus.businessId,
+          isSuper: bus.isSuper || false,
+          isAuthorizer: bus.isAuthorizer ? 1 : 0,
         }
 
         const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
@@ -641,8 +665,8 @@ export default class UserController {
           ...rPersonalData,
           ...imageData,
           email: resolvedEmail || user.email,
-          birthDate: DateTime.fromJSDate(rPersonalData!.birthDate),
-          phone: rPersonalData!.phone ?? null,
+          birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
+          phone: rPersonalData.phone ?? null,
           createdAt: dateTime,
           updatedAt: dateTime,
           createdBy: auth.user!.id,
@@ -668,9 +692,15 @@ export default class UserController {
         employee.userId = user.id
         await employee.useTransaction(trx).save()
       }
+
       await user.load('personalData')
-      if (user.personalData?.cityId)
-        await user.personalData.load('city')
+
+      if (user.personalData.cityId) await user.personalData.load('city')
+      if (user.personalData.nationalityId) await user.personalData.load('nationality')
+      if (user.personalData.sexId) await user.personalData.load('sex')
+      if (user.personalData.stateCivilId) await user.personalData.load('stateCivil')
+      if (user.personalData.typeIdentifyId) await user.personalData.load('typeIdentify')
+
 
       await user.useTransaction(trx).save()
       await trx.commit()
@@ -723,7 +753,7 @@ export default class UserController {
           email: vine.string().email().optional(),
           business: vine.any().optional(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' }).optional().requiredIfMissing('personalData'),
-          personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
+          personalData: personalDataPartialSchema.optional().requiredIfMissing('employeeId'),
           signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
         })
       )
@@ -794,30 +824,30 @@ export default class UserController {
             // Update existing personal data
             const pd = await PersonalData.findOrFail(user.personalDataId)
             pd.useTransaction(trx)
-            pd.names = rPersonalData.names
-            pd.lastNameP = rPersonalData.lastNameP
-            pd.lastNameM = rPersonalData.lastNameM
-            pd.typeIdentifyId = rPersonalData.typeIdentifyId
-            pd.identify = rPersonalData.identify
-            pd.stateCivilId = rPersonalData.stateCivilId
-            pd.sexId = rPersonalData.sexId
-            pd.birthDate = DateTime.fromJSDate(rPersonalData.birthDate)
-            pd.nationalityId = rPersonalData.nationalityId
-            pd.cityId = rPersonalData.cityId
-            pd.address = rPersonalData.address
+            pd.names = rPersonalData.names || pd.names
+            pd.lastNameP = rPersonalData.lastNameP || pd.lastNameP
+            pd.lastNameM = rPersonalData.lastNameM || pd.lastNameM
+            pd.typeIdentifyId = rPersonalData.typeIdentifyId ?? null
+            pd.identify = rPersonalData.identify ?? null
+            pd.stateCivilId = rPersonalData.stateCivilId ?? null
+            pd.sexId = rPersonalData.sexId ?? null
+            pd.birthDate = rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null
+            pd.nationalityId = rPersonalData.nationalityId ?? null
+            pd.cityId = rPersonalData.cityId ?? null
+            pd.address = rPersonalData.address ?? null
             pd.phone = rPersonalData.phone ?? user.email
-            pd.movil = rPersonalData.movil
+            pd.movil = rPersonalData.movil ?? null
             pd.email = rPersonalData.email ?? user.email
-            Object.assign(pd, imageData)
             pd.updatedAt = dateTime
             pd.updatedBy = auth.user!.id
+            Object.assign(pd, imageData)
             await pd.save()
           } else {
             // Create new personal data
             const payloadPersonalData = {
               ...rPersonalData,
               ...imageData,
-              birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+              birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
               phone: rPersonalData.phone ?? null,
               createdAt: dateTime,
               updatedAt: dateTime,
@@ -867,10 +897,12 @@ export default class UserController {
             vine.object({
               businessId: vine.number().positive(),
               rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive()).optional()
+              permissions: vine.array(vine.number().positive()).optional(),
+              isSuper: vine.boolean().optional(),
+              isAuthorizer: vine.boolean().optional()
             })
           ).optional(),
-          personalData: personalDataSchema.optional(),
+          personalData: personalDataPartialSchema.optional(),
           isAdmin: vine.boolean().optional(),
           isAuthorizer: vine.boolean().optional(),
           signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
@@ -880,6 +912,7 @@ export default class UserController {
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
     const createdFiles: string[] = []
+    const filesToDelete: string[] = []
 
     try {
 
@@ -907,6 +940,7 @@ export default class UserController {
 
       // Handle signature upload
       if (signature) {
+        if (user.signatureShort) filesToDelete.push(user.signatureShort)
         const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
         user.signature = resultUpload.url
         user.signatureShort = resultUpload.url_short
@@ -917,31 +951,91 @@ export default class UserController {
 
       // Update business assignments if provided
       if (business && business.length > 0) {
-        // Remove existing business assignments
-        await user.related('businessUser').query().delete()
+        // Handle business user updates/creation
+        if (user.isAdmin) {
+          // For admin users, ensure they have access to ALL businesses with admin privileges
+          const allBusinesses = await Business.all()
+          for (const bus of allBusinesses) {
+            let businessUser = await BusinessUser.query()
+              .where('userId', user.id)
+              .where('businessId', bus.id)
+              .first()
 
-        for (const bus of business) {
-          const payloadBusinessUser = {
-            userId: user.id,
-            businessId: bus.businessId,
+            if (businessUser) {
+              // Update existing
+              businessUser.isSuper = true
+              businessUser.isAuthorizer = 1
+              await businessUser.useTransaction(trx).save()
+            } else {
+              // Create new
+              businessUser = await BusinessUser.create({
+                userId: user.id,
+                businessId: bus.id,
+                isSuper: true,
+                isAuthorizer: 1,
+              }, { client: trx })
+            }
+
+            // Update/create role
+            await businessUser.related('businessUserRols').query().delete()
+            const businessUserRol = {
+              businessUserId: businessUser.id,
+              rolId: 1, // Default admin role
+            }
+            await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+          }
+        } else {
+          // For non-admin users, update/create for each provided business
+          for (const bus of business) {
+            let businessUser = await BusinessUser.query()
+              .where('userId', user.id)
+              .where('businessId', bus.businessId)
+              .first()
+
+            if (businessUser) {
+              // Update existing
+              businessUser.isSuper = bus.isSuper || false
+              businessUser.isAuthorizer = bus.isAuthorizer ? 1 : 0
+              await businessUser.useTransaction(trx).save()
+            } else {
+              // Create new
+              businessUser = await BusinessUser.create({
+                userId: user.id,
+                businessId: bus.businessId,
+                isSuper: bus.isSuper || false,
+                isAuthorizer: bus.isAuthorizer ? 1 : 0,
+              }, { client: trx })
+            }
+
+            // Update role
+            await businessUser.related('businessUserRols').query().delete()
+            const businessUserRol = {
+              businessUserId: businessUser.id,
+              rolId: bus.rolId || 0,
+            }
+            await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+            // Update permissions
+            await businessUser.related('bussinessUserPermissions').query().delete()
+            const payloadPermission = (bus.permissions || []).map((permId) => ({
+              businessUserId: businessUser.id,
+              permissionId: permId,
+            }))
+
+            if (payloadPermission?.length)
+              await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
           }
 
-          const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
-
-          const businessUserRol = {
-            businessUserId: businessUser.id,
-            rolId: bus.rolId || 0,
+          // Remove businessUsers not included in the provided array
+          const providedBusinessIds = business.map(b => b.businessId)
+          const businessUsersToDelete = await BusinessUser.query()
+            .where('userId', user.id)
+            .whereNotIn('businessId', providedBusinessIds)
+          for (const bu of businessUsersToDelete) {
+            await bu.related('businessUserRols').query().delete()
+            await bu.related('bussinessUserPermissions').query().delete()
+            await bu.useTransaction(trx).delete()
           }
-
-          await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
-
-          const payloadPermission = (bus.permissions || []).map((permId) => ({
-            businessUserId: businessUser.id,
-            permissionId: permId,
-          }))
-
-          if (payloadPermission?.length)
-            await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
         }
       }
 
@@ -966,30 +1060,31 @@ export default class UserController {
           // Update existing personal data
           const pd = await PersonalData.findOrFail(user.personalDataId)
           pd.useTransaction(trx)
-          pd.names = rPersonalData.names
-          pd.lastNameP = rPersonalData.lastNameP
-          pd.lastNameM = rPersonalData.lastNameM
-          pd.typeIdentifyId = rPersonalData.typeIdentifyId
-          pd.identify = rPersonalData.identify
-          pd.stateCivilId = rPersonalData.stateCivilId
-          pd.sexId = rPersonalData.sexId
-          pd.birthDate = DateTime.fromJSDate(rPersonalData.birthDate)
-          pd.nationalityId = rPersonalData.nationalityId
-          pd.cityId = rPersonalData.cityId
-          pd.address = rPersonalData.address
+          if (pd.photoShort && photo) filesToDelete.push(pd.photoShort)
+          pd.names = rPersonalData.names || pd.names
+          pd.lastNameP = rPersonalData.lastNameP || pd.lastNameP
+          pd.lastNameM = rPersonalData.lastNameM || pd.lastNameM
+          pd.typeIdentifyId = rPersonalData.typeIdentifyId ?? null
+          pd.identify = rPersonalData.identify ?? null
+          pd.stateCivilId = rPersonalData.stateCivilId ?? null
+          pd.sexId = rPersonalData.sexId ?? null
+          pd.birthDate = rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null
+          pd.nationalityId = rPersonalData.nationalityId ?? null
+          pd.cityId = rPersonalData.cityId ?? null
+          pd.address = rPersonalData.address ?? null
           pd.phone = rPersonalData.phone ?? user.email
-          pd.movil = rPersonalData.movil
+          pd.movil = rPersonalData.movil ?? null
           pd.email = rPersonalData.email ?? user.email
-          Object.assign(pd, imageData)
           pd.updatedAt = dateTime
           pd.updatedBy = auth.user!.id
+          pd.merge(imageData)
           await pd.save()
         } else {
           // Create new personal data
           const payloadPersonalData = {
             ...rPersonalData,
             ...imageData,
-            birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+            birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
             phone: rPersonalData.phone ?? null,
             createdAt: dateTime,
             updatedAt: dateTime,
@@ -1006,10 +1101,18 @@ export default class UserController {
       await user.save()
       await trx.commit()
 
-      await user.load('personalData')
+      // Delete old files after successful commit
+      if (filesToDelete.length) await Promise.all(filesToDelete.map(file => Google.deleteFile(file).catch(() => null)))
 
-      if (user.personalData.cityId)
-        await user.personalData.load('city')
+      await user.load('personalData')
+      await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
+
+      if (user.personalData.cityId) await user.personalData.load('city')
+      if (user.personalData.nationalityId) await user.personalData.load('nationality')
+      if (user.personalData.sexId) await user.personalData.load('sex')
+      if (user.personalData.stateCivilId) await user.personalData.load('stateCivil')
+      if (user.personalData.typeIdentifyId) await user.personalData.load('typeIdentify')
+
 
       return response.status(200).json({
         user,
@@ -1112,7 +1215,7 @@ export default class UserController {
 
       const newUser = await User.create(payload)
       newUser
-      /*   emitter.emit('new::userEmailStore', {
+      /*   await emitter.emit('new::userEmailStore', {
           email: newUser.email,
           code_confirm: newUser.code,
         }) */
@@ -1236,11 +1339,11 @@ export default class UserController {
         ? `${user.personalData.names} ${user.personalData.lastNameP} ${user.personalData.lastNameM}`
         : 'Usuario'
 
-      emitter.emit('new::userPasswordRecovered' as any, {
+      await emitter.emit('new::userPasswordRecovered', {
         email: user.email,
         full_name,
         password: finalPassword,
-        time: dateTime.toISO(),
+        time: dateTime.toISO()!,
       })
 
       return response.status(200).json({
@@ -1284,14 +1387,14 @@ export default class UserController {
         })
       }
 
-      if (user.clientId <= 0 && user.clientId !== -1) {
-        return response.status(500).json({
-          ...MessageFrontEnd(
-            i18n.formatMessage('messages.user_error'),
-            i18n.formatMessage('messages.error_title')
-          ),
-        })
-      }
+      /*       if (user.clientId <= 0 && user.clientId !== -1) {
+              return response.status(500).json({
+                ...MessageFrontEnd(
+                  i18n.formatMessage('messages.user_error'),
+                  i18n.formatMessage('messages.error_title')
+                ),
+              })
+            } */
 
       if (!(await user.verifyPassword(password))) {
         return response.status(500).json({
@@ -1535,24 +1638,41 @@ export default class UserController {
     response.ok(permissions)
   }
 
-  public async index({ response }: HttpContext) {
-    const users = await User.query().preload('personalData', q => q.preload('typeIdentify').preload('city'))
-      .preload('businessUser', buQ => buQ.preload('business', bQ => bQ.select('id', 'name')))
+  public async index({ request, response }: HttpContext) {
+    const { page, perPage } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          page: vine.number().positive().optional(),
+          perPage: vine.number().positive().optional(),
+        })
+      )
+    )
+
+    const query = User.query()
+      .preload('personalData', q => q.preload('typeIdentify').preload('city'))
+      .preload('businessUser', buQ =>
+        buQ.preload('business', bQ => bQ.select('id', 'name',)))
+
+    const users = page ? await query.paginate(page, perPage ?? 10) : await query
     response.ok(users)
   }
 
   public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
     // Similar to store, but for admin
     const dateTime = await Util.getDateTimes(request.ip())
-    const { email, business, personalData, signature } = await request.validateUsing(
+    const { email, business, personalData, signature, isAauthorizer, isAdmin } = await request.validateUsing(
       vine.compile(
         vine.object({
           email: vine.string().email(),
+          isAdmin: vine.boolean().optional(),
+          isAauthorizer: vine.boolean().optional(),
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
               rolId: vine.number().positive().optional(),
-              permissions: vine.array(vine.number().positive()).optional()
+              permissions: vine.array(vine.number().positive()).optional(),
+              isSuper: vine.boolean().optional(),
+              isAuthorizer: vine.boolean().optional(),
             })
           ).optional(),
           personalData: personalDataSchema,
@@ -1561,7 +1681,6 @@ export default class UserController {
       )
     )
     const createdFiles: string[] = []
-    const businessArray: BusinessPayload[] = business ? (typeof business === 'string' ? JSON.parse(business) : business) : []
     const trx = await db.transaction()
 
     try {
@@ -1581,11 +1700,12 @@ export default class UserController {
         {
           email,
           password: password,
-          isAuthorizer: true,
+          isAuthorizer: isAauthorizer ?? false,
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,
-          isAdmin: true,
+          verified: true,
+          isAdmin: isAdmin ?? false
         },
         { client: trx }
       )
@@ -1600,28 +1720,56 @@ export default class UserController {
         createdFiles.push(resultUpload.url_short)
       }
 
-      for (const bus of businessArray) {
-        const payloadBusinessUser = {
-          userId: user.id,
-          businessId: bus.businessId,
+      // Handle business user creation
+      if (isAdmin) {
+        // For admin users, create businessUser entries for ALL businesses
+        const allBusinesses = await Business.query().select('id').exec()
+
+        for (const business of allBusinesses) {
+          const payloadBusinessUser = {
+            userId: user.id,
+            businessId: business.id,
+            isSuper: true,
+            isAuthorizer: 1, // true = 1
+          }
+
+          const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
+
+          // Create default role for admin users
+          const businessUserRol = {
+            businessUserId: businessUser.id,
+            rolId: 1, // Default admin role
+          }
+
+          await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
         }
+      } else if (business) {
+        // For non-admin users, process the provided business array
+        for (const bus of business) {
+          const payloadBusinessUser = {
+            userId: user.id,
+            businessId: bus.businessId,
+            isSuper: bus.isSuper ?? false,
+            isAuthorizer: bus.isAuthorizer ? 1 : 0,
+          }
 
-        const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
+          const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
 
-        const businessUserRol = {
-          businessUserId: businessUser.id,
-          rolId: bus.rolId || 0,
+          const businessUserRol = {
+            businessUserId: businessUser.id,
+            rolId: bus.rolId || 0,
+          }
+
+          await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+          const payloadPermission = (bus.permissions || []).map((permId) => ({
+            businessUserId: businessUser.id,
+            permissionId: permId,
+          }))
+
+          if (payloadPermission?.length)
+            await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
         }
-
-        await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
-
-        const payloadPermission = (bus.permissions || []).map((permId) => ({
-          businessUserId: businessUser.id,
-          permissionId: permId,
-        }))
-
-        if (payloadPermission?.length)
-          await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
       }
 
       if (personalData) {
@@ -1644,7 +1792,7 @@ export default class UserController {
           ...rPersonalData,
           ...imageData,
           email: personalData.email || user.email,
-          birthDate: DateTime.fromJSDate(rPersonalData.birthDate),
+          birthDate: rPersonalData.birthDate ? DateTime.fromJSDate(rPersonalData.birthDate) : null,
           phone: rPersonalData.phone ?? null,
           createdAt: dateTime,
           updatedAt: dateTime,
@@ -1657,9 +1805,15 @@ export default class UserController {
         if (createdFile) createdFiles.push(createdFile)
       }
 
+
+
+      await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
       await user.load('personalData', pQ => pQ.preload('typeIdentify'))
+
       if (user.personalData?.cityId) await user.personalData.load('city')
+
       await user.useTransaction(trx).save()
+
       await trx.commit()
 
       await mail.send((message) => {

@@ -30,7 +30,7 @@ import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
-    return arr.reduce((acc: any, item: any) => {
+    return arr.reduce((acc: any, item) => {
         const composite = keys.map(k => item[k]).join('__')
         if (!acc[composite]) acc[composite] = []
         acc[composite].push(item)
@@ -182,80 +182,80 @@ export default class EmployeeController {
         return data
     }
 
-    // Helper for search endpoints (lightweight mapping)
-    private mapSearchEmployee(obj: any): any {
-        const out: any = { ...obj }
-        const bd = this.toDt(out.birth_date)
-        if (bd) {
-            out.birth_date_format = bd.toFormat('yyyy-LL-dd')
-            out.birth_date = bd.toFormat('dd/MM/yyyy')
-            out.age = Math.trunc(DateTime.now().diff(bd, 'years').years)
-        } else {
-            out.birth_date_format = null
-            out.age = null
-        }
-        if (out.business?.length > 0 && out.business[0]?.enabled !== undefined) {
-            out.enabled = out.business[0].enabled
-        }
-        if (out.city && out.city.country && out.city.country.id && out.city.country_id === undefined) {
-            out.city.country_id = out.city.country.id
-        }
-        if (out.full_name) delete out.full_name
-        return out
-    }
-
-    // Row type returned by raw repository search queries
-    private mapRepoEmployeeSearch(row: {
-        id: number
-        business_id: number
-        enabled: boolean | 0 | 1
-        identify_type_id: number
-        identify: string
-        names: string
-        last_name_p: string
-        last_name_m: string
-        photo?: string | null
-        thumb?: string | null
-        token?: string | null
-        text: string
-        birth_date?: string | Date | null
-        city_id?: number | null
-        city_name?: string | null
-        city_country_id?: number | null
-        country_id?: number | null
-        country_name?: string | null
-        [k: string]: unknown
-    }) {
-        const out: any = { ...row }
-        // Build typed identify object expected by clients
-        out.typeIdentify = { id: row.identify_type_id, text: row.text }
-
-        // Date normalization: prefer birth_date, fallback to birth_day
-        const dt = this.toDt(row.birth_date)
-        if (dt) {
-            out.birth_date_format = dt.toFormat('yyyy-LL-dd')
-            out.birth_date = dt.toFormat('dd/MM/yyyy')
-            out.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
-        } else {
-            out.birth_date_format = null
-            out.age = null
-        }
-
-        // Compose city object if pieces are present
-        if (row.city_id || row.city_name || row.city_country_id) {
-            out.city = {
-                id: row.city_id ?? null,
-                name: row.city_name ?? null,
-                country_id: row.city_country_id ?? null,
-                country: row.country_id || row.country_name
-                    ? { id: row.country_id ?? null, name: row.country_name ?? null }
-                    : undefined,
+    /*     // Helper for search endpoints (lightweight mapping)
+        private mapSearchEmployee(obj: any): any {
+            const out: any = { ...obj }
+            const bd = this.toDt(out.birth_date)
+            if (bd) {
+                out.birth_date_format = bd.toFormat('yyyy-LL-dd')
+                out.birth_date = bd.toFormat('dd/MM/yyyy')
+                out.age = Math.trunc(DateTime.now().diff(bd, 'years').years)
+            } else {
+                out.birth_date_format = null
+                out.age = null
             }
+            if (out.business?.length > 0 && out.business[0]?.enabled !== undefined) {
+                out.enabled = out.business[0].enabled
+            }
+            if (out.city && out.city.country && out.city.country.id && out.city.country_id === undefined) {
+                out.city.country_id = out.city.country.id
+            }
+            if (out.full_name) delete out.full_name
+            return out
         }
-        // Legacy cleanup
-        if (out.full_name) delete out.full_name
-        return out
-    }
+    
+        // Row type returned by raw repository search queries
+        private mapRepoEmployeeSearch(row: {
+            id: number
+            business_id: number
+            enabled: boolean | 0 | 1
+            identify_type_id: number
+            identify: string
+            names: string
+            last_name_p: string
+            last_name_m: string
+            photo?: string | null
+            thumb?: string | null
+            token?: string | null
+            text: string
+            birth_date?: string | Date | null
+            city_id?: number | null
+            city_name?: string | null
+            city_country_id?: number | null
+            country_id?: number | null
+            country_name?: string | null
+            [k: string]: unknown
+        }) {
+            const out: any = { ...row }
+            // Build typed identify object expected by clients
+            out.typeIdentify = { id: row.identify_type_id, text: row.text }
+    
+            // Date normalization: prefer birth_date, fallback to birth_day
+            const dt = this.toDt(row.birth_date)
+            if (dt) {
+                out.birth_date_format = dt.toFormat('yyyy-LL-dd')
+                out.birth_date = dt.toFormat('dd/MM/yyyy')
+                out.age = Math.trunc(DateTime.now().diff(dt, 'years').years)
+            } else {
+                out.birth_date_format = null
+                out.age = null
+            }
+    
+            // Compose city object if pieces are present
+            if (row.city_id || row.city_name || row.city_country_id) {
+                out.city = {
+                    id: row.city_id ?? null,
+                    name: row.city_name ?? null,
+                    country_id: row.city_country_id ?? null,
+                    country: row.country_id || row.country_name
+                        ? { id: row.country_id ?? null, name: row.country_name ?? null }
+                        : undefined,
+                }
+            }
+            // Legacy cleanup
+            if (out.full_name) delete out.full_name
+            return out
+        } */
     /** Create a new employee with related business link and nested collections */
     public async store({ request, response, auth, i18n }: HttpContext) {
         const { employeeStoreValidator } = await import('#validators/employee')
@@ -275,31 +275,32 @@ export default class EmployeeController {
             const currentTime = await Util.getDateTimes(request.ip())
             // Debug: nested collections received (disabled in production)
 
-            const authorization = request.file('authorization')
+            const authorization = request.file('authorization', { size: '5mb' })
 
             const employeeData: any = {
-                identifyTypeId: payload.typeIdentifyId,
-                identify: payload.identify,
-                names: payload.names,
-                lastNameP: payload.lastNameP,
-                lastNameM: payload.lastNameM,
-                stateCivilId: payload.stateCivil ?? null,
-                sexId: payload.sexId,
-                birthDate: payload.birthDate ? DateTime.fromISO(payload.birthDate) : null,
-                nationalityId: payload.nationalityId,
-                cityId: payload.cityId,
-                address: payload.address,
-                phone: payload.phone ?? null,
-                movil: payload.movil,
-                email: payload.email,
+                /*                 identifyTypeId: payload.typeIdentifyId,
+                                identify: payload.identify,
+                                names: payload.names,
+                                lastNameP: payload.lastNameP,
+                                lastNameM: payload.lastNameM,
+                                stateCivilId: payload.stateCivil ?? null,
+                                sexId: payload.sexId,
+                                birthDate: payload.birthDate ? DateTime.fromISO(payload.birthDate) : null,
+                                nationalityId: payload.nationalityId,
+                                cityId: payload.cityId,
+                                address: payload.address,
+                                phone: payload.phone ?? null,
+                                movil: payload.movil,
+                                email: payload.email, */
                 createdById: authUserId,
                 updatedById: authUserId,
                 createdAt: currentTime,
                 updatedAt: currentTime,
             }
 
+
+
             const businessEmployeeData: any = {
-                userId: payload.userId,
                 enabled: payload.enabled || false,
                 businessId: payload.businessId,
                 afpId: payload.afpId ?? 0,
@@ -381,7 +382,7 @@ export default class EmployeeController {
                     const payloadPersonalData = {
                         ...pdData,
                         ...imageData,
-                        birthDate: DateTime.fromJSDate(pdData.birthDate)!,
+                        birthDate: pdData.birthDate ? DateTime.fromJSDate(pdData.birthDate) : null,
                         phone: pdData.phone ?? null,
                         createdAt: currentTime,
                         updatedAt: currentTime,
@@ -433,7 +434,7 @@ export default class EmployeeController {
                     })
                 }
                 if (contacts.length) {
-                    await employee.related('emergencyContacts').createMany(contacts as any, { client: trx })
+                    await employee.related('emergencyContacts').createMany(contacts, { client: trx })
                 }
             }
 
@@ -451,7 +452,7 @@ export default class EmployeeController {
                 })
             }
             if (normalizedScheduleWork.length) {
-                await employee.related('scheduleWork').createMany(normalizedScheduleWork as any, { client: trx })
+                await employee.related('scheduleWork').createMany(normalizedScheduleWork, { client: trx })
             }
             // (contacts metadata already set during mapping)
 
@@ -485,17 +486,13 @@ export default class EmployeeController {
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                 })
             })
-            await employee.load('stateCivil', (b) => b.select(['id', 'text']))
-            await employee.load('nationality', (b) => b.select(['id', 'name', 'nationality']))
-            await employee.load('sexes', (b) => b.select(['id', 'text']))
+            // Replaced legacy direct relations with personalData preload
+            await employee.load('personalData')
             await employee.load('certificateHealth')
             await employee.load('emergencyContacts', (b) => {
                 b.preload('relationship', (rb) => rb.select(['id', 'country_id', 'key_id', 'text', 'value', 'enabled', 'created_by', 'updated_by', 'created_at', 'updated_at']))
             })
-            await employee.load('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
+            // City & country now accessible via personalData if needed
             await employee.load('scheduleWork', (b) => {
                 b.preload('schedule')
                 b.preload('work')
@@ -527,16 +524,16 @@ export default class EmployeeController {
         const trx = await db.transaction()
         const { employeeUpdateValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeUpdateValidator)
-        const { userId, personalData } = payload as any
+        const { userId, personalData } = payload
         const createdFiles: string[] = []
         try {
             // Nested collections are arrays of objects now
-            const hasScheduleWork = (payload as any).scheduleWork !== undefined
-            const hasCertificateHealth = (payload as any).certificateHealth !== undefined
-            const hasContactsEmergency = (payload as any).contactsEmergency !== undefined
-            const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork && Array.isArray((payload as any).scheduleWork) ? (payload as any).scheduleWork : []
-            const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth && Array.isArray((payload as any).certificateHealth) ? (payload as any).certificateHealth : []
-            const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency && Array.isArray((payload as any).contactsEmergency) ? (payload as any).contactsEmergency : []
+            const hasScheduleWork = payload.scheduleWork !== undefined
+            const hasCertificateHealth = payload.certificateHealth !== undefined
+            const hasContactsEmergency = payload.contactsEmergency !== undefined
+            const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork && Array.isArray(payload.scheduleWork) ? payload.scheduleWork : []
+            const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth && Array.isArray(payload.certificateHealth) ? payload.certificateHealth : []
+            const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency && Array.isArray(payload.contactsEmergency) ? payload.contactsEmergency : []
             const employee = await Employee.find(employeeId)
             if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
 
@@ -562,20 +559,21 @@ export default class EmployeeController {
             // Handle new photo / authorization uploads & remove old if needed
 
 
-            const newAuthorization = request.file('authorization')
+            const newAuthorization = request.file('authorization', { size: '5mb' })
             if (newAuthorization) {
-                if ((employee as any).authorization_mirror_short) {
-                    try { await Google.deleteFile((employee as any).authorization_mirror_short); } catch { }
-                    if ((employee as any).thumb_authorization_mirror_short) { try { await Google.deleteFile((employee as any).thumb_authorization_mirror_short); } catch { } }
-                    Object.assign(employee, { authorization_mirror: null, authorization_mirror_short: null, thumb_authorization_mirror: null, thumb_authorization_mirror_short: null })
+                if (employee.authorizationMirrorShort) {
+                    try { await Google.deleteFile(employee.authorizationMirrorShort); } catch { }
+                    if (employee.thumbAuthorizationMirrorShort) { try { await Google.deleteFile(employee.thumbAuthorizationMirrorShort); } catch { } }
+                    employee.authorizationMirror = null
+                    employee.authorizationMirrorShort = null
+                    employee.thumbAuthorizationMirror = null
+                    employee.thumbAuthorizationMirrorShort = null
                 }
                 const uploadedA = await Google.uploadFile(newAuthorization, 'admin/authorizations')
-                Object.assign(employee, {
-                    authorization_mirror: uploadedA.url,
-                    authorization_mirror_short: uploadedA.url_short,
-                    thumb_authorization_mirror: uploadedA.url_thumb,
-                    thumb_authorization_mirror_short: uploadedA.url_thumb_short,
-                })
+                employee.authorizationMirror = uploadedA.url
+                employee.authorizationMirrorShort = uploadedA.url_short
+                employee.thumbAuthorizationMirror = uploadedA.url_thumb
+                employee.thumbAuthorizationMirrorShort = uploadedA.url_thumb_short
                 if (uploadedA.url_short) createdFiles.push(uploadedA.url_short)
             }
 
@@ -608,9 +606,9 @@ export default class EmployeeController {
                             existingPd.merge({
                                 ...pdData,
                                 ...imageData,
-                                birthDate: DateTime.fromJSDate(pdData.birthDate),
+                                birthDate: pdData.birthDate ? DateTime.fromJSDate(pdData.birthDate) : null,
                                 phone: pdData.phone ?? null,
-                                updatedAt: currentTime,
+                                updatedAt: DateTime.now(),
                                 updatedBy: auth.user!.id,
                             })
                             await existingPd.save()
@@ -619,10 +617,10 @@ export default class EmployeeController {
                         const payloadPersonalData = {
                             ...pdData,
                             ...imageData,
-                            birthDate: DateTime.fromJSDate(pdData.birthDate),
+                            birthDate: pdData.birthDate ? DateTime.fromJSDate(pdData.birthDate) : null,
                             phone: pdData.phone ?? null,
-                            createdAt: currentTime,
-                            updatedAt: currentTime,
+                            createdAt: DateTime.now(),
+                            updatedAt: DateTime.now(),
                             createdBy: auth.user!.id,
                             updatedBy: auth.user!.id,
                         }
@@ -722,7 +720,7 @@ export default class EmployeeController {
                     })
                 }
                 if (contacts.length) {
-                    await employee.related('emergencyContacts').createMany(contacts as any, { client: trx })
+                    await employee.related('emergencyContacts').createMany(contacts, { client: trx })
                 }
             }
 
@@ -742,7 +740,7 @@ export default class EmployeeController {
                     })
                 }
                 if (normalizedScheduleWork.length) {
-                    await employee.related('scheduleWork').createMany(normalizedScheduleWork as any, { client: trx })
+                    await employee.related('scheduleWork').createMany(normalizedScheduleWork, { client: trx })
                 }
             }
 
@@ -773,17 +771,23 @@ export default class EmployeeController {
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                 })
             })
-            await employee.load('stateCivil', (b) => b.select(['id', 'text']))
-            await employee.load('nationality', (b) => b.select(['id', 'name', 'nationality']))
-            await employee.load('sexes', (b) => b.select(['id', 'text']))
+            await employee.load('personalData', (pd) => {
+                pd.select([
+                    'id', 'names', 'last_name_p', 'last_name_m', 'type_identify_id', 'identify',
+                    'state_civil_id', 'sex_id', 'birth_date', 'nationality_id', 'city_id',
+                    'address', 'phone', 'movil', 'email', 'photo', 'thumb', 'photo_short', 'thumb_short'
+                ])
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                    .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
+                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
+            })
             await employee.load('certificateHealth')
             await employee.load('emergencyContacts', (b) => {
                 b.preload('relationship', (rb) => rb.select(['id', 'country_id', 'key_id', 'text', 'value', 'enabled', 'created_by', 'updated_by', 'created_at', 'updated_at']))
             })
-            await employee.load('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
+            // City & country now accessible via personalData if needed
             await employee.load('scheduleWork', (b) => {
                 b.preload('schedule')
                 b.preload('work')
@@ -811,11 +815,14 @@ export default class EmployeeController {
         const businessId = Number(params.business_id)
         const employee = await Employee.query()
             .where('token', token)
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => {
-                        ti.select(['id', 'name'])
+            .preload('personalData', (pd) => {
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                    .preload('city', (cityQ) => {
+                        cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name']))
                     })
+                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .preload('createdBy', (builder) => {
                 builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
@@ -823,13 +830,6 @@ export default class EmployeeController {
             .preload('updatedBy', (builder) => {
                 builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })
-            .preload('typeIdentify', (b) => b.select(['id', 'text']))
-            .preload('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
-            .preload('nationality', (b) => b.select(['id', 'name', 'nationality']))
-            .preload('sexes', (b) => b.select(['id', 'text']))
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                     .where('enabled', true)
@@ -870,41 +870,37 @@ export default class EmployeeController {
     /** Find employees by identify (uniform formatting, no 500 on empty) */
     public async findByIdentify({ request, response }: HttpContext) {
         const { identify, typeIdentify, businessId } = await request.validateUsing(employeeFindByIdentifyValidator)
-        const row = await Employee.query()
-            .where('identify', String(identify).trim())
-            .where('identify_type_id', typeIdentify)
-            .select(['id', 'identify_type_id', 'identify', 'names', 'last_name_p', 'last_name_m', 'birth_date', 'personal_data_id'])
+        const employee = await Employee.query()
+            .whereHas('personalData', (pdQ) => {
+                pdQ.where('identify', String(identify).trim())
+                    .where('type_identify_id', typeIdentify)
+            })
             .preload('business', (b) => {
                 b.where('business_id', businessId)
                 b.select(['id', 'enabled', 'employee_id', 'business_id'])
             })
-            .preload('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
-            })
-            .preload('typeIdentify', (b) => b.select(['id', 'text']))
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            .preload('personalData', (pd) => {
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                // .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
+                // .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                // .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                // .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .first()
-        const list = row ? [this.mapSearchEmployee(row.toJSON())] : []
-        return response.ok(list)
+        return response.ok(employee)
     }
 
     public async findById({ response, request }: HttpContext) {
         const { employeeId, businessId } = await request.validateUsing(employeeFindByIdValidator)
         const employee = await Employee.query()
             .where('id', employeeId)
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => {
-                        ti.select(['id', 'name'])
-                    })
-            })
-            .preload('city', (b) => {
-                b.select(['id', 'name', 'country_id'])
-                b.preload('country', (cb) => cb.select(['id', 'name']))
+            .preload('personalData', (pd) => {
+                pd
+                    .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+                    .preload('city', (cityQ) => cityQ.select(['id', 'name', 'country_id']).preload('country', (co) => co.select(['id', 'name'])))
+                    .preload('nationality', (natQ) => natQ.select(['id', 'name', 'nationality']))
+                    .preload('stateCivil', (scQ) => scQ.select(['id', 'text']))
+                    .preload('sex', (sexQ) => sexQ.select(['id', 'text']))
             })
             .preload('business', (b) => {
                 b.where('business_id', businessId)
@@ -924,75 +920,29 @@ export default class EmployeeController {
     }
 
     public async findByName({ request, response }: HttpContext) {
-        const { name, businessId } = await request.validateUsing(employeeFindByNameValidator)
-        const rows = await EmployeeRepository.findByName(businessId, name)
-        if (!rows || !rows.length) return response.ok([])
-        const employeeIds = rows.map((r: any) => r.id)
+        const { name } = await request.validateUsing(employeeFindByNameValidator)
         const employees = await Employee.query()
-            .whereIn('id', employeeIds)
-            .select(['id', 'personal_data_id'])
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            .whereHas('personalData', (pdQ) => {
+                pdQ.where('names', 'like', `%${name}%`)
             })
-        const personalDataById: Record<number, any> = {}
-        for (const e of employees) {
-            const pd = (e as any).personalData
-            if (pd) personalDataById[e.id] = pd
-        }
-        const list = (rows as any[]).map((r) => {
-            const base = this.mapRepoEmployeeSearch(r as any)
-            const pd = personalDataById[r.id]
-            if (pd) {
-                base.personalData = {
-                    id: pd.id,
-                    names: pd.names,
-                    last_name_p: pd.last_name_p,
-                    last_name_m: pd.last_name_m,
-                    identify: pd.identify,
-                    type_identify_id: pd.type_identify_id,
-                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
-                }
-            }
-            return base
-        })
-        return response.ok(list)
+            .preload('personalData', (pd) => {
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+            })
+
+        response.ok(employees)
     }
 
     public async findByLastNameP({ request, response }: HttpContext) {
-        const { lastNameP, businessId } = await request.validateUsing(employeeFindByLastNamePValidator)
-        const rows = await EmployeeRepository.findByLastNameP(businessId, lastNameP)
-        if (!rows || !rows.length) return response.ok([])
-        const employeeIds = rows.map((r: any) => r.id)
+        const { lastNameP } = await request.validateUsing(employeeFindByLastNamePValidator)
         const employees = await Employee.query()
-            .whereIn('id', employeeIds)
-            .select(['id', 'personal_data_id'])
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            .whereHas('personalData', (pdQ) => {
+                pdQ.where('last_name_p', 'like', `%${lastNameP}%`)
             })
-        const personalDataById: Record<number, any> = {}
-        for (const e of employees) {
-            const pd = (e as any).personalData
-            if (pd) personalDataById[e.id] = pd
-        }
-        const list = (rows as any[]).map((r) => {
-            const base = this.mapRepoEmployeeSearch(r as any)
-            const pd = personalDataById[r.id]
-            if (pd) {
-                base.personalData = {
-                    id: pd.id,
-                    names: pd.names,
-                    last_name_p: pd.last_name_p,
-                    last_name_m: pd.last_name_m,
-                    identify: pd.identify,
-                    type_identify_id: pd.type_identify_id,
-                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
-                }
-            }
-            return base
-        })
-        return response.ok(list)
+            .preload('personalData', (pd) => {
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
+            })
+
+        response.ok(employees)
     }
 
     /** Autocomplete endpoint combining name/last name/identify partial matching */
@@ -1010,32 +960,11 @@ export default class EmployeeController {
         const employees = await Employee.query()
             .whereIn('id', employeeIds)
             .select(['id', 'personal_data_id'])
-            .preload('personalData', (pd: any) => {
-                pd.select(['id', 'names', 'last_name_p', 'last_name_m', 'identify', 'type_identify_id'])
-                    .preload('typeIdentify', (ti: any) => ti.select(['id', 'name']))
+            .preload('personalData', (pd) => {
+                pd.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
-        const personalDataById: Record<number, any> = {}
-        for (const e of employees) {
-            const pd = (e as any).personalData
-            if (pd) personalDataById[e.id] = pd
-        }
-        const list = (rows as any[]).map((r) => {
-            const base = this.mapRepoEmployeeSearch(r as any)
-            const pd = personalDataById[r.id]
-            if (pd) {
-                base.personalData = {
-                    id: pd.id,
-                    names: pd.names,
-                    last_name_p: pd.last_name_p,
-                    last_name_m: pd.last_name_m,
-                    identify: pd.identify,
-                    type_identify_id: pd.type_identify_id,
-                    typeIdentify: pd.typeIdentify ? { id: pd.typeIdentify.id, name: pd.typeIdentify.name } : null,
-                }
-            }
-            return base
-        })
-        return response.ok(list)
+
+        return response.ok(employees)
     }
 
     public async deletePhoto({ request, response, i18n }: HttpContext) {
@@ -1044,12 +973,19 @@ export default class EmployeeController {
         const employee = await Employee.find(employeeId)
         if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
 
+        await employee.load('personalData')
+        const pd = employee.personalData
+        if (!pd) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
+
         // Delete stored files if present
-        if ((employee as any).photo_short) { try { await Google.deleteFile((employee as any).photo_short) } catch { } }
-        if ((employee as any).thumb_short) { try { await Google.deleteFile((employee as any).thumb_short) } catch { } }
-        employee.updatedAt = dateTime
-        Object.assign(employee, { photo: null, photo_short: null, thumb: null, thumb_short: null })
-        await employee.save()
+        if (pd.photoShort) { try { await Google.deleteFile(pd.photoShort) } catch { } }
+        if (pd.thumbShort) { try { await Google.deleteFile(pd.thumbShort) } catch { } }
+        pd.photo = null
+        pd.photoShort = null
+        pd.thumb = null
+        pd.thumbShort = null
+        pd.updatedAt = dateTime
+        await pd.save()
 
         return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.delete_ok'), i18n.formatMessage('messages.ok_title')))
     }
@@ -1082,15 +1018,15 @@ export default class EmployeeController {
             const businessEmployee = await BusinessEmployee.find(businessEmployeeId)
             if (!businessEmployee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
             businessEmployee.enabled = false
-                ; (businessEmployee as any).inactive_at = dateTime
-                ; (businessEmployee as any).inactive_by = auth.user!.id
+            businessEmployee.inactiveAt = dateTime
+            businessEmployee.inactiveBy = auth.user!.id
             await businessEmployee.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.inactive_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.inactive_error'), i18n.formatMessage('messages.error_title')))
         }
     }
-
+    //
     public async reactive({ request, response, i18n }: HttpContext) {
         const { businessEmployeeId } = await request.validateUsing(employeeBusinessEmployeeIdValidator)
         if (typeof businessEmployeeId !== 'number' || businessEmployeeId <= 0) {
@@ -1100,8 +1036,8 @@ export default class EmployeeController {
             const businessEmployee = await BusinessEmployee.find(businessEmployeeId)
             if (!businessEmployee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
             businessEmployee.enabled = true
-                ; (businessEmployee as any).inactive_at = null
-                ; (businessEmployee as any).inactive_by = null
+            businessEmployee.inactiveAt = null
+            businessEmployee.inactiveBy = null
             await businessEmployee.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.reactive_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
@@ -1112,10 +1048,10 @@ export default class EmployeeController {
     public async findWorkPermits({ request, auth }: HttpContext) {
         const { employeeId, businessId } = await request.validateUsing(employeeFindWorkPermitsValidator)
         const permits = await EmployeePermit.query().where('employee_id', employeeId).where('business_id', businessId).orderBy('id', 'desc')
+        const authUserId = auth.user!.id
         const result = permits.map((p) => {
-            const json = p.toJSON()
-                ; (json as any).is_authorizer = json.authorizer_id === auth.user!.id
-            return json
+            const is_authorizer = p.authorizerId === authUserId
+            return { ...p.serialize(), is_authorizer }
         })
         return result
     }
@@ -1124,32 +1060,32 @@ export default class EmployeeController {
         const dateTime = await Util.getDateTimes(request.ip())
         const { employeePermitStoreValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeePermitStoreValidator)
-
+        const authUserId = auth.user!.id
         try {
             const permitData: any = {
                 type: payload.type,
-                date_start: payload.dateStart,
-                date_end: payload.dateEnd,
+                dateStart: DateTime.fromJSDate(payload.dateStart),
+                dateEnd: DateTime.fromJSDate(payload.dateEnd),
                 reason: payload.reason,
-                employee_id: payload.employeeId,
-                business_id: payload.businessId,
-                authorizer_id: payload.authorizerId,
+                employeeId: payload.employeeId,
+                businessId: payload.businessId,
+                authorizerId: payload.authorizerId,
                 authorized: false,
-                created_at: dateTime,
-                updated_at: dateTime,
-                created_by: auth.user!.id,
-                updated_by: auth.user!.id,
+                createdAt: dateTime,
+                updatedAt: dateTime,
+                createdBy: authUserId,
+                updatedBy: authUserId,
             }
 
             // Handle file upload if present
-            const file = request.file('file')
+            const file = request.file('file', { extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp', 'doc', 'docx'], size: '5mb' })
             if (file) {
                 const uploaded = await Google.uploadFile(file, 'admin/permits')
                 Object.assign(permitData, {
                     file: uploaded.url,
-                    file_short: uploaded.url_short,
+                    fileShort: uploaded.url_short,
                     thumb: uploaded.url_thumb,
-                    thumb_short: uploaded.url_thumb_short,
+                    thumbShort: uploaded.url_thumb_short,
                 })
             }
 
@@ -1158,20 +1094,23 @@ export default class EmployeeController {
             const employee = await Employee.find(payload.employeeId)
             const authorizer = await User.find(payload.authorizerId)
             if (employee && authorizer) {
-                emitter.emit('new::employeePermitStore', {
-                    email: (employee as any).email,
-                    full_name: `${employee.names} ${(employee as any).lastNameP || (employee as any).last_name_p || ''} ${(employee as any).lastNameM || (employee as any).last_name_m || ''}`.trim(),
+                try { await employee.load('personalData') } catch { }
+                const pd = employee.personalData
+                const fullName = pd ? [pd.names, pd.lastNameP, pd.lastNameM].filter(Boolean).join(' ').trim() : ''
+                await emitter.emit('new::employeePermitStore', {
+                    email: pd?.email,
+                    fullName: fullName,
                     token: permit.token,
                 })
-                emitter.emit('new::employeePermitStoreAuthorizer', {
+                await emitter.emit('new::employeePermitStoreAuthorizer', {
                     email: authorizer.email,
-                    full_name: (authorizer as any).full_name,
+                    fullName: authorizer.full_name,
                     token: permit.token,
                 })
             }
 
             return response.status(201).json({
-                permit,
+                permit: { ...permit, is_authorizer: permit.authorizerId === authUserId },
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
             })
         } catch (error) {
@@ -1180,11 +1119,87 @@ export default class EmployeeController {
         }
     }
 
+    public async updateWorkPermits({ request, response, auth, i18n }: HttpContext) {
+        const dateTime = await Util.getDateTimes(request.ip())
+        const { employeePermitUpdateValidator } = await import('#validators/employee')
+        const payload = await request.validateUsing(employeePermitUpdateValidator)
+
+        try {
+            const permit = await EmployeePermit.findOrFail(payload.permitId)
+
+            const authUserId = auth.user!.id
+            const permitData: any = {
+                type: payload.type,
+                dateStart: DateTime.fromJSDate(payload.dateStart),
+                dateEnd: DateTime.fromJSDate(payload.dateEnd),
+                reason: payload.reason,
+                employeeId: payload.employeeId,
+                businessId: payload.businessId,
+                authorizerId: payload.authorizerId,
+                updatedAt: dateTime,
+                updatedBy: authUserId,
+            }
+
+            // Handle file upload if present
+            const file = request.file('file', { extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp', 'doc', 'docx'], size: '5mb' })
+
+
+            let oldFileShort: string | null = null
+            let oldThumbShort: string | null = null
+            if (file) {
+                // Delete old files if exist
+                if (file) {
+                    if (permit.fileShort) oldFileShort = permit.fileShort
+                    if (permit.thumbShort) oldThumbShort = permit.thumbShort
+                }
+                const uploaded = await Google.uploadFile(file, 'admin/permits')
+                Object.assign(permitData, {
+                    file: uploaded.url,
+                    fileShort: uploaded.url_short,
+                    thumb: uploaded.url_thumb,
+                    thumbShort: uploaded.url_thumb_short,
+                })
+            }
+
+            permit.merge(permitData)
+            await permit.save()
+
+            const employee = await Employee.find(payload.employeeId)
+            const authorizer = await User.find(payload.authorizerId)
+            if (employee && authorizer) {
+                try { await employee.load('personalData') } catch { }
+                const pd = employee.personalData
+                const fullName = pd ? [pd.names, pd.lastNameP, pd.lastNameM].filter(Boolean).join(' ').trim() : ''
+                await emitter.emit('new::employeePermitStore', {
+                    email: pd?.email,
+                    fullName: fullName,
+                    token: permit.token,
+                })
+                await emitter.emit('new::employeePermitStoreAuthorizer', {
+                    email: authorizer.email,
+                    fullName: authorizer.full_name,
+                    token: permit.token,
+                })
+            }
+
+            if (oldFileShort) try { await Google.deleteFile(oldFileShort) } catch { }
+            if (oldThumbShort) try { await Google.deleteFile(oldThumbShort) } catch { }
+
+            return response.status(200).json({
+                permit: { ...permit.serialize(), is_authorizer: permit.authorizerId === authUserId },
+                ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')),
+            })
+        } catch (error) {
+            console.error(error)
+            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
+        }
+    }
+
     public async showWorkPermitByToken({ params }: HttpContext) {
         const token = params.token
         const permit = await EmployeePermit.query()
             .where('token', token)
-            .preload('employee', (b) => b.preload('typeIdentify'))
+            .preload('employee', (b) => b.preload('personalData'))
             .preload('business', (b) => b.select(['id', 'identify', 'name', 'url', 'url_thumb', 'email', 'phone']))
             .preload('authorizer', (b) => b.select(['id', 'identify', 'type_identify_id']))
             .first()
@@ -1194,7 +1209,9 @@ export default class EmployeeController {
         try {
             if (permit.authorizerId) {
                 const authorizer = await User.find(permit.authorizerId)
-                const authorizerEmployeeId = authorizer?.employeeId
+                const authorizerEmployee = await authorizer?.related('employee').query().where('business_id', permit.businessId).first()
+                const authorizerEmployeeId = authorizerEmployee?.id
+
                 if (authorizerEmployeeId) {
                     const be = await BusinessEmployee.query()
                         .where('business_id', permit.businessId)
@@ -1216,11 +1233,17 @@ export default class EmployeeController {
     public async autorizePermit({ request, response, auth, i18n }: HttpContext) {
         const { permitId } = await request.validateUsing(employeePermitIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
-        const permit = await EmployeePermit.find(permitId)
-        if (!permit) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
-        if (!(permit as any).authorized && permit.authorizerId === auth.user!.id) {
-            ; (permit as any).authorized = true
-                ; (permit as any).authorized_at = dateTime
+        const permit = await EmployeePermit.findOrFail(permitId)
+        const authUser = auth.getUserOrFail()
+        const isPAuthorizer = permit.authorizerId === auth.user!.id
+        const isAdmin = authUser.isAdmin
+        const activeBUsr = isPAuthorizer || isAdmin
+            ? null
+            : await authUser.related('businessUser').query().where('business_id', permit.businessId).first()
+
+        if (isPAuthorizer || isAdmin || activeBUsr?.isSuper) {
+            permit.authorized = true
+            permit.authorizedAt = dateTime
             await permit.save()
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorized_ok'), i18n.formatMessage('messages.ok_title')))
         }
@@ -1419,21 +1442,22 @@ export default class EmployeeController {
     public async findAccess({ request }: HttpContext) {
         let { condition, workId, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessValidator)
         const dateTime = await Util.getDateTimes(request.ip())
+        let pDateStart = dateStart ? DateTime.fromJSDate(dateStart) : null
+        let pDateEnd = dateEnd ? DateTime.fromJSDate(dateEnd) : null
         if (condition === 1) {
-            dateStart = dateTime.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateEnd = pDateStart
         } else if (condition === 2) {
             const prev = dateTime.minus({ days: 1 })
-            dateStart = prev.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateStart = prev
+            pDateEnd = pDateStart
         } else if (condition === 3) {
-            dateStart = dateTime.startOf('month').toFormat('yyyy-LL-dd')
-            dateEnd = dateTime.endOf('month').toFormat('yyyy-LL-dd')
+            pDateStart = dateTime.startOf('month')
+            pDateEnd = dateTime.endOf('month')
         }
+        const finalDateStart = pDateStart ?? dateTime
+        const finalDateEnd = pDateEnd ?? finalDateStart
         if (workId && workId > 0) {
-            const ds = dateStart ?? dateTime.toFormat('yyyy-LL-dd')
-            const de = dateEnd ?? ds
-            return EmployeeAccessRepository.findAccessByWorkId(workId, ds, de)
+            return EmployeeAccessRepository.findAccessByWorkId(workId, finalDateStart.toFormat('yyyy-LL-dd'), finalDateEnd.toFormat('yyyy-LL-dd'))
         }
         return []
     }
@@ -1441,20 +1465,22 @@ export default class EmployeeController {
     public async findAccessByEmployeeId({ request }: HttpContext) {
         let { employeeId, condition, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessByEmployeeIdValidator)
         const dateTime = await Util.getDateTimes(request.ip())
+
+        let pDateStart = dateStart ? DateTime.fromJSDate(dateStart) : null
+        let pDateEnd = dateEnd ? DateTime.fromJSDate(dateEnd) : null
         if (condition === 1) {
-            dateStart = dateTime.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateEnd = pDateStart
         } else if (condition === 2) {
             const prev = dateTime.minus({ days: 1 })
-            dateStart = prev.toFormat('yyyy-LL-dd')
-            dateEnd = dateStart
+            pDateStart = prev
+            pDateEnd = pDateStart
         } else if (condition === 3) {
-            dateStart = dateTime.startOf('month').toFormat('yyyy-LL-dd')
-            dateEnd = dateTime.endOf('month').toFormat('yyyy-LL-dd')
+            pDateStart = dateTime.startOf('month')
+            pDateEnd = dateTime.endOf('month')
         }
-        const ds = dateStart ?? dateTime.toFormat('yyyy-LL-dd')
-        const de = dateEnd ?? ds
-        const access = await EmployeeAccessRepository.findAccessByEmployeeId(employeeId, ds, de)
+        const finalDateStart = pDateStart ?? dateTime.toFormat('yyyy-LL-dd')
+        const finalDateEEnd = pDateEnd ?? finalDateStart
+        const access = await EmployeeAccessRepository.findAccessByEmployeeId(employeeId, finalDateStart.toString(), finalDateEEnd.toString())
         const grouped = groupBy(access, ['date'])
         return grouped
     }

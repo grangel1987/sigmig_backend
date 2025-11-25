@@ -22,10 +22,10 @@ export default class EmployeePermit extends BaseModel {
     @column()
     public type: string
 
-    @column({ columnName: 'date_start' })
+    @column.date({ columnName: 'date_start', serialize: (v) => v?.toFormat('yyyy-LL-dd') })
     public dateStart: DateTime | null
 
-    @column({ columnName: 'date_end' })
+    @column.date({ columnName: 'date_end', serialize: (v) => v?.toFormat('yyyy-LL-dd') })
     public dateEnd: DateTime | null
 
     @column()

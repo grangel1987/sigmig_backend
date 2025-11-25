@@ -1,24 +1,10 @@
-import { personalDataSchema } from '#validators/personal_data'
 import vine from '@vinejs/vine'
+import { employeePersonalDataSchema } from './personal_data.js'
 
 export const employeeStoreValidator = vine.compile(
     vine.object({
         enabled: vine.boolean().optional(),
-        // All identity fields shared with personalData are now optional (mutual exclusivity with personalData/personalDataId)
-        typeIdentifyId: vine.number().positive().optional(),
-        identify: vine.string().trim().minLength(3).optional(),
-        names: vine.string().trim().minLength(1).optional(),
-        lastNameP: vine.string().trim().minLength(1).optional(),
-        lastNameM: vine.string().trim().minLength(1).optional(),
-        stateCivil: vine.number().optional(),
-        sexId: vine.number().positive().optional(),
-        birthDate: vine.string().trim().optional(), // ISO or yyyy-MM-dd expected
-        nationalityId: vine.number().positive().optional(),
-        cityId: vine.number().positive().optional(),
-        address: vine.string().optional(),
-        phone: vine.string().optional(),
-        movil: vine.string().optional(),
-        email: vine.string().email().optional(),
+        // All identity fields now live in personalData, not Employee
         businessId: vine.number().positive(),
         afpId: vine.number().optional(),
         afpPercentage: vine.number().optional(),
@@ -85,7 +71,7 @@ export const employeeStoreValidator = vine.compile(
             )
             .optional(),
         userId: vine.number().positive().exists({ table: 'users', column: 'id' }).optional().requiredIfMissing('personalData'),
-        personalData: personalDataSchema.optional().requiredIfMissing('userId'),
+        personalData: employeePersonalDataSchema.optional().requiredIfMissing('userId'),
     })
 )
 
@@ -175,15 +161,29 @@ export const employeeUpdateValidator = vine.compile(
             )
             .optional(),
         userId: vine.number().positive().exists({ table: 'users', column: 'id' }).optional().requiredIfMissing('personalData'),
-        personalData: personalDataSchema.optional().requiredIfMissing('userId'),
+        personalData: employeePersonalDataSchema.optional().requiredIfMissing('userId'),
     })
 )
 
 export const employeePermitStoreValidator = vine.compile(
     vine.object({
         type: vine.string().trim(),
-        dateStart: vine.string().trim(),
-        dateEnd: vine.string().trim(),
+        dateStart: vine.date(),
+        dateEnd: vine.date(),
+        reason: vine.string().trim(),
+        employeeId: vine.number().positive(),
+        businessId: vine.number().positive(),
+        authorizerId: vine.number().positive(),
+        file: vine.file().optional(),
+    })
+)
+
+export const employeePermitUpdateValidator = vine.compile(
+    vine.object({
+        permitId: vine.number().positive(),
+        type: vine.string().trim(),
+        dateStart: vine.date(),
+        dateEnd: vine.date(),
         reason: vine.string().trim(),
         employeeId: vine.number().positive(),
         businessId: vine.number().positive(),
@@ -336,8 +336,8 @@ export const employeeFindAccessValidator = vine.compile(
     vine.object({
         condition: vine.number().positive(),
         workId: vine.number().optional(),
-        dateStart: vine.string().optional(),
-        dateEnd: vine.string().optional(),
+        dateStart: vine.date().optional(),
+        dateEnd: vine.date().optional(),
     })
 )
 
@@ -345,7 +345,7 @@ export const employeeFindAccessByEmployeeIdValidator = vine.compile(
     vine.object({
         employeeId: vine.number().positive(),
         condition: vine.number().positive(),
-        dateStart: vine.string().optional(),
-        dateEnd: vine.string().optional(),
+        dateStart: vine.date().optional(),
+        dateEnd: vine.date().optional(),
     })
 )

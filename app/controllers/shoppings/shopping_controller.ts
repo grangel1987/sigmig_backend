@@ -1,4 +1,3 @@
-import BusinessEmployee from '#models/business/business_employee'
 import Shopping from '#models/shoppings/shopping'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
@@ -81,6 +80,15 @@ export default class ShoppingController {
 
             await trx.commit()
 
+            // Preload authorizer with personalData if authorizerId exists
+            if (shopping.authorizerId) {
+                await shopping.load('authorizer', (b) => {
+                    b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
+                    b.preload('personalData')
+                    b.preload('employee', (emp) => emp.preload('position'))
+                })
+            }
+
             return response.status(201).json({
                 shopping,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
@@ -137,11 +145,26 @@ export default class ShoppingController {
             }
 
             await trx.commit()
-            return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')))
+
+            // Reload the shopping with preloads
+            const updatedShop = await Shopping.findOrFail(shopId)
+            // Preload authorizer with personalData if authorizerId exists
+            if (updatedShop.authorizerId) {
+                await updatedShop.load('authorizer', (b) => {
+                    b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
+                    b.preload('personalData')
+                    b.preload('employee', (emp) => emp.preload('position'))
+                })
+            }
+
+            return response.status(201).json({
+                shopping: updatedShop,
+                ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title'))
+            })
         } catch (error) {
             await trx.rollback()
             console.error(error)
-            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.udpate_error'), i18n.formatMessage('messages.error_title')))
+            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
         }
     }
 
@@ -149,18 +172,40 @@ export default class ShoppingController {
     public async authorizer({ request, auth, response, i18n }: HttpContext) {
         const { id } = await request.validateUsing(vine.compile(vine.object({ id: vine.number().positive() })))
         const dateTime = await Util.getDateTimes('')
+
+        const authUser = auth.getUserOrFail()
+        const shop = await Shopping.findOrFail(id)
+
         try {
-            const shop = await Shopping.findOrFail(id)
-            shop.isAuthorized = true
-            shop.authorizerId = auth.user!.id
-            shop.authorizerAt = dateTime
-            await shop.save()
-            return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
+            const isPAuthorizer = shop.authorizerId === auth.user!.id
+            const isAdmin = authUser.isAdmin
+            const activeBUsr = isPAuthorizer || isAdmin
+                ? null
+                : await authUser.related('businessUser').query().where('business_id', shop.businessId).first()
+
+
+            if (isPAuthorizer || isAdmin || activeBUsr?.isSuper) {
+                shop.isAuthorized = true
+                shop.authorizerAt = dateTime
+                await shop.save()
+                return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
+            }
+            else
+                return response.status(403)
+                    .json({
+                        isAdmin: authUser.isAdmin,
+                        canAuthorize: shop.authorizerId === authUser.id,
+                        ...MessageFrontEnd(
+                            i18n.formatMessage('messages.no_authorizer_permission'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    })
         } catch (error) {
             console.error(error)
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_error'), i18n.formatMessage('messages.error_title')))
         }
     }
+
 
     /** Find shopping by business and number */
     public async findByNro({ request }: HttpContext) {
@@ -223,26 +268,33 @@ export default class ShoppingController {
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
 
+        // Preload authorizer with personalData if authorizerId exists
+        if (shop.authorizerId) {
+            await shop.load('authorizer', (b) => {
+                b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
+                b.preload('personalData')
+                b.preload('employee', (emp) => emp.preload('position'))
+            })
+        }
 
-
-        const authorizer = await
-            BusinessEmployee.query()
-                .join('employees', 'employees.id',
-                    'business_employees.employee_id'
-                )
-                .select([
-                    'business_employees.id as id',
-                    'employees.last_name_p',
-                    'employees.names',
-                    'employees.last_name_m',
-                    'business_employees.position_id',
-                ])
-                .preload('position', (b) => b.select(['id', 'name'])).first()
+        /*         const authorizer = await
+                    BusinessEmployee.query()
+                        .join('employees', 'employees.id',
+                            'business_employees.employee_id'
+                        )
+                        .select([
+                            'business_employees.id as id',
+                            'employees.last_name_p',
+                            'employees.names',
+                            'employees.last_name_m',
+                            'business_employees.position_id',
+                        ])
+                        .preload('position', (b) => b.select(['id', 'name'])).first() */
 
 
         // Convert to plain object and post-process
         const serialized: any = shop.toJSON()
-        serialized.authorizer = authorizer?.serialize()
+        // serialized.authorizer = authorizer?.serialize()
 
 
         if (Array.isArray(serialized.products)) {
@@ -299,7 +351,7 @@ export default class ShoppingController {
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
             console.error(error)
-            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.udpate_error'), i18n.formatMessage('messages.error_title')))
+            return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.update_error'), i18n.formatMessage('messages.error_title')))
         }
     }
 
@@ -328,29 +380,21 @@ export default class ShoppingController {
             b.preload('personalData')
         })
 
-
-
-        const authorizer = await
-            BusinessEmployee.query()
-                .join('employees', 'employees.id',
-                    'business_employees.employee_id'
-                )
-                .select([
-                    'business_employees.id as id',
-                    'employees.last_name_p',
-                    'employees.names',
-                    'employees.last_name_m',
-                    'business_employees.position_id',
-                ])
-                .preload('position', (b) => b.select(['id', 'name'])).first()
-
+        // Preload authorizer with personalData if authorizerId exists
+        if (shop.authorizerId) {
+            await shop.load('authorizer', (b) => {
+                b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
+                b.preload('personalData')
+                b.preload('employee', (emp) => emp.preload('position'))
+            })
+        }
 
         // Convert to plain object and post-process
 
 
         // serialize and compute product totals (price * count + tax)
         const serialized: any = shop.toJSON()
-        serialized.authorizer = authorizer?.serialize()
+        // serialized.authorizer = authorizer?.serialize()
         if (Array.isArray(serialized.products)) {
             for (const p of serialized.products) {
                 const subtotal = Number(p.price) * Number(p.count)
@@ -371,7 +415,7 @@ export default class ShoppingController {
                 full_name: shop.provider.name,
                 token: shop.token ?? '',
             }
-            await emitter.emit('new::shoppingShare', payloadEmail)
+            await await emitter.emit('new::shoppingShare', payloadEmail)
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
             console.error(error)
