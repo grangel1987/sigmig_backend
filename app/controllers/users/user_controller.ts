@@ -622,7 +622,7 @@ export default class UserController {
           userId: user.id,
           businessId: bus.businessId,
           isSuper: bus.isSuper || false,
-          authorizer: bus.isAuthorizer ? 1 : 0,
+          isAuthorizer: bus.isAuthorizer ? 1 : 0,
         }
 
         const businessUser = await user.related('businessUser').create(payloadBusinessUser, { client: trx })
@@ -1723,7 +1723,7 @@ export default class UserController {
             userId: user.id,
             businessId: business.id,
             isSuper: true,
-            authorizer: 1, // true = 1
+            isAuthorizer: 1, // true = 1
           }
 
           const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
@@ -1743,7 +1743,7 @@ export default class UserController {
             userId: user.id,
             businessId: bus.businessId,
             isSuper: bus.isSuper || false,
-            authorizer: bus.isAuthorizer ? 1 : 0,
+            isAuthorizer: bus.isAuthorizer ? 1 : 0,
           }
 
           const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
