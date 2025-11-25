@@ -1655,10 +1655,12 @@ export default class UserController {
   public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
     // Similar to store, but for admin
     const dateTime = await Util.getDateTimes(request.ip())
-    const { email, business, personalData, signature } = await request.validateUsing(
+    const { email, business, personalData, signature, isAauthorizer, isAdmin } = await request.validateUsing(
       vine.compile(
         vine.object({
           email: vine.string().email(),
+          isAdmin: vine.boolean().optional(),
+          isAauthorizer: vine.boolean().optional(),
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
@@ -1693,12 +1695,12 @@ export default class UserController {
         {
           email,
           password: password,
-          isAuthorizer: true,
+          isAuthorizer: isAauthorizer ?? false,
           createdAt: dateTime,
           updatedAt: dateTime,
           enabled: true,
           verified: true,
-          isAdmin: true,
+          isAdmin: isAdmin ?? false
         },
         { client: trx }
       )
@@ -1714,7 +1716,7 @@ export default class UserController {
       }
 
       // Handle business user creation
-      if (user.isAdmin) {
+      if (isAdmin) {
         // For admin users, create businessUser entries for ALL businesses
         const allBusinesses = await Business.query().select('id').exec()
 
@@ -1742,7 +1744,7 @@ export default class UserController {
           const payloadBusinessUser = {
             userId: user.id,
             businessId: bus.businessId,
-            isSuper: bus.isSuper || false,
+            isSuper: bus.isSuper ?? false,
             isAuthorizer: bus.isAuthorizer ? 1 : 0,
           }
 
