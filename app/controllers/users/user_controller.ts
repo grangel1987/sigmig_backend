@@ -912,6 +912,7 @@ export default class UserController {
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
     const createdFiles: string[] = []
+    const filesToDelete: string[] = []
 
     try {
 
@@ -939,6 +940,7 @@ export default class UserController {
 
       // Handle signature upload
       if (signature) {
+        if (user.signatureShort) filesToDelete.push(user.signatureShort)
         const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
         user.signature = resultUpload.url
         user.signatureShort = resultUpload.url_short
@@ -950,28 +952,27 @@ export default class UserController {
       // Update business assignments if provided
       if (business && business.length > 0) {
         // Handle business user updates/creation
-        if (user.isAdmin !== undefined) {
-          // For admin users, ensure they have access to ALL provided businesses with admin privileges
-          for (const bus of business) {
+        if (user.isAdmin) {
+          // For admin users, ensure they have access to ALL businesses with admin privileges
+          const allBusinesses = await Business.all()
+          for (const bus of allBusinesses) {
             let businessUser = await BusinessUser.query()
               .where('userId', user.id)
-              .where('businessId', bus.businessId)
+              .where('businessId', bus.id)
               .first()
 
-            const isAdmin = Boolean(user.isAdmin)
-            const isAuth = user.isAdmin ? 1 : 0
             if (businessUser) {
               // Update existing
-              businessUser.isSuper = isAdmin
-              businessUser.isAuthorizer = isAuth
+              businessUser.isSuper = true
+              businessUser.isAuthorizer = 1
               await businessUser.useTransaction(trx).save()
             } else {
               // Create new
               businessUser = await BusinessUser.create({
                 userId: user.id,
-                businessId: bus.businessId,
-                isSuper: isAdmin,
-                isAuthorizer: isAuth,
+                businessId: bus.id,
+                isSuper: true,
+                isAuthorizer: 1,
               }, { client: trx })
             }
 
@@ -1024,17 +1025,17 @@ export default class UserController {
             if (payloadPermission?.length)
               await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
           }
-        }
 
-        // Remove businessUsers not included in the provided array
-        const providedBusinessIds = business.map(b => b.businessId)
-        const businessUsersToDelete = await BusinessUser.query()
-          .where('userId', user.id)
-          .whereNotIn('businessId', providedBusinessIds)
-        for (const bu of businessUsersToDelete) {
-          await bu.related('businessUserRols').query().delete()
-          await bu.related('bussinessUserPermissions').query().delete()
-          await bu.useTransaction(trx).delete()
+          // Remove businessUsers not included in the provided array
+          const providedBusinessIds = business.map(b => b.businessId)
+          const businessUsersToDelete = await BusinessUser.query()
+            .where('userId', user.id)
+            .whereNotIn('businessId', providedBusinessIds)
+          for (const bu of businessUsersToDelete) {
+            await bu.related('businessUserRols').query().delete()
+            await bu.related('bussinessUserPermissions').query().delete()
+            await bu.useTransaction(trx).delete()
+          }
         }
       }
 
@@ -1059,6 +1060,7 @@ export default class UserController {
           // Update existing personal data
           const pd = await PersonalData.findOrFail(user.personalDataId)
           pd.useTransaction(trx)
+          if (pd.photoShort && photo) filesToDelete.push(pd.photoShort)
           pd.names = rPersonalData.names || pd.names
           pd.lastNameP = rPersonalData.lastNameP || pd.lastNameP
           pd.lastNameM = rPersonalData.lastNameM || pd.lastNameM
@@ -1073,9 +1075,9 @@ export default class UserController {
           pd.phone = rPersonalData.phone ?? user.email
           pd.movil = rPersonalData.movil ?? null
           pd.email = rPersonalData.email ?? user.email
-          Object.assign(pd, imageData)
           pd.updatedAt = dateTime
           pd.updatedBy = auth.user!.id
+          pd.merge(imageData)
           await pd.save()
         } else {
           // Create new personal data
@@ -1098,6 +1100,9 @@ export default class UserController {
       user.updatedAt = dateTime
       await user.save()
       await trx.commit()
+
+      // Delete old files after successful commit
+      if (filesToDelete.length) await Promise.all(filesToDelete.map(file => Google.deleteFile(file).catch(() => null)))
 
       await user.load('personalData')
       await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
