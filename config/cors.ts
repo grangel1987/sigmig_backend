@@ -1,3 +1,4 @@
+import env from '#start/env'
 import { defineConfig } from '@adonisjs/cors'
 
 /**
@@ -8,7 +9,10 @@ import { defineConfig } from '@adonisjs/cors'
  */
 const corsConfig = defineConfig({
   enabled: true,
-  origin: ['http://212.38.95.163', 'http://localhost:5173'],
+  origin:
+    env.get('NODE_ENV') === 'development'
+      ? ['http://212.38.95.163', 'http://localhost:5173']
+      : ['https://admin.serviciosgenessis.com'],
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   headers: true,
   exposeHeaders: [],
