@@ -1,4 +1,5 @@
 import SettingLicOccupation from '#models/setting_lic/setting_lic_occupation'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { licOccupationStoreValidator, licOccupationUpdateValidator } from '#validators/setting_lics'
 import { HttpContext } from '@adonisjs/core/http'
@@ -11,7 +12,10 @@ type MessageFrontEndType = {
 }
 
 export default class LicOccupationController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -44,7 +48,10 @@ export default class LicOccupationController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(licOccupationStoreValidator)
         const dateTime = DateTime.local()
 
@@ -80,7 +87,10 @@ export default class LicOccupationController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const occupationId = params.id
         const data = await request.validateUsing(licOccupationUpdateValidator)
         const dateTime = DateTime.local()
@@ -119,7 +129,10 @@ export default class LicOccupationController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const occupationId = params.id
         const dateTime = DateTime.local()
 
@@ -156,7 +169,10 @@ export default class LicOccupationController {
         }
     }
 
-    public async select({ response, i18n }: HttpContext) {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { response, i18n } = ctx
         try {
             const occupations = await SettingLicOccupation.query()
                 .where('enabled', true)

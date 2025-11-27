@@ -1,6 +1,7 @@
 import BusinessUser from '#models/business/business_user'
 import Work from '#models/works/work'
 import WorksRepository from '#repositories/works/works_repository'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -13,7 +14,10 @@ type MessageFrontEnd = {
 
 export default class WorkController {
 
-  public async index({ request, auth, response, i18n }: HttpContext) {
+  public async index(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'works', 'view')
+
+    const { request, auth, response, i18n } = ctx
 
     const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
       page: vine.number().positive().optional(),
@@ -55,7 +59,10 @@ export default class WorkController {
     }
   }
 
-  public async store({ auth, request, response, i18n }: HttpContext) {
+  public async store(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'works', 'create')
+
+    const { auth, request, response, i18n } = ctx
     const { businessId, name, code, lat, log } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -106,7 +113,10 @@ export default class WorkController {
     }
   }
 
-  public async update({ params, request, response, auth, i18n }: HttpContext) {
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'works', 'update')
+
+    const { params, request, response, auth, i18n } = ctx
     const workId = params.id
     const { name, code, lat, log } = await request.validateUsing(
       vine.compile(
@@ -155,7 +165,10 @@ export default class WorkController {
     }
   }
 
-  public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+  public async changeStatus(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'works', 'update')
+
+    const { params, response, auth, i18n } = ctx
     const workId = params.id
     const dateTime = DateTime.local()
 
@@ -191,7 +204,10 @@ export default class WorkController {
     }
   }
 
-  public async findAll({ params }: HttpContext) {
+  public async findAll(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'works', 'view')
+
+    const { params } = ctx
     const business_id = params.business_id
     const works = await Work.query()
       .select(['id', 'code', 'name'])
@@ -201,7 +217,10 @@ export default class WorkController {
     return works
   }
 
-  public async select({ auth, response, i18n }: HttpContext) {
+  public async select(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'works', 'view')
+
+    const { auth, response, i18n } = ctx
     try {
       const userId = auth.user!.id
       const business = await Work.query()

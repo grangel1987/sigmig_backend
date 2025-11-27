@@ -1,4 +1,5 @@
 import SettingLegalGratification from '#models/legal_gratifications/setting_legal_gratification'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { settingLegalGratificationStoreValidator, settingLegalGratificationUpdateValidator } from '#validators/setting_legal_gratification'
@@ -6,7 +7,10 @@ import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 
 export default class SettingLegalGratificationController {
-    async index({ request }: HttpContext) {
+    async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -28,7 +32,10 @@ export default class SettingLegalGratificationController {
         }
     }
 
-    async store({ request, response, auth, i18n }: HttpContext) {
+    async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const { name } = await request.validateUsing(settingLegalGratificationStoreValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         try {
@@ -54,7 +61,10 @@ export default class SettingLegalGratificationController {
         }
     }
 
-    async update({ request, params, response, auth, i18n }: HttpContext) {
+    async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { request, params, response, auth, i18n } = ctx
         const id = Number(params.id)
         const { name } = await request.validateUsing(settingLegalGratificationUpdateValidator)
         const dateTime = await Util.getDateTimes(request.ip())
@@ -76,7 +86,10 @@ export default class SettingLegalGratificationController {
         }
     }
 
-    async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+    async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const id = Number(params.id)
         const dateTime = await Util.getDateTimes(request.ip())
         try {
@@ -102,7 +115,10 @@ export default class SettingLegalGratificationController {
         }
     }
 
-    async select({ }: HttpContext) {
+    async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { } = ctx
         const result: { text: string; value: number }[] = []
         const legalGrts = await SettingLegalGratification.query().where('enabled', true).orderBy('id')
         for (const legalGrt of legalGrts) {

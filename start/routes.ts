@@ -66,6 +66,16 @@ router.group(() => {
   })
     .prefix('business')
 
+  // Roles
+  router.group(() => {
+    router.get("/", "#controllers/role/rol_controller.index");
+    router.post("/store", "#controllers/role/rol_controller.store");
+    router.get("/:id", "#controllers/role/rol_controller.show");
+    router.put("/update/:id", "#controllers/role/rol_controller.update");
+  })
+    .prefix('role')
+    .middleware(auth)
+
 
 
 

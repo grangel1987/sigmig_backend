@@ -1,4 +1,5 @@
 import SettingAffiliation from '#models/affiliation/setting_affiliation'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { affiliationStoreValidator, affiliationUpdateValidator } from '#validators/affiliation'
 import { HttpContext } from '@adonisjs/core/http'
@@ -12,7 +13,10 @@ type MessageFrontEndType = {
 }
 
 export default class SettingAffiliationController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -45,7 +49,10 @@ export default class SettingAffiliationController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(affiliationStoreValidator)
         const dateTime = DateTime.local()
 
@@ -82,7 +89,10 @@ export default class SettingAffiliationController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const affiliationId = params.id
         const data = await request.validateUsing(affiliationUpdateValidator)
         const dateTime = DateTime.local()
@@ -138,7 +148,10 @@ export default class SettingAffiliationController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const affiliationId = params.id
         const dateTime = DateTime.local()
 
@@ -175,7 +188,10 @@ export default class SettingAffiliationController {
         }
     }
 
-    public async select({ response, i18n }: HttpContext) {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { response, i18n } = ctx
         try {
             const affiliations = await SettingAffiliation.query()
                 .where('enabled', true)

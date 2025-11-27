@@ -1,4 +1,5 @@
 import SettingSchedule from '#models/schedules/setting_schedule'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { settingScheduleStoreValidator, settingScheduleUpdateValidator } from '#validators/setting_schedule'
@@ -8,7 +9,10 @@ import vine from '@vinejs/vine'
 
 export default class SettingScheduleController {
     /** List schedules for selected business of current user */
-    async index({ request, auth }: HttpContext) {
+    async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, auth } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -35,13 +39,19 @@ export default class SettingScheduleController {
         return page ? query.paginate(page, perPage ?? 10) : query
     }
 
-    async show({ params }: HttpContext) {
+    async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { params } = ctx
         const scheduleId = Number(params.schedule_id || params.id)
         const schedule = await SettingSchedule.find(scheduleId)
         return schedule
     }
 
-    async store({ request, response, auth, i18n }: HttpContext) {
+    async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const { businessId, name, workDays, daysOff, events, minFlexIn, minFlexOut } = await request.validateUsing(
             settingScheduleStoreValidator
         )
@@ -92,7 +102,10 @@ export default class SettingScheduleController {
         }
     }
 
-    async update({ params, request, response, auth, i18n }: HttpContext) {
+    async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const scheduleId = Number(params.id)
         const { name, workDays, daysOff, events } = await request.validateUsing(settingScheduleUpdateValidator)
         const dateTime = await Util.getDateTimes(request.ip())
@@ -138,7 +151,10 @@ export default class SettingScheduleController {
         }
     }
 
-    async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+    async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const scheduleId = Number(params.id)
         const dateTime = await Util.getDateTimes(request.ip())
         try {
@@ -166,7 +182,10 @@ export default class SettingScheduleController {
         }
     }
 
-    async select({ auth }: HttpContext) {
+    async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { auth } = ctx
         const userId = auth.user!.id
         const business = await Database.from('business_users').where('selected', true).where('user_id', userId).first()
         const businessId = business?.business_id

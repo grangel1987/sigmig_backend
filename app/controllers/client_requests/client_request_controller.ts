@@ -1,4 +1,5 @@
 import ClientRequest from '#models/client_requests/client_request'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { HttpContext } from '@adonisjs/core/http'
@@ -9,7 +10,10 @@ export default class ClientRequestController {
      * Store a new client request (simplified conversion)
      * Expects: clientId (number), isBooking (boolean)
      */
-    public async store({ request, response, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'client_requests', 'create')
+
+        const { request, response, i18n } = ctx
         const clientId = request.input('clientId') as number | undefined
         const isBooking = !!request.input('isBooking')
 
@@ -51,7 +55,10 @@ export default class ClientRequestController {
     }
 
     /** Find a client request by token */
-    public async findByToken({ request, response, i18n }: HttpContext) {
+    public async findByToken(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'client_requests', 'view')
+
+        const { request, response, i18n } = ctx
         const token = request.input('token')
         if (!token) {
             return response.status(422).json({
@@ -80,7 +87,10 @@ export default class ClientRequestController {
     }
 
     /** List requests by clientId */
-    public async findRequestByClientId({ request, response, i18n }: HttpContext) {
+    public async findRequestByClientId(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'client_requests', 'view')
+
+        const { request, response, i18n } = ctx
         const clientId = request.input('clientId') as number | undefined
         if (!clientId) {
             return response.status(422).json({

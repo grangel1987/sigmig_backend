@@ -1,6 +1,7 @@
 import Client from '#models/clients/client'
 import ClientFile from '#models/clients/client_file'
 import ClientRepository from '#repositories/clients/client_repository'
+import PermissionService from '#services/permission_service'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
@@ -12,7 +13,10 @@ import console from 'node:console'
 
 export default class ClientController {
     // GET /client/ (optionally could be paginated in future)
-    public async index({ response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'view')
+
+        const { response, i18n } = ctx
         try {
             const clients = await Client.query()
                 .preload('city', (builder) => {
@@ -48,7 +52,10 @@ export default class ClientController {
     }
 
     // POST /client/store
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'create')
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(clientStoreValidator)
         const dateTime = await Util.getDateTimes(request.ip())
 
@@ -202,7 +209,10 @@ export default class ClientController {
     }
 
     // PUT /client/update/:id
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'update')
+
+        const { params, request, response, auth, i18n } = ctx
         const clientId = params.id
         const { clientDocumentInvoiceId, clientDocumentInvoiceValue, systemPaymentProvider, ...data } = await request.validateUsing(clientUpdateValidator)
         const dateTime = await Util.getDateTimes(request.ip())
@@ -345,7 +355,10 @@ export default class ClientController {
     }
 
     // PUT /client/change-status/:id
-    public async changeStatus({ params, request, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'update')
+
+        const { params, request, response, auth, i18n } = ctx
         const clientId = params.id
         const dateTime = await Util.getDateTimes(request.ip())
 
@@ -390,7 +403,10 @@ export default class ClientController {
     }
 
     // POST /client/findAutoComplete
-    public async findAutoComplete({ request }: HttpContext) {
+    public async findAutoComplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'view')
+
+        const { request } = ctx
         const { val } = await request.validateUsing(
             vine.compile(
                 vine.object({ val: vine.string().trim() })
@@ -401,7 +417,10 @@ export default class ClientController {
     }
 
     // GET /client/show/:id
-    public async show({ params }: HttpContext) {
+    public async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'view')
+
+        const { params } = ctx
         const clientId = params.id
         const client = await Client.query()
             .where('id', clientId)
@@ -420,7 +439,10 @@ export default class ClientController {
     }
 
     // DELETE /client/delete/photo/:id
-    public async deletePhoto({ params, response, i18n }: HttpContext) {
+    public async deletePhoto(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'update')
+
+        const { params, response, i18n } = ctx
         try {
             const client = await Client.findOrFail(params.id)
 
@@ -469,7 +491,10 @@ export default class ClientController {
     }
 
     // POST /client/find/params
-    public async findByParams({ request, response, i18n }: HttpContext) {
+    public async findByParams(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'view')
+
+        const { request, response, i18n } = ctx
         const { email } = await request.validateUsing(
             vine.compile(vine.object({ email: vine.string().email() }))
         )
@@ -484,7 +509,10 @@ export default class ClientController {
     }
 
     // POST /client/search
-    public async search({ request }: HttpContext) {
+    public async search(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'view')
+
+        const { request } = ctx
         const { value } = await request.validateUsing(
             vine.compile(vine.object({ value: vine.string().trim() }))
         )
@@ -494,7 +522,10 @@ export default class ClientController {
     }
 
     // POST /client-web/find-profile
-    public async finProfileClientById({ request }: HttpContext) {
+    public async finProfileClientById(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'view')
+
+        const { request } = ctx
         const { id } = await request.validateUsing(
             vine.compile(vine.object({ id: vine.number().positive() }))
         )
@@ -516,7 +547,10 @@ export default class ClientController {
     }
 
     // POST /client-web/delete-file
-    public async deleteFile({ request, response, i18n }: HttpContext) {
+    public async deleteFile(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'update')
+
+        const { request, response, i18n } = ctx
         const { id } = await request.validateUsing(
             vine.compile(vine.object({ id: vine.number().positive() }))
         )

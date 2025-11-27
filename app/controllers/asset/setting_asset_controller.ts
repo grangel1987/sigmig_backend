@@ -1,4 +1,5 @@
 import SettingAsset from '#models/asset/setting_asset';
+import PermissionService from '#services/permission_service';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { assetStoreValidator, assetUpdateValidator } from '#validators/asset';
 import { HttpContext } from '@adonisjs/core/http';
@@ -11,7 +12,10 @@ type MessageFrontEndType = {
 }
 
 export default class SettingAssetController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -44,7 +48,10 @@ export default class SettingAssetController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(assetStoreValidator)
         const dateTime = DateTime.local()
 
@@ -86,7 +93,10 @@ export default class SettingAssetController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const assetId = params.id
         const data = await request.validateUsing(assetUpdateValidator)
         const dateTime = DateTime.local()
@@ -133,7 +143,10 @@ export default class SettingAssetController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const assetId = params.id
         const dateTime = DateTime.local()
 

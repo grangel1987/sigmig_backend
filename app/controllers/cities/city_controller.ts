@@ -1,5 +1,6 @@
 import City from '#models/cities/City'
 import CityRepository from '#repositories/cities/city_repository'
+import PermissionService from '#services/permission_service'
 import Util from '#utils/Util'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
@@ -13,7 +14,10 @@ type MessageFrontEnd = {
 
 export default class CityController {
 
-  public async index({ request, response }: HttpContext) {
+  public async index(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cities', 'view')
+
+    const { request, response } = ctx
 
     const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
       page: vine.number().positive().optional(),
@@ -34,7 +38,10 @@ export default class CityController {
     return response.ok(cities)
   }
 
-  public async store({ request, response, auth, i18n }: HttpContext) {
+  public async store(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cities', 'create')
+
+    const { request, response, auth, i18n } = ctx
     const { countryId, name } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -76,7 +83,10 @@ export default class CityController {
     }
   }
 
-  public async update({ params, request, response, auth, i18n }: HttpContext) {
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cities', 'update')
+
+    const { params, request, response, auth, i18n } = ctx
     const cityId = params.id
     const { countryId, name } = await request.validateUsing(vine.compile(vine.object({
       countryId: vine.number().positive().optional(),
@@ -118,7 +128,10 @@ export default class CityController {
     }
   }
 
-  public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+  public async changeStatus(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cities', 'update')
+
+    const { params, response, auth, i18n } = ctx
     const cityId = params.id
     const dateTime = DateTime.local()
 
@@ -152,7 +165,10 @@ export default class CityController {
     }
   }
 
-  public async findByCountry({ request, response, i18n }: HttpContext) {
+  public async findByCountry(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cities', 'view')
+
+    const { request, response, i18n } = ctx
     // Validate pagination from querystring
     const { page, perPage } = await request.validateUsing(
       vine.compile(
@@ -184,7 +200,10 @@ export default class CityController {
     return response.ok(cities)
   }
 
-  public async select({ request, response, i18n }: HttpContext) {
+  public async select(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cities', 'view')
+
+    const { request, response, i18n } = ctx
     const { country_id } = request.params()
     const countryId = Number(country_id)
     if (!country_id || Number.isNaN(countryId) || countryId <= 0) {

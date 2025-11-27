@@ -1,4 +1,5 @@
 import SettingLoadFamily from '#models/load_family/setting_load_family'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -10,7 +11,10 @@ type MessageFrontEndType = {
 }
 
 export default class SettingLoadFamilyController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -43,7 +47,10 @@ export default class SettingLoadFamilyController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -85,7 +92,10 @@ export default class SettingLoadFamilyController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const loadFamilyId = params.id
         const data = await request.validateUsing(
             vine.compile(
@@ -130,7 +140,10 @@ export default class SettingLoadFamilyController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const loadFamilyId = params.id
         const dateTime = DateTime.local()
 
@@ -167,7 +180,10 @@ export default class SettingLoadFamilyController {
         }
     }
 
-    public async select({ response, i18n }: HttpContext) {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { response, i18n } = ctx
         try {
             const loadFamilies = await SettingLoadFamily.query()
                 .where('enabled', true)

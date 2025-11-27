@@ -1,11 +1,15 @@
 import SettingBugetCategory from '#models/buget/setting_buget_category'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 export default class SettingBugetCategoryController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -36,7 +40,10 @@ export default class SettingBugetCategoryController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const { name } = await request.validateUsing(
             vine.compile(vine.object({ name: vine.string().trim() }))
         )
@@ -75,7 +82,10 @@ export default class SettingBugetCategoryController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const categoryId = params.id
         const { name } = await request.validateUsing(
             vine.compile(vine.object({ name: vine.string().trim().optional() }))
@@ -111,7 +121,10 @@ export default class SettingBugetCategoryController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const categoryId = params.id
         const dateTime = DateTime.local()
 
@@ -145,7 +158,10 @@ export default class SettingBugetCategoryController {
         }
     }
 
-    public async select({ response, i18n }: HttpContext) {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { response, i18n } = ctx
         try {
             const categories = await SettingBugetCategory.query().where('enabled', true)
             return categories.map((c) => ({ text: c.name, value: c.id }))

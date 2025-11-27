@@ -1,5 +1,6 @@
 import CostCenter from '#models/cost_centers/cost_center'
 import CostCenterRepository from '#repositories/cost_centers/cost_center_repository'
+import PermissionService from '#services/permission_service'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -13,7 +14,10 @@ type MessageFrontEnd = {
 
 export default class CostCenterController {
 
-  public async index({ request, response, auth }: HttpContext) {
+  public async index(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cost_centers', 'view')
+
+    const { request, response, auth } = ctx
 
     const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
       page: vine.number().positive().optional(),
@@ -44,7 +48,10 @@ export default class CostCenterController {
     }
   }
 
-  public async store({ auth, request, response, i18n }: HttpContext) {
+  public async store(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cost_centers', 'create')
+
+    const { auth, request, response, i18n } = ctx
     const { businessId, name, code } = await request.validateUsing(vine.compile(vine.object({
       businessId: vine.number().positive(),
       name: vine.string().trim(),
@@ -82,7 +89,10 @@ export default class CostCenterController {
     }
   }
 
-  public async update({ params, request, response, auth, i18n }: HttpContext) {
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cost_centers', 'update')
+
+    const { params, request, response, auth, i18n } = ctx
     const costCenterId = params.id
     const { name, code } = await request.validateUsing(vine.compile(vine.object({
       name: vine.string().trim().optional(),
@@ -118,7 +128,10 @@ export default class CostCenterController {
     }
   }
 
-  public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+  public async changeStatus(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cost_centers', 'update')
+
+    const { params, response, auth, i18n } = ctx
     const costCenterId = params.id
     const dateTime = DateTime.local()
 
@@ -149,7 +162,10 @@ export default class CostCenterController {
     }
   }
 
-  public async findAll({ params }: HttpContext) {
+  public async findAll(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cost_centers', 'view')
+
+    const { params } = ctx
     const business_id = params.business_id
     const costCenters = await CostCenter.query()
       .select(['id', 'code', 'name'])
@@ -159,7 +175,10 @@ export default class CostCenterController {
     return costCenters
   }
 
-  public async select({ request }: HttpContext) {
+  public async select(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'cost_centers', 'view')
+
+    const { request } = ctx
     const { params } = await request.validateUsing(vine.compile(vine.object({
       params: vine.object({ business_id: vine.number().positive() })
     })))

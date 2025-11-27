@@ -1,5 +1,6 @@
 import Product from '#models/products/product'
 import ProductRepository from '#repositories/products/product_repository'
+import PermissionService from '#services/permission_service'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { productStoreValidator, productUpdateValidator } from '#validators/product'
@@ -12,7 +13,10 @@ type MessageFrontEndType = { message: string; title: string }
 
 export default class ProductController {
     /** Index – list products of the authenticated user’s selected business */
-    async index({ auth, request, response, i18n }: HttpContext) {
+    async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'view')
+
+        const { auth, request, response, i18n } = ctx
         const userId = auth.user!.id
         const { page, perPage } = await request.validateUsing(
             vine.compile(
@@ -49,7 +53,10 @@ export default class ProductController {
     }
 
     /** changeStatus – toggle enabled flag */
-    async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'update')
+
+        const { params, response, auth, i18n } = ctx
         const dateTime = DateTime.local()
         try {
             const product = await Product.findOrFail(params.id)
@@ -84,7 +91,10 @@ export default class ProductController {
         }
     }
 
-    async findAutoComplete({ request, response, i18n }: HttpContext) {
+    async findAutoComplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'view')
+
+        const { request, response, i18n } = ctx
         const { val, businessId } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -106,7 +116,10 @@ export default class ProductController {
     }
 
     /** Store – create a new product (with optional photo) */
-    async store({ request, response, auth, i18n }: HttpContext) {
+    async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'create')
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(productStoreValidator)
         const photo = request.file('photo')
         const dateTime = DateTime.local()
@@ -157,14 +170,20 @@ export default class ProductController {
     }
 
     /** Show – single product */
-    async show({ params, response }: HttpContext) {
+    async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'view')
+
+        const { params, response } = ctx
         const product = await Product.findOrFail(params.id)
         await product.load('type')
         response.ok(product)
     }
 
     /** Delete photo – remove both original & thumbnail from GCS */
-    async deletePhoto({ params, response, i18n }: HttpContext) {
+    async deletePhoto(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'update')
+
+        const { params, response, i18n } = ctx
         const product = await Product.findOrFail(params.id)
 
         const filesToDelete = [product.urlShort, product.urlThumbShort].filter(Boolean) as string[]
@@ -205,7 +224,10 @@ export default class ProductController {
     }
 
     /** Update – (you didn’t provide the method body, but here’s a complete version) */
-    async update({ params, request, response, auth, i18n }: HttpContext) {
+    async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'update')
+
+        const { params, request, response, auth, i18n } = ctx
         const data = await request.validateUsing(productUpdateValidator)
         const photo = request.file('photo', {
             size: '10mb',

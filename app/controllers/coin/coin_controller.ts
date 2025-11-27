@@ -1,5 +1,6 @@
 import Coin from '#models/coin/coin'
 import CoinRepository from '#repositories/coin/coin_repository'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -7,7 +8,10 @@ import { DateTime } from 'luxon'
 
 export default class CoinController {
     /** List coins (optional pagination) */
-    public async index({ request }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'coins', 'view');
+
+        const { request } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -31,7 +35,10 @@ export default class CoinController {
     }
 
     /** Create coin */
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'coins', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const { name, symbol } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -79,7 +86,10 @@ export default class CoinController {
     }
 
     /** Update coin */
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'coins', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const { name, symbol } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -123,12 +133,17 @@ export default class CoinController {
     }
 
     /** Select list */
-    public async select() {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'coins', 'view');
+
         return CoinRepository.select()
     }
 
     /** Change status (toggle enabled) */
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'coins', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const dateTime = DateTime.local()
 
         try {

@@ -1,5 +1,6 @@
 import Shopping from '#models/shoppings/shopping'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import {
@@ -22,7 +23,10 @@ type MessageFrontEndType = { message: string; title: string }
 
 export default class ShoppingController {
     /** Store a new shopping (creates shopping and its products) */
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'create')
+
+        const { request, response, auth, i18n } = ctx
         const { businessId, currencySymbol, provider, products, costCenter, work, info, rounding } =
             await request.validateUsing(shoppingStoreValidator)
 
@@ -101,7 +105,10 @@ export default class ShoppingController {
     }
 
     /** Update an existing shopping and its products */
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'update')
+
+        const { params, request, response, auth, i18n } = ctx
         const { shopId } = await shoppingShopIdParamValidator.validate(params)
         const trx = await db.transaction()
         const dateTime = await Util.getDateTimes(request.ip())
@@ -169,7 +176,10 @@ export default class ShoppingController {
     }
 
     /** Mark shopping as authorized by current user */
-    public async authorizer({ request, auth, response, i18n }: HttpContext) {
+    public async authorizer(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'update')
+
+        const { request, auth, response, i18n } = ctx
         const { id } = await request.validateUsing(vine.compile(vine.object({ id: vine.number().positive() })))
         const dateTime = await Util.getDateTimes('')
 
@@ -208,7 +218,10 @@ export default class ShoppingController {
 
 
     /** Find shopping by business and number */
-    public async findByNro({ request }: HttpContext) {
+    public async findByNro(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { request } = ctx
         const { businessId, number } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -234,7 +247,10 @@ export default class ShoppingController {
     }
 
     /** Show a shopping by id with preloads */
-    public async show({ params }: HttpContext) {
+    public async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { params } = ctx
         const shopId = params.id
         let shop = await Shopping.find(shopId)
         if (!shop) return null
@@ -308,7 +324,10 @@ export default class ShoppingController {
     }
 
     /** Soft-delete a shopping (mark disabled) */
-    public async delete({ params, auth, response, i18n }: HttpContext) {
+    public async delete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'delete')
+
+        const { params, auth, response, i18n } = ctx
         const { shopId } = await shoppingShopIdParamValidator.validate(params)
         const dateTime = await Util.getDateTimes('')
         try {
@@ -325,21 +344,30 @@ export default class ShoppingController {
     }
 
     /** Find shoppings by provider name (uses repository) */
-    public async findByNameProvider({ request }: HttpContext) {
+    public async findByNameProvider(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { request } = ctx
         const { businessId, name } = await request.validateUsing(shoppingFindByNameProviderValidator)
         const shoppings = await ShoppingRepository.findByNameProvider(businessId, name)
         return shoppings
     }
 
     /** Find shoppings by date */
-    public async findByDate({ request }: HttpContext) {
+    public async findByDate(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { request } = ctx
         const { businessId, date } = await request.validateUsing(shoppingFindByDateValidator)
         const shoppings = await ShoppingRepository.findByDate(businessId, date)
         return shoppings
     }
 
     /** Update shopping's nro_buget */
-    public async updateNroBuget({ params, request, response, i18n }: HttpContext) {
+    public async updateNroBuget(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'update')
+
+        const { params, request, response, i18n } = ctx
         const dateTime = DateTime.local()
         const { id: shopId } = await shoppingIdParamValidator.validate(params)
         const { nroBuget } = await request.validateUsing(shoppingUpdateNroBugetValidator)
@@ -356,7 +384,10 @@ export default class ShoppingController {
     }
 
     /** Show by token (used for sharing) */
-    public async showByToken({ params }: HttpContext) {
+    public async showByToken(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { params } = ctx
         const { token } = await shoppingTokenParamValidator.validate(params)
         const shop = await Shopping.findBy('token', token)
         if (!shop) return null
@@ -406,7 +437,10 @@ export default class ShoppingController {
     }
 
     /** Share shopping via event */
-    public async share({ params, response, i18n }: HttpContext) {
+    public async share(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { params, response, i18n } = ctx
         const { id: shopId } = await shoppingIdParamValidator.validate(params)
         try {
             const shop = await Shopping.query().where('id', shopId).preload('provider').firstOrFail()

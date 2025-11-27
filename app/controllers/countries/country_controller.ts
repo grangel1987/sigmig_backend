@@ -1,5 +1,6 @@
 import Country from '#models/countries/country'
 import CountryRepository from '#repositories/countries/country_repository'
+import PermissionService from '#services/permission_service'
 import messageFrontEnd from '#utils/MessageFrontEnd'
 import { countryUpdateValidator } from '#validators/country'
 import { HttpContext } from '@adonisjs/core/http'
@@ -10,7 +11,10 @@ import { DateTime } from 'luxon'
 
 export default class CountryController {
 
-  public async index({ request }: HttpContext) {
+  public async index(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'countries', 'view')
+
+    const { request } = ctx
 
     const { page, perPage, text } = await request.validateUsing(vine.compile(vine.object({
       page: vine.number().positive().optional(),
@@ -37,12 +41,16 @@ export default class CountryController {
     return countries
   }
 
-  public async select() {
+  public async select(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'countries', 'view')
     const countries = await CountryRepository.select()
     return countries
   }
 
-  public async update({ params, request, response, auth, i18n }: HttpContext) {
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'countries', 'update')
+
+    const { params, request, response, auth, i18n } = ctx
     const countryId = params.id
     const dateTime = DateTime.local()
     const { name, prefix, nationality } = await request.validateUsing(countryUpdateValidator)

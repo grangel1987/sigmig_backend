@@ -1,6 +1,7 @@
 import Booking from '#models/booking/booking'
 import SettingBookingNote from '#models/booking/setting_booking_note'
 import BookingRepository from '#repositories/booking/booking_repository'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { bookingStoreValidator } from '#validators/booking'
@@ -42,7 +43,10 @@ export default class BookingController {
         } */
 
     // POST /booking/store
-    public async store({ request, response, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'create')
+
+        const { request, response, i18n } = ctx
         const trx = await db.transaction()
         try {
             const dateTime = await Util.getDateTimes(request.ip())
@@ -153,14 +157,20 @@ export default class BookingController {
         }
     }
     // GET /booking/:id
-    public async show({ params }: HttpContext) {
+    public async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'view')
+
+        const { params } = ctx
         const bookingId = Number(params.id)
         const booking = await BookingRepository.findBookingById(bookingId)
         return booking
     }
 
     // POST /booking/find/number { id }
-    public async findByNro({ request }: HttpContext) {
+    public async findByNro(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'view')
+
+        const { request } = ctx
         const { id } = request.all()
         const bookingId = Number(id)
         const bookings = await Booking.query()
@@ -176,7 +186,10 @@ export default class BookingController {
     }
 
     // POST /booking/find/status { status: 'attended' | 'unattended' }
-    public async findByStatus({ request }: HttpContext) {
+    public async findByStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'view')
+
+        const { request } = ctx
         const { status } = request.all()
         const st = String(status) === 'attended'
         const bookings = await Booking.query()
@@ -192,7 +205,10 @@ export default class BookingController {
     }
 
     // POST /booking/find/name { name }
-    public async findByName({ request }: HttpContext) {
+    public async findByName(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'view')
+
+        const { request } = ctx
         const { name } = request.all()
         const rows = await BookingRepository.findByNameOrEmail(String(name || ''))
         // Keep legacy-like output, minimal mapping
@@ -210,7 +226,10 @@ export default class BookingController {
     }
 
     // POST /booking/find/buget { nro_buget }
-    public async findByNroBuget({ request }: HttpContext) {
+    public async findByNroBuget(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'view')
+
+        const { request } = ctx
         const { nro_buget } = request.all()
         const bookings = await Booking.query()
             .where('nro_buget', String(nro_buget || ''))
@@ -225,7 +244,10 @@ export default class BookingController {
     }
 
     // POST /booking/count/unattended
-    public async findCountUnattended({ request }: HttpContext) {
+    public async findCountUnattended(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'view')
+
+        const { request } = ctx
         await Util.getDateTimes(request.ip())
         const result = await db.from('bookings').where('attended', 0).count('* as total')
         const row = Array.isArray(result) ? (result as any)[0] : (result as any)
@@ -233,7 +255,10 @@ export default class BookingController {
     }
 
     // POST /booking/find/complements { bookingId }
-    public async findComplements({ request }: HttpContext) {
+    public async findComplements(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'view')
+
+        const { request } = ctx
         const { bookingId } = request.all()
         const booking = await Booking.query()
             .where('id', Number(bookingId))
@@ -244,7 +269,10 @@ export default class BookingController {
     }
 
     // PUT /booking/update/:booking_id
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'booking', 'update')
+
+        const { params, request, response, auth, i18n } = ctx
         const bookingId = Number(params.booking_id)
         const trx = await db.transaction()
         try {

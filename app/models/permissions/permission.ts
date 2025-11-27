@@ -1,4 +1,6 @@
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import Module from '#models/module'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class Permission extends BaseModel {
@@ -9,10 +11,19 @@ export default class Permission extends BaseModel {
   public key: string
 
   @column()
+  declare name: string
+
+  @column()
   public description: string
 
   @column()
   public type: string
+
+  @column()
+  public moduleId: number
+
+  @belongsTo(() => Module)
+  public module: BelongsTo<typeof Module>
 
   @column.dateTime({ serializeAs: null })
   public createdAt: DateTime

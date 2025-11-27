@@ -1,5 +1,6 @@
 import BusinessUser from '#models/business/business_user'
 import Position from '#models/positions/position'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { positionStoreValidator, positionUpdateValidator } from '#validators/position'
 import { HttpContext } from '@adonisjs/core/http'
@@ -9,7 +10,10 @@ import { DateTime } from 'luxon'
 type Message = { message: string; title: string }
 
 export default class PositionController {
-    public async index({ auth, response, i18n, request }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'positions', 'view')
+
+        const { auth, response, i18n, request } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -54,7 +58,10 @@ export default class PositionController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'positions', 'create')
+
+        const { request, response, auth, i18n } = ctx
         const { businessId, name } = await request.validateUsing(positionStoreValidator)
         const dateTime = DateTime.local()
 
@@ -94,7 +101,10 @@ export default class PositionController {
         }
     }
 
-    public async update({ request, params, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'positions', 'update')
+
+        const { request, params, response, auth, i18n } = ctx
         const positionId = params.id
         const { name } = await request.validateUsing(positionUpdateValidator)
         const dateTime = DateTime.local()
@@ -135,7 +145,10 @@ export default class PositionController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'positions', 'update')
+
+        const { params, response, auth, i18n } = ctx
         const positionId = params.id
         const dateTime = DateTime.local()
 
@@ -175,7 +188,10 @@ export default class PositionController {
         }
     }
 
-    public async select({ auth, response, i18n }: HttpContext) {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'positions', 'view')
+
+        const { auth, response, i18n } = ctx
         try {
             const userId = auth.user!.id
             const business = await BusinessUser.query()

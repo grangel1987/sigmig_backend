@@ -1,8 +1,11 @@
 import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import Employee from '#models/employees/employee'
+import Module from '#models/module'
+import Permission from '#models/permissions/permission'
 import PersonalData from '#models/users/personal_data'
 import User from '#models/users/user'
+import PermissionService from '#services/permission_service'
 import env from '#start/env'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
@@ -423,7 +426,10 @@ export default class UserController {
     }
   }
 
-  public async assignUserToEmployee({ request, response, i18n }: HttpContext) {
+  public async assignUserToEmployee(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'update')
+
+    const { request, response, i18n } = ctx
     const { personalDataId, email } = request.all()
     const dateTime = await Util.getDateTimes(request.ip())
     const password = '12345678'
@@ -495,7 +501,10 @@ export default class UserController {
     }
   }
 
-  public async removeUserFromEmployee({ request, response, i18n }: HttpContext) {
+  public async removeUserFromEmployee(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'update')
+
+    const { request, response, i18n } = ctx
     const { user_id } = request.all()
 
     try {
@@ -529,7 +538,10 @@ export default class UserController {
     }
   }
 
-  public async store({ request, response, auth, i18n }: HttpContext) {
+  public async store(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'create')
+
+    const { request, response, auth, i18n } = ctx
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
     const { email, business, signature, employeeId, personalData, isAuthorizer, isAdmin } = await request.validateUsing(
@@ -745,7 +757,10 @@ export default class UserController {
     }
   }
 
-  public async update({ request, response, auth, i18n }: HttpContext) {
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'update')
+
+    const { request, response, auth, i18n } = ctx
     const { params, email, signature, employeeId, personalData } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -887,7 +902,10 @@ export default class UserController {
     }
   }
 
-  public async updateAdmin({ request, response, auth, i18n }: HttpContext) {
+  public async updateAdmin(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'update')
+
+    const { request, response, auth, i18n } = ctx
     const { params, email, business, personalData, isAdmin, isAuthorizer, signature } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -1134,7 +1152,10 @@ export default class UserController {
     }
   }
 
-  public async verifiedUser({ request, response, i18n }: HttpContext) {
+  public async verifiedUser(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'update')
+
+    const { request, response, i18n } = ctx
     const { email, code } = request.all()
     const dateTime = await Util.getDateTimes(request.ip())
     const user = await User.findBy('email', email)
@@ -1176,13 +1197,19 @@ export default class UserController {
     }
   }
 
-  public async findByArgs({ request }: HttpContext) {
+  public async findByArgs(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'view')
+
+    const { request } = ctx
     const { text } = request.all()
     const users = await UserRepository.findByArgs(text)
     return users
   }
 
-  public async findByToken({ auth }: HttpContext) {
+  public async findByToken(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'view')
+
+    const { auth } = ctx
     const userId = auth.user!.id
     const userData = await UserRepository.findDataCompleteUserByUserId(userId)
     return userData
@@ -1616,25 +1643,22 @@ export default class UserController {
     }
   }
 
-  public async findModules({ response }: HttpContext) {
-    // Placeholder: return a list of modules
-    const modules = [
-      { id: 1, name: 'Users', description: 'User management' },
-      { id: 2, name: 'Business', description: 'Business management' },
-      // Add more as needed
-    ]
+  public async findModules({ response, request, }: HttpContext) {
+    const { withPerms } = request.qs();
+    const moduleQ = Module.query()
+
+
+
+    if (withPerms)
+      moduleQ.preload('permissions', q => q.select('id', 'name', 'key', 'description', 'module_id'))
+
+    const modules = await moduleQ
     response.ok(modules)
   }
 
   public async findPermission({ request, response }: HttpContext) {
     const { module_id } = await request.validateUsing(vine.compile(vine.object({ module_id: vine.number().positive() })))
-    // Placeholder: return permissions for the module
-    const permissions = [
-      { id: 1, key: 'user.create', description: 'Create users', type: 'user', module_id: 1 },
-      { id: 2, key: 'user.read', description: 'Read users', type: 'user', module_id: 1 },
-      { id: 3, key: 'business.create', description: 'Create business', type: 'business', module_id: 2 },
-      // Add more as needed
-    ].filter(p => p.module_id === module_id)
+    const permissions = await Permission.query().where('module_id', module_id)
     response.ok(permissions)
   }
 

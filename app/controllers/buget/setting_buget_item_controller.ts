@@ -1,11 +1,15 @@
 import SettingBugetItem from '#models/buget/setting_buget_item'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 export default class SettingBugetItemController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -39,7 +43,10 @@ export default class SettingBugetItemController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const { typeId, value, categoryIds, withTitle, title } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -94,7 +101,10 @@ export default class SettingBugetItemController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const itemId = params.id
         const { typeId, value, categoryIds, withTitle, title } = await request.validateUsing(
             vine.compile(
@@ -153,7 +163,10 @@ export default class SettingBugetItemController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const itemId = params.id
         const dateTime = DateTime.local()
 
@@ -188,7 +201,10 @@ export default class SettingBugetItemController {
         }
     }
 
-    public async findByType({ params }: HttpContext) {
+    public async findByType(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { params } = ctx
         const typeId = params.id
         const items = await SettingBugetItem.query()
             .select(['id', 'value'])
@@ -197,7 +213,9 @@ export default class SettingBugetItemController {
         return items
     }
 
-    public async findAll() {
+    public async findAll(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
         const items = await SettingBugetItem.query()
             .select(['id', 'type_id', 'value'])
             .where('enabled', true)

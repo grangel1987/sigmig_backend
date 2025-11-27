@@ -7,6 +7,7 @@ import PersonalData from '#models/users/personal_data'
 import User from '#models/users/user'
 import EmployeeAccessRepository from '#repositories/employees/employee_access_repository'
 import EmployeeRepository from '#repositories/employees/employee_repository'
+import PermissionService from '#services/permission_service'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
@@ -257,7 +258,10 @@ export default class EmployeeController {
             return out
         } */
     /** Create a new employee with related business link and nested collections */
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'create')
+
+        const { request, response, auth, i18n } = ctx
         const { employeeStoreValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeStoreValidator)
         const { userId, personalData } = payload
@@ -518,7 +522,10 @@ export default class EmployeeController {
     }
 
     /** Update base employee and business specific data */
-    public async update({ request, params, auth, i18n, response }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'update')
+
+        const { request, params, auth, i18n, response } = ctx
         const employeeId = Number(params.id)
         const currentTime = (await Util.getDateTimes(request.ip())).toISO()
         const trx = await db.transaction()
@@ -810,7 +817,10 @@ export default class EmployeeController {
     }
 
     /** Show employee by token + business context (legacy-shaped response) */
-    public async show({ params }: HttpContext) {
+    public async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'view')
+
+        const { params } = ctx
         const token = params.token
         const businessId = Number(params.business_id)
         const employee = await Employee.query()
@@ -868,7 +878,10 @@ export default class EmployeeController {
     }
 
     /** Find employees by identify (uniform formatting, no 500 on empty) */
-    public async findByIdentify({ request, response }: HttpContext) {
+    public async findByIdentify(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'view')
+
+        const { request, response } = ctx
         const { identify, typeIdentify, businessId } = await request.validateUsing(employeeFindByIdentifyValidator)
         const employee = await Employee.query()
             .whereHas('personalData', (pdQ) => {
@@ -890,7 +903,10 @@ export default class EmployeeController {
         return response.ok(employee)
     }
 
-    public async findById({ response, request }: HttpContext) {
+    public async findById(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'view')
+
+        const { response, request } = ctx
         const { employeeId, businessId } = await request.validateUsing(employeeFindByIdValidator)
         const employee = await Employee.query()
             .where('id', employeeId)
@@ -919,7 +935,10 @@ export default class EmployeeController {
         return response.ok(legacy)
     }
 
-    public async findByName({ request, response }: HttpContext) {
+    public async findByName(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'view')
+
+        const { request, response } = ctx
         const { name } = await request.validateUsing(employeeFindByNameValidator)
         const employees = await Employee.query()
             .whereHas('personalData', (pdQ) => {
@@ -932,7 +951,10 @@ export default class EmployeeController {
         response.ok(employees)
     }
 
-    public async findByLastNameP({ request, response }: HttpContext) {
+    public async findByLastNameP(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'view')
+
+        const { request, response } = ctx
         const { lastNameP } = await request.validateUsing(employeeFindByLastNamePValidator)
         const employees = await Employee.query()
             .whereHas('personalData', (pdQ) => {
@@ -946,7 +968,10 @@ export default class EmployeeController {
     }
 
     /** Autocomplete endpoint combining name/last name/identify partial matching */
-    public async findAutocomplete({ request, response }: HttpContext) {
+    public async findAutocomplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'view')
+
+        const { request, response } = ctx
         const { default: vine } = await import('@vinejs/vine')
         const schema = vine.compile(vine.object({
             value: vine.string().trim().minLength(1).optional(),
@@ -967,7 +992,10 @@ export default class EmployeeController {
         return response.ok(employees)
     }
 
-    public async deletePhoto({ request, response, i18n }: HttpContext) {
+    public async deletePhoto(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'update')
+
+        const { request, response, i18n } = ctx
         const { employeeId } = await request.validateUsing(employeeDeletePhotoValidator)
         const dateTime = await Util.getDateTimes(request.ip())
         const employee = await Employee.find(employeeId)
@@ -990,13 +1018,19 @@ export default class EmployeeController {
         return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.delete_ok'), i18n.formatMessage('messages.ok_title')))
     }
 
-    public async countActive({ params }: HttpContext) {
+    public async countActive(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'view')
+
+        const { params } = ctx
         const businessId = Number(params.business_id)
         const result = await db.from('business_employees').where('enabled', true).where('business_id', businessId).count('* as total')
         return result[0].total
     }
 
-    public async report({ request }: HttpContext) {
+    public async report(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'viewReports')
+
+        const { request } = ctx
         const { condition, expireDate, costCenter, businessId } = await request.validateUsing(employeeReportValidator)
         const report = await EmployeeRepository.report(condition, expireDate ?? null, costCenter ?? null, businessId)
         return report.map((r) => ({
@@ -1008,7 +1042,10 @@ export default class EmployeeController {
         }))
     }
 
-    public async inactive({ request, auth, response, i18n }: HttpContext) {
+    public async inactive(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'update')
+
+        const { request, auth, response, i18n } = ctx
         const { businessEmployeeId } = await request.validateUsing(employeeBusinessEmployeeIdValidator)
         if (typeof businessEmployeeId !== 'number' || businessEmployeeId <= 0) {
             return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.validation_error'), i18n.formatMessage('messages.error_title')))
@@ -1027,7 +1064,10 @@ export default class EmployeeController {
         }
     }
     //
-    public async reactive({ request, response, i18n }: HttpContext) {
+    public async reactive(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'employees', 'update')
+
+        const { request, response, i18n } = ctx
         const { businessEmployeeId } = await request.validateUsing(employeeBusinessEmployeeIdValidator)
         if (typeof businessEmployeeId !== 'number' || businessEmployeeId <= 0) {
             return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.validation_error'), i18n.formatMessage('messages.error_title')))

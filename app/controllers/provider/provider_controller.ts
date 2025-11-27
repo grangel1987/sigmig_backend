@@ -3,6 +3,7 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Provider from '#models/provider/provider'
 import ProviderProduct from '#models/provider/provider_product'
 import ProviderRepository from '#repositories/provider/provider_repository'
+import PermissionService from '#services/permission_service'
 import { providerStoreValidator, providerUpdateValidator } from '#validators/provider'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -12,7 +13,10 @@ type MessageFrontEndType = { message: string; title: string }
 
 export default class ProviderController {
     /** List all providers */
-    async index({ request, response, i18n }: HttpContext) {
+    async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'view')
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -46,7 +50,10 @@ export default class ProviderController {
     }
 
     /** Store new provider */
-    async store({ request, response, auth, i18n }: HttpContext) {
+    async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'create')
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(providerStoreValidator)
         const dateTime = DateTime.local()
 
@@ -83,7 +90,10 @@ export default class ProviderController {
     }
 
     /** Update provider */
-    async update({ params, request, response, auth, i18n }: HttpContext) {
+    async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'update')
+
+        const { params, request, response, auth, i18n } = ctx
         const data = await request.validateUsing(providerUpdateValidator)
         const dateTime = DateTime.local()
 
@@ -120,14 +130,20 @@ export default class ProviderController {
     }
 
     /** Show single provider */
-    async show({ params }: HttpContext) {
+    async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'view')
+
+        const { params } = ctx
         const provider = await Provider.findOrFail(params.id)
         await provider.load('city', (b) => b.select('id', 'name'))
         return provider
     }
 
     /** Store provider product */
-    async storeProduct({ request, response, auth, i18n }: HttpContext) {
+    async storeProduct(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'create')
+
+        const { request, response, auth, i18n } = ctx
         const { name, code, price, providerId } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -178,7 +194,10 @@ export default class ProviderController {
     }
 
     /** Update provider product */
-    async updateProduct({ request, response, params, auth, i18n }: HttpContext) {
+    async updateProduct(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'update')
+
+        const { request, response, params, auth, i18n } = ctx
         const { name, code, price, providerId } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -228,7 +247,10 @@ export default class ProviderController {
 
 
     /** List products by provider (paginated) */
-    async findProductsByProvider({ params, request, response, i18n }: HttpContext) {
+    async findProductsByProvider(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'view')
+
+        const { params, request, response, i18n } = ctx
         // Validate pagination from querystring
         const { page, perPage } = await request.validateUsing(
             vine.compile(
@@ -260,7 +282,10 @@ export default class ProviderController {
     }
 
     /** Change provider status */
-    async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'update')
+
+        const { params, response, auth, i18n } = ctx
         const dateTime = DateTime.local()
 
         try {
@@ -287,7 +312,10 @@ export default class ProviderController {
     }
 
     /** Change product status */
-    async changeStatusProduct({ params, response, auth, i18n }: HttpContext) {
+    async changeStatusProduct(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'update')
+
+        const { params, response, auth, i18n } = ctx
         const productId = params.product_id
         const dateTime = DateTime.local()
 
@@ -315,13 +343,19 @@ export default class ProviderController {
     }
 
     /** Autocomplete: Providers */
-    async findAutoComplete({ request }: HttpContext) {
+    async findAutoComplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'view')
+
+        const { request } = ctx
         const { val } = request.only(['val'])
         return await ProviderRepository.findAutoComplete(val)
     }
 
     /** Autocomplete: Provider Products */
-    async findProductAutoComplete({ request }: HttpContext) {
+    async findProductAutoComplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'view')
+
+        const { request } = ctx
         const { val, providerId } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -335,7 +369,10 @@ export default class ProviderController {
     }
 
     /** Show single product */
-    async showProduct({ params }: HttpContext) {
+    async showProduct(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'providers', 'view')
+
+        const { params } = ctx
         return await ProviderProduct.findOrFail(params.product_id)
     }
 }

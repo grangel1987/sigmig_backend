@@ -1,6 +1,7 @@
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BugetRepository from '#repositories/bugets/buget_repository'
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
@@ -12,7 +13,10 @@ import { log } from 'node:console'
 
 export default class BugetController {
   // Create a new buget (legacy parity)
-  public async store({ request, response, auth, i18n }: HttpContext) {
+  public async store(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'create')
+
+    const { request, response, auth, i18n } = ctx
     // Expect camelCase input keys only
     const {
       businessId,
@@ -126,7 +130,10 @@ export default class BugetController {
   }
 
   // Show details matching legacy shape (expired flag and formatted date)
-  public async show({ params, request }: HttpContext) {
+  public async show(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params, request } = ctx
     const bugetId = Number(params.id)
     const dateTime = await Util.getDateTimes(request.ip())
     const now = dateTime
@@ -180,7 +187,10 @@ export default class BugetController {
     return serialized
   }
   // Minimal find by number: returns array with a single record similar to legacy
-  public async findByNro({ request }: HttpContext) {
+  public async findByNro(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { request } = ctx
     const { businessId, number } = await request.validateUsing(bugetFindByNroValidator)
     const rows = await db.from('bugets').where('business_id', businessId).where('nro', number).limit(1)
     const id = rows.length ? rows[0].id : 0
@@ -189,18 +199,27 @@ export default class BugetController {
     return [buget]
   }
 
-  public async findByNameClient({ request }: HttpContext) {
+  public async findByNameClient(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { request } = ctx
     const { businessId, name } = await request.validateUsing(bugetFindByNameClientValidator)
     return await BugetRepository.findByNameClient(Number(businessId), String(name || ''))
   }
 
-  public async findByDate({ request }: HttpContext) {
+  public async findByDate(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { request } = ctx
     const { businessId, date } = await request.validateUsing(bugetFindByDateValidator)
     const dateSql = DateTime.fromJSDate(date).toSQLDate()!
     return await BugetRepository.findByDate(Number(businessId), String(dateSql))
   }
 
-  public async delete({ params, request, auth, response, i18n }: HttpContext) {
+  public async delete(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'delete')
+
+    const { params, request, auth, response, i18n } = ctx
     const bugetId = Number(params.id)
     const dateTime = await Util.getDateTimes(request.ip())
     try {
@@ -214,7 +233,10 @@ export default class BugetController {
     }
   }
 
-  public async countMade({ params }: HttpContext) {
+  public async countMade(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params } = ctx
     const businessId = Number(params.business_id)
     const query = `
     SELECT 
@@ -231,7 +253,10 @@ export default class BugetController {
     return row?.counts ?? 0
   }
 
-  public async countMadeYear({ params }: HttpContext) {
+  public async countMadeYear(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params } = ctx
     const businessId = Number(params.business_id)
     const query = `
       SELECT 
@@ -247,7 +272,10 @@ export default class BugetController {
     return result.rows ?? result[0]
   }
 
-  public async report({ request }: HttpContext) {
+  public async report(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
+
+    const { request } = ctx
     const { dateInitial, dateEnd, businessId } = await request.validateUsing(vine.compile(vine.object({
       dateInitial: vine.date().optional(),
       dateEnd: vine.date().optional(),
@@ -257,14 +285,20 @@ export default class BugetController {
     return await BugetRepository.report(businessId, dateInitial, dateEnd)
   }
 
-  public async searchItems({ request }: HttpContext) {
+  public async searchItems(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { request } = ctx
     const { typeId, categoryId, params } = request.all()
     const items = await BugetRepository.searchItems(typeId, categoryId, params)
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 
   // Update buget and replace related rows (legacy parity)
-  public async update({ params, request, auth, response, i18n }: HttpContext) {
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'update')
+
+    const { params, request, auth, response, i18n } = ctx
     const bugetId = Number(params.id)
     const trx = await db.transaction()
     try {

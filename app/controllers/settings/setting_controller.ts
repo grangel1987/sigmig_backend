@@ -1,5 +1,6 @@
 import Indicator from "#models/settings/indicator"
 import SettingRepository from "#repositories/settings/setting_repository"
+import PermissionService from '#services/permission_service'
 import MessageFrontEnd from "#utils/MessageFrontEnd"
 import Util from "#utils/Util"
 import { countryIdParamValidator } from '#validators/settings'
@@ -17,7 +18,10 @@ interface IndicatorPayload {
 
 export default class SettingController {
   // Fetch settings by country
-  public async findSettingsByCountry({ params, response, i18n }: HttpContext) {
+  public async findSettingsByCountry(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+    const { params, response, i18n } = ctx
     try {
       const { id } = await countryIdParamValidator.validate(params)
       const settings = await SettingRepository.findSettingsByCountry(id)
@@ -33,7 +37,10 @@ export default class SettingController {
   }
 
   // Fetch or update economic indicators
-  public async indicators({ request, i18n }: HttpContext) {
+  public async indicators(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+    const { request, i18n } = ctx
     try {
       const dateTime = await Util.getDateTimes(request.ip())
       const lastIndicator = await SettingRepository.getLastIndicator()

@@ -1,4 +1,5 @@
 import SettingLicPayingEntity from '#models/setting_lic/setting_lic_paying_entity';
+import PermissionService from '#services/permission_service';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { licPayingEntityStoreValidator, licPayingEntityUpdateValidator } from '#validators/setting_lics';
 import { HttpContext } from '@adonisjs/core/http';
@@ -11,7 +12,10 @@ type MessageFrontEndType = {
 }
 
 export default class LicPayingEntityController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -44,7 +48,10 @@ export default class LicPayingEntityController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(licPayingEntityStoreValidator)
         const dateTime = DateTime.local()
 
@@ -80,7 +87,10 @@ export default class LicPayingEntityController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const payingEntityId = params.id
         const data = await request.validateUsing(licPayingEntityUpdateValidator)
         const dateTime = DateTime.local()
@@ -119,7 +129,10 @@ export default class LicPayingEntityController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const payingEntityId = params.id
         const dateTime = DateTime.local()
 
@@ -156,7 +169,10 @@ export default class LicPayingEntityController {
         }
     }
 
-    public async select({ response, i18n }: HttpContext) {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { response, i18n } = ctx
         try {
             const payingEntities = await SettingLicPayingEntity.query()
                 .where('enabled', true)

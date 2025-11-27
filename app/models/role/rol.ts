@@ -12,6 +12,9 @@ export default class Rol extends BaseModel {
   public id: number
 
   @column()
+  public businessId: number | null
+
+  @column()
   public name: string
 
   @column()
@@ -23,11 +26,11 @@ export default class Rol extends BaseModel {
   @column({ serializeAs: null })
   public enabled: boolean
 
-  @column({ columnName: 'createdById' })
-  public createdById: number | null
+  @column({ columnName: 'created_by' })
+  public createdById: number
 
-  @column({ columnName: 'updatedById' })
-  public updatedById: number | null
+  @column({ columnName: 'updated_by' })
+  public updatedById: number
 
   @column.dateTime({ serializeAs: null })
   public createdAt: DateTime

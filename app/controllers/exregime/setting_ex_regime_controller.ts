@@ -1,4 +1,5 @@
 import SettingExRegime from '#models/exregime/setting_ex_regime';
+import PermissionService from '#services/permission_service';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { exRegimeStoreValidator, exRegimeUpdateValidator } from '#validators/exregime';
 import { HttpContext } from '@adonisjs/core/http';
@@ -11,7 +12,10 @@ type MessageFrontEndType = {
 }
 
 export default class SettingExRegimeController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, response, i18n } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -44,7 +48,10 @@ export default class SettingExRegimeController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(exRegimeStoreValidator)
         const dateTime = DateTime.local()
 
@@ -80,7 +87,10 @@ export default class SettingExRegimeController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const exregimeId = params.id
         const data = await request.validateUsing(exRegimeUpdateValidator)
         const dateTime = DateTime.local()
@@ -119,7 +129,10 @@ export default class SettingExRegimeController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const exregimeId = params.id
         const dateTime = DateTime.local()
 
@@ -156,7 +169,10 @@ export default class SettingExRegimeController {
         }
     }
 
-    public async select({ response, i18n }: HttpContext) {
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { response, i18n } = ctx
         try {
             const exregimes = await SettingExRegime.query()
                 .where('enabled', true)

@@ -1,4 +1,5 @@
 import Account from '#models/bank/account';
+import PermissionService from '#services/permission_service';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { accountStoreValidator, accountUpdateValidator } from '#validators/bank';
 import { HttpContext } from '@adonisjs/core/http';
@@ -11,7 +12,10 @@ type MessageFrontEndType = {
 }
 
 export default class AccountController {
-    public async index({ request, response, i18n }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'banks', 'view');
+
+        const { request, response, i18n } = ctx
         try {
             const { page, perPage } = await request.validateUsing(
                 vine.compile(
@@ -52,7 +56,10 @@ export default class AccountController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'banks', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(accountStoreValidator)
         const dateTime = DateTime.local()
 
@@ -104,7 +111,10 @@ export default class AccountController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'banks', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const accountId = params.id
         const data = await request.validateUsing(accountUpdateValidator)
         const dateTime = DateTime.local()
@@ -158,7 +168,10 @@ export default class AccountController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'banks', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const accountId = params.id
         const dateTime = DateTime.local()
 
@@ -204,7 +217,10 @@ export default class AccountController {
         }
     }
 
-    public async findAll({ response, i18n }: HttpContext) {
+    public async findAll(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'banks', 'view');
+
+        const { response, i18n } = ctx
 
 
         try {

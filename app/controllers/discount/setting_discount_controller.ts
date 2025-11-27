@@ -1,4 +1,5 @@
 import SettingDiscount from '#models/discount/setting_discount';
+import PermissionService from '#services/permission_service';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { discountStoreValidator, discountUpdateValidator } from '#validators/discount';
 import { HttpContext } from '@adonisjs/core/http';
@@ -12,7 +13,10 @@ type MessageFrontEndType = {
 }
 
 export default class SettingDiscountController {
-    public async index({ request, i18n, response }: HttpContext) {
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view');
+
+        const { request, i18n, response } = ctx
         const { page, perPage } = await request.validateUsing(
             vine.compile(
                 vine.object({
@@ -45,7 +49,10 @@ export default class SettingDiscountController {
         }
     }
 
-    public async store({ request, response, auth, i18n }: HttpContext) {
+    public async store(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'create');
+
+        const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(discountStoreValidator)
         const dateTime = DateTime.local()
 
@@ -83,7 +90,10 @@ export default class SettingDiscountController {
         }
     }
 
-    public async update({ params, request, response, auth, i18n }: HttpContext) {
+    public async update(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, request, response, auth, i18n } = ctx
         const discountId = params.id
         const data = await request.validateUsing(discountUpdateValidator)
         const dateTime = DateTime.local()
@@ -140,7 +150,10 @@ export default class SettingDiscountController {
         }
     }
 
-    public async changeStatus({ params, response, auth, i18n }: HttpContext) {
+    public async changeStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update');
+
+        const { params, response, auth, i18n } = ctx
         const discountId = params.id
         const dateTime = DateTime.local()
 

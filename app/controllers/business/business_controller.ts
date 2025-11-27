@@ -1,5 +1,6 @@
 import Business from '#models/business/business'
 import BusinessRepository from '#repositories/business/business_repository'
+import PermissionService from '#services/permission_service'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
@@ -28,7 +29,10 @@ interface BusinessPayload {
 }
 
 export default class BusinessController {
-  public async store({ request, response, auth, i18n }: HttpContext) {
+  public async store(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'business', 'create')
+
+    const { request, response, auth, i18n } = ctx
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request.ip())
 
@@ -137,7 +141,10 @@ export default class BusinessController {
   /** -----------------------------------------------------------------
    *  FIND ALL BUSINESSES FOR LOGGED USER + COINS + TAXES
    *  ----------------------------------------------------------------- */
-  public async findBusinessByUser({ request, auth }: HttpContext) {
+  public async findBusinessByUser(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'business', 'view')
+
+    const { request, auth } = ctx
     const userId = auth.user!.id
 
     const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
@@ -161,7 +168,10 @@ export default class BusinessController {
   /** -----------------------------------------------------------------
    *  CHANGE SELECTED BUSINESS (pivot table business_users)
    *  ----------------------------------------------------------------- */
-  public async changeBusiness({ params, auth, response, i18n }: HttpContext) {
+  public async changeBusiness(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'business', 'update')
+
+    const { params, auth, response, i18n } = ctx
     const { id: businessId } = params
     const userId = auth.user!.id
 
@@ -188,7 +198,10 @@ export default class BusinessController {
   /** -----------------------------------------------------------------
    *  SHOW ONE BUSINESS (with coins & delegate)
    *  ----------------------------------------------------------------- */
-  public async show({ params, response, i18n }: HttpContext) {
+  public async show(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'business', 'view')
+
+    const { params, response, i18n } = ctx
     const business = await BusinessRepository.findBusinessOneById(params.id)
 
     if (business) {
@@ -211,7 +224,10 @@ export default class BusinessController {
   /** -----------------------------------------------------------------
    *  DELETE PHOTO (GCS)
    *  ----------------------------------------------------------------- */
-  public async deletePhoto({ params, response, i18n }: HttpContext) {
+  public async deletePhoto(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'business', 'update')
+
+    const { params, response, i18n } = ctx
     const business = await Business.findOrFail(params.id)
     const { urlShort, urlThumbShort } = business
 
@@ -253,13 +269,10 @@ export default class BusinessController {
   /** -----------------------------------------------------------------
    *  UPDATE BUSINESS (full flow – photo, delegate, coins, transaction)
    *  ----------------------------------------------------------------- */
-  public async update({
-    params,
-    request,
-    response,
-    auth,
-    i18n,
-  }: HttpContext) {
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'business', 'update')
+
+    const { params, request, response, auth, i18n } = ctx
     const businessId = Number(params.id)
     const userId = auth.user!.id
     const ip = request.ip()
