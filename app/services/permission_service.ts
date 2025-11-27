@@ -23,16 +23,19 @@ export default class PermissionService {
 
         // A) Check if user is admin
         if (user?.isAdmin) {
+            console.log('User is admin')
             return true
         }
 
         // B) Check if user is super user in their selected business
         const selectedBusiness = await user?.related('selectedBusiness').query().first()
         if (selectedBusiness?.isSuper) {
+            console.log('User is super user in selected business')
             return true
         }
 
         // C) Check if user has the required permission
+        console.log(`Checking permission for module: ${moduleKey}, permission: ${permissionKey}`)
         return await this.checkUserPermission(selectedBusiness, moduleKey, permissionKey)
     }
 
@@ -57,11 +60,14 @@ export default class PermissionService {
 
         if (!permission) return false
 
+
+        console.log({ permissionId: permission.id, moduleId: module.id });
+
+
         // Check if user has this permission through business user permissions
-        const businessUserPermission = await selectedBusiness
-            .related('bussinessUserPermissions')
+        const businessUserPermission = await selectedBusiness.related('roles')
             .query()
-            .where('permissionId', permission.id)
+            .whereHas('permissions', pQ => pQ.where('permissions.id', permission.id))
             .first()
 
         return !!businessUserPermission

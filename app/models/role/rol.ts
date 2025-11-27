@@ -1,4 +1,5 @@
 
+import BusinessUser from '#models/business/business_user'
 import BusinessUserRol from '#models/business/business_user_rol'
 import Permission from '#models/permissions/permission'
 import User from '#models/users/user'
@@ -50,6 +51,13 @@ export default class Rol extends BaseModel {
     pivotRelatedForeignKey: 'permission_id',
   })
   public permissions: ManyToMany<typeof Permission>
+
+  @manyToMany(() => BusinessUser, {
+    pivotTable: 'business_user_rols',
+    pivotForeignKey: 'rol_id',
+    pivotRelatedForeignKey: 'business_user_id'
+  })
+  public businessUsers: ManyToMany<typeof BusinessUser>
 
   @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
