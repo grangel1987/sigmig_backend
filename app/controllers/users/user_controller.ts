@@ -1682,6 +1682,7 @@ export default class UserController {
       .preload('personalData', q => q.preload('typeIdentify').preload('city'))
       .preload('businessUser', buQ =>
         buQ.preload('business', bQ => bQ.select('id', 'name',)))
+      .preload('employee', q => q.preload('position'))
 
     const users = page ? await query.paginate(page, perPage ?? 10) : await query
     response.ok(users)
@@ -1839,6 +1840,7 @@ export default class UserController {
 
       await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
       await user.load('personalData', pQ => pQ.preload('typeIdentify'))
+      await user.load('employee', q => q.preload('position'))
 
       if (user.personalData?.cityId) await user.personalData.load('city')
 
@@ -1954,6 +1956,7 @@ export default class UserController {
         .where('id', params.id)
         .preload('personalData', q => q.preload('typeIdentify').preload('city'))
         .preload('businessUser', buQ => buQ.preload('business', bQ => bQ.select('id', 'name')))
+        .preload('employee', q => q.preload('position'))
         .first()
 
       if (!user) {
