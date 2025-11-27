@@ -1153,7 +1153,6 @@ export default class UserController {
   }
 
   public async verifiedUser(ctx: HttpContext) {
-    await PermissionService.requirePermission(ctx, 'users', 'update')
 
     const { request, response, i18n } = ctx
     const { email, code } = request.all()
@@ -1207,7 +1206,6 @@ export default class UserController {
   }
 
   public async findByToken(ctx: HttpContext) {
-    await PermissionService.requirePermission(ctx, 'users', 'view')
 
     const { auth } = ctx
     const userId = auth.user!.id
@@ -1662,7 +1660,15 @@ export default class UserController {
     response.ok(permissions)
   }
 
-  public async index({ request, response }: HttpContext) {
+  public async index(ctx: HttpContext) {
+
+    const { request, response } = ctx
+    await PermissionService.requirePermission(ctx, 'users', 'view')
+
+    console.log('index');
+
+
+
     const { page, perPage } = await request.validateUsing(
       vine.compile(
         vine.object({

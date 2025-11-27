@@ -4,7 +4,10 @@ export default class extends BaseSchema {
     protected tableName = 'modules'
 
     async up() {
+        // Temporarily disable foreign key checks to allow dropping the table
+        this.schema.raw('SET FOREIGN_KEY_CHECKS = 0')
         this.schema.dropTableIfExists(this.tableName)
+        this.schema.raw('SET FOREIGN_KEY_CHECKS = 1')
     }
 
     async down() {
