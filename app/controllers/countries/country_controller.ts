@@ -5,22 +5,24 @@ import messageFrontEnd from '#utils/MessageFrontEnd'
 import { countryUpdateValidator } from '#validators/country'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
-import { log } from 'console'
 import { DateTime } from 'luxon'
-
+import { log } from 'node:console'
 
 export default class CountryController {
-
   public async index(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'countries', 'view')
 
     const { request } = ctx
 
-    const { page, perPage, text } = await request.validateUsing(vine.compile(vine.object({
-      page: vine.number().positive().optional(),
-      perPage: vine.number().positive().optional(),
-      text: vine.string().trim().optional()
-    })))
+    const { page, perPage, text } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          page: vine.number().positive().optional(),
+          perPage: vine.number().positive().optional(),
+          text: vine.string().trim().optional(),
+        })
+      )
+    )
     let query = Country.query()
 
     log(text)
@@ -31,10 +33,14 @@ export default class CountryController {
 
     const countries = await query
       .preload('createdBy', (builder) => {
-        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
       })
       .preload('updatedBy', (builder) => {
-        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
       })
       .paginate(page || 1, perPage || 10)
 
@@ -70,10 +76,14 @@ export default class CountryController {
       await country.save()
 
       await country.load('createdBy', (builder) => {
-        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
       })
       await country.load('updatedBy', (builder) => {
-        builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
       })
 
       return response.status(201).json({
@@ -86,7 +96,7 @@ export default class CountryController {
         ...messageFrontEnd(
           i18n.formatMessage('messages.update_error'),
           i18n.formatMessage('messages.error_title')
-        )
+        ),
       })
     }
   }
