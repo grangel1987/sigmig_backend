@@ -45,7 +45,7 @@ export default class ShoppingRepository {
         cities
       WHERE
         shoppings.business_id=? AND
-        to_char(shoppings.created_at, 'YYYY-MM-DD') = ? AND
+        DATE(shoppings.created_at) = ? AND
         providers.id = shoppings.provider_id AND
         providers.city_id = cities.id
     `
