@@ -360,7 +360,10 @@ export default class ShoppingController {
         const { token } = await shoppingTokenParamValidator.validate(params)
         const shop = await Shopping.findBy('token', token)
         if (!shop) return null
-        await shop.load('business')
+        await shop.load('business', (builder) => {
+            builder.select(['id', 'name', 'url', 'email', 'identify', 'address', 'phone', 'days_expire_buget', 'type_identify_id', 'footer'])
+            builder.preload('typeIdentify', (b) => b.select(['text', 'id']))
+        })
 
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))

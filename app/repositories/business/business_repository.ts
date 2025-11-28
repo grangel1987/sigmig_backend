@@ -1,6 +1,6 @@
+import Business from "#models/business/business"
 import BusinessDelegate from "#models/business/business_delegate"
 import db from "@adonisjs/lucid/services/db"
-import { SimplePaginatorContract } from "@adonisjs/lucid/types/querybuilder"
 
 interface BusinessByUser {
   id: number
@@ -67,40 +67,20 @@ interface BusinessTax {
 
 export default class BusinessRepository {
   public static async findBusinessByUser(userId: number, page = 1, perPage = 10) {
-    const result = await db
-      .from('businesses')
-      .select(
-        'businesses.id',
-        'businesses.name',
-        'businesses.url',
-        'businesses.url_thumb',
-        'businesses.type_identify_id',
-        'businesses.is_utility',
-        'businesses.utility',
-        'businesses.is_discount',
-        'businesses.discount',
-        'businesses.phone',
-        'businesses.authorization_minor',
-        'settings.text as type_identify',
-        'businesses.identify',
-        'business_users.selected',
-        // 'business_users.rol',
-        'businesses.email_confirm_inactive_employee',
-        'businesses.enabled',
-        'countries.id as country_id',
-        'countries.name as country',
-        'countries.phone_code',
-        'cities.id as city_id',
-        'cities.name as city'
-      )
-      .innerJoin('business_users', 'businesses.id', 'business_users.business_id')
-      .innerJoin('countries', 'countries.id', 'businesses.country_id')
-      .innerJoin('settings', 'settings.id', 'businesses.type_identify_id')
-      .innerJoin('cities', 'businesses.city_id', 'cities.id')
-      .where('businesses.enabled', true)
-      .where('business_users.user_id', userId).paginate(page, perPage)
+    const result = await Business.query()
+      .whereHas('users', (usersQuery) => {
+        usersQuery.where('user_id', userId)
+      })
+      .where('enabled', true)
+      .preload('country')
+      .preload('city')
+      .preload('typeIdentify')
+      .preload('users', (usersQuery) => {
+        usersQuery.where('user_id', userId)
+      })
+      .paginate(page, perPage)
 
-    return result as SimplePaginatorContract<BusinessByUser>
+    return result
   }
 
   public static async findBusinessOneById(businessId: number): Promise<BusinessOneById | null> {

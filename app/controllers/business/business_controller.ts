@@ -147,14 +147,18 @@ export default class BusinessController {
     const businesses = await BusinessRepository.findBusinessByUser(userId, page, perPage)
     const businessCoins = await BusinessRepository.findBusinessCoins(userId)
     const businessTaxes = await BusinessRepository.findBusinessTaxes(userId)
-    for (const business of businesses) {
+    const res = businesses.all().map((business) => {
       const bid = business.id
-      business.coins = businessCoins.filter((c) => c.business_id === bid)
-      business.taxes = businessTaxes
+      const serBiz = business.serialize()
+      serBiz.coins = businessCoins.filter((c) => c.business_id === bid)
+      serBiz.taxes = businessTaxes
         .filter((t) => t.business_id === bid)
-    }
 
-    return businesses
+      return serBiz
+    }
+    )
+
+    return { data: res, meta: businesses.getMeta() }
   }
 
   /** -----------------------------------------------------------------
@@ -188,22 +192,35 @@ export default class BusinessController {
    *  SHOW ONE BUSINESS (with coins & delegate)
    *  ----------------------------------------------------------------- */
   public async show({ params, response, i18n }: HttpContext) {
-    const business = await BusinessRepository.findBusinessOneById(params.id)
+    try {
+      const business = await Business.findOrFail(params.id)
 
-    if (business) {
-      const coins = await BusinessRepository.findBusinessOneCoins(params.id)
-      const delegate = await BusinessRepository.findBusinessDelegate(params.id)
+      if (!business.enabled) {
+        return response.status(422).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('data.not_found'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
+      }
 
-      if (coins) business.coins = coins
-      if (delegate) business.delegate = delegate
+      // Load relationships
+      await business.load('country', (b) => b.select('name as country'))
+      await business.load('typeIdentify', (b) => b.select('text as type_identify'))
+      await business.load('delegate')
+      await business.load('coins', (builder) => {
+        builder.preload('coins')
+      })
 
       return business
-    } else return response.status(422).json({
-      ...MessageFrontEnd(
-        i18n.formatMessage('data.not_found'),
-        i18n.formatMessage('messages.error_title')
-      ),
-    })
+    } catch (error) {
+      return response.status(422).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('data.not_found'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    }
   }
 
 
@@ -362,6 +379,7 @@ export default class BusinessController {
       await business.load('country', (b) => b.select('name as country'))
       await business.load('typeIdentify', (b) => b.select('text as type_identify'))
       await business.load('coins', (b) => b.preload('coins'))
+      await business.load('delegate')
 
       return response.status(201).json({
         business,
