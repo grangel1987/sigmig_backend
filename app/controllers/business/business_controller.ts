@@ -218,6 +218,7 @@ export default class BusinessController {
       await business.load('country', (b) => b.select('name as country'))
       await business.load('typeIdentify', (b) => b.select('text as type_identify'))
       await business.load('delegate')
+      await business.load('')
       await business.load('coins', (builder) => {
         builder.preload('coins')
       })
@@ -333,81 +334,92 @@ export default class BusinessController {
       })
 
       // ------------------- DELEGATE -------------------
-      await trx.from('business_delegates')
-        .where('business_id', business.id)
-        .delete()
 
-      if (delName || delEmail)
-        await business.related('delegate').create(
-          {
+      if (delName || delEmail) {
+
+        const delegate = await business.related('delegate').query().first()
+        if (!delegate) {
+          await business.related('delegate').create(
+            {
+              name: delName,
+              typeIdentifyId: delTypeIdentifyId,
+              identify: delIdentify,
+              phone: delPhone,
+              email: delEmail,
+              createdAt: dateTime,
+              createdBy: userId,
+              updatedAt: dateTime,
+              updatedBy: userId,
+            },
+            { client: trx }
+          )
+        }
+        else {
+          await delegate.useTransaction(trx).merge({
             name: delName,
             typeIdentifyId: delTypeIdentifyId,
             identify: delIdentify,
             phone: delPhone,
             email: delEmail,
-            createdAt: dateTime,
-            createdBy: userId,
             updatedAt: dateTime,
             updatedBy: userId,
-          },
-          { client: trx }
-        )
+          }).save()
+        }
+        // ------------------- PHOTO -------------------
+        if (photo) {
+          // delete old
+          if (business.urlShort) {
+            await Google.deleteFile(business.urlShort)
+            await Google.deleteFile(business.urlThumbShort!)
+          }
 
-      // ------------------- PHOTO -------------------
-      if (photo) {
-        // delete old
-        if (business.urlShort) {
-          await Google.deleteFile(business.urlShort)
-          await Google.deleteFile(business.urlThumbShort!)
+          const res = await Google.uploadFile(photo, 'business', 'image')
+          business.merge(res)
         }
 
-        const res = await Google.uploadFile(photo, 'business', 'image')
-        business.merge(res)
+        await business.useTransaction(trx).save()
+
+        // ------------------- COINS -------------------
+        if (coins) {
+
+          await trx.from('business_coins')
+            .where('business_id', business.id)
+            .delete()
+
+          const payload = coins.map((coinId, idx) => ({
+            businessId: business.id,
+            coinId: coinId,
+            isDefault: idx === 0 ? 1 : 0,
+          }))
+
+          await business.related('coins').createMany(payload, { client: trx })
+        }
+
+        await trx.commit()
+
+        // ------------------- LOAD RELATIONS FOR RESPONSE -------------------
+        await business.load('country', (b) => b.select('name as country'))
+        await business.load('typeIdentify', (b) => b.select('text as type_identify'))
+        await business.load('coins', (b) => b.preload('coins'))
+        await business.load('delegate')
+
+        return response.status(201).json({
+          business,
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.update_ok'),
+            i18n.formatMessage('messages.ok_title')
+          ),
+        })
+      } catch (err) {
+        await trx.rollback()
+        console.error(err)
+        return response.status(500).json({
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          ),
+        })
       }
-
-      await business.useTransaction(trx).save()
-
-      // ------------------- COINS -------------------
-      if (coins) {
-
-        await trx.from('business_coins')
-          .where('business_id', business.id)
-          .delete()
-
-        const payload = coins.map((coinId, idx) => ({
-          businessId: business.id,
-          coinId: coinId,
-          isDefault: idx === 0 ? 1 : 0,
-        }))
-
-        await business.related('coins').createMany(payload, { client: trx })
-      }
-
-      await trx.commit()
-
-      // ------------------- LOAD RELATIONS FOR RESPONSE -------------------
-      await business.load('country', (b) => b.select('name as country'))
-      await business.load('typeIdentify', (b) => b.select('text as type_identify'))
-      await business.load('coins', (b) => b.preload('coins'))
-      await business.load('delegate')
-
-      return response.status(201).json({
-        business,
-        ...MessageFrontEnd(
-          i18n.formatMessage('messages.update_ok'),
-          i18n.formatMessage('messages.ok_title')
-        ),
-      })
-    } catch (err) {
-      await trx.rollback()
-      console.error(err)
-      return response.status(500).json({
-        ...MessageFrontEnd(
-          i18n.formatMessage('messages.update_error'),
-          i18n.formatMessage('messages.error_title')
-        ),
-      })
     }
-  }
 
 }
