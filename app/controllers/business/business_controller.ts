@@ -144,12 +144,15 @@ export default class BusinessController {
     await PermissionService.requirePermission(ctx, 'business', 'view')
 
     const { request, auth } = ctx
-    const userId = auth.user!.id
+    const authUser = auth.getUserOrFail()
+    const userId = authUser.id
 
     const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
       page: vine.number().positive().optional(),
       perPage: vine.number().positive().optional()
     })))
+
+    const activeBizUser = await authUser.related('selectedBusiness').query().first()
 
     const businesses = await BusinessRepository.findBusinessByUser(userId, page, perPage)
     const businessCoins = await BusinessRepository.findBusinessCoins(userId)
@@ -160,7 +163,7 @@ export default class BusinessController {
       serBiz.coins = businessCoins.filter((c) => c.business_id === bid)
       serBiz.taxes = businessTaxes
         .filter((t) => t.business_id === bid)
-
+      serBiz.selected = activeBizUser?.id === bid
       return serBiz
     }
     )
