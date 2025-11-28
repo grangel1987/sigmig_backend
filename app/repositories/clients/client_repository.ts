@@ -53,6 +53,7 @@ export default class ClientRepository {
       .join('cities', 'clients.city_id', 'cities.id')
       .whereRaw('clients.name LIKE ?', [`%${params}%`])
       .limit(limit)
+      .preload('city', (b) => b.select(['id', 'name']))
 
     return result
   }
