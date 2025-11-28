@@ -46,11 +46,11 @@ export default class BusinessController {
       email,
       daysExpireBuget,
       coins,
-      delName,
-      delTypeIdentifyId,
-      delIdentify,
-      delPhone,
-      delEmail,
+      delegateName,
+      delegateTypeIdentifyId,
+      delegateIdentify,
+      delegatePhone,
+      delegateEmail,
       authorizationMinor,
       emailConfirmInactiveEmployee,
     } = await request.validateUsing(businessValidator)
@@ -78,11 +78,11 @@ export default class BusinessController {
         }
 
         const delegatePayload = {
-          name: delName,
-          type_identify_id: delTypeIdentifyId,
-          identify: delIdentify,
-          phone: delPhone,
-          email: delEmail,
+          name: delegateName,
+          type_identify_id: delegateTypeIdentifyId,
+          identify: delegateIdentify,
+          phone: delegatePhone,
+          email: delegateEmail,
         }
 
         const business = await Business.create(payload, { client: trx })
@@ -218,7 +218,7 @@ export default class BusinessController {
       await business.load('country', (b) => b.select('name as country'))
       await business.load('typeIdentify', (b) => b.select('text as type_identify'))
       await business.load('delegate')
-      await business.load('')
+      await business.load('city')
       await business.load('coins', (builder) => {
         builder.preload('coins')
       })
@@ -302,11 +302,11 @@ export default class BusinessController {
       email,
       daysExpireBuget,
       coins,
-      delName,
-      delTypeIdentifyId,
-      delIdentify,
-      delPhone,
-      delEmail,
+      delegateName,
+      delegateTypeIdentifyId,
+      delegateIdentify,
+      delegatePhone,
+      delegateEmail,
       authorizationMinor,
       emailConfirmInactiveEmployee,
     } = await request.validateUsing(businessValidator)
@@ -335,17 +335,16 @@ export default class BusinessController {
 
       // ------------------- DELEGATE -------------------
 
-      if (delName || delEmail) {
-
+      if (delegateName || delegateEmail) {
         const delegate = await business.related('delegate').query().first()
         if (!delegate) {
           await business.related('delegate').create(
             {
-              name: delName,
-              typeIdentifyId: delTypeIdentifyId,
-              identify: delIdentify,
-              phone: delPhone,
-              email: delEmail,
+              name: delegateName,
+              typeIdentifyId: delegateTypeIdentifyId,
+              identify: delegateIdentify,
+              phone: delegatePhone,
+              email: delegateEmail,
               createdAt: dateTime,
               createdBy: userId,
               updatedAt: dateTime,
@@ -356,70 +355,71 @@ export default class BusinessController {
         }
         else {
           await delegate.useTransaction(trx).merge({
-            name: delName,
-            typeIdentifyId: delTypeIdentifyId,
-            identify: delIdentify,
-            phone: delPhone,
-            email: delEmail,
+            name: delegateName,
+            typeIdentifyId: delegateTypeIdentifyId,
+            identify: delegateIdentify,
+            phone: delegatePhone,
+            email: delegateEmail,
             updatedAt: dateTime,
             updatedBy: userId,
           }).save()
         }
-        // ------------------- PHOTO -------------------
-        if (photo) {
-          // delete old
-          if (business.urlShort) {
-            await Google.deleteFile(business.urlShort)
-            await Google.deleteFile(business.urlThumbShort!)
-          }
-
-          const res = await Google.uploadFile(photo, 'business', 'image')
-          business.merge(res)
-        }
-
-        await business.useTransaction(trx).save()
-
-        // ------------------- COINS -------------------
-        if (coins) {
-
-          await trx.from('business_coins')
-            .where('business_id', business.id)
-            .delete()
-
-          const payload = coins.map((coinId, idx) => ({
-            businessId: business.id,
-            coinId: coinId,
-            isDefault: idx === 0 ? 1 : 0,
-          }))
-
-          await business.related('coins').createMany(payload, { client: trx })
-        }
-
-        await trx.commit()
-
-        // ------------------- LOAD RELATIONS FOR RESPONSE -------------------
-        await business.load('country', (b) => b.select('name as country'))
-        await business.load('typeIdentify', (b) => b.select('text as type_identify'))
-        await business.load('coins', (b) => b.preload('coins'))
-        await business.load('delegate')
-
-        return response.status(201).json({
-          business,
-          ...MessageFrontEnd(
-            i18n.formatMessage('messages.update_ok'),
-            i18n.formatMessage('messages.ok_title')
-          ),
-        })
-      } catch (err) {
-        await trx.rollback()
-        console.error(err)
-        return response.status(500).json({
-          ...MessageFrontEnd(
-            i18n.formatMessage('messages.update_error'),
-            i18n.formatMessage('messages.error_title')
-          ),
-        })
       }
+      // ------------------- PHOTO -------------------
+      if (photo) {
+        // delete old
+        if (business.urlShort) {
+          await Google.deleteFile(business.urlShort)
+          await Google.deleteFile(business.urlThumbShort!)
+        }
+
+        const res = await Google.uploadFile(photo, 'business', 'image')
+        business.merge(res)
+      }
+
+      await business.useTransaction(trx).save()
+
+      // ------------------- COINS -------------------
+      if (coins) {
+
+        await trx.from('business_coins')
+          .where('business_id', business.id)
+          .delete()
+
+        const payload = coins.map((coinId, idx) => ({
+          businessId: business.id,
+          coinId: coinId,
+          isDefault: idx === 0 ? 1 : 0,
+        }))
+
+        await business.related('coins').createMany(payload, { client: trx })
+      }
+
+      await trx.commit()
+
+      // ------------------- LOAD RELATIONS FOR RESPONSE -------------------
+      await business.load('country', (b) => b.select('name as country'))
+      await business.load('typeIdentify', (b) => b.select('text as type_identify'))
+      await business.load('coins', (b) => b.preload('coins'))
+      await business.load('delegate')
+
+      return response.status(201).json({
+        business,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (err) {
+      await trx.rollback()
+      console.error(err)
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
     }
+  }
 
 }
