@@ -1,6 +1,7 @@
+import Business from '#models/business/business'
 import User from '#models/users/user'
-import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { BaseModel, beforeCreate, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class Coin extends BaseModel {
@@ -31,8 +32,16 @@ export default class Coin extends BaseModel {
   @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
 
-  @belongsTo(() => User, { foreignKey: 'updatedById' })
+  @belongsTo(() => User, { foreignKey: 'updatedBy' })
   public updatedBy: BelongsTo<typeof User>
+
+  @manyToMany(() => Business, {
+    pivotTable: 'business_coins',
+    pivotForeignKey: 'coin_id',
+    pivotRelatedForeignKey: 'business_id',
+    pivotColumns: ['is_default']
+  })
+  public businesses: ManyToMany<typeof Business>
 
   @beforeCreate()
   public static async ensureDefaults(coin: Coin) {

@@ -9,18 +9,18 @@ export const businessValidator = vine.compile(vine.object({
     identify: vine.string().trim().maxLength(50),
     address: vine.string().trim().maxLength(255),
 
-    phone: vine.string().trim().mobile(),
-    email: vine.string().trim().email(),
+    phone: vine.string().trim(),
+    email: vine.string().trim(),
 
     daysExpireBuget: vine.number().min(1).max(365),
-    coins: vine.any().optional(),
+    coins: vine.array(vine.number().positive()).optional(),
 
-    delName: vine.any().optional(),
-    delTypeIdentifyId: vine.any().optional(),
-    delIdentify: vine.any().optional(),
-    delPhone: vine.any().optional(),
-    delEmail: vine.any().optional(),
+    delName: vine.string().optional(),
+    delTypeIdentifyId: vine.number().optional(),
+    delIdentify: vine.string().optional(),
+    delPhone: vine.string().optional(),
+    delEmail: vine.string().optional(),
 
-    authorizationMinor: vine.any().optional(),
-    emailConfirmInactiveEmployee: vine.any().optional(),
+    authorizationMinor: vine.boolean().optional(),
+    emailConfirmInactiveEmployee: vine.boolean().optional(),
 }))
