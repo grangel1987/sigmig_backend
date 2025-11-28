@@ -45,6 +45,7 @@ export default class ClientRepository {
         'clients.id',
         'clients.name',
         'clients.identify',
+        'clients.city_id',
         'settings.text',
         Database.raw('cities.name as city'),
         'clients.enabled',
