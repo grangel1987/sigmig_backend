@@ -41,10 +41,10 @@ export default class Buget extends BaseModel {
     @column()
     public enabled: boolean | null
 
-    @column.dateTime()
+    @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
     public createdAt: DateTime
 
-    @column.dateTime()
+    @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
     public updatedAt: DateTime
 
     @column({ columnName: 'created_by' })
@@ -53,10 +53,10 @@ export default class Buget extends BaseModel {
     @column({ columnName: 'updated_by' })
     public updatedById: number
 
-    @column.dateTime({ columnName: 'expire_date' })
+    @column.dateTime({ columnName: 'expire_date', serialize: (value: DateTime) => value?.toFormat('dd/MM/yyyy') })
     public expireDate: DateTime
 
-    @column.dateTime({ columnName: 'deleted_at' })
+    @column.dateTime({ columnName: 'deleted_at', serialize: (value: DateTime) => value?.toFormat('dd/MM/yyyy') })
     public deletedAt: DateTime | null
 
     @column({ columnName: 'deleted_by' })
