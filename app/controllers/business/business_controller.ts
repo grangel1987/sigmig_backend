@@ -163,7 +163,7 @@ export default class BusinessController {
       serBiz.coins = businessCoins.filter((c) => c.business_id === bid)
       serBiz.taxes = businessTaxes
         .filter((t) => t.business_id === bid)
-      serBiz.selected = activeBizUser?.id === bid
+      serBiz.selected = activeBizUser?.businessId === bid
       return serBiz
     }
     )
