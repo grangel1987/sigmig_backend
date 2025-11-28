@@ -215,8 +215,8 @@ export default class BusinessController {
       }
 
       // Load relationships
-      await business.load('country', (b) => b.select('name as country'))
-      await business.load('typeIdentify', (b) => b.select('text as type_identify'))
+      await business.load('country')
+      await business.load('typeIdentify')
       await business.load('delegate')
       await business.load('city')
       await business.load('coins', (builder) => {
@@ -267,8 +267,8 @@ export default class BusinessController {
     business.urlThumbShort = ''
     await business.save()
 
-    await business.load('country', (b) => b.select('name as country'))
-    await business.load('typeIdentify', (b) => b.select('text as type_identify'))
+    await business.load('country')
+    await business.load('typeIdentify')
     await business.load('coins', (b) => b.preload('coins'))
 
     return response.status(201).json({
@@ -398,8 +398,8 @@ export default class BusinessController {
       await trx.commit()
 
       // ------------------- LOAD RELATIONS FOR RESPONSE -------------------
-      await business.load('country', (b) => b.select('name as country'))
-      await business.load('typeIdentify', (b) => b.select('text as type_identify'))
+      await business.load('country')
+      await business.load('typeIdentify')
       await business.load('coins', (b) => b.preload('coins'))
       await business.load('delegate')
 
@@ -421,5 +421,4 @@ export default class BusinessController {
       })
     }
   }
-
 }
