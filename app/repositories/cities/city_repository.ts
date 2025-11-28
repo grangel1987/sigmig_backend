@@ -9,10 +9,14 @@ export default class CityRepository {
 
   public static async select(country_id: number): Promise<CitySelectResult[]> {
 
-    const result = await db.from('cities')
+    const q = db.from('cities')
       .select('id', 'name as text')
-      .where('enabled', 'true')
+      .where('enabled', 1)
       .where('country_id', country_id)
+
+    console.log(q.toQuery());
+
+    const result = await q
     return result
   }
 }
