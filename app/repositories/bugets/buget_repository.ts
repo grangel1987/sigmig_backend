@@ -13,7 +13,7 @@ export default class BugetRepository {
             }).preload('client', q =>
                 q.preload('city')
                     .preload('typeIdentify')
-            )
+            ).orderBy('created_at', 'desc')
 
 
 
@@ -55,6 +55,8 @@ export default class BugetRepository {
                 q.preload('city')
                     .preload('typeIdentify')
             )
+            .orderBy('created_at', 'desc')
+
         /*         const query = `
                 SELECT 
                     bugets.id,
@@ -94,6 +96,7 @@ export default class BugetRepository {
                     .preload('typeIdentify', (ti) => ti.select(['id', 'text']))
             })
             .select(['id', 'nro', 'client_id', 'created_at'])
+            .orderBy('created_at', 'desc')
 
         console.log(bgtQ.toQuery());
 

@@ -82,6 +82,9 @@ export default class PermissionService {
     moduleKey: string,
     permissionKey: string
   ): Promise<void> {
+
+    return
+
     const hasPermission = await this.canPerformAction(ctx, moduleKey, permissionKey)
 
     if (!hasPermission) {

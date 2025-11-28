@@ -195,8 +195,11 @@ export default class BugetController {
     const rows = await db.from('bugets').where('business_id', businessId).where('nro', number).limit(1)
     const id = rows.length ? rows[0].id : 0
     if (!id) return []
-    const buget = await db.from('bugets').where('id', id).first()
-    return [buget]
+    const budgetRes = await Buget.query().where('id', id).preload('client', q =>
+      q.preload('city')
+        .preload('typeIdentify')
+    )
+    return budgetRes
   }
 
   public async findByNameClient(ctx: HttpContext) {
