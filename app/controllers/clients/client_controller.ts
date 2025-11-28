@@ -20,7 +20,7 @@ export default class ClientController {
         try {
             const clients = await Client.query()
                 .preload('city', (builder) => {
-                    builder.select(['id', 'country_id'])
+                    builder.select(['id', 'country_id', 'name'])
                 })
                 .preload('documentInvoice')
                 .preload('responsibles', (builder) => {
