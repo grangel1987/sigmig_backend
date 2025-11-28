@@ -328,10 +328,10 @@ export default class ShoppingController {
         await PermissionService.requirePermission(ctx, 'shopping', 'delete')
 
         const { params, request, auth, response, i18n } = ctx
-        const { shopId } = await shoppingShopIdParamValidator.validate(params)
+        const { shop_id } = await shoppingShopIdParamValidator.validate(params)
         const dateTime = await Util.getDateTimes(request)
         try {
-            const shop = await Shopping.findOrFail(shopId)
+            const shop = await Shopping.findOrFail(shop_id)
             shop.enabled = false
             shop.deletedAt = dateTime
             shop.deletedById = auth.user!.id
