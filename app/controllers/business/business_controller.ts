@@ -42,11 +42,11 @@ export default class BusinessController {
       email,
       daysExpireBuget,
       coins,
-      delName,
-      delTypeIdentifyId,
-      delIdentify,
-      delPhone,
-      delEmail,
+      delegateName,
+      delegateTypeIdentifyId,
+      delegateIdentify,
+      delegatePhone,
+      delegateEmail,
       authorizationMinor,
       emailConfirmInactiveEmployee,
     } = await request.validateUsing(businessValidator)
@@ -74,11 +74,11 @@ export default class BusinessController {
         }
 
         const delegatePayload = {
-          name: delName,
-          type_identify_id: delTypeIdentifyId,
-          identify: delIdentify,
-          phone: delPhone,
-          email: delEmail,
+          name: delegateName,
+          type_identify_id: delegateTypeIdentifyId,
+          identify: delegateIdentify,
+          phone: delegatePhone,
+          email: delegateEmail,
         }
 
         const business = await Business.create(payload, { client: trx })
@@ -208,6 +208,7 @@ export default class BusinessController {
       await business.load('country', (b) => b.select('name as country'))
       await business.load('typeIdentify', (b) => b.select('text as type_identify'))
       await business.load('delegate')
+      await business.load('city')
       await business.load('coins', (builder) => {
         builder.preload('coins')
       })
@@ -291,11 +292,11 @@ export default class BusinessController {
       email,
       daysExpireBuget,
       coins,
-      delName,
-      delTypeIdentifyId,
-      delIdentify,
-      delPhone,
-      delEmail,
+      delegateName,
+      delegateTypeIdentifyId,
+      delegateIdentify,
+      delegatePhone,
+      delegateEmail,
       authorizationMinor,
       emailConfirmInactiveEmployee,
     } = await request.validateUsing(businessValidator)
@@ -327,21 +328,36 @@ export default class BusinessController {
         .where('business_id', business.id)
         .delete()
 
-      if (delName || delEmail)
-        await business.related('delegate').create(
-          {
-            name: delName,
-            typeIdentifyId: delTypeIdentifyId,
-            identify: delIdentify,
-            phone: delPhone,
-            email: delEmail,
-            createdAt: dateTime,
-            createdBy: userId,
+      if (delegateName || delegateEmail) {
+        const delegate = await business.related('delegate').query().first()
+        if (!delegate) {
+          await business.related('delegate').create(
+            {
+              name: delegateName,
+              typeIdentifyId: delegateTypeIdentifyId,
+              identify: delegateIdentify,
+              phone: delegatePhone,
+              email: delegateEmail,
+              createdAt: dateTime,
+              createdBy: userId,
+              updatedAt: dateTime,
+              updatedBy: userId,
+            },
+            { client: trx }
+          )
+        }
+        else {
+          await delegate.useTransaction(trx).merge({
+            name: delegateName,
+            typeIdentifyId: delegateTypeIdentifyId,
+            identify: delegateIdentify,
+            phone: delegatePhone,
+            email: delegateEmail,
             updatedAt: dateTime,
             updatedBy: userId,
-          },
-          { client: trx }
-        )
+          }).save()
+        }
+      }
 
       // ------------------- PHOTO -------------------
       if (photo) {
