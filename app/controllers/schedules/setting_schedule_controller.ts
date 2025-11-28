@@ -55,7 +55,7 @@ export default class SettingScheduleController {
         const { businessId, name, workDays, daysOff, events, minFlexIn, minFlexOut } = await request.validateUsing(
             settingScheduleStoreValidator
         )
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
 
         try {
             let eventsStr = events
@@ -108,7 +108,7 @@ export default class SettingScheduleController {
         const { params, request, response, auth, i18n } = ctx
         const scheduleId = Number(params.id)
         const { name, workDays, daysOff, events } = await request.validateUsing(settingScheduleUpdateValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         try {
             const schedule = await SettingSchedule.findOrFail(scheduleId)
 
@@ -156,7 +156,7 @@ export default class SettingScheduleController {
 
         const { params, request, response, auth, i18n } = ctx
         const scheduleId = Number(params.id)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         try {
             const schedule = await SettingSchedule.findOrFail(scheduleId)
             schedule.enabled = !schedule.enabled

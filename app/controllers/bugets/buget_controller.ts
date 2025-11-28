@@ -34,7 +34,7 @@ export default class BugetController {
 
     const trx = await db.transaction()
     try {
-      const dateTime = await Util.getDateTimes(request.ip())
+      const dateTime = await Util.getDateTimes(request)
       const business = await Business.query({ client: trx }).where('id', businessId).firstOrFail()
       const daysExpire = business.daysExpireBuget || 0
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
@@ -135,7 +135,7 @@ export default class BugetController {
 
     const { params, request } = ctx
     const bugetId = Number(params.id)
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const now = dateTime
     const buget = await Buget.find(bugetId)
     if (!buget) return null
@@ -216,6 +216,7 @@ export default class BugetController {
     const { request } = ctx
     const { businessId, date } = await request.validateUsing(bugetFindByDateValidator)
     const dateSql = DateTime.fromJSDate(date).toSQLDate()!
+
     return await BugetRepository.findByDate(Number(businessId), String(dateSql))
   }
 
@@ -224,7 +225,7 @@ export default class BugetController {
 
     const { params, request, auth, response, i18n } = ctx
     const bugetId = Number(params.id)
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     try {
       await db
         .from('bugets')
@@ -305,7 +306,7 @@ export default class BugetController {
     const bugetId = Number(params.id)
     const trx = await db.transaction()
     try {
-      const dateTime = await Util.getDateTimes(request.ip())
+      const dateTime = await Util.getDateTimes(request)
       const {
         products = [],
         items = [],

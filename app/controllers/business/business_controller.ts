@@ -34,7 +34,7 @@ export default class BusinessController {
 
     const { request, response, auth, i18n } = ctx
     const trx = await db.transaction()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
 
     const {
       name,
@@ -292,8 +292,7 @@ export default class BusinessController {
     const { params, request, response, auth, i18n } = ctx
     const businessId = Number(params.id)
     const userId = auth.user!.id
-    const ip = request.ip()
-    const dateTime = await Util.getDateTimes(ip)
+    const dateTime = await Util.getDateTimes(request)
 
     const {
       name,

@@ -70,7 +70,7 @@ export default class BusinessEmployeeController {
             })
         )
         const { businessOldId, businessId, employeeId } = await request.validateUsing(schema)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
 
         const exists = await BusinessEmployee.query()
             .where('business_id', businessId)

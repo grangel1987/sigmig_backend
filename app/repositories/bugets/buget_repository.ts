@@ -47,15 +47,26 @@ export default class BugetRepository {
 
     // Find budgets by creation date for a business
     public static async findByDate(businessId: number, date: string) {
+        const today = DateTime.now().toSQLDate()
+        const tomorrow = DateTime.now().plus({ days: 1 }).toSQLDate()
 
-        return await Buget.query()
+        let query = Buget.query()
             .where('business_id', businessId)
-            .whereRaw('DATE(created_at) = ?', [date])
             .preload('client', q =>
                 q.preload('city')
                     .preload('typeIdentify')
             )
             .orderBy('created_at', 'desc')
+
+        if (date === today) {
+            // If date is today, query for range between today and tomorrow
+            query = query.whereRaw('DATE(created_at) BETWEEN ? AND ?', [today, tomorrow])
+        } else {
+            // Otherwise, query for exact date
+            query = query.whereRaw('DATE(created_at) = ?', [date])
+        }
+
+        return await query
 
         /*         const query = `
                 SELECT 

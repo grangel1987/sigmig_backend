@@ -49,7 +49,7 @@ export default class BookingController {
         const { request, response, i18n } = ctx
         const trx = await db.transaction()
         try {
-            const dateTime = await Util.getDateTimes(request.ip())
+            const dateTime = await Util.getDateTimes(request)
             const { booking, clientId, guests, propertie, items, feeding } = await request.validateUsing(bookingStoreValidator)
 
             // Normalize booking payload
@@ -248,7 +248,7 @@ export default class BookingController {
         await PermissionService.requirePermission(ctx, 'booking', 'view')
 
         const { request } = ctx
-        await Util.getDateTimes(request.ip())
+        await Util.getDateTimes(request)
         const result = await db.from('bookings').where('attended', 0).count('* as total')
         const row = Array.isArray(result) ? (result as any)[0] : (result as any)
         return row?.total ?? 0
@@ -277,7 +277,7 @@ export default class BookingController {
         const trx = await db.transaction()
         try {
             const { nro_buget } = request.all()
-            const dateTime = await Util.getDateTimes(request.ip())
+            const dateTime = await Util.getDateTimes(request)
             // Load and update via Lucid within the same transaction
             const booking = await Booking.findOrFail(bookingId)
             booking.useTransaction(trx)

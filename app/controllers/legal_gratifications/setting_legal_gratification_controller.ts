@@ -37,7 +37,7 @@ export default class SettingLegalGratificationController {
 
         const { request, response, auth, i18n } = ctx
         const { name } = await request.validateUsing(settingLegalGratificationStoreValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         try {
             const payload = {
                 name,
@@ -67,7 +67,7 @@ export default class SettingLegalGratificationController {
         const { request, params, response, auth, i18n } = ctx
         const id = Number(params.id)
         const { name } = await request.validateUsing(settingLegalGratificationUpdateValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         try {
             const legalGrt = await SettingLegalGratification.findOrFail(id)
             legalGrt.merge({ name, updatedById: auth.user!.id, updatedAt: dateTime })
@@ -91,7 +91,7 @@ export default class SettingLegalGratificationController {
 
         const { params, request, response, auth, i18n } = ctx
         const id = Number(params.id)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         try {
             const legalGrt = await SettingLegalGratification.findOrFail(id)
             legalGrt.enabled = !legalGrt.enabled

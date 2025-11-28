@@ -28,7 +28,7 @@ export default class ClientRequestController {
         }
 
         try {
-            const now = await Util.getDateTimes(request.ip())
+            const now = await Util.getDateTimes(request)
             const payload = {
                 clientId,
                 isBooking,

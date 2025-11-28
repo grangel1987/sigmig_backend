@@ -57,7 +57,7 @@ export default class ClientController {
 
         const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(clientStoreValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
 
 
         const trx = await db.transaction()
@@ -215,7 +215,7 @@ export default class ClientController {
         const { params, request, response, auth, i18n } = ctx
         const clientId = params.id
         const { clientDocumentInvoiceId, clientDocumentInvoiceValue, systemPaymentProvider, ...data } = await request.validateUsing(clientUpdateValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         const trx = await db.transaction()
         try {
             const client = await Client.findOrFail(clientId, { client: trx })
@@ -360,7 +360,7 @@ export default class ClientController {
 
         const { params, request, response, auth, i18n } = ctx
         const clientId = params.id
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
 
         try {
             const client = await Client.findOrFail(clientId)

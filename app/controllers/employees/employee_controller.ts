@@ -276,7 +276,7 @@ export default class EmployeeController {
             const certificateHealthRaw: Record<string, any>[] = Array.isArray(payload.certificateHealth) ? payload.certificateHealth : []
             const contactsEmergencyRaw: Record<string, any>[] = Array.isArray(payload.contactsEmergency) ? payload.contactsEmergency : []
 
-            const currentTime = await Util.getDateTimes(request.ip())
+            const currentTime = await Util.getDateTimes(request)
             // Debug: nested collections received (disabled in production)
 
             const authorization = request.file('authorization', { size: '5mb' })
@@ -527,7 +527,7 @@ export default class EmployeeController {
 
         const { request, params, auth, i18n, response } = ctx
         const employeeId = Number(params.id)
-        const currentTime = (await Util.getDateTimes(request.ip())).toISO()
+        const currentTime = (await Util.getDateTimes(request)).toISO()
         const trx = await db.transaction()
         const { employeeUpdateValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeUpdateValidator)
@@ -997,7 +997,7 @@ export default class EmployeeController {
 
         const { request, response, i18n } = ctx
         const { employeeId } = await request.validateUsing(employeeDeletePhotoValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         const employee = await Employee.find(employeeId)
         if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
 
@@ -1050,7 +1050,7 @@ export default class EmployeeController {
         if (typeof businessEmployeeId !== 'number' || businessEmployeeId <= 0) {
             return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.validation_error'), i18n.formatMessage('messages.error_title')))
         }
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         try {
             const businessEmployee = await BusinessEmployee.find(businessEmployeeId)
             if (!businessEmployee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
@@ -1097,7 +1097,7 @@ export default class EmployeeController {
     }
 
     public async storeWorkPermits({ request, response, auth, i18n }: HttpContext) {
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         const { employeePermitStoreValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeePermitStoreValidator)
         const authUserId = auth.user!.id
@@ -1160,7 +1160,7 @@ export default class EmployeeController {
     }
 
     public async updateWorkPermits({ request, response, auth, i18n }: HttpContext) {
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         const { employeePermitUpdateValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeePermitUpdateValidator)
 
@@ -1272,7 +1272,7 @@ export default class EmployeeController {
 
     public async autorizePermit({ request, response, auth, i18n }: HttpContext) {
         const { permitId } = await request.validateUsing(employeePermitIdValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         const permit = await EmployeePermit.findOrFail(permitId)
         const authUser = auth.getUserOrFail()
         const isPAuthorizer = permit.authorizerId === auth.user!.id
@@ -1292,7 +1292,7 @@ export default class EmployeeController {
 
     public async deletePermit({ request, response, auth, i18n }: HttpContext) {
         const { permitId } = await request.validateUsing(employeePermitIdValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         const permit = await EmployeePermit.find(permitId)
         if (!permit) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
         permit.enabled = !permit.enabled
@@ -1481,7 +1481,7 @@ export default class EmployeeController {
 
     public async findAccess({ request }: HttpContext) {
         let { condition, workId, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
         let pDateStart = dateStart ? DateTime.fromJSDate(dateStart) : null
         let pDateEnd = dateEnd ? DateTime.fromJSDate(dateEnd) : null
         if (condition === 1) {
@@ -1504,7 +1504,7 @@ export default class EmployeeController {
 
     public async findAccessByEmployeeId({ request }: HttpContext) {
         let { employeeId, condition, dateStart, dateEnd } = await request.validateUsing(employeeFindAccessByEmployeeIdValidator)
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
 
         let pDateStart = dateStart ? DateTime.fromJSDate(dateStart) : null
         let pDateEnd = dateEnd ? DateTime.fromJSDate(dateEnd) : null

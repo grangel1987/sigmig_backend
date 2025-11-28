@@ -44,7 +44,7 @@ export default class UserController {
           })))
 
 
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
 
     try {
       const user = await UserRepository.findByEmail(email)
@@ -201,7 +201,7 @@ export default class UserController {
         })
       )
     )
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const user = await auth.use('jwt').authenticate()
 
     if (await user.verifyPassword(currentPassword)) {
@@ -236,7 +236,7 @@ export default class UserController {
   }
 
   public async resetPassword({ request, response, auth, i18n }: HttpContext) {
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const { businessId, userId } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -366,7 +366,7 @@ export default class UserController {
         })
       )
     )
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const dev = env.get('NODE_ENV') === 'development' || Boolean(request.header('Pwdsecret'))
 
 
@@ -431,7 +431,7 @@ export default class UserController {
 
     const { request, response, i18n } = ctx
     const { personalDataId, email } = request.all()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const password = '12345678'
 
     try {
@@ -543,7 +543,7 @@ export default class UserController {
 
     const { request, response, auth, i18n } = ctx
     const trx = await db.transaction()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const { email, business, signature, employeeId, personalData, isAuthorizer, isAdmin } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -774,7 +774,7 @@ export default class UserController {
       )
     )
     const trx = await db.transaction()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const createdFiles: string[] = []
 
     try {
@@ -928,7 +928,7 @@ export default class UserController {
       )
     )
     const trx = await db.transaction()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const createdFiles: string[] = []
     const filesToDelete: string[] = []
 
@@ -1156,7 +1156,7 @@ export default class UserController {
 
     const { request, response, i18n } = ctx
     const { email, code } = request.all()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const user = await User.findBy('email', email)
 
     if (!user) {
@@ -1215,7 +1215,7 @@ export default class UserController {
 
   public async webRegisterEmail({ request, response, i18n }: HttpContext) {
     const { email } = request.all()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
 
     try {
       const user = await User.findBy('email', email)
@@ -1264,7 +1264,7 @@ export default class UserController {
 
   public async webVerifyCodeConfirm({ request, response, i18n }: HttpContext) {
     const { code, email } = request.all()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const user = await User.findBy('email', email)
 
     if (user) {
@@ -1299,7 +1299,7 @@ export default class UserController {
 
   public async webRegisterPwd({ request, response, i18n }: HttpContext) {
     const { password, email } = request.all()
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const user = await User.findBy('email', email)
 
     if (user) {
@@ -1331,7 +1331,7 @@ export default class UserController {
    */
   public async recoverPassword({ request, response, i18n }: HttpContext) {
     const { email } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email() })))
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
 
     try {
       const user = await User.query()
@@ -1389,7 +1389,7 @@ export default class UserController {
   }
 
   public async webClientLogin({ request, response, auth, i18n }: HttpContext) {
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const { username, password } = request.only(['username', 'password'])
 
     try {
@@ -1473,7 +1473,7 @@ export default class UserController {
         })
       )
     )
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     try {
       const user = await User.findOrFail(params.id)
       const oldShort = user.signatureShort
@@ -1516,7 +1516,7 @@ export default class UserController {
         })
       )
     )
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     try {
       const user = await User.findOrFail(params.id)
       if (!user.personalDataId) {
@@ -1568,7 +1568,7 @@ export default class UserController {
         })
       )
     )
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     try {
       const user = await User.findOrFail(params.id)
       const oldShort = user.signatureShort
@@ -1604,7 +1604,7 @@ export default class UserController {
         })
       )
     )
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     try {
       const user = await User.findOrFail(params.id)
       if (!user.personalDataId) {
@@ -1690,7 +1690,7 @@ export default class UserController {
 
   public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
     // Similar to store, but for admin
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const { email, business, personalData, signature, isAauthorizer, isAdmin } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -1917,7 +1917,7 @@ export default class UserController {
 
   public async verifyCodeConfirm({ request, response, i18n }: HttpContext) {
     const { email, code } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email(), code: vine.string() })))
-    const dateTime = await Util.getDateTimes(request.ip())
+    const dateTime = await Util.getDateTimes(request)
     const user = await User.findBy('email', email)
 
     if (!user) {

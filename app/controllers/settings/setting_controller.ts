@@ -42,7 +42,7 @@ export default class SettingController {
 
     const { request, i18n } = ctx
     try {
-      const dateTime = await Util.getDateTimes(request.ip())
+      const dateTime = await Util.getDateTimes(request)
       const lastIndicator = await SettingRepository.getLastIndicator()
 
       if (lastIndicator) {

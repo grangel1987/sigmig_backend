@@ -31,7 +31,7 @@ export default class ShoppingController {
             await request.validateUsing(shoppingStoreValidator)
 
         const trx = await db.transaction()
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
 
         try {
             const lastShop = await db.from('shoppings')
@@ -111,7 +111,7 @@ export default class ShoppingController {
         const { params, request, response, auth, i18n } = ctx
         const { shopId } = await shoppingShopIdParamValidator.validate(params)
         const trx = await db.transaction()
-        const dateTime = await Util.getDateTimes(request.ip())
+        const dateTime = await Util.getDateTimes(request)
 
         try {
             const { provider, products, cost_center: costCenter, work, info, rounding } = request.all() as any
@@ -181,7 +181,7 @@ export default class ShoppingController {
 
         const { request, auth, response, i18n } = ctx
         const { id } = await request.validateUsing(vine.compile(vine.object({ id: vine.number().positive() })))
-        const dateTime = await Util.getDateTimes('')
+        const dateTime = await Util.getDateTimes(request)
 
         const authUser = auth.getUserOrFail()
         const shop = await Shopping.findOrFail(id)
@@ -327,9 +327,9 @@ export default class ShoppingController {
     public async delete(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'shopping', 'delete')
 
-        const { params, auth, response, i18n } = ctx
+        const { params, request, auth, response, i18n } = ctx
         const { shopId } = await shoppingShopIdParamValidator.validate(params)
-        const dateTime = await Util.getDateTimes('')
+        const dateTime = await Util.getDateTimes(request)
         try {
             const shop = await Shopping.findOrFail(shopId)
             shop.enabled = false

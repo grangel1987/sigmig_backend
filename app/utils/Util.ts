@@ -1,4 +1,5 @@
 import Env from '#start/env';
+import { Request } from '@adonisjs/core/http';
 import logger from '@adonisjs/core/services/logger';
 import geoip from 'geoip-lite';
 import { DateTime } from 'luxon';
@@ -77,9 +78,9 @@ export default new class Util {
     return Math.floor(DateTime.fromISO(expireDate).toMillis() / 1000);
   }
 
-  async getDateTimes(ip?: string) {
-    const location = await this.getLocation(ip)
-    const now = DateTime.now().setZone(location?.timezone || 'America/Santiago');
+  async getDateTimes(req: Request) {
+    // const location = await this.getLocation(ip)
+    const now = DateTime.now().setZone(req.header('Timezone') || 'America/Santiago');
     return now;
   }
 
