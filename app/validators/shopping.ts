@@ -64,7 +64,7 @@ export const shoppingIdParamValidator = vine.compile(
 
 export const shoppingShopIdParamValidator = vine.compile(
     vine.object({
-        shopId: vine.number().positive(),
+        shop_id: vine.number().positive(),
     })
 )
 

@@ -109,13 +109,13 @@ export default class ShoppingController {
         await PermissionService.requirePermission(ctx, 'shopping', 'update')
 
         const { params, request, response, auth, i18n } = ctx
-        const { shopId } = await shoppingShopIdParamValidator.validate(params)
+        const { shop_id } = await shoppingShopIdParamValidator.validate(params)
         const trx = await db.transaction()
         const dateTime = await Util.getDateTimes(request)
 
         try {
             const { provider, products, cost_center: costCenter, work, info, rounding } = request.all() as any
-            const shop = await Shopping.findOrFail(shopId)
+            const shop = await Shopping.findOrFail(shop_id)
 
             shop.costCenterId = costCenter ?? null
             shop.workId = work ?? null
@@ -135,7 +135,7 @@ export default class ShoppingController {
             await shop.useTransaction(trx).save()
 
             // Remove old products and insert new ones
-            await trx.from('shopping_products').where('shopping_id', shopId).delete()
+            await trx.from('shopping_products').where('shopping_id', shop_id).delete()
 
             const productsRows = (products || []).map((p: any) => {
                 const productId = Number(p.id)
@@ -154,7 +154,7 @@ export default class ShoppingController {
             await trx.commit()
 
             // Reload the shopping with preloads
-            const updatedShop = await Shopping.findOrFail(shopId)
+            const updatedShop = await Shopping.findOrFail(shop_id)
             // Preload authorizer with personalData if authorizerId exists
             if (updatedShop.authorizerId) {
                 await updatedShop.load('authorizer', (b) => {
