@@ -1,4 +1,5 @@
 import Shopping from '#models/shoppings/shopping'
+import Util from '#utils/Util'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
@@ -15,7 +16,7 @@ export default class ShoppingProduct extends BaseModel {
     @column()
     public name: string
 
-    @column()
+    @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
     public price: number
 
     @column({ columnName: 'count' })

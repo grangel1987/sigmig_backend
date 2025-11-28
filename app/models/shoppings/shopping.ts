@@ -5,6 +5,7 @@ import Setting from '#models/settings/setting'
 import ShoppingProduct from '#models/shoppings/shopping_product'
 import User from '#models/users/user'
 import Work from '#models/works/work'
+import Util from '#utils/Util'
 import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
@@ -31,7 +32,7 @@ export default class Shopping extends BaseModel {
     @column({ columnName: 'work_id' })
     public workId: number | null
 
-    @column()
+    @column(/* { serialize: (value: number) => Util.truncateToTwoDecimals(value) } */)
     public rounding: number
 
     @column({ columnName: 'requested_by' })
@@ -43,10 +44,10 @@ export default class Shopping extends BaseModel {
     @column({ columnName: 'send_condition_id' })
     public sendConditionId: number | null
 
-    @column({ columnName: 'send_amount' })
+    @column({ columnName: 'send_amount', serialize: (value: number | null) => Util.truncateToTwoDecimals(value) })
     public sendAmount: number | null
 
-    @column({ columnName: 'other_amount' })
+    @column({ columnName: 'other_amount', serialize: (value: number | null) => Util.truncateToTwoDecimals(value) })
     public otherAmount: number | null
 
     @column()

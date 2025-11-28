@@ -1,5 +1,6 @@
 import Buget from '#models/bugets/buget'
 import Product from '#models/products/product'
+import Util from '#utils/Util'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
@@ -19,7 +20,7 @@ export default class BugetProduct extends BaseModel {
     @column()
     public name: string
 
-    @column()
+    @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
     public amount: number
 
     @column()

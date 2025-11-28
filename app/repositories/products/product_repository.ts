@@ -6,6 +6,7 @@ export default class ProductRepository {
   static index(businessId: number) {
     return Product.query()
       .where('business_id', businessId)
+      .where('enabled', true)
       .preload('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
