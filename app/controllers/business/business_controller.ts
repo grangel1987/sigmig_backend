@@ -68,13 +68,13 @@ export default class BusinessController {
           address,
           phone,
           email,
-          authorizationMinor: authorizationMinor === 'true',
+          authorizationMinor: Boolean(authorizationMinor),
           daysExpireBuget: daysExpireBuget,
           createdAt: dateTime,
           createdById: auth.user!.id,
           updatedAt: dateTime,
           updatedById: auth.user!.id,
-          emailConfirmInactiveEmployee: emailConfirmInactiveEmployee === 'true',
+          emailConfirmInactiveEmployee: Boolean(emailConfirmInactiveEmployee),
         }
 
         const delegatePayload = {
@@ -95,14 +95,13 @@ export default class BusinessController {
           await business.merge(res).useTransaction(trx).save()
 
           if (coins) {
-            const parsedCoins = JSON.parse(coins)
 
             await trx.from('business_coins').where('business_id', business.id).delete()
 
-            const coinsData = parsedCoins.map((coinId: number, index: number) => ({
-              business_id: business.id,
-              coin_id: coinId,
-              is_default: index === 0 ? 1 : 0,
+            const coinsData = coins.map((coinId: number, index: number) => ({
+              businessId: business.id,
+              coinId: coinId,
+              isDefault: index === 0 ? 1 : 0,
             }))
 
             await business.related('coins').createMany(coinsData, { client: trx })
@@ -280,22 +279,22 @@ export default class BusinessController {
 
     const {
       name,
-      country_id: countryId,
-      type_identify_id: typeIdentifyId,
+      countryId,
+      typeIdentifyId,
       identify,
       address,
       phone,
       email,
-      days_expire_buget: daysExpireBuget,
-      coins: rawCoins,
-      del_name: delName,
-      del_type_identify_id: delTypeIdentifyId,
-      del_identify: delIdentify,
-      del_phone: delPhone,
-      del_email: delEmail,
-      authorization_minor: authorizationMinor,
-      email_confirm_inactive_employee: emailConfirmInactiveEmployee,
-    } = request.all()
+      daysExpireBuget,
+      coins,
+      delName,
+      delTypeIdentifyId,
+      delIdentify,
+      delPhone,
+      delEmail,
+      authorizationMinor,
+      emailConfirmInactiveEmployee,
+    } = await request.validateUsing(businessValidator)
 
     const photo = request.file('photo')
 
@@ -355,8 +354,7 @@ export default class BusinessController {
       await business.useTransaction(trx).save()
 
       // ------------------- COINS -------------------
-      if (rawCoins) {
-        const coins: number[] = JSON.parse(rawCoins)
+      if (coins) {
 
         await trx.from('business_coins')
           .where('business_id', business.id)
