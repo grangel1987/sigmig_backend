@@ -178,7 +178,7 @@ export default class ClientController {
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
                     .select(['id', 'personal_data_id', 'email'])
             })
-            await client.load('typeIdentify', (builder) => builder.select(['id', 'text', 'client_contact_type_id']))
+            await client.load('typeIdentify', (builder) => builder.select(['id', 'text']))
             await client.load('city', (builder) => builder.select(['id', 'country_id']))
             await client.load('files')
             await client.load('documentInvoice')
