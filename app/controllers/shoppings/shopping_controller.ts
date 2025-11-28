@@ -317,7 +317,7 @@ export default class ShoppingController {
             for (const p of serialized.products) {
                 const importe = Number(p.price) * Number(p.count)
                 const tax = Number(p.tax) / 100
-                    ; (p as any).total = importe * tax + importe
+                    ; (p as any).total = Util.truncateToTwoDecimals(importe * tax + importe)
             }
         }
         return serialized
@@ -430,7 +430,7 @@ export default class ShoppingController {
             for (const p of serialized.products) {
                 const subtotal = Number(p.price) * Number(p.count)
                 const tax = Number(p.tax) / 100
-                p.total = subtotal * tax + subtotal
+                p.total = Util.truncateToTwoDecimals(subtotal * tax + subtotal)
             }
         }
         return serialized
@@ -449,7 +449,7 @@ export default class ShoppingController {
                 full_name: shop.provider.name,
                 token: shop.token ?? '',
             }
-            await await emitter.emit('new::shoppingShare', payloadEmail)
+            await emitter.emit('new::shoppingShare', payloadEmail)
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_ok'), i18n.formatMessage('messages.ok_title')))
         } catch (error) {
             console.error(error)

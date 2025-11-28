@@ -72,7 +72,7 @@ export default class ProductController {
         const { params, response, auth, i18n } = ctx
         const dateTime = DateTime.local()
         try {
-            const product = await Product.findOrFail(params.id)
+            const product = await Product.query().where('id', params.id).firstOrFail()
             product.enabled = !product.enabled
             product.updatedById = auth.user!.id
             product.updatedAt = dateTime
@@ -281,7 +281,7 @@ export default class ProductController {
         const dateTime = DateTime.local()
 
         try {
-            const product = await Product.findOrFail(params.id)
+            const product = await Product.query().where('id', params.id).firstOrFail()
 
             let url = product.url
             let urlShort = product.urlShort

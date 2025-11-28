@@ -204,5 +204,15 @@ export default new class Util {
     return Math.round(Math.random() * 999999).toString();
   }
 
+  /**
+   * Truncate a number to 2 decimal places without rounding
+   * @param value - The number to truncate
+   * @returns The truncated number with 2 decimal places
+   */
+  truncateToTwoDecimals(value: number | null): number | null {
+    if (value === null || value === undefined) return null;
+    return Math.trunc(value * 100) / 100;
+  }
+
 }
 

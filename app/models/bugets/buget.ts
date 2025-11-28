@@ -5,6 +5,7 @@ import BugetProduct from '#models/bugets/buget_product'
 import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import User from '#models/users/user'
+import Util from '#utils/Util'
 import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
@@ -28,13 +29,13 @@ export default class Buget extends BaseModel {
     @column({ columnName: 'currency_symbol' })
     public currencySymbol: string | null
 
-    @column({ columnName: 'currency_value' })
+    @column({ columnName: 'currency_value', serialize: (value: number | null) => Util.truncateToTwoDecimals(value) })
     public currencyValue: number | null
 
-    @column()
+    @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
     public utility: number
 
-    @column()
+    @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
     public discount: number
 
     @column()
