@@ -1,6 +1,7 @@
 import Setting from '#models/settings/setting';
 import User from '#models/users/user';
-import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm';
+import { BaseModel, beforeCreate, beforeFetch, beforeFind, belongsTo, column } from '@adonisjs/lucid/orm';
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import { DateTime } from 'luxon';
 
@@ -50,6 +51,12 @@ export default class Product extends BaseModel {
     @column({ columnName: 'updated_by' })
     public updatedById: number;
 
+    @column.dateTime({ serializeAs: null })
+    declare deletedAt: DateTime
+
+    @column({ serializeAs: null })
+    public deleted: boolean;
+
     @column.dateTime({ autoCreate: true })
     public createdAt: DateTime;
 
@@ -69,6 +76,17 @@ export default class Product extends BaseModel {
 
     @belongsTo(() => Setting, { foreignKey: 'typeId' })
     public type!: BelongsTo<typeof Setting>;
+
+    /**
+     * Runs before finding a single record from the database
+     */
+    @beforeFind()
+    @beforeFetch()
+    public static hookName(query: ModelQueryBuilderContract<typeof Product>) {
+        query.where('deleted', false);
+
+    }
+
 
     public static castDates(_field: string, value: DateTime): string {
         return value.toFormat('dd/MM/yyyy hh:mm:ss a');

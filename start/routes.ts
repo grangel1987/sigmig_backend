@@ -183,6 +183,7 @@ router.group(() => {
       "#controllers/buget/setting_buget_category_controller.changeStatus"
     );
     router.get("/select", "#controllers/buget/setting_buget_category_controller.select");
+    router.delete("/delete/:id", "#controllers/buget/setting_buget_category_controller.delete");
   })
     .prefix("setting-buget-categories")
     .middleware(auth)
@@ -356,6 +357,7 @@ router.group(() => {
     router.put("/change-status/:id", "#controllers/products/product_controller.changeStatus");
     router.post("/findAutoComplete", "#controllers/products/product_controller.findAutoComplete");
     router.get("/show/:id", "#controllers/products/product_controller.show");
+    router.delete("/delete/:id", "#controllers/products/product_controller.delete");
     router.delete("/delete/photo/:id", "#controllers/products/product_controller.deletePhoto");
   })
     .prefix(`product`)
@@ -613,6 +615,12 @@ router.group(() => {
     router.get('/details/:token', '#controllers/shoppings/shopping_controller.showByToken')
   })
     .prefix('shopping')
+
+  // Bugets (public)
+  router.group(() => {
+    router.get('/view/:token', '#controllers/bugets/buget_controller.showPublic')
+  })
+    .prefix('buget')
 
   // Booking (protected)
   router.group(() => {

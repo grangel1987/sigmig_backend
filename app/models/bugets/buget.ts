@@ -24,6 +24,10 @@ export default class Buget extends BaseModel {
     @column({ columnName: 'client_id' })
     public clientId: number | null
 
+
+    @column()
+    declare token: string | null
+
     @column({ columnName: 'currency_id' })
     public currencyId: number | null
 
@@ -95,6 +99,16 @@ export default class Buget extends BaseModel {
     @hasOne(() => BugetDetail, { foreignKey: 'bugetId' })
     public details: HasOne<typeof BugetDetail>
 
+
+    /**
+     * Runs before creating a new record
+     */
+    @beforeCreate()
+    public static async setToken(bdt: Buget) {
+
+        if (!bdt.token) bdt.token = Util.generateToken(16)
+
+    }
 
 
     @beforeFetch()

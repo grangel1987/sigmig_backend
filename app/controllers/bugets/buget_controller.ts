@@ -221,6 +221,141 @@ export default class BugetController {
     }
     return serialized
   }
+
+  // Public method to view budget by token (no authentication required)
+  public async showPublic(ctx: HttpContext) {
+    const { params, request } = ctx
+    const token = params.token as string
+
+    if (!token) {
+      return ctx.response.status(400).json({
+        message: 'Token is required',
+        title: 'Bad Request'
+      })
+    }
+
+    const dateTime = await Util.getDateTimes(request)
+    const now = dateTime
+
+    // Find budget by token (bypassing the enabled filter)
+    const buget = await Buget.query()
+      .where('token', token)
+      .where('enabled', true)
+      .first()
+
+    if (!buget) {
+      return ctx.response.status(404).json({
+        message: 'Budget not found or expired',
+        title: 'Not Found'
+      })
+    }
+
+    // Load all the same relationships as the authenticated show method
+    await buget.load('business', (q) => {
+      q.select(['name', 'url', 'email', 'identify', 'footer', 'type_identify_id'])
+      q.preload('typeIdentify', (qq) => qq.select(['text']))
+    })
+
+    await buget.load('client', (q) => {
+      q.select(['name', 'identify', 'email', 'address', 'phone', 'identify_type_id', 'city_id'])
+      q.preload('typeIdentify', (qq) => qq.select(['text']))
+      q.preload('city', (qq) => qq.select(['name']))
+    })
+
+    await buget.load('products', (q) => {
+      q.select(['name', 'amount', 'count', 'count_person', 'tax', 'product_id'])
+      q.preload('products', (qq) => {
+        qq.select(['name', 'type_id'])
+        qq.preload('type', (qqq) => qqq.select(['text']))
+      })
+    })
+
+    await buget.load('items', (q) => {
+      q.select(['with_title', 'title', 'value'])
+    })
+
+    await buget.load('banks', (q) => {
+      q.select(['account_id'])
+      q.preload('account', (qq) => {
+        qq.select(['number', 'bank_id', 'type_account_id'])
+        qq.preload('bank', (qqq) => qqq.select(['text']))
+        qq.preload('typeAccount', (qqq) => qqq.select(['text']))
+      })
+    })
+
+    await buget.load('details', (q) => {
+      q.select(['cost_center', 'work', 'observation'])
+    })
+
+    // Create a clean serialized version without IDs and timestamps
+    const serialized: any = {
+      nro: buget.nro,
+      currencySymbol: buget.currencySymbol,
+      currencyValue: buget.currencyValue,
+      utility: buget.utility,
+      discount: buget.discount,
+      enabled: !!buget.enabled, // Ensure boolean
+      expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
+      business: buget.business ? {
+        name: buget.business.name,
+        url: buget.business.url,
+        email: buget.business.email,
+        identify: buget.business.identify,
+        footer: buget.business.footer,
+        typeIdentify: buget.business.typeIdentify?.text
+      } : null,
+      client: buget.client ? {
+        name: buget.client.name,
+        identify: buget.client.identify,
+        email: buget.client.email,
+        address: buget.client.address,
+        phone: buget.client.phone,
+        typeIdentify: buget.client.typeIdentify?.text,
+        city: buget.client.city?.name
+      } : null,
+      products: buget.products?.map(product => ({
+        name: product.name,
+        amount: product.amount,
+        count: product.count,
+        countPerson: product.countPerson,
+        tax: product.tax,
+        product: product.products ? {
+          name: product.products.name,
+          type: product.products.type?.text
+        } : null
+      })) || [],
+      items: buget.items?.map(item => ({
+        withTitle: !!item.withTitle, // Ensure boolean
+        title: item.title,
+        value: item.value
+      })) || [],
+      banks: buget.banks?.filter(bank => bank.account).map(bank => ({
+        account: {
+          accountNumber: bank.account!.number,
+          bank: bank.account!.bank?.text,
+          typeAccount: bank.account!.typeAccount?.text
+        }
+      })) || [],
+      details: buget.details ? {
+        costCenter: buget.details.costCenter,
+        work: buget.details.work,
+        observation: buget.details.observation
+      } : null
+    }
+
+    // Add expiration info
+    const expireDate = buget.expireDate
+    if (expireDate) {
+      serialized.expired = expireDate < now
+      serialized.expireDateFormat = Util.parseToMoment(expireDate, false, { separator: '/', firstYear: false })
+    } else {
+      serialized.expired = true
+      serialized.expireDateFormat = ''
+    }
+
+    return serialized
+  }
+
   // Minimal find by number: returns array with a single record similar to legacy
   public async findByNro(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
@@ -354,12 +489,13 @@ export default class BugetController {
         currencySymbol,
       } = await request.validateUsing(bugetUpdateValidator)
 
-      // Get existing budget to disable it and get business/client info
       const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
 
-      // Disable the existing budget
+      const token = existingBuget.token!
+
       existingBuget.merge({
         enabled: false,
+        token: null,
         updatedAt: dateTime,
         updatedById: auth.user!.id,
       })
@@ -387,6 +523,7 @@ export default class BugetController {
         discount: Number(discount) || 0,
         utility: Number(utility) || 0,
         createdAt: dateTime,
+        token,
         updatedAt: dateTime,
         createdById: auth.user!.id,
         updatedById: auth.user!.id,

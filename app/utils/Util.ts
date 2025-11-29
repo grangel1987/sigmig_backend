@@ -1,6 +1,7 @@
 import Env from '#start/env';
 import { Request } from '@adonisjs/core/http';
 import logger from '@adonisjs/core/services/logger';
+import crypto from 'crypto';
 import geoip from 'geoip-lite';
 import { DateTime } from 'luxon';
 interface LocationResult {
@@ -213,6 +214,25 @@ export default new class Util {
   truncateToTwoDecimals(value: number | null): number | null {
     if (value === null || value === undefined) return null;
     return Math.trunc(value * 100) / 100;
+  }
+
+  /**
+   * Generate a URL-safe random token of specified length
+   * @param length - The desired length of the token (default: 32)
+   * @returns A URL-safe random string
+   */
+  generateToken(length: number = 32): string {
+    // Calculate bytes needed (base64url encoding is ~4/3 of original bytes)
+    const bytes = Math.ceil((length * 3) / 4);
+    const randomBytes = crypto.randomBytes(bytes);
+
+    // Convert to base64url (URL-safe base64)
+    return randomBytes
+      .toString('base64')
+      .replace(/\+/g, '-') // Replace + with -
+      .replace(/\//g, '_') // Replace / with _
+      .replace(/=/g, '')   // Remove padding
+      .substring(0, length); // Trim to exact length
   }
 
 }

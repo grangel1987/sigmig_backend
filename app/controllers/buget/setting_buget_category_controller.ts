@@ -174,4 +174,38 @@ export default class SettingBugetCategoryController {
             })
         }
     }
+
+    public async delete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'delete');
+
+        const { params, response, auth, i18n } = ctx
+        const categoryId = params.id
+        const dateTime = DateTime.local()
+
+        try {
+            const category = await SettingBugetCategory.findOrFail(categoryId)
+            category.merge({
+                enabled: false,
+                deleted: true,
+                updatedById: auth.user!.id,
+                updatedAt: dateTime,
+                deletedAt: dateTime,
+            })
+            await category.save()
+
+            return response.status(200).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.delete_ok'),
+                    i18n.formatMessage('messages.ok_title')
+                )
+            })
+        } catch (error) {
+            return response.status(500).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.delete_error'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            })
+        }
+    }
 }

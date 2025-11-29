@@ -340,4 +340,37 @@ export default class ProductController {
                 )
         }
     }
+
+    async delete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'products', 'delete')
+
+        const { params, response, auth, i18n } = ctx
+        const dateTime = DateTime.local()
+
+        try {
+            const product = await Product.findOrFail(params.id)
+            product.merge({
+                enabled: false,
+                deleted: true,
+                updatedById: auth.user!.id,
+                deletedAt: dateTime,
+            })
+            await product.save()
+
+            return response.status(200).json({
+                message: i18n.formatMessage('messages.delete_ok'),
+                title: i18n.formatMessage('messages.ok_title'),
+            } as MessageFrontEndType)
+        } catch (error) {
+            console.error(error)
+            return response
+                .status(500)
+                .json(
+                    MessageFrontEnd(
+                        i18n.formatMessage('messages.delete_error'),
+                        i18n.formatMessage('messages.error_title')
+                    )
+                )
+        }
+    }
 }
