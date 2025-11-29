@@ -32,7 +32,7 @@ export default class Coin extends BaseModel {
   @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
 
-  @belongsTo(() => User, { foreignKey: 'updatedBy' })
+  @belongsTo(() => User, { foreignKey: 'updatedById' })
   public updatedBy: BelongsTo<typeof User>
 
   @manyToMany(() => Business, {
