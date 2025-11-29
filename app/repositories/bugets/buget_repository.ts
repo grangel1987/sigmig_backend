@@ -124,7 +124,7 @@ export default class BugetRepository {
         })) */
     }
 
-    public static async searchItems(type_id?: number, category_id?: string, params?: string) {
+    public static async searchItems(type_id?: number, category_id?: number, params?: string) {
         const query = `
             SELECT
                 setting_buget_items.id,
