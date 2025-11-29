@@ -465,8 +465,8 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { type_id, category_id, params } = request.all()
-    const items = await BugetRepository.searchItems(type_id, category_id, params)
+    const { typeId, categoryId, params } = request.all()
+    const items = await BugetRepository.searchItems(typeId, categoryId, params)
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 
