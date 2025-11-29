@@ -13,6 +13,8 @@ import { log } from 'node:console'
 
 export default class BugetController {
   // Create a new buget (legacy parity)
+
+
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'create')
 
@@ -127,6 +129,39 @@ export default class BugetController {
         )
       )
     }
+  }
+
+  // List budgets with optional pagination and filtering
+  public async index(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { request } = ctx
+    const { businessId, page = 1, limit = 20, enabled } = request.qs()
+
+    let query = Buget.query()
+      .preload('client', q =>
+        q.preload('city')
+          .preload('typeIdentify')
+      )
+      .preload('createdBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      .preload('updatedBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      .orderBy('created_at', 'desc')
+
+    if (businessId) {
+      query = query.where('business_id', businessId)
+    }
+
+    if (enabled !== undefined) {
+      query = query.where('enabled', enabled === 'true')
+    }
+
+    const budgets = await query.paginate(page, limit)
+
+    return budgets
   }
 
   // Show details matching legacy shape (expired flag and formatted date)

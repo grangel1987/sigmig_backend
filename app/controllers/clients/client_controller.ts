@@ -587,4 +587,59 @@ export default class ClientController {
             )
         }
     }
+
+    // GET /client/list/:businessId - List all clients with optional pagination
+    public async clientsList(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'clients', 'view')
+
+        const { request } = ctx
+        const { page, perPage = 20, text } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    text: vine.string().trim().optional(),
+                    page: vine.number().positive().optional(),
+                    perPage: vine.number().positive().optional(),
+                })
+            )
+        )
+
+        const clientsQuery = Client.query()
+            .where('enabled', true)
+            .preload('city', (builder) => {
+                builder.select(['id', 'country_id', 'name'])
+                builder.preload('country', (b) => b.select(['id', 'name']))
+            })
+            .preload('documentInvoice')
+            .preload('responsibles', (builder) => {
+                builder.select(['client_id', 'identify_type_id', 'identify', 'name', 'phone', 'email', 'client_contact_type_id'])
+                builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
+                builder.preload('typeContact', (b) => b.select(['id', 'text']))
+            })
+            .preload('typeIdentify', (builder) => builder.select(['id', 'text']))
+            .preload('files')
+            .preload('createdBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            .preload('updatedBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            .orderBy('created_at', 'desc')
+
+        if (text) clientsQuery.where((query) => {
+            query
+                .where('name', 'like', `%${text}%`)
+                .orWhere('email', 'like', `%${text}%`)
+                .orWhere('phone', 'like', `${text}%`)
+                .orWhere('identify', 'like', `${text}%`)
+        })
+
+        const clients = await (
+            page
+                ? clientsQuery.paginate(page, perPage)
+                : clientsQuery
+        )
+        return clients
+    }
 }

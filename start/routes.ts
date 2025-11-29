@@ -537,6 +537,7 @@ router.group(() => {
   // Clients (protected)
   router.group(() => {
     router.get('/', '#controllers/clients/client_controller.index')
+    router.get('/list', '#controllers/clients/client_controller.clientsList')
     router.post('/store', '#controllers/clients/client_controller.store')
     router.put('/update/:id', '#controllers/clients/client_controller.update')
     router.put('/change-status/:id', '#controllers/clients/client_controller.changeStatus')
@@ -574,6 +575,7 @@ router.group(() => {
 
   // Bugets (quotes)
   router.group(() => {
+    router.get('/', '#controllers/bugets/buget_controller.index')
     router.post('/store', '#controllers/bugets/buget_controller.store')
     router.get('/:id', '#controllers/bugets/buget_controller.show')
     router.post('/find/number', '#controllers/bugets/buget_controller.findByNro')
