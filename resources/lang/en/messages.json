@@ -34,5 +34,11 @@
     "authorizer_ok": "Purchase authorized successfully.",
     "authorizer_error": "There was an error authorizing the purchase.",
     "email_send_ok": "Email sent successfully.",
-    "email_send_error": "There was an error sending the email."
+    "email_send_error": "There was an error sending the email.",
+    "budget_email_subject": "Your Budget is Ready",
+    "budget_email_body": "Dear {{clientName}},\n\nYour budget has been prepared. Please find the details below.\n\nBudget Number: {{budgetNumber}}\nExpiration Date: {{expirationDate}}\n\nYou can view your budget at: {{budgetUrl}}\n\nBest regards,\n{{businessName}}",
+    "budget_number": "Budget Number",
+    "expiration_date": "Expiration Date",
+    "business": "Business",
+    "view_budget": "Click here to view your budget"
 }

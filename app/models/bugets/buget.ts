@@ -24,7 +24,6 @@ export default class Buget extends BaseModel {
     @column({ columnName: 'client_id' })
     public clientId: number | null
 
-
     @column()
     declare token: string | null
 

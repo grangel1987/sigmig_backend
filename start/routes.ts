@@ -589,6 +589,7 @@ router.group(() => {
     router.get('/count/made/year/:business_id', '#controllers/bugets/buget_controller.countMadeYear')
     router.post('/report', '#controllers/bugets/buget_controller.report')
     router.post('/search-items', '#controllers/bugets/buget_controller.searchItems')
+    router.post('/send-email/:id', '#controllers/bugets/buget_controller.sendEmailToClient')
   })
     .prefix('buget')
     .middleware(auth)

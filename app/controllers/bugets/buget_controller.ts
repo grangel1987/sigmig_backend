@@ -2,11 +2,13 @@ import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import PermissionService from '#services/permission_service'
+import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
+import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 import { log } from 'node:console'
@@ -595,6 +597,102 @@ export default class BugetController {
       return response.status(500).json(
         MessageFrontEnd(
           i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+  }
+
+  public async sendEmailToClient(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params, response, i18n } = ctx
+    const bugetId = Number(params.id)
+    const { email } = await ctx.request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+        })
+      )
+    )
+
+    try {
+      const buget = await Buget.find(bugetId)
+      if (!buget) {
+        return response.status(404).json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+      }
+
+      await buget.load('client', (q) => {
+        q.select(['id', 'name', 'email'])
+      })
+      await buget.load('business', (q) => {
+        q.select(['id', 'name', 'url'])
+      })
+
+      if (!buget.client || (!email && !buget.client.email)) {
+        return response.status(400).json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+      }
+
+      const recipientEmail = email || buget.client.email!
+
+      const clientName = buget.client.name
+      const budgetNumber = buget.nro
+      const expirationDate = buget.expireDate ? Util.parseToMoment(buget.expireDate, false, { separator: '/', firstYear: false }) : ''
+      const businessName = buget.business?.name || ''
+
+      const host = env.get('NODE_ENV') === 'development'
+        ? 'http://212.38.95.163/sigmig/'
+        : 'https://admin.serviciosgenessis.com/'
+
+      const budgetUrl = host + `client/budget/${buget.token}`
+
+      const subject = i18n.formatMessage('budget_email_subject')
+      const body = i18n.formatMessage('budget_email_body', { clientName, budgetNumber, expirationDate, budgetUrl, businessName })
+      const budgetNumberLabel = i18n.formatMessage('budget_number')
+      const expirationDateLabel = i18n.formatMessage('expiration_date')
+      const businessLabel = i18n.formatMessage('business')
+      const viewBudgetLabel = i18n.formatMessage('view_budget')
+
+      await mail.send((message) => {
+        message
+          .to(recipientEmail)
+          .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+          .subject(subject)
+          .htmlView('emails/budget_client', {
+            subject,
+            body,
+            budgetNumber,
+            expirationDate,
+            budgetUrl: budgetUrl,
+            businessName,
+            budgetNumberLabel,
+            expirationDateLabel,
+            businessLabel,
+            viewBudgetLabel,
+          })
+      })
+
+      return response.status(200).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.email_send_ok'),
+          i18n.formatMessage('messages.ok_title')
+        )
+      )
+    } catch (error) {
+      log(error)
+      return response.status(500).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.email_send_error'),
           i18n.formatMessage('messages.error_title')
         )
       )

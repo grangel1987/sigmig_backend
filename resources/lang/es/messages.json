@@ -34,5 +34,11 @@
     "authorizer_ok": "Compra autorizada correctamente.",
     "authorizer_error": "Ocurrió un error al autorizar la compra.",
     "email_send_ok": "Correo enviado correctamente.",
-    "email_send_error": "Ocurrió un error al enviar el correo."
+    "email_send_error": "Ocurrió un error al enviar el correo.",
+    "budget_email_subject": "Su Cotización Está Lista",
+    "budget_email_body": "Estimado {{clientName}},\n\nSu Cotización ha sido procesada. A continuación encontrará los detalles.\n\nNúmero de Cotización: {{budgetNumber}}\nFecha de Expiración: {{expirationDate}}\n\nPuede ver su Cotización en: {{budgetUrl}}\n\nAtentamente,\n{{businessName}}",
+    "budget_number": "Número de Cotización",
+    "expiration_date": "Fecha de Expiración",
+    "business": "Empresa",
+    "view_budget": "Haga clic aquí para ver su Cotización"
 }
