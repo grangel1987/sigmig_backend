@@ -18,7 +18,7 @@ export default class extends BaseSchema {
         table.string('type').notNullable()
         table.string('name').notNullable()
 
-        table.integer('module_id').references('id').inTable('modules').onDelete('RESTRICT')
+        table.integer('module_id').unsigned().references('id').inTable('modules').onDelete('RESTRICT')
 
         table.unique(['type', 'key'])
 
