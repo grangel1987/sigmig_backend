@@ -1,7 +1,7 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class AlterEmployeePermitFileToText extends BaseSchema {
-    protected tableName = 'setting_buget_categories'
+    protected tableName = 'bugets'
 
     public async up() {
 
