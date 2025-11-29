@@ -662,12 +662,12 @@ export default class BugetController {
 
       const budgetUrl = host + `client/budget/${buget.token}`
 
-      const subject = i18n.formatMessage('budget_email_subject')
-      const body = i18n.formatMessage('budget_email_body', { clientName, budgetNumber, expirationDate, budgetUrl, businessName })
-      const budgetNumberLabel = i18n.formatMessage('budget_number')
-      const expirationDateLabel = i18n.formatMessage('expiration_date')
-      const businessLabel = i18n.formatMessage('business')
-      const viewBudgetLabel = i18n.formatMessage('view_budget')
+      const subject = i18n.formatMessage('messages.budget_email_subject')
+      const body = i18n.formatMessage('messages.budget_email_body', { clientName, budgetNumber, expirationDate, businessName })
+      const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
+      const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
+      const businessLabel = i18n.formatMessage('messages.business')
+      const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
 
       await mail.send((message) => {
         message
