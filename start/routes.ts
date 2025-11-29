@@ -639,7 +639,7 @@ router.group(() => {
 
 
 }).prefix('api/v2')
-
+  .where('id', /^[0-9]+$/)
 router.get('/', async () => {
   return {
     hello: 'world',

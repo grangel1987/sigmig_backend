@@ -188,6 +188,7 @@ export default class ClientController {
                 builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
                 builder.preload('typeContact', (b) => b.select(['id', 'text']))
             })
+            await trx.commit()
 
             return response.status(201).json({
                 client,
@@ -334,6 +335,7 @@ export default class ClientController {
                 builder.preload('typeIdentify', (b) => b.select(['id', 'text']))
                 builder.preload('typeContact', (b) => b.select(['id', 'text']))
             })
+            await trx.commit()
 
             return response.status(201).json({
                 client,

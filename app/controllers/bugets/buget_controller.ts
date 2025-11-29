@@ -619,6 +619,9 @@ export default class BugetController {
     try {
       const buget = await Buget.find(bugetId)
       if (!buget) {
+
+        console.log(bugetId);
+
         return response.status(404).json(
           MessageFrontEnd(
             i18n.formatMessage('messages.no_exist'),
@@ -634,7 +637,10 @@ export default class BugetController {
         q.select(['id', 'name', 'url'])
       })
 
-      if (!buget.client || (!email && !buget.client.email)) {
+      if (!buget.client || (!email && !buget.client?.email)) {
+
+        console.log('Email values:', { email, clientEmail: buget.client.email });
+
         return response.status(400).json(
           MessageFrontEnd(
             i18n.formatMessage('messages.no_exist'),
