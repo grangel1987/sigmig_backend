@@ -137,7 +137,7 @@ export default class BugetRepository {
             WHERE
                 setting_buget_items.enabled=1 
                 ${type_id ? ` AND setting_buget_items.type_id=${type_id}` : ` `} 
-                ${category_id ? ` AND setting_buget_items.category_id like "%${category_id}%"` : ` `} 
+                ${category_id ? ` AND setting_buget_items.category_id=${category_id}` : ` `} 
                 ${params ? ` AND (setting_buget_items.value LIKE "%${params}%" OR setting_buget_items.title LIKE "%${params}%")` : ``} `
         const result = await db.rawQuery(query)
         return result.rows ?? result[0]
