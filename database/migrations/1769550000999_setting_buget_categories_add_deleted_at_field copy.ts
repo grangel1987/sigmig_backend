@@ -12,10 +12,10 @@ export default class AlterEmployeePermitFileToText extends BaseSchema {
         if (hasDeleted && hasDeletedAt) return
         this.schema.alterTable(this.tableName, (table) => {
             if (!hasDeletedAt) {
-                table.timestamp('deleted_at').notNullable()
+                table.timestamp('deleted_at')
             }
             if (!hasDeleted) {
-                table.boolean('deleted').notNullable().defaultTo(0)
+                table.boolean('deleted').defaultTo(0)
             }
         })
     }
