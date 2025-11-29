@@ -319,21 +319,49 @@ export default class BugetController {
         currencySymbol,
       } = await request.validateUsing(bugetUpdateValidator)
 
-      const buget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
+      // Get existing budget to disable it and get business/client info
+      const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
 
-      buget.merge({
-        utility: Number(utility) || 0,
-        discount: Number(discount) || 0,
+      // Disable the existing budget
+      existingBuget.merge({
+        enabled: false,
         updatedAt: dateTime,
         updatedById: auth.user!.id,
+      })
+      existingBuget.useTransaction(trx)
+      await existingBuget.save()
+
+      // Get business for expiration calculation
+      const business = await Business.query({ client: trx }).where('id', existingBuget.businessId!).firstOrFail()
+      const daysExpire = business.daysExpireBuget || 0
+      const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
+      const expireDate = DateTime.fromISO(expireDateISO)
+
+      // Get next nro
+      const last = await trx.from('bugets').where('business_id', existingBuget.businessId!).orderBy('id', 'desc').limit(1)
+      const nro = last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1
+
+      // Create new budget payload!
+      const payload = {
+        nro: String(nro),
+        businessId: existingBuget.businessId,
         currencySymbol: currencySymbol ?? null,
         currencyId: currencyId ?? null,
         currencyValue: currencyValue ?? null,
-      })
-      buget.useTransaction(trx)
-      await buget.save()
+        clientId: existingBuget.clientId,
+        discount: Number(discount) || 0,
+        utility: Number(utility) || 0,
+        createdAt: dateTime,
+        updatedAt: dateTime,
+        createdById: auth.user!.id,
+        updatedById: auth.user!.id,
+        expireDate,
+        enabled: true,
+      }
 
-      // Normalize arrays
+      const buget = await Buget.create(payload, { client: trx })
+
+      // Normalize products to model properties (camelCase)
       const productsRows = (products as any[]).map((p) => {
         const periodId = p?.period?.period ?? null
         const productId = p?.id
@@ -360,13 +388,6 @@ export default class BugetController {
 
       const banksRows = (banks as any[]).map((b) => ({ accountId: typeof b === 'object' ? b?.accountId : b }))
 
-      // Clear existing relations
-      await trx.from('buget_products').where('buget_id', bugetId).delete()
-      await trx.from('buget_accounts').where('buget_id', bugetId).delete()
-      await trx.from('buget_items').where('buget_id', bugetId).delete()
-      await trx.from('buget_details').where('buget_id', bugetId).delete()
-
-      // Recreate
       await buget.related('products').createMany(productsRows, { client: trx })
       await buget.related('items').createMany(itemsRows, { client: trx })
       await buget.related('banks').createMany(banksRows, { client: trx })
@@ -378,6 +399,8 @@ export default class BugetController {
         }
       }
 
+      await trx.commit()
+
       await buget.load('createdBy', (builder) => {
         builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
@@ -385,7 +408,6 @@ export default class BugetController {
         builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
 
-      await trx.commit()
       return response.status(201).json({
         buget,
         ...MessageFrontEnd(
