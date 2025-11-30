@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgb(0, 123, 255);
+        }
+        .header h1 {
+            color: rgb(0, 123, 255);
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .header .business-name {
+            color: rgb(108, 117, 125);
+            font-size: 16px;
+            font-weight: normal;
+            margin: 0;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .budget-details {
+            background-color: rgb(248, 249, 250);
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            margin-bottom: 10px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: rgb(73, 80, 87);
+        }
+        .detail-value {
+            color: rgb(0, 123, 255);
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: rgb(0, 123, 255);
+            color: rgb(255, 255, 255) !important;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: rgb(0, 86, 179);
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgb(222, 226, 230);
+            text-align: center;
+            color: rgb(108, 117, 125);
+            font-size: 14px;
+        }
+        .backup-link {
+            color: rgb(102, 102, 102);
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ subject }}</h1>
+            <p class="business-name">{{ businessName }}</p>
+        </div>
+
+        <div class="content">
+            <p>{{ body }}</p>
+
+            <div class="budget-details">
+                <div class="detail-row">
+                    <span class="detail-label">{{ budgetNumberLabel }}:</span>
+                    <span class="detail-value">{{ budgetNumber }}</span>
+                </div>
+                @if(clientName)
+                <div class="detail-row">
+                    <span class="detail-label">{{ clientLabel }}:</span>
+                    <span class="detail-value">{{ clientName }}</span>
+                </div>
+                @end
+                @if(expirationDate)
+                <div class="detail-row">
+                    <span class="detail-label">{{ expirationDateLabel }}:</span>
+                    <span class="detail-value">{{ expirationDate }}</span>
+                </div>
+                @end
+                @if(createdBy)
+                <div class="detail-row">
+                    <span class="detail-label">{{ createdByLabel }}:</span>
+                    <span class="detail-value">{{ createdBy }}</span>
+                </div>
+                @end
+            </div>
+
+            @if(budgetUrl)
+            <div class="button-container">
+                <a href="{{ budgetUrl }}" class="button">{{ viewBudgetLabel }}</a>
+            </div>
+            <p class="backup-link">
+                {{ backupText }}: {{ budgetUrl }}
+            </p>
+            @end
+        </div>
+
+        <div class="footer">
+            <p>{{ businessName }}</p>
+        </div>
+    </div>
+</body>
+</html>

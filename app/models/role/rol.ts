@@ -33,7 +33,7 @@ export default class Rol extends BaseModel {
   @column({ columnName: 'updated_by' })
   public updatedById: number
 
-  @column.dateTime({ serializeAs: null })
+  @column.dateTime({ autoCreate: true, serializeAs: null })
   public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })

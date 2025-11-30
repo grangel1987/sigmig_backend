@@ -1,6 +1,7 @@
 import SettingBugetCategory from '#models/buget/setting_buget_category'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -10,13 +11,7 @@ export default class SettingBugetCategoryController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, response, i18n } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
+        const { page, perPage, status, text } = await request.validateUsing(indexFiltersWithStatus
         )
 
         try {
@@ -27,6 +22,9 @@ export default class SettingBugetCategoryController {
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
+
+            if (status) query.where('enabled', status === 'enabled' ? true : false)
+            if (text) query.whereRaw('name LIKE ?', [`%${text}%`])
 
             const categories = await (page ? query.paginate(page, perPage || 10) : query)
             return categories

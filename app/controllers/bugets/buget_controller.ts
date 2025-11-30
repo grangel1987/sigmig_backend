@@ -1,5 +1,6 @@
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
+import BusinessUser from '#models/business/business_user'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import PermissionService from '#services/permission_service'
 import env from '#start/env'
@@ -14,7 +15,6 @@ import { DateTime } from 'luxon'
 import { log } from 'node:console'
 
 export default class BugetController {
-  // Create a new buget (legacy parity)
 
 
   public async store(ctx: HttpContext) {
@@ -113,6 +113,46 @@ export default class BugetController {
       await buget.load('updatedBy', (builder) => {
         builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
+
+      // Load client data for email
+      await buget.load('client', (q) => q.select(['name']))
+
+      // Prepare email payload data
+      const clientName = buget.client?.name || ''
+      const createdByName = buget.createdBy?.personalData ? `${buget.createdBy.personalData.names} ${buget.createdBy.personalData.lastNameP} ${buget.createdBy.personalData.lastNameM}`.trim() : ''
+      /*       const host = env.get('NODE_ENV') === 'development'
+              ? 'http://212.38.95.163/sigmig/'
+              : 'https://admin.serviciosgenessis.com/'
+            const budgetUrl = host + `admin/budget/${buget.id}`
+       */
+
+      // Send email notification to super users
+      try {
+        await sendBudgetNotification(businessId, {
+          budgetNumber: buget.nro,
+          clientName,
+          expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+          createdBy: createdByName,
+          // budgetUrl,
+          businessName: business.name,
+          subject: i18n.formatMessage('messages.budget_created_email_subject', { budgetNumber: buget.nro }),
+          body: i18n.formatMessage('messages.budget_created_email_body', {
+            budgetNumber: buget.nro,
+            clientName,
+            expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+            createdBy: createdByName
+          }),
+          budgetNumberLabel: i18n.formatMessage('messages.budget_number'),
+          clientLabel: i18n.formatMessage('messages.client'),
+          expirationDateLabel: i18n.formatMessage('messages.expiration_date'),
+          createdByLabel: i18n.formatMessage('messages.created_by'),
+          viewBudgetLabel: i18n.formatMessage('messages.view_budget'),
+          backupText: i18n.formatMessage('messages.budget_created_backup_text'),
+        })
+      } catch (emailError) {
+        // Log email error but don't fail the budget creation
+        console.log('Error sending budget creation notification email:', emailError)
+      }
 
       return response.status(201).json({
         buget,
@@ -378,18 +418,18 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, name } = await request.validateUsing(bugetFindByNameClientValidator)
-    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''))
+    const { businessId, name, page, perPage } = await request.validateUsing(bugetFindByNameClientValidator)
+    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''), page, perPage)
   }
 
   public async findByDate(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, date } = await request.validateUsing(bugetFindByDateValidator)
+    const { businessId, date, page, perPage } = await request.validateUsing(bugetFindByDateValidator)
     const dateSql = DateTime.fromJSDate(date).toSQLDate()!
 
-    return await BugetRepository.findByDate(Number(businessId), String(dateSql))
+    return await BugetRepository.findByDate(Number(businessId), String(dateSql), page, perPage)
   }
 
   public async delete(ctx: HttpContext) {
@@ -452,13 +492,15 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
 
     const { request } = ctx
-    const { dateInitial, dateEnd, businessId } = await request.validateUsing(vine.compile(vine.object({
+    const { dateInitial, dateEnd, businessId, page = 1, limit = 20 } = await request.validateUsing(vine.compile(vine.object({
       dateInitial: vine.date().optional(),
       dateEnd: vine.date().optional(),
       businessId: vine.number(),
+      page: vine.number().optional(),
+      limit: vine.number().optional(),
     })))
 
-    return await BugetRepository.report(businessId, dateInitial, dateEnd)
+    return await BugetRepository.report(businessId, dateInitial, dateEnd, page, limit)
   }
 
   public async searchItems(ctx: HttpContext) {
@@ -489,6 +531,7 @@ export default class BugetController {
         currencyId,
         currencyValue,
         currencySymbol,
+        keepSameNro = false,
       } = await request.validateUsing(bugetUpdateValidator)
 
       const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
@@ -510,9 +553,14 @@ export default class BugetController {
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
 
-      // Get next nro
-      const last = await trx.from('bugets').where('business_id', existingBuget.businessId!).orderBy('id', 'desc').limit(1)
-      const nro = last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1
+      // Get next nro or keep the same one
+      let nro: string
+      if (keepSameNro) {
+        nro = existingBuget.nro!
+      } else {
+        const last = await trx.from('bugets').where('business_id', existingBuget.businessId!).orderBy('id', 'desc').limit(1)
+        nro = String(last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1)
+      }
 
       // Create new budget payload!
       const payload = {
@@ -581,6 +629,54 @@ export default class BugetController {
       await buget.load('updatedBy', (builder) => {
         builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
       })
+
+      // Load client data for email
+      await buget.load('client', (q) => q.select(['name']))
+
+      // Prepare email payload data for budget update
+      const clientName = buget.client?.name || ''
+      const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
+      /*       const host = env.get('NODE_ENV') === 'development'
+              ? 'http://212.38.95.163/sigmig/'
+              : 'https://admin.serviciosgenessis.com/'
+            const budgetUrl = host + `admin/budget/${buget.id}`
+       */
+      const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
+      const body = i18n.formatMessage('messages.budget_updated_email_body', {
+        budgetNumber: buget.nro,
+        clientName,
+        expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+        createdBy: updatedByName
+      })
+      const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
+      const clientLabel = i18n.formatMessage('messages.client')
+      const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
+      const createdByLabel = i18n.formatMessage('messages.updated_by')
+      const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
+      const backupText = i18n.formatMessage('messages.budget_updated_backup_text')
+
+      // Send email notification to super users
+      try {
+        await sendBudgetNotification(business.id, {
+          subject,
+          body,
+          budgetNumber: buget.nro,
+          clientName,
+          expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+          createdBy: updatedByName,
+          // budgetUrl,
+          businessName: business.name,
+          budgetNumberLabel,
+          clientLabel,
+          expirationDateLabel,
+          createdByLabel,
+          viewBudgetLabel,
+          backupText,
+        }, 'emails/budget_updated')
+      } catch (emailError) {
+        // Log email error but don't fail the budget update
+        console.log('Error sending budget update notification email:', emailError)
+      }
 
       return response.status(201).json({
         buget,
@@ -669,7 +765,7 @@ export default class BugetController {
       const businessLabel = i18n.formatMessage('messages.business')
       const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
 
-      await mail.send((message) => {
+      await mail.sendLater((message) => {
         message
           .to(recipientEmail)
           .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
@@ -702,6 +798,48 @@ export default class BugetController {
           i18n.formatMessage('messages.error_title')
         )
       )
+    }
+  }
+}
+
+
+export async function sendBudgetNotification(businessId: number, emailData: {
+  subject: string
+  body: string
+  budgetNumber: string
+  clientName: string
+  expirationDate: string
+  createdBy: string
+  budgetUrl?: string
+  businessName: string
+  budgetNumberLabel: string
+  clientLabel: string
+  expirationDateLabel: string
+  createdByLabel: string
+  viewBudgetLabel: string
+  backupText: string
+}, template: string = 'emails/budget_created') {
+  const superUsers = await BusinessUser.query()
+    .where('business_id', businessId)
+    .where('is_super', true)
+    .preload('user', (userQuery) => {
+      userQuery.select(['personal_data_id', 'id', 'email'])
+      userQuery.preload('personalData', (pdQ) => pdQ.select(['id', 'names', 'last_name_p', 'last_name_m']))
+    })
+
+  if (superUsers) {
+    // Send email to each super user
+    for (const businessUser of superUsers) {
+      if (businessUser.user?.email) {
+        await mail.send((message) => {
+          message
+            .to('piedraigor@gmail.com'/* businessUser.user!.email */)
+            .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+            .subject(emailData.subject)
+            .htmlView(template, emailData)
+        })
+        break
+      }
     }
   }
 }

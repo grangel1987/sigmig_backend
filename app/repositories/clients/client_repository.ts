@@ -3,23 +3,26 @@ import Database from '@adonisjs/lucid/services/db';
 
 export default class ClientRepository {
   /** Autocomplete for Clients */
-  static async findAutoComplete(val: string) {
+  static async findAutoComplete(val: string, page?: number, perPage = 20) {
+    const valBinding = `%${val}%`
 
+    let query = Client.query()
+      .select([
+        'clients.id',
+        Database.raw("CONCAT(settings.text, ' ', clients.identify, ' ', clients.name) AS identify")
+      ])
+      .join('settings', 'clients.identify_type_id', 'settings.id')
+      .where('clients.enabled', true)
+      .where((builder) => {
+        builder
+          .where('clients.identify', 'LIKE', valBinding)
+          .orWhere('clients.name', 'LIKE', valBinding)
+      })
 
-    const sql = `
-      SELECT 
-      c.id,
-      CONCAT(s.text, ' ', c.identify, ' ', c.name) AS identify
-      FROM clients c
-      JOIN settings s ON s.id = c.identify_type_id
-      WHERE c.enabled = true
-      AND (c.identify LIKE ? OR c.name LIKE ?)
-      LIMIT 20
-      `
-    console.log({ val, sql });
-    const valBinding = `%${val}%`;
-    const result = await Database.rawQuery(sql, [valBinding, valBinding])
-    return result[0]
+    if (page)
+      return await query.paginate(page, perPage)
+    else
+      return await query.limit(perPage)
   }
 
   /** Find by params (email) */
@@ -39,8 +42,8 @@ export default class ClientRepository {
   }
 
   /** Search by name */
-  static async search(params: string, limit = 50) {
-    const result = await Client.query()
+  static async search(params: string, page?: number, perPage = 20) {
+    const q = Client.query()
       .select([
         'clients.id',
         'clients.name',
@@ -53,8 +56,10 @@ export default class ClientRepository {
       .join('settings', 'clients.identify_type_id', 'settings.id')
       .join('cities', 'clients.city_id', 'cities.id')
       .whereRaw('clients.name LIKE ?', [`%${params}%`])
-      .limit(limit)
-      .preload('city', (b) => b.select(['id', 'name']))
+      .preload('city', (b) => b.select(['id', 'name']));
+    const result = page ? await q.paginate(page ?? 1, perPage) : await q;
+
+
 
     return result
   }

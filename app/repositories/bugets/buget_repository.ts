@@ -4,9 +4,8 @@ import { DateTime } from 'luxon'
 
 export default class BugetRepository {
     // Find budgets by client name for a business
-    public static async findByNameClient(businessId: number, name: string) {
-
-        return await Buget.query()
+    public static async findByNameClient(businessId: number, name: string, page?: number, limit?: number) {
+        let query = Buget.query()
             .where('business_id', businessId)
             .whereHas('client', (query) => {
                 query.whereRaw('clients.name LIKE ?', [`%${name}%`])
@@ -15,38 +14,15 @@ export default class BugetRepository {
                     .preload('typeIdentify')
             ).orderBy('created_at', 'desc')
 
+        if (page && limit) {
+            return await query.paginate(page, limit)
+        }
 
-
-        /*   const query = `
-          SELECT 
-              bugets.id,
-              bugets.nro,
-              clients.name AS client_name,
-              clients.identify,
-              settings.text, 
-              clients.email,
-              cities.name AS city,
-              bugets.created_at,
-              bugets.expire_date,
-              bugets.enabled
-          FROM 
-              bugets,
-              clients,
-              settings,
-              cities
-          WHERE
-              bugets.business_id=${businessId} AND
-              clients.name LIKE "%${name}%" AND
-              clients.id = bugets.client_id AND 
-              settings.id = clients.identify_type_id AND
-              clients.city_id = cities.id;`
-  
-          const result = await db.rawQuery(query)
-          return result.rows ?? result[0] */
+        return await query
     }
 
     // Find budgets by creation date for a business
-    public static async findByDate(businessId: number, date: string) {
+    public static async findByDate(businessId: number, date: string, page?: number, limit?: number) {
         const today = DateTime.now().toSQLDate()
         const tomorrow = DateTime.now().plus({ days: 1 }).toSQLDate()
 
@@ -66,35 +42,14 @@ export default class BugetRepository {
             query = query.whereRaw('DATE(created_at) = ?', [date])
         }
 
-        return await query
+        if (page && limit) {
+            return await query.paginate(page, limit)
+        }
 
-        /*         const query = `
-                SELECT 
-                    bugets.id,
-                    bugets.nro,
-                    clients.name AS client_name,
-                    CONCAT(settings.text,' ',clients.identify)AS identify,
-                    clients.email AS client_email,
-                    cities.name AS city,
-                    bugets.created_at,
-                    bugets.expire_date,
-                    bugets.enabled
-                FROM 
-                    bugets,
-                    clients,
-                    settings,
-                    cities
-                WHERE
-                    bugets.business_id=${businessId} AND
-                    SUBSTRING(bugets.created_at,1,10)='${date}' AND
-                    clients.id = bugets.client_id AND 
-                    settings.id = clients.identify_type_id AND
-                    clients.city_id = cities.id;`
-                const result = await db.rawQuery(query)
-                return result.rows ?? result[0] */
+        return await query
     }
 
-    public static async report(businessId: number, dateInitial?: Date, dateEnd?: Date,) {
+    public static async report(businessId: number, dateInitial?: Date, dateEnd?: Date, page?: number, limit?: number) {
 
         const start = dateInitial ? DateTime.fromJSDate(dateInitial,).toSQLDate()! : '1970-01-01'
         const end = dateEnd ? DateTime.fromJSDate(dateEnd,).toSQLDate()! : '9999-12-31'
@@ -110,6 +65,10 @@ export default class BugetRepository {
             .orderBy('created_at', 'desc')
 
         console.log(bgtQ.toQuery());
+
+        if (page && limit) {
+            return await bgtQ.paginate(page, limit)
+        }
 
         const bugets = await bgtQ
 

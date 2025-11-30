@@ -52,6 +52,7 @@ export const bugetStoreValidator = vine.compile(
         utility: vine.number().optional(),
 
         clientDetails: clientDetailsSchema,
+        keepSameNro: vine.boolean().optional(),
     })
 )
 
@@ -69,6 +70,7 @@ export const bugetUpdateValidator = vine.compile(
         utility: vine.number().optional(),
 
         clientDetails: clientDetailsSchema,
+        keepSameNro: vine.boolean().optional(),
     })
 )
 
@@ -83,6 +85,8 @@ export const bugetFindByNameClientValidator = vine.compile(
     vine.object({
         businessId: vine.number(),
         name: vine.string(),
+        page: vine.number().optional(),
+        perPage: vine.number().optional(),
     })
 )
 
@@ -90,5 +94,7 @@ export const bugetFindByDateValidator = vine.compile(
     vine.object({
         businessId: vine.number(),
         date: vine.date(),
+        page: vine.number().optional(),
+        perPage: vine.number().optional(),
     })
 )

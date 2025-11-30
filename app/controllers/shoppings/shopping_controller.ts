@@ -1,6 +1,8 @@
+import BusinessUser from '#models/business/business_user'
 import Shopping from '#models/shoppings/shopping'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
 import PermissionService from '#services/permission_service'
+import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import {
@@ -15,6 +17,7 @@ import {
 import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
+import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
 import { randomUUID } from 'crypto'
 import { DateTime } from 'luxon'
@@ -91,6 +94,58 @@ export default class ShoppingController {
                     b.preload('personalData')
                     b.preload('employee', (emp) => emp.preload('position'))
                 })
+            }
+
+            // Load provider and business data for email
+            await shopping.load('provider', (q) => q.select(['name']))
+            await shopping.load('business', (q) => q.select(['name']))
+            await shopping.load('createdBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+
+            // Prepare email payload data
+            const providerName = shopping.provider?.name || ''
+            const createdByName = shopping.createdBy?.personalData ? `${shopping.createdBy.personalData.names} ${shopping.createdBy.personalData.lastNameP} ${shopping.createdBy.personalData.lastNameM}`.trim() : ''
+            /*             const host = env.get('NODE_ENV') === 'development'
+                            ? 'http://212.38.95.163/sigmig/'
+                            : 'https://admin.serviciosgenessis.com/'
+                        const shoppingUrl = host + `admin/shopping/${shopping.id}` */
+
+            const subject = i18n.formatMessage('messages.shopping_created_email_subject', { shoppingNumber: shopping.nro })
+            const body = i18n.formatMessage('messages.shopping_created_email_body', {
+                shoppingNumber: shopping.nro,
+                providerName,
+                expirationDate: shopping.expireDate ? Util.parseToMoment(shopping.expireDate, false, { separator: '/', firstYear: false }) : '',
+                requestedBy: createdByName
+            })
+            const shoppingNumberLabel = i18n.formatMessage('messages.shopping_number')
+            const providerLabel = i18n.formatMessage('messages.provider')
+            const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
+            const requestedByLabel = i18n.formatMessage('messages.requested_by')
+            const viewShoppingLabel = i18n.formatMessage('messages.view_shopping')
+            const backupText = i18n.formatMessage('messages.shopping_created_backup_text')
+
+            // Send email notification to super users
+            try {
+                await sendShoppingNotification(businessId, {
+                    subject,
+                    body,
+                    shoppingNumber: shopping.nro,
+                    providerName,
+                    expirationDate: shopping.expireDate ? Util.parseToMoment(shopping.expireDate, false, { separator: '/', firstYear: false }) : '',
+                    requestedBy: createdByName,
+                    // shoppingUrl,
+                    businessName: shopping.business?.name || '',
+                    shoppingNumberLabel,
+                    providerLabel,
+                    expirationDateLabel,
+                    requestedByLabel,
+                    viewShoppingLabel,
+                    backupText,
+                })
+            } catch (emailError) {
+                // Log email error but don't fail the shopping creation
+                console.log('Error sending shopping creation notification email:', emailError)
             }
 
             return response.status(201).json({
@@ -198,6 +253,70 @@ export default class ShoppingController {
                 shop.isAuthorized = true
                 shop.authorizerAt = dateTime
                 await shop.save()
+
+                // Load relationships for email notification
+                await shop.load('business', (q) => q.select(['name']))
+                await shop.load('provider', (q) => q.select(['name']))
+                await shop.load('createdBy', (builder) => {
+                    builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+                })
+                await shop.load('authorizer', (builder) => {
+                    builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id'])
+                })
+
+                // Prepare email data
+                const providerName = shop.provider?.name || ''
+                const authorizedByName = shop.authorizer?.personalData ? `${shop.authorizer.personalData.names} ${shop.authorizer.personalData.lastNameP} ${shop.authorizer.personalData.lastNameM}`.trim() : ''
+                /*                 const host = env.get('NODE_ENV') === 'development'
+                                    ? 'http://212.38.95.163/sigmig/'
+                                    : 'https://admin.serviciosgenessis.com/'
+                                const shoppingUrl = host + `admin/shopping/${shop.id}`
+                 */
+                const subject = i18n.formatMessage('messages.shopping_authorized_email_subject', { shoppingNumber: shop.nro })
+                const body = i18n.formatMessage('messages.shopping_authorized_email_body', {
+                    shoppingNumber: shop.nro,
+                    providerName,
+                    authorizationDate: shop.authorizerAt ? Util.parseToMoment(shop.authorizerAt, false, { separator: '/', firstYear: false }) : '',
+                    authorizedBy: authorizedByName
+                })
+                const shoppingNumberLabel = i18n.formatMessage('messages.shopping_number')
+                const providerLabel = i18n.formatMessage('messages.provider')
+                const authorizationDateLabel = i18n.formatMessage('messages.authorization_date')
+                const authorizedByLabel = i18n.formatMessage('messages.authorized_by')
+                const viewShoppingLabel = i18n.formatMessage('messages.view_authorized_shopping')
+                const backupText = i18n.formatMessage('messages.shopping_authorized_backup_text')
+
+                // Send email notification to the creator
+                try {
+                    if (shop.createdBy?.email) {
+                        await mail.sendLater((message) => {
+                            message
+                                .to(shop.createdBy!.email)
+                                .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+                                .subject(subject)
+                                .htmlView('emails/shopping_authorized', {
+                                    subject,
+                                    body,
+                                    shoppingNumber: shop.nro,
+                                    providerName,
+                                    authorizationDate: shop.authorizerAt ? Util.parseToMoment(shop.authorizerAt, false, { separator: '/', firstYear: false }) : '',
+                                    authorizedBy: authorizedByName,
+                                    // shoppingUrl,
+                                    businessName: shop.business?.name || '',
+                                    shoppingNumberLabel,
+                                    providerLabel,
+                                    authorizationDateLabel,
+                                    authorizedByLabel,
+                                    viewShoppingLabel,
+                                    backupText,
+                                })
+                        })
+                    }
+                } catch (emailError) {
+                    // Log email error but don't fail the authorization
+                    console.log('Error sending shopping authorization notification email:', emailError)
+                }
+
                 return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
             }
             else
@@ -457,6 +576,47 @@ export default class ShoppingController {
         } catch (error) {
             console.error(error)
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_error'), i18n.formatMessage('messages.error_title')))
+        }
+    }
+}
+
+
+export async function sendShoppingNotification(businessId: number, emailData: {
+    subject: string
+    body: string
+    shoppingNumber: string
+    providerName: string
+    expirationDate: string
+    requestedBy: string
+    shoppingUrl?: string
+    businessName: string
+    shoppingNumberLabel: string
+    providerLabel: string
+    expirationDateLabel: string
+    requestedByLabel: string
+    viewShoppingLabel: string
+    backupText: string
+}, template: string = 'emails/shopping_created') {
+    const superUsers = await BusinessUser.query()
+        .where('business_id', businessId)
+        .where('is_super', true)
+        .preload('user', (userQuery) => {
+            userQuery.select(['personal_data_id', 'id', 'email'])
+            userQuery.preload('personalData', (pdQ) => pdQ.select(['id', 'names', 'last_name_p', 'last_name_m']))
+        })
+
+    if (superUsers.length > 0) {
+        // Send email to each super user
+        for (const businessUser of superUsers) {
+            if (businessUser.user?.email) {
+                await mail.send((message) => {
+                    message
+                        .to(businessUser.user!.email)
+                        .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+                        .subject(emailData.subject)
+                        .htmlView(template, emailData)
+                })
+            }
         }
     }
 }

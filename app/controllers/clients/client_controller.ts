@@ -12,13 +12,22 @@ import vine from '@vinejs/vine'
 import console from 'node:console'
 
 export default class ClientController {
-    // GET /client/ (optionally could be paginated in future)
+    // GET /client/ (optionally paginated)
     public async index(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'clients', 'view')
 
-        const { response, i18n } = ctx
+        const { request, response, i18n } = ctx
+        const { page, perPage = 20 } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    page: vine.number().positive().optional(),
+                    perPage: vine.number().positive().optional(),
+                })
+            )
+        )
+
         try {
-            const clients = await Client.query()
+            const clientsQuery = Client.query()
                 .preload('city', (builder) => {
                     builder.select(['id', 'country_id', 'name'])
                 })
@@ -31,7 +40,6 @@ export default class ClientController {
                 .preload('typeIdentify', (builder) => builder.select(['id', 'text']))
                 .preload('createdBy', (builder) => {
                     builder
-
                         .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
                         .select(['id', 'personal_data_id', 'email'])
                 })
@@ -40,6 +48,13 @@ export default class ClientController {
                         .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
                         .select(['id', 'personal_data_id', 'email'])
                 })
+
+            const clients = await (
+                page
+                    ? clientsQuery.paginate(page, perPage)
+                    : clientsQuery
+            )
+
             return clients
         } catch (error) {
             return response.status(500).json(
@@ -515,11 +530,16 @@ export default class ClientController {
         await PermissionService.requirePermission(ctx, 'clients', 'view')
 
         const { request } = ctx
-        const { value } = await request.validateUsing(
-            vine.compile(vine.object({ value: vine.string().trim() }))
+        const { value, page, perPage } = await request.validateUsing(
+            vine.compile(vine.object({
+                value: vine.string().trim(),
+                page: vine.number().positive().optional(),
+                perPage: vine.number().positive().optional()
+
+            }))
         )
         const params = value.replace(/\s/g, '%')
-        const result = await ClientRepository.search(params)
+        const result = await ClientRepository.search(params, page, perPage)
         return result
     }
 

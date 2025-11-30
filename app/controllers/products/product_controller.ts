@@ -3,6 +3,7 @@ import ProductRepository from '#repositories/products/product_repository'
 import PermissionService from '#services/permission_service'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 import { productStoreValidator, productUpdateValidator } from '#validators/product'
 import { HttpContext } from '@adonisjs/core/http'
 import Database from '@adonisjs/lucid/services/db'
@@ -18,14 +19,9 @@ export default class ProductController {
 
         const { auth, request, response, i18n } = ctx
         const userId = auth.user!.id
-        const { page, perPage, text } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                    text: vine.string().trim().optional(),
-                })
-            )
+
+        const { page, perPage, text, status } = await request.validateUsing(
+            indexFiltersWithStatus
         )
 
         try {
@@ -48,6 +44,7 @@ export default class ProductController {
                 })
 
             if (text?.length) query.whereRaw('name LIKE ?', [`%${text}%`])
+            if (status) query.where('enabled', status === 'enabled' ? 1 : 0)
 
             const products = page ? await query.paginate(page, perPage ?? 10) : await query
 
