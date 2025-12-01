@@ -502,6 +502,10 @@ export default class EmployeeController {
                 b.preload('work')
             })
 
+            if (employee.userId)
+                await employee.load('user')
+
+
             // Map to legacy shape (formats, aliases, etc.)
             const legacy = this.toLegacyEmployee(employee.toJSON())
             if ((legacy as any).certificateHeatlh === undefined && (legacy as any).certificateHealth !== undefined) {
@@ -799,6 +803,10 @@ export default class EmployeeController {
                 b.preload('schedule')
                 b.preload('work')
             })
+
+            if (employee.userId)
+                await employee.load('user')
+
 
             const legacy = this.toLegacyEmployee(employee.toJSON())
             if ((legacy as any).certificateHeatlh === undefined && (legacy as any).certificateHealth !== undefined) {
