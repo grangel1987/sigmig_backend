@@ -1781,17 +1781,16 @@ export default class UserController {
       if (isAdmin) {
         // For admin users, create businessUser entries for ALL businesses
         const allBusinesses = await Business.query().select('id').exec()
-
+        let selected = true
         for (const business of allBusinesses) {
-          const payloadBusinessUser = {
+
+          const businessUser = await BusinessUser.create({
             userId: user.id,
+            selected,
             businessId: business.id,
             isSuper: true,
             isAuthorizer: 1, // true = 1
-          }
-
-          const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
-
+          }, { client: trx })
           // Create default role for admin users
           const businessUserRol = {
             businessUserId: businessUser.id,
@@ -1799,16 +1798,23 @@ export default class UserController {
           }
 
           await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+          selected = false
+
         }
       } else if (business) {
         // For non-admin users, process the provided business array
+
+        let selected = true
+
         for (const bus of business) {
           const payloadBusinessUser = {
             userId: user.id,
             businessId: bus.businessId,
             isSuper: bus.isSuper ?? false,
             isAuthorizer: bus.isAuthorizer ? 1 : 0,
+            selected,
           }
+
 
           const businessUser = await BusinessUser.create(payloadBusinessUser, { client: trx })
 
@@ -1826,6 +1832,9 @@ export default class UserController {
 
           if (payloadPermission?.length)
             await businessUser.related('bussinessUserPermissions').createMany(payloadPermission, { client: trx })
+
+          selected = false
+
         }
       }
 
