@@ -73,6 +73,7 @@ router.group(() => {
     router.get("/:id", "#controllers/role/rol_controller.show");
     router.put("/update/:id", "#controllers/role/rol_controller.update");
     router.put("/change-status/:id", "#controllers/role/rol_controller.toggleStatus");
+    router.get("/select", "#controllers/role/rol_controller.select");
   })
     .prefix('rol')
     .middleware(auth)

@@ -370,4 +370,23 @@ export default class RolController {
             })
         }
     }
+
+    public async select(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'roles', 'view')
+
+        const { response } = ctx
+
+        const roles = await Rol.query()
+            .where('enabled', true)
+            .select(['id', 'name', 'description'])
+            .preload('permissions', (builder) => {
+                builder.select(['id', 'name', 'key', 'type'])
+                    .preload('module', (moduleBuilder) => {
+                        moduleBuilder.select(['id', 'name'])
+                    })
+            })
+            .orderBy('name')
+
+        return response.ok(roles)
+    }
 }
