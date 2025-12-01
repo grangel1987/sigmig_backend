@@ -1,6 +1,7 @@
 import Permission from '#models/permissions/permission'
 import Rol from '#models/role/rol'
 import PermissionService from '#services/permission_service'
+import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { indexFiltersWithStatus } from '#validators/general'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
@@ -81,7 +82,10 @@ export default class RolController {
         })
 
         return response.created({
-            message: i18n.t('messages.role_created_successfully'),
+            ...MessageFrontEnd(
+                i18n.formatMessage('messages.store_ok'),
+                i18n.formatMessage('messages.ok_title')
+            ),
             data: role
         })
     }
@@ -160,7 +164,10 @@ export default class RolController {
 
 
         return response.ok({
-            message: i18n.t('messages.role_updated_successfully'),
+            ...MessageFrontEnd(
+                i18n.formatMessage('messages.updated_ok'),
+                i18n.formatMessage('messages.ok_title')
+            ),
             data: res
         })
     }
@@ -194,7 +201,10 @@ export default class RolController {
         await role.save()
 
         return response.ok({
-            message: i18n.t('messages.role_deleted_successfully')
+            ...MessageFrontEnd(
+                i18n.formatMessage('messages.delete_ok'),
+                i18n.formatMessage('messages.ok_title')
+            )
         })
     }
 
@@ -236,7 +246,10 @@ export default class RolController {
         await role.related('permissions').attach(permissionIds)
 
         return response.ok({
-            message: i18n.t('messages.permissions_attached_successfully')
+            ...MessageFrontEnd(
+                i18n.formatMessage('messages.update_ok'),
+                i18n.formatMessage('messages.ok_title')
+            )
         })
     }
 
@@ -336,8 +349,10 @@ export default class RolController {
 
             return response.status(200).json({
                 role,
-                message: i18n.formatMessage(role.enabled ? 'messages.ok_enabled' : 'messages.ok_disabled'),
-                title: i18n.formatMessage('messages.ok_title'),
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.updated_ok'),
+                    i18n.formatMessage('messages.ok_title')
+                ),
             })
         } catch (error) {
             return response.status(500).json({
