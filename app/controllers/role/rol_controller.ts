@@ -40,6 +40,7 @@ export default class RolController {
                 builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })
 
+        if (businessId) rolQ.where('business_id', businessId)
 
         if (text) rolQ.where('name', 'LIKE', `%${text}%`)
         if (status) rolQ.where('enabled', status === 'enabled' ? 1 : 0)
