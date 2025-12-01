@@ -24,7 +24,7 @@ export default class Rol extends BaseModel {
   @column({ serializeAs: null })
   public isSystem: boolean
 
-  @column({ serializeAs: null })
+  @column()
   public enabled: boolean
 
   @column({ columnName: 'created_by' })
