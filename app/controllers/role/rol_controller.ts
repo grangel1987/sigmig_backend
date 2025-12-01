@@ -383,7 +383,7 @@ export default class RolController {
 
         const rolQ = Rol.query()
             .where('enabled', true)
-            .select(['id', 'name', 'description'])
+            .select(['id', 'name', 'description', 'business_id'])
             .preload('permissions', (builder) => {
                 builder.select(['id', 'name', 'key', 'type'])
             })
