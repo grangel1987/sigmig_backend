@@ -1,6 +1,7 @@
 import Permission from '#models/permissions/permission'
 import Rol from '#models/role/rol'
 import PermissionService from '#services/permission_service'
+import { indexFiltersWithStatus } from '#validators/general'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
@@ -14,12 +15,9 @@ export default class RolController {
 
         const { request, response } = ctx
 
-        const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
-            page: vine.number().positive().optional(),
-            perPage: vine.number().positive().optional()
-        })))
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
-        const roles = await Rol.query()
+        const rolQ = Rol.query()
             .where('enabled', true)
             .preload('permissions', (builder) => {
                 builder.preload('module', (moduleBuilder) => {
@@ -32,7 +30,14 @@ export default class RolController {
             .preload('updatedBy', (builder) => {
                 builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
             })
+
+
+        if (text) rolQ.where('name', 'LIKE', `%${text}%`)
+        if (status) rolQ.where('enabled', status === 'enabled' ? 1 : 0)
+
+        const roles = await rolQ
             .paginate(page || 1, perPage || 10)
+
 
         return response.ok(roles)
     }
