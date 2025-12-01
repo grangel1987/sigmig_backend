@@ -1,6 +1,5 @@
 
 import BusinessEmployee from '#models/business/business_employee'
-import Position from '#models/positions/position'
 import PersonalData from '#models/users/personal_data'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column, computed, hasMany } from '@adonisjs/lucid/orm'
@@ -20,12 +19,12 @@ export default class Employee extends BaseModel {
 
     // Legacy identity/name/location/contact fields now in personalData.
 
-    @column({ columnName: 'position_id' })
-    public positionId: number | null
-
-    @belongsTo(() => Position, { foreignKey: 'positionId' })
-    public position: BelongsTo<typeof Position>
-
+    /*     @column({ columnName: 'position_id' })
+        public positionId: number | null
+    
+        @belongsTo(() => Position, { foreignKey: 'positionId' })
+        public position: BelongsTo<typeof Position>
+     */
     // Removed lastNameM, birthDate, stateCivilId (now in personalData)
 
     @column({ columnName: 'personal_data_id' })

@@ -428,6 +428,7 @@ export default class UserController {
 
   public async assignUserToEmployee(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'users', 'update')
+    await PermissionService.requirePermission(ctx, 'employees', 'update')
 
     const { request, response, i18n } = ctx
     const { personalDataId, email } = request.all()
@@ -1858,7 +1859,10 @@ export default class UserController {
             q.select('id', 'name'))
           ))
       await user.load('personalData', pQ => pQ.preload('typeIdentify'))
-      await user.load('employee', q => q.preload('position'))
+      await user.load('employee', q =>
+        q.preload('business', business =>
+          business.preload('position')
+        ))
 
       if (user.personalData?.cityId) await user.personalData.load('city')
 
@@ -1974,7 +1978,10 @@ export default class UserController {
         .where('id', params.id)
         .preload('personalData', q => q.preload('typeIdentify').preload('city'))
         .preload('businessUser', buQ => buQ.preload('business', bQ => bQ.select('id', 'name')))
-        .preload('employee', q => q.preload('position'))
+        .preload('employee', q =>
+          q.preload('business', business =>
+            business.preload('position')
+          ))
         .first()
 
       if (!user) {
