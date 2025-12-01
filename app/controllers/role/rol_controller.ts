@@ -5,6 +5,7 @@ import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
+import { DateTime } from 'luxon'
 
 export default class RolController {
 
@@ -288,5 +289,56 @@ export default class RolController {
         }
 
         return response.ok(role.permissions)
+    }
+
+    public async toggleStatus(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'roles', 'update')
+
+        const { params, response, auth, i18n } = ctx
+        const roleId = params.id
+        const dateTime = DateTime.local()
+
+        try {
+            const role = await Rol.findOrFail(roleId)
+
+            // Check if role is a system role
+            if (role.isSystem) {
+                throw new Exception('Cannot change status of system role', {
+                    status: 400,
+                    code: 'CANNOT_CHANGE_SYSTEM_ROLE_STATUS'
+                })
+            }
+
+            const status = !role.enabled
+            role.merge({
+                enabled: status,
+                updatedById: auth.user!.id,
+                updatedAt: dateTime,
+            })
+            await role.save()
+
+            await role.load('permissions', (builder) => {
+                builder.preload('module', (moduleBuilder) => {
+                    moduleBuilder.select(['id', 'name'])
+                })
+            })
+            if (role.createdById) await role.load('createdBy', (builder) => {
+                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+            if (role.updatedById) await role.load('updatedBy', (builder) => {
+                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+
+            return response.status(200).json({
+                role,
+                message: i18n.formatMessage(role.enabled ? 'messages.ok_enabled' : 'messages.ok_disabled'),
+                title: i18n.formatMessage('messages.ok_title'),
+            })
+        } catch (error) {
+            return response.status(500).json({
+                message: i18n.formatMessage('messages.update_error'),
+                title: i18n.formatMessage('messages.error_title')
+            })
+        }
     }
 }
