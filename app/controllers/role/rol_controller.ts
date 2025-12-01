@@ -17,6 +17,14 @@ export default class RolController {
         const { request, response } = ctx
 
         const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
+        let businessId
+
+        businessId = request.header('Business')
+        if (!businessId) {
+            await ctx.auth.user?.loadOnce('selectedBusiness')
+            const selected = ctx.auth.user?.selectedBusiness
+            businessId = selected?.id
+        }
 
         const rolQ = Rol.query()
             .where('enabled', true)
