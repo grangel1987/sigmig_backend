@@ -374,18 +374,24 @@ export default class RolController {
     public async select(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'roles', 'view')
 
-        const { response } = ctx
+        const { response, request } = ctx
 
-        const roles = await Rol.query()
+        const { businessId } = await request.validateUsing(vine.compile(
+            vine.object({
+                businessId: vine.number().positive().optional(),
+            })))
+
+        const rolQ = Rol.query()
             .where('enabled', true)
             .select(['id', 'name', 'description'])
             .preload('permissions', (builder) => {
                 builder.select(['id', 'name', 'key', 'type'])
-                    .preload('module', (moduleBuilder) => {
-                        moduleBuilder.select(['id', 'name'])
-                    })
             })
             .orderBy('name')
+
+        if (businessId) rolQ.where('business_id', businessId)
+
+        const roles = await rolQ
 
         return response.ok(roles)
     }
