@@ -1691,7 +1691,7 @@ export default class UserController {
           .preload('businessUserRols', q => q.preload('rols', q =>
             q.select('id', 'name'))
           ))
-      .preload('employee', q => q.preload('position'))
+      .preload('employee', q => q.preload('business', business => business.preload('position')))
 
     const users = page ? await query.paginate(page, perPage ?? 10) : await query
     response.ok(users)
