@@ -590,8 +590,9 @@ export default class UserController {
       }
 
       let personalDataId: number | undefined
+      let employee: Employee | null = null
       if (employeeId) {
-        const employee = await Employee.findOrFail(employeeId)
+        employee = await Employee.findOrFail(employeeId)
         if (!employee.personalDataId) {
           await trx.rollback()
           return response.status(422).json({
@@ -619,6 +620,8 @@ export default class UserController {
         },
         { client: trx }
       )
+
+      await employee?.merge({ userId: user.id }).useTransaction(trx).save()
       if (signature) {
         const resultUpload = await Google.uploadFile(signature, 'signatures', 'image')
         user.signature = resultUpload.url
@@ -1696,9 +1699,10 @@ export default class UserController {
   public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
     // Similar to store, but for admin
     const dateTime = await Util.getDateTimes(request)
-    const { email, business, personalData, signature, isAauthorizer, isAdmin } = await request.validateUsing(
+    const { email, business, personalData, signature, isAauthorizer, isAdmin, employeeId } = await request.validateUsing(
       vine.compile(
         vine.object({
+          employeeId: vine.number().positive().optional(),
           email: vine.string().email(),
           isAdmin: vine.boolean().optional(),
           isAauthorizer: vine.boolean().optional(),
@@ -1711,7 +1715,7 @@ export default class UserController {
               isAuthorizer: vine.boolean().optional(),
             })
           ).optional(),
-          personalData: personalDataSchema,
+          personalData: personalDataSchema.optional(),
           signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
         })
       )
@@ -1808,7 +1812,12 @@ export default class UserController {
         }
       }
 
-      if (personalData) {
+      if (employeeId) {
+        const employee = await Employee.findOrFail(employeeId, { client: trx })
+        employee.userId = user.id
+        if (employee.personalDataId) user.personalDataId = employee.personalDataId
+        await employee.useTransaction(trx).save()
+      } else if (personalData) {
         let imageData = {}
         let createdFile: string | null = null
         const { photo, ...rPersonalData } = personalData
