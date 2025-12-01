@@ -636,11 +636,11 @@ export default class BugetController {
       // Prepare email payload data for budget update
       const clientName = buget.client?.name || ''
       const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
-      /*       const host = env.get('NODE_ENV') === 'development'
-              ? 'http://212.38.95.163/sigmig/'
-              : 'https://admin.serviciosgenessis.com/'
-            const budgetUrl = host + `admin/budget/${buget.id}`
-       */
+      const host = env.get('NODE_ENV') === 'development'
+        ? 'http://212.38.95.163/sigmig/'
+        : 'https://admin.serviciosgenessis.com/'
+      const budgetUrl = host + `admin/budget/${buget.id}`
+
       const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
       const body = i18n.formatMessage('messages.budget_updated_email_body', {
         budgetNumber: buget.nro,
@@ -664,7 +664,7 @@ export default class BugetController {
           clientName,
           expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
           createdBy: updatedByName,
-          // budgetUrl,
+          budgetUrl,
           businessName: business.name,
           budgetNumberLabel,
           clientLabel,

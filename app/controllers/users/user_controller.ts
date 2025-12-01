@@ -910,11 +910,14 @@ export default class UserController {
     await PermissionService.requirePermission(ctx, 'users', 'update')
 
     const { request, response, auth, i18n } = ctx
-    const { params, email, business, personalData, isAdmin, isAuthorizer, signature } = await request.validateUsing(
+    const { params, email, business, personalData, isAdmin, isAuthorizer, signature, employeeId } = await request.validateUsing(
       vine.compile(
         vine.object({
           params: vine.object({ userId: vine.number().positive() }),
           email: vine.string().email().optional(),
+          employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' })
+            .optional(),
+          // .requiredIfMissing('personalData'),
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
@@ -943,7 +946,7 @@ export default class UserController {
 
       // Update email if provided
       if (email && email !== user.email) {
-        const existingUser = await User.findBy('email', email)
+        const existingUser = await User.findBy('email', email, { client: trx })
         if (existingUser && existingUser.id !== user.id) {
           await trx.rollback()
           return response.status(422).json({
@@ -1050,10 +1053,11 @@ export default class UserController {
 
           // Remove businessUsers not included in the provided array
           const providedBusinessIds = business.map(b => b.businessId)
-          const businessUsersToDelete = await BusinessUser.query()
+          const businessUsersToDelete = await BusinessUser.query({ client: trx })
             .where('userId', user.id)
             .whereNotIn('businessId', providedBusinessIds)
           for (const bu of businessUsersToDelete) {
+            bu.useTransaction(trx)
             await bu.related('businessUserRols').query().delete()
             await bu.related('bussinessUserPermissions').query().delete()
             await bu.useTransaction(trx).delete()
@@ -1062,7 +1066,19 @@ export default class UserController {
       }
 
       // Update personal data if provided
-      if (personalData) {
+      let modifyPersonalData = true
+      if (employeeId) {
+        const employee = await Employee.findOrFail(employeeId, { client: trx })
+        if (!employee.userId) {
+          modifyPersonalData = false
+          employee.userId = user.id
+          if (employee.personalDataId) user.personalDataId = employee.personalDataId
+          await employee.useTransaction(trx).save()
+        }
+      }
+
+
+      if (personalData && modifyPersonalData) {
         let imageData = {}
         let createdFile: string | null = null
         const { photo, ...rPersonalData } = personalData
@@ -1080,7 +1096,7 @@ export default class UserController {
 
         if (user.personalDataId) {
           // Update existing personal data
-          const pd = await PersonalData.findOrFail(user.personalDataId)
+          const pd = await PersonalData.findOrFail(user.personalDataId, { client: trx })
           pd.useTransaction(trx)
           if (pd.photoShort && photo) filesToDelete.push(pd.photoShort)
           pd.names = rPersonalData.names || pd.names
