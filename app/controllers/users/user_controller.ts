@@ -1123,8 +1123,10 @@ export default class UserController {
       if (filesToDelete.length) await Promise.all(filesToDelete.map(file => Google.deleteFile(file).catch(() => null)))
 
       await user.load('personalData')
-      await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
-
+      await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name'))
+        .preload('businessUserRols', q => q.preload('rols', q =>
+          q.select('id', 'name'))
+        ))
       if (user.personalData.cityId) await user.personalData.load('city')
       if (user.personalData.nationalityId) await user.personalData.load('nationality')
       if (user.personalData.sexId) await user.personalData.load('sex')
@@ -1680,8 +1682,11 @@ export default class UserController {
 
     const query = User.query()
       .preload('personalData', q => q.preload('typeIdentify').preload('city'))
-      .preload('businessUser', buQ =>
-        buQ.preload('business', bQ => bQ.select('id', 'name',)))
+      .preload('businessUser', q =>
+        q.preload('business', q => q.select('id', 'name'))
+          .preload('businessUserRols', q => q.preload('rols', q =>
+            q.select('id', 'name'))
+          ))
       .preload('employee', q => q.preload('position'))
 
     const users = page ? await query.paginate(page, perPage ?? 10) : await query
@@ -1838,7 +1843,11 @@ export default class UserController {
 
 
 
-      await user.load('businessUser', q => q.preload('business', q => q.select('id', 'name')))
+      await user.load('businessUser', q =>
+        q.preload('business', q => q.select('id', 'name'))
+          .preload('businessUserRols', q => q.preload('rols', q =>
+            q.select('id', 'name'))
+          ))
       await user.load('personalData', pQ => pQ.preload('typeIdentify'))
       await user.load('employee', q => q.preload('position'))
 
