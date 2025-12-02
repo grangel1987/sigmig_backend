@@ -412,7 +412,7 @@ export default class BugetController {
       .where('nro', number)
       .where('enabled', true)
       .orderBy('id', 'desc')
-      .first()
+      .limit(1)
     return budgetRes
   }
 
