@@ -536,7 +536,11 @@ export default class BugetController {
         keepSameNro = false,
       } = await request.validateUsing(bugetUpdateValidator)
 
-      const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
+      const existingBuget = await Buget.query({ client: trx })
+        .where('id', bugetId)
+        .where('enabled', true) // Only update enabled budgets
+        .forUpdate() // Lock the row to prevent concurrent updates
+        .firstOrFail()
 
       const token = existingBuget.token!
 
@@ -560,8 +564,15 @@ export default class BugetController {
       if (keepSameNro) {
         nro = existingBuget.nro!
       } else {
-        const last = await trx.from('bugets').where('business_id', existingBuget.businessId!).orderBy('id', 'desc').limit(1)
-        nro = String(last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1)
+        // Use a more robust approach for NRO generation to handle concurrency
+        const lastBuget = await Buget.query({ client: trx })
+          .where('business_id', existingBuget.businessId!)
+          .where('enabled', true)
+          .orderBy('nro', 'desc')
+          .limit(1)
+          .first()
+        const lastNro = lastBuget ? parseInt(lastBuget.nro!) : 0
+        nro = String(lastNro + 1)
       }
 
       // Create new budget payload!
@@ -575,6 +586,7 @@ export default class BugetController {
         discount: Number(discount) || 0,
         utility: Number(utility) || 0,
         createdAt: dateTime,
+        prevId: existingBuget.id,
         token,
         updatedAt: dateTime,
         createdById: auth.user!.id,

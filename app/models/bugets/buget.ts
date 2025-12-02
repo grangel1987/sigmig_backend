@@ -45,6 +45,9 @@ export default class Buget extends BaseModel {
     @column()
     public enabled: boolean | null
 
+    @column()
+    public prevId: number | null
+
     @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
     public createdAt: DateTime
 
@@ -112,7 +115,7 @@ export default class Buget extends BaseModel {
 
     @beforeFetch()
     public static hookName(query: ModelQueryBuilderContract<typeof Buget>) {
-        query.where('bugets.enabled', true)
+        query.where('bugets.enabled', true).whereNotNull('bugets.token')
     }
 
     public static castDates(field: string, value: DateTime) {
