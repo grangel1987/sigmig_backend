@@ -83,7 +83,7 @@ export default class PermissionService {
     permissionKey: string
   ): Promise<void> {
 
-    return
+    // return
 
     const hasPermission = await this.canPerformAction(ctx, moduleKey, permissionKey)
 
