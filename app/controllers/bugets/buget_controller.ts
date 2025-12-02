@@ -404,13 +404,15 @@ export default class BugetController {
 
     const { request } = ctx
     const { businessId, number } = await request.validateUsing(bugetFindByNroValidator)
-    const rows = await db.from('bugets').where('business_id', businessId).where('nro', number).limit(1)
-    const id = rows.length ? rows[0].id : 0
-    if (!id) return []
-    const budgetRes = await Buget.query().where('id', id).preload('client', q =>
-      q.preload('city')
-        .preload('typeIdentify')
-    )
+    const budgetRes = await Buget.query().where('business_id', businessId)
+      .preload('client', q =>
+        q.preload('city')
+          .preload('typeIdentify')
+      )
+      .where('nro', number)
+      .where('enabled', true)
+      .orderBy('id', 'desc')
+      .first()
     return budgetRes
   }
 
