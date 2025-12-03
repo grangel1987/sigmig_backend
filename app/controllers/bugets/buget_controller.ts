@@ -568,15 +568,8 @@ export default class BugetController {
       if (keepSameNro) {
         nro = existingBuget.nro!
       } else {
-        const last = await trx.from('bugets')
-          .where('business_id', existingBuget.businessId!)
-          .orderBy('id', 'desc')
-          .limit(1)
-
+        const last = await trx.from('bugets').where('business_id', existingBuget.businessId!).orderBy('id', 'desc').limit(1)
         nro = String(last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1)
-
-        const lastNro = last.length > 0 ? parseInt(last[0].nro!) : 0
-        nro = String(lastNro + 1)
       }
 
       // Create new budget payload!
