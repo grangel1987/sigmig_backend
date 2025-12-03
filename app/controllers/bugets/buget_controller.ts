@@ -45,7 +45,11 @@ export default class BugetController {
       const expireDate = DateTime.fromISO(expireDateISO)
 
       // next nro
-      const last = await trx.from('bugets').where('business_id', businessId).orderBy('id', 'desc').limit(1)
+      const last = await trx.from('bugets')
+        .where('business_id', businessId)
+        .orderBy('id', 'desc')
+        .limit(1)
+
       const nro = last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1
 
       const payload = {
@@ -564,14 +568,15 @@ export default class BugetController {
       if (keepSameNro) {
         nro = existingBuget.nro!
       } else {
-        // Use a more robust approach for NRO generation to handle concurrency
-        const lastBuget = await Buget.query({ client: trx })
+        const last = await trx.from('bugets')
           .where('business_id', existingBuget.businessId!)
           .where('enabled', true)
-          .orderBy('nro', 'desc')
+          .orderBy('id', 'desc')
           .limit(1)
-          .first()
-        const lastNro = lastBuget ? parseInt(lastBuget.nro!) : 0
+
+        nro = String(last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1)
+
+        const lastNro = last.length > 0 ? parseInt(last[0].nro!) : 0
         nro = String(lastNro + 1)
       }
 
