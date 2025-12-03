@@ -43,7 +43,7 @@ export default class Buget extends BaseModel {
     public discount: number
 
     @column()
-    public enabled: boolean | null
+    public enabled: boolean
 
     @column()
     public prevId: number | null
@@ -71,7 +71,7 @@ export default class Buget extends BaseModel {
 
     @beforeCreate()
     public static setDefaults(model: Buget) {
-        if (model.enabled === undefined || model.enabled === null) model.enabled = true
+        if (model.enabled === undefined) model.enabled = true
     }
 
     @belongsTo(() => Business, { foreignKey: 'businessId' })
