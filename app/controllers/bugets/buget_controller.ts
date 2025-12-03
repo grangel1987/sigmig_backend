@@ -915,7 +915,7 @@ export default class BugetController {
         q.select(['id', 'name', 'url'])
       })
 
-      if (!buget.client || (!email && !buget.client?.email)) {
+      if (!email && !buget.client?.email) {
 
         console.log('Email values:', { email, clientEmail: buget.client.email });
 
