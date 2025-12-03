@@ -6,7 +6,7 @@ import PermissionService from '#services/permission_service'
 import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
-import { bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
+import { bugetChangeClientValidator, bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
@@ -124,11 +124,11 @@ export default class BugetController {
       // Prepare email payload data
       const clientName = buget.client?.name || ''
       const createdByName = buget.createdBy?.personalData ? `${buget.createdBy.personalData.names} ${buget.createdBy.personalData.lastNameP} ${buget.createdBy.personalData.lastNameM}`.trim() : ''
-      /*       const host = env.get('NODE_ENV') === 'development'
-              ? 'http://212.38.95.163/sigmig/'
-              : 'https://admin.serviciosgenessis.com/'
-            const budgetUrl = host + `admin/budget/${buget.id}`
-       */
+
+      const host = env.get('NODE_ENV') === 'development'
+        ? 'http://212.38.95.163/sigmig/'
+        : 'https://admin.serviciosgenessis.com/'
+      const budgetUrl = host + `client/budget/${buget.token}`
 
       // Send email notification to super users
       try {
@@ -137,7 +137,7 @@ export default class BugetController {
           clientName,
           expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
           createdBy: createdByName,
-          // budgetUrl,
+          budgetUrl,
           businessName: business.name,
           subject: i18n.formatMessage('messages.budget_created_email_subject', { budgetNumber: buget.nro }),
           body: i18n.formatMessage('messages.budget_created_email_body', {
@@ -644,50 +644,51 @@ export default class BugetController {
       await buget.load('client', (q) => q.select(['name']))
 
       // Prepare email payload data for budget update
-      const clientName = buget.client?.name || ''
-      const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
-      /*       const host = env.get('NODE_ENV') === 'development'
+      /*       const clientName = buget.client?.name || ''
+            const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
+      
+            const host = env.get('NODE_ENV') === 'development'
               ? 'http://212.38.95.163/sigmig/'
               : 'https://admin.serviciosgenessis.com/'
-            const budgetUrl = host + `admin/budget/${buget.id}` */
-
-      const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
-      const body = i18n.formatMessage('messages.budget_updated_email_body', {
-        budgetNumber: buget.nro,
-        clientName,
-        expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
-        createdBy: updatedByName
-      })
-      const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
-      const clientLabel = i18n.formatMessage('messages.client')
-      const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
-      const createdByLabel = i18n.formatMessage('messages.updated_by')
-      const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
-      const backupText = i18n.formatMessage('messages.budget_updated_backup_text')
-
-      // Send email notification to super users
-      try {
-        await sendBudgetNotification(business.id, {
-          subject,
-          body,
-          budgetNumber: buget.nro,
-          clientName,
-          expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
-          createdBy: updatedByName,
-          // budgetUrl,
-          businessName: business.name,
-          budgetNumberLabel,
-          clientLabel,
-          expirationDateLabel,
-          createdByLabel,
-          viewBudgetLabel,
-          backupText,
-        }, 'emails/budget_updated')
-      } catch (emailError) {
-        // Log email error but don't fail the budget update
-        console.log('Error sending budget update notification email:', emailError)
-      }
-
+            const budgetUrl = host + `client/budget/${buget.token}`
+      
+            const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
+            const body = i18n.formatMessage('messages.budget_updated_email_body', {
+              budgetNumber: buget.nro,
+              clientName,
+              expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+              createdBy: updatedByName
+            })
+            const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
+            const clientLabel = i18n.formatMessage('messages.client')
+            const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
+            const createdByLabel = i18n.formatMessage('messages.updated_by')
+            const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
+            const backupText = i18n.formatMessage('messages.budget_updated_backup_text')
+      
+            // Send email notification to super users
+            try {
+              await sendBudgetNotification(business.id, {
+                subject,
+                body,
+                budgetNumber: buget.nro,
+                clientName,
+                expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+                createdBy: updatedByName,
+                budgetUrl,
+                businessName: business.name,
+                budgetNumberLabel,
+                clientLabel,
+                expirationDateLabel,
+                createdByLabel,
+                viewBudgetLabel,
+                backupText,
+              }, 'emails/budget_updated')
+            } catch (emailError) {
+              // Log email error but don't fail the budget update
+              console.log('Error sending budget update notification email:', emailError)
+            }
+       */
       return response.status(201).json({
         buget,
         ...MessageFrontEnd(
@@ -700,6 +701,197 @@ export default class BugetController {
 
       console.log(error);
 
+      return response.status(500).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+  }
+
+  // Change the client of a budget: create a new budget with the new client and archive the previous one
+  public async changeClient(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'update')
+
+    const { params, request, auth, response, i18n } = ctx
+    const bugetId = Number(params.id)
+    const trx = await db.transaction()
+    try {
+      const dateTime = await Util.getDateTimes(request)
+      const {
+        products = [],
+        items = [],
+        banks = [],
+        discount,
+        utility,
+        clientDetails,
+        currencyId,
+        currencyValue,
+        currencySymbol,
+        client,
+        clientId,
+      } = await request.validateUsing(bugetChangeClientValidator)
+
+      // allow client override via body: client object or clientId
+      const inputClient = client || null
+      const inputClientId = clientId || null
+
+      if (!inputClient && !inputClientId) {
+        return response.status(400).json(
+          MessageFrontEnd(
+            'Either client or clientId must be provided',
+            'Validation Error'
+          )
+        )
+      }
+
+      const existingBuget = await Buget.query({ client: trx })
+        .where('id', bugetId)
+        .where('enabled', true)
+        .forUpdate()
+        .firstOrFail()
+
+      // Archive previous budget
+      await trx.from('bugets')
+        .where('id', bugetId)
+        .update({
+          enabled: 0,
+          token: null,
+          updated_at: dateTime.toSQL({ includeOffset: false }),
+          updated_by: auth.user!.id,
+        })
+
+      // Get business for expiration calculation
+      const business = await Business.query({ client: trx }).where('id', existingBuget.businessId!).firstOrFail()
+      const daysExpire = business.daysExpireBuget || 0
+      const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
+      const expireDate = DateTime.fromISO(expireDateISO)
+
+      // Always use next nro (do NOT keep the same)
+      const last = await trx.from('bugets').where('business_id', existingBuget.businessId!).orderBy('id', 'desc').limit(1)
+      const nro = String(last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1)
+
+      // Determine new client id
+      const newClientId = (inputClient && inputClient.id) ? inputClient.id : (inputClientId ? inputClientId : existingBuget.clientId)
+
+      // Create new budget payload WITHOUT token so model hook will create it
+      const buget = await Buget.create({
+        nro: String(nro),
+        businessId: existingBuget.businessId,
+        currencySymbol: currencySymbol ?? null,
+        currencyId: currencyId ?? null,
+        currencyValue: currencyValue ?? null,
+        clientId: newClientId,
+        discount: Number(discount) || 0,
+        utility: Number(utility) || 0,
+        createdAt: dateTime,
+        prevId: existingBuget.id,
+        // DO NOT set token here - allow @beforeCreate to set a new token
+        updatedAt: dateTime,
+        createdById: auth.user!.id,
+        updatedById: auth.user!.id,
+        expireDate,
+        enabled: true,
+      }, { client: trx })
+
+      // Normalize related rows and persist
+      const productsRows = (products as any[]).map((p) => {
+        const periodId = p?.period?.period ?? null
+        const productId = p?.id
+        const countPerson = p?.countPerson
+        const amount = p?.amountDefault ?? p?.amount
+        return {
+          productId: productId,
+          periodId: periodId,
+          name: p?.name,
+          amount,
+          count: p?.count,
+          countPerson: countPerson,
+          tax: p?.tax,
+        }
+      })
+
+      const itemsRows = (items as any[]).map((it) => ({
+        itemId: it?.id,
+        withTitle: !!it?.withTitle,
+        title: it?.title ?? null,
+        typeId: it?.typeId,
+        value: it?.value,
+      }))
+
+      const banksRows = (banks as any[]).map((b) => ({ accountId: typeof b === 'object' ? b?.accountId : b }))
+
+      await buget.related('products').createMany(productsRows, { client: trx })
+      await buget.related('items').createMany(itemsRows, { client: trx })
+      await buget.related('banks').createMany(banksRows, { client: trx })
+
+      if (clientDetails) {
+        const { costCenter, work, observation } = clientDetails as any
+        if (costCenter || work || observation) {
+          await buget.related('details').create({ costCenter, work, observation }, { client: trx })
+        }
+      }
+
+      await trx.commit()
+
+      await buget.load('createdBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      await buget.load('updatedBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+
+      // Load client data for email
+      await buget.load('client', (q) => q.select(['name']))
+
+      // Send notification to super users about the client change (reusing creation template)
+      /*       try {
+              const clientName = buget.client?.name || ''
+              const createdByName = buget.createdBy?.personalData ? `${buget.createdBy.personalData.names} ${buget.createdBy.personalData.lastNameP} ${buget.createdBy.personalData.lastNameM}`.trim() : ''
+              const subject = i18n.formatMessage('messages.budget_created_email_subject', { budgetNumber: buget.nro })
+              const body = i18n.formatMessage('messages.budget_created_email_body', {
+                budgetNumber: buget.nro,
+                clientName,
+                expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+                createdBy: createdByName
+              })
+      
+              const host = env.get('NODE_ENV') === 'development'
+                ? 'http://212.38.95.163/sigmig/'
+                : 'https://admin.serviciosgenessis.com/'
+              const budgetUrl = host + `client/budget/${buget.token}`
+      
+              await sendBudgetNotification(business.id, {
+                budgetNumber: buget.nro,
+                clientName,
+                expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+                createdBy: createdByName,
+                budgetUrl,
+                businessName: business.name,
+                subject,
+                body,
+                budgetNumberLabel: i18n.formatMessage('messages.budget_number'),
+                clientLabel: i18n.formatMessage('messages.client'),
+                expirationDateLabel: i18n.formatMessage('messages.expiration_date'),
+                createdByLabel: i18n.formatMessage('messages.created_by'),
+                viewBudgetLabel: i18n.formatMessage('messages.view_budget'),
+                backupText: i18n.formatMessage('messages.budget_created_backup_text'),
+              })
+            } catch (emailError) {
+              console.log('Error sending budget change-client notification email:', emailError)
+            }
+       */
+      return response.status(201).json({
+        buget,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      await trx.rollback()
+      console.log(error)
       return response.status(500).json(
         MessageFrontEnd(
           i18n.formatMessage('messages.update_error'),

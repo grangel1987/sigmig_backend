@@ -101,3 +101,23 @@ export const bugetFindByDateValidator = vine.compile(
 
     })
 )
+
+export const bugetChangeClientValidator = vine.compile(
+    vine.object({
+        currencySymbol: vine.string().optional().nullable(),
+        currencyId: vine.number().optional().nullable(),
+        currencyValue: vine.number().optional().nullable(),
+
+        client: clientSchema,
+        clientId: vine.number().optional(),
+
+        products: vine.array(productSchema).optional(),
+        items: vine.array(itemSchema).optional(),
+        banks: vine.array(bankAny).optional(),
+
+        discount: vine.number().optional(),
+        utility: vine.number().optional(),
+
+        clientDetails: clientDetailsSchema,
+    })
+)
