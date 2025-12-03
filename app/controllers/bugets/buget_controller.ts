@@ -416,8 +416,8 @@ export default class BugetController {
       .where('nro', number)
       // .where('enabled', true)
       .orderBy('id', 'desc')
-      .limit(1)
-    return budgetRes
+      .first()
+    return [budgetRes]
   }
 
   public async findByNameClient(ctx: HttpContext) {
