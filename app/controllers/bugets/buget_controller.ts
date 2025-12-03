@@ -551,7 +551,7 @@ export default class BugetController {
       await trx.from('bugets')
         .where('id', bugetId)
         .update({
-          enabled: false,
+          enabled: 0,
           token: null,
           updated_at: dateTime.toSQL({ includeOffset: false }),
           updated_by: auth.user!.id,
@@ -573,7 +573,8 @@ export default class BugetController {
       }
 
       // Create new budget payload!
-      const payload = {
+
+      const buget = await Buget.create({
         nro: String(nro),
         businessId: existingBuget.businessId,
         currencySymbol: currencySymbol ?? null,
@@ -590,9 +591,7 @@ export default class BugetController {
         updatedById: auth.user!.id,
         expireDate,
         enabled: true,
-      }
-
-      const buget = await Buget.create(payload, { client: trx })
+      }, { client: trx })
 
       // Normalize products to model properties (camelCase)
       const productsRows = (products as any[]).map((p) => {
