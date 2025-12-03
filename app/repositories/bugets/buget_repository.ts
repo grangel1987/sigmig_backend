@@ -19,7 +19,7 @@ export default class BugetRepository {
         }
 
         if (status)
-            query = query.where('enabled', status === 'enabled')
+            query = query.where('bugets.enabled', status === 'enabled')
 
 
         return await query
@@ -47,7 +47,7 @@ export default class BugetRepository {
         }
 
         if (status)
-            query = query.where('enabled', status === 'enabled')
+            query = query.where('bugets.enabled', status === 'enabled')
 
         if (page && limit) {
             return await query.paginate(page, limit)
