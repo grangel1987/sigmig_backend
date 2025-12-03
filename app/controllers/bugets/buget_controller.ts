@@ -554,7 +554,7 @@ export default class BugetController {
           enabled: false,
           token: null,
           updated_at: dateTime.toSQL({ includeOffset: false }),
-          updated_by_id: auth.user!.id,
+          updated_by: auth.user!.id,
         })
 
       // Get business for expiration calculation
