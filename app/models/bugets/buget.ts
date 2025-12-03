@@ -6,8 +6,7 @@ import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import User from '#models/users/user'
 import Util from '#utils/Util'
-import { BaseModel, beforeCreate, beforeFetch, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
-import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
+import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -43,7 +42,10 @@ export default class Buget extends BaseModel {
     public discount: number
 
     @column()
-    public enabled: boolean | null
+    public enabled: boolean
+
+    @column()
+    public prevId: number | null
 
     @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
     public createdAt: DateTime
@@ -68,7 +70,7 @@ export default class Buget extends BaseModel {
 
     @beforeCreate()
     public static setDefaults(model: Buget) {
-        if (model.enabled === undefined || model.enabled === null) model.enabled = true
+        if (model.enabled === undefined) model.enabled = true
     }
 
     @belongsTo(() => Business, { foreignKey: 'businessId' })
@@ -109,11 +111,11 @@ export default class Buget extends BaseModel {
 
     }
 
-
-    @beforeFetch()
-    public static hookName(query: ModelQueryBuilderContract<typeof Buget>) {
-        query.where('bugets.enabled', true)
-    }
+    /* 
+        @beforeFetch()
+        public static hookName(query: ModelQueryBuilderContract<typeof Buget>) {
+            query.where('bugets.enabled', true).whereNotNull('bugets.token')
+        } */
 
     public static castDates(field: string, value: DateTime) {
         if (field === 'expire_date') return value.toFormat('yyyy-MM-dd')

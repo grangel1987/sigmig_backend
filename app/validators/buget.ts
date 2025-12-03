@@ -87,6 +87,7 @@ export const bugetFindByNameClientValidator = vine.compile(
         name: vine.string(),
         page: vine.number().optional(),
         perPage: vine.number().optional(),
+        status: vine.enum(['enabled', 'disabled']).optional(),
     })
 )
 
@@ -96,5 +97,13 @@ export const bugetFindByDateValidator = vine.compile(
         date: vine.date(),
         page: vine.number().optional(),
         perPage: vine.number().optional(),
+        status: vine.enum(['enabled', 'disabled']).optional(),
+
+    })
+)
+
+export const bugetChangeClientValidator = vine.compile(
+    vine.object({
+        clientId: vine.number(),
     })
 )

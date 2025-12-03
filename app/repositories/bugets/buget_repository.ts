@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 
 export default class BugetRepository {
     // Find budgets by client name for a business
-    public static async findByNameClient(businessId: number, name: string, page?: number, limit?: number) {
+    public static async findByNameClient(businessId: number, name: string, page?: number, limit?: number, status?: 'disabled' | 'enabled') {
         let query = Buget.query()
             .where('business_id', businessId)
             .whereHas('client', (query) => {
@@ -18,11 +18,15 @@ export default class BugetRepository {
             return await query.paginate(page, limit)
         }
 
+        if (status)
+            query = query.where('bugets.enabled', status === 'enabled')
+
+
         return await query
     }
 
     // Find budgets by creation date for a business
-    public static async findByDate(businessId: number, date: string, page?: number, limit?: number) {
+    public static async findByDate(businessId: number, date: string, page?: number, limit?: number, status?: 'disabled' | 'enabled') {
         const today = DateTime.now().toSQLDate()
         const tomorrow = DateTime.now().plus({ days: 1 }).toSQLDate()
 
@@ -41,6 +45,9 @@ export default class BugetRepository {
             // Otherwise, query for exact date
             query = query.whereRaw('DATE(created_at) = ?', [date])
         }
+
+        if (status)
+            query = query.where('bugets.enabled', status === 'enabled')
 
         if (page && limit) {
             return await query.paginate(page, limit)

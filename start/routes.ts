@@ -586,6 +586,7 @@ router.group(() => {
     router.post('/find/name', '#controllers/bugets/buget_controller.findByNameClient')
     router.post('/find/date', '#controllers/bugets/buget_controller.findByDate')
     router.put('/update/:id', '#controllers/bugets/buget_controller.update')
+    router.put('/change-client/:id', '#controllers/bugets/buget_controller.changeClient')
     router.delete('/delete/:id', '#controllers/bugets/buget_controller.delete')
     router.get('/count/made/:business_id', '#controllers/bugets/buget_controller.countMade')
     router.get('/count/made/year/:business_id', '#controllers/bugets/buget_controller.countMadeYear')
