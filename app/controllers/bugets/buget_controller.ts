@@ -414,7 +414,7 @@ export default class BugetController {
           .preload('typeIdentify')
       )
       .where('nro', number)
-      .where('enabled', true)
+      // .where('enabled', true)
       .orderBy('id', 'desc')
       .limit(1)
     return budgetRes
