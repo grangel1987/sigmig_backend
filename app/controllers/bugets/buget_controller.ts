@@ -424,18 +424,18 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, name, page, perPage } = await request.validateUsing(bugetFindByNameClientValidator)
-    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''), page, perPage)
+    const { businessId, name, page, perPage, status } = await request.validateUsing(bugetFindByNameClientValidator)
+    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''), page, perPage, status)
   }
 
   public async findByDate(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, date, page, perPage } = await request.validateUsing(bugetFindByDateValidator)
+    const { businessId, date, page, perPage, status } = await request.validateUsing(bugetFindByDateValidator)
     const dateSql = DateTime.fromJSDate(date).toSQLDate()!
 
-    return await BugetRepository.findByDate(Number(businessId), String(dateSql), page, perPage)
+    return await BugetRepository.findByDate(Number(businessId), String(dateSql), page, perPage, status)
   }
 
   public async delete(ctx: HttpContext) {
