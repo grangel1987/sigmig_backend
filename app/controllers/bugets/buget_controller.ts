@@ -570,7 +570,6 @@ export default class BugetController {
       } else {
         const last = await trx.from('bugets')
           .where('business_id', existingBuget.businessId!)
-          .where('enabled', true)
           .orderBy('id', 'desc')
           .limit(1)
 
