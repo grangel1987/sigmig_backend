@@ -719,32 +719,7 @@ export default class BugetController {
     const trx = await db.transaction()
     try {
       const dateTime = await Util.getDateTimes(request)
-      const {
-        products = [],
-        items = [],
-        banks = [],
-        discount,
-        utility,
-        clientDetails,
-        currencyId,
-        currencyValue,
-        currencySymbol,
-        client,
-        clientId,
-      } = await request.validateUsing(bugetChangeClientValidator)
-
-      // allow client override via body: client object or clientId
-      const inputClient = client || null
-      const inputClientId = clientId || null
-
-      if (!inputClient && !inputClientId) {
-        return response.status(400).json(
-          MessageFrontEnd(
-            'Either client or clientId must be provided',
-            'Validation Error'
-          )
-        )
-      }
+      const { clientId } = await request.validateUsing(bugetChangeClientValidator)
 
       const existingBuget = await Buget.query({ client: trx })
         .where('id', bugetId)
@@ -772,19 +747,16 @@ export default class BugetController {
       const last = await trx.from('bugets').where('business_id', existingBuget.businessId!).orderBy('id', 'desc').limit(1)
       const nro = String(last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1)
 
-      // Determine new client id
-      const newClientId = (inputClient && inputClient.id) ? inputClient.id : (inputClientId ? inputClientId : existingBuget.clientId)
-
       // Create new budget payload WITHOUT token so model hook will create it
       const buget = await Buget.create({
         nro: String(nro),
         businessId: existingBuget.businessId,
-        currencySymbol: currencySymbol ?? null,
-        currencyId: currencyId ?? null,
-        currencyValue: currencyValue ?? null,
-        clientId: newClientId,
-        discount: Number(discount) || 0,
-        utility: Number(utility) || 0,
+        currencySymbol: existingBuget.currencySymbol,
+        currencyId: existingBuget.currencyId,
+        currencyValue: existingBuget.currencyValue,
+        clientId: clientId,
+        discount: existingBuget.discount,
+        utility: existingBuget.utility,
         createdAt: dateTime,
         prevId: existingBuget.id,
         // DO NOT set token here - allow @beforeCreate to set a new token
@@ -795,42 +767,50 @@ export default class BugetController {
         enabled: true,
       }, { client: trx })
 
-      // Normalize related rows and persist
-      const productsRows = (products as any[]).map((p) => {
-        const periodId = p?.period?.period ?? null
-        const productId = p?.id
-        const countPerson = p?.countPerson
-        const amount = p?.amountDefault ?? p?.amount
-        return {
-          productId: productId,
-          periodId: periodId,
-          name: p?.name,
-          amount,
-          count: p?.count,
-          countPerson: countPerson,
-          tax: p?.tax,
-        }
-      })
+      // Copy all related rows exactly
+      // Products
+      const existingProducts = await existingBuget.related('products').query()
+      if (existingProducts.length > 0) {
+        const productsRows = existingProducts.map(p => ({
+          productId: p.productId,
+          periodId: p.periodId,
+          name: p.name,
+          amount: p.amount,
+          count: p.count,
+          countPerson: p.countPerson,
+          tax: p.tax,
+        }))
+        await buget.related('products').createMany(productsRows, { client: trx })
+      }
 
-      const itemsRows = (items as any[]).map((it) => ({
-        itemId: it?.id,
-        withTitle: !!it?.withTitle,
-        title: it?.title ?? null,
-        typeId: it?.typeId,
-        value: it?.value,
-      }))
+      // Items
+      const existingItems = await existingBuget.related('items').query()
+      if (existingItems.length > 0) {
+        const itemsRows = existingItems.map(it => ({
+          itemId: it.itemId,
+          withTitle: it.withTitle,
+          title: it.title,
+          typeId: it.typeId,
+          value: it.value,
+        }))
+        await buget.related('items').createMany(itemsRows, { client: trx })
+      }
 
-      const banksRows = (banks as any[]).map((b) => ({ accountId: typeof b === 'object' ? b?.accountId : b }))
+      // Banks
+      const existingBanks = await existingBuget.related('banks').query()
+      if (existingBanks.length > 0) {
+        const banksRows = existingBanks.map(b => ({ accountId: b.accountId }))
+        await buget.related('banks').createMany(banksRows, { client: trx })
+      }
 
-      await buget.related('products').createMany(productsRows, { client: trx })
-      await buget.related('items').createMany(itemsRows, { client: trx })
-      await buget.related('banks').createMany(banksRows, { client: trx })
-
-      if (clientDetails) {
-        const { costCenter, work, observation } = clientDetails as any
-        if (costCenter || work || observation) {
-          await buget.related('details').create({ costCenter, work, observation }, { client: trx })
-        }
+      // Details
+      const existingDetails = await existingBuget.related('details').query().first()
+      if (existingDetails) {
+        await buget.related('details').create({
+          costCenter: existingDetails.costCenter,
+          work: existingDetails.work,
+          observation: existingDetails.observation,
+        }, { client: trx })
       }
 
       await trx.commit()
@@ -880,8 +860,8 @@ export default class BugetController {
               })
             } catch (emailError) {
               console.log('Error sending budget change-client notification email:', emailError)
-            }
-       */
+            } */
+
       return response.status(201).json({
         buget,
         ...MessageFrontEnd(
