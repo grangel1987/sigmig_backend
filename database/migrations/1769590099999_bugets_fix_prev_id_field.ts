@@ -5,7 +5,7 @@ export default class AlterEmployeePermitFileToText extends BaseSchema {
 
     public async up() {
 
-        const hasTk = await this.schema.hasColumn(this.tableName, 'token')
+        const hasTk = await this.schema.hasColumn(this.tableName, 'prev_id')
 
 
         if (hasTk) return
