@@ -33,9 +33,9 @@ export default class SettingBugetItemController {
                         q.whereNull('business_id')
                     }
                 })
-                /*                 .preload('type', (builder) => {
-                                    builder.select(['id', 'text'])
-                                }) */
+                .preload('type', (builder) => {
+                    builder.select(['id', 'text'])
+                })
                 .preload('createdBy', (builder) => {
                     builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
