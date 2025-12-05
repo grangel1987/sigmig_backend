@@ -1,3 +1,4 @@
+import Business from '#models/business/business'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -25,6 +26,9 @@ export default class SettingBugetItem extends BaseModel {
 
     @column()
     public enabled: boolean
+
+    @column({ columnName: 'business_id' })
+    public businessId?: number | null
 
     @column({ columnName: 'created_by' })
     public createdById: number
@@ -54,6 +58,9 @@ export default class SettingBugetItem extends BaseModel {
 
     @belongsTo(() => User, { foreignKey: 'updatedById' })
     public updatedBy: BelongsTo<typeof User>
+
+    @belongsTo(() => Business, { foreignKey: 'businessId' })
+    public business: BelongsTo<typeof Business>
 
     public static castDates(_field: string, value: DateTime): string {
         return value.toFormat('dd/MM/yyyy hh:mm:ss a')

@@ -20,8 +20,16 @@ export default class SettingBugetItemController {
         )
 
         try {
+            const headerBusinessId = Number(request.header('Business')) || undefined
             const query = SettingBugetItem.query()
                 .whereNull('deleted_at')
+                .andWhere((q) => {
+                    if (headerBusinessId) {
+                        q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                    } else {
+                        q.whereNull('business_id')
+                    }
+                })
                 /*                 .preload('type', (builder) => {
                                     builder.select(['id', 'text'])
                                 }) */
@@ -48,7 +56,7 @@ export default class SettingBugetItemController {
         await PermissionService.requirePermission(ctx, 'settings', 'create');
 
         const { request, response, auth, i18n } = ctx
-        const { typeId, value, categoryIds, withTitle, title } = await request.validateUsing(
+        const { typeId, value, categoryIds, withTitle, title, businessId } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     typeId: vine.number().positive(),
@@ -56,6 +64,7 @@ export default class SettingBugetItemController {
                     categoryIds: vine.array(vine.number().positive()).optional(),
                     withTitle: vine.boolean().optional(),
                     title: vine.string().trim().optional(),
+                    businessId: vine.number().positive().optional(),
                 })
             )
         )
@@ -71,6 +80,8 @@ export default class SettingBugetItemController {
                 withTitle: withTitle ?? false,
                 title,
                 categoryIdsCsv: categoriesCsv,
+                // Only set businessId when provided in payload; otherwise keep null
+                businessId: businessId ?? null,
                 createdById: auth.user!.id,
                 updatedById: auth.user!.id,
                 createdAt: dateTime,
@@ -115,6 +126,7 @@ export default class SettingBugetItemController {
                     categoryIds: vine.array(vine.number().positive()).optional(),
                     withTitle: vine.boolean().optional(),
                     title: vine.string().trim().optional(),
+                    businessId: vine.number().positive().optional(),
                 })
             )
         )
@@ -131,6 +143,7 @@ export default class SettingBugetItemController {
                 withTitle,
                 title,
                 categoryIdsCsv: categoriesCsv,
+                // businessId,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })
@@ -233,23 +246,40 @@ export default class SettingBugetItemController {
     public async findByType(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
-        const { params } = ctx
+        const { params, request } = ctx
         const typeId = params.id
+        const headerBusinessId = Number(request.header('Business')) || undefined
         const items = await SettingBugetItem.query()
             .select(['id', 'value'])
             .where('type_id', typeId)
             .where('enabled', true)
             .whereNull('deleted_at')
+            .andWhere((q) => {
+                if (headerBusinessId) {
+                    q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                } else {
+                    q.whereNull('business_id')
+                }
+            })
         return items
     }
 
     public async findAll(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
+        const { request } = ctx
+        const headerBusinessId = Number(request.header('Business')) || undefined
         const items = await SettingBugetItem.query()
             .select(['id', 'type_id', 'value'])
             .where('enabled', true)
             .whereNull('deleted_at')
+            .andWhere((q) => {
+                if (headerBusinessId) {
+                    q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                } else {
+                    q.whereNull('business_id')
+                }
+            })
         return items
     }
 }
