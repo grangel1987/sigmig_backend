@@ -1,8 +1,11 @@
+import SettingBugetCategory from '#models/buget/setting_buget_category'
 import SettingBugetItem from '#models/buget/setting_buget_item'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
+import { ModelPaginator } from '@adonisjs/lucid/orm'
 import vine from '@vinejs/vine'
+import console from 'console'
 import { DateTime } from 'luxon'
 
 export default class SettingBugetItemController {
@@ -20,7 +23,16 @@ export default class SettingBugetItemController {
         )
 
         try {
+            const headerBusinessId = Number(request.header('Business')) || undefined
             const query = SettingBugetItem.query()
+                .whereNull('deleted_at')
+                .andWhere((q) => {
+                    if (headerBusinessId) {
+                        q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                    } else {
+                        q.whereNull('business_id')
+                    }
+                })
                 /*                 .preload('type', (builder) => {
                                     builder.select(['id', 'text'])
                                 }) */
@@ -32,8 +44,22 @@ export default class SettingBugetItemController {
                 })
 
             const items = await (page ? query.paginate(page, perPage || 10) : query)
-            return items
+
+            const catsPerItem: Map<number, number[]> = new Map()
+            const catIDs = new Set<number>()
+
+            const workingItems = 'all' in items ? items.all() : items
+
+            const serializedItems = await serializeSettingBudgetItemsList(workingItems, catsPerItem, catIDs)
+
+            if (page)
+                return { data: serializedItems, meta: (items as ModelPaginator).getMeta() }
+            else
+                return serializedItems
+
         } catch (error) {
+            console.log(error);
+
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),
@@ -43,11 +69,13 @@ export default class SettingBugetItemController {
         }
     }
 
+
+
     public async store(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'create');
 
         const { request, response, auth, i18n } = ctx
-        const { typeId, value, categoryIds, withTitle, title } = await request.validateUsing(
+        const { typeId, value, categoryIds, withTitle, title, businessId } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     typeId: vine.number().positive(),
@@ -55,6 +83,7 @@ export default class SettingBugetItemController {
                     categoryIds: vine.array(vine.number().positive()).optional(),
                     withTitle: vine.boolean().optional(),
                     title: vine.string().trim().optional(),
+                    businessId: vine.number().positive().optional(),
                 })
             )
         )
@@ -70,6 +99,8 @@ export default class SettingBugetItemController {
                 withTitle: withTitle ?? false,
                 title,
                 categoryIdsCsv: categoriesCsv,
+                // Only set businessId when provided in payload; otherwise keep null
+                businessId: businessId ?? null,
                 createdById: auth.user!.id,
                 updatedById: auth.user!.id,
                 createdAt: dateTime,
@@ -114,6 +145,7 @@ export default class SettingBugetItemController {
                     categoryIds: vine.array(vine.number().positive()).optional(),
                     withTitle: vine.boolean().optional(),
                     title: vine.string().trim().optional(),
+                    businessId: vine.number().positive().optional(),
                 })
             )
         )
@@ -130,6 +162,7 @@ export default class SettingBugetItemController {
                 withTitle,
                 title,
                 categoryIdsCsv: categoriesCsv,
+                // businessId,
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })
@@ -201,24 +234,98 @@ export default class SettingBugetItemController {
         }
     }
 
+    public async delete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'delete');
+
+        const { params, response, i18n } = ctx
+        const itemId = params.id
+        const dateTime = DateTime.local()
+
+        try {
+            const item = await SettingBugetItem.findOrFail(itemId)
+            item.merge({ deletedAt: dateTime })
+            await item.save()
+
+            return response.status(200).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.delete_ok'),
+                    i18n.formatMessage('messages.ok_title')
+                )
+            })
+        } catch (error) {
+            return response.status(500).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.delete_error'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            })
+        }
+    }
+
     public async findByType(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
-        const { params } = ctx
+        const { params, request } = ctx
         const typeId = params.id
+        const headerBusinessId = Number(request.header('Business')) || undefined
         const items = await SettingBugetItem.query()
             .select(['id', 'value'])
             .where('type_id', typeId)
             .where('enabled', true)
+            .whereNull('deleted_at')
+            .andWhere((q) => {
+                if (headerBusinessId) {
+                    q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                } else {
+                    q.whereNull('business_id')
+                }
+            })
         return items
     }
 
     public async findAll(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
+        const { request } = ctx
+        const headerBusinessId = Number(request.header('Business')) || undefined
         const items = await SettingBugetItem.query()
             .select(['id', 'type_id', 'value'])
             .where('enabled', true)
+            .whereNull('deleted_at')
+            .andWhere((q) => {
+                if (headerBusinessId) {
+                    q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                } else {
+                    q.whereNull('business_id')
+                }
+            })
         return items
     }
+}
+
+async function serializeSettingBudgetItemsList(workingItems: SettingBugetItem[], catsPerItem: Map<number, number[]>, catIDs: Set<number>) {
+    for (let i = 0; i < workingItems.length; i++) {
+        const item = workingItems[i]
+        const categoryIdsCsv = item.categoryIdsCsv
+
+        if (!categoryIdsCsv) continue
+        const cats = categoryIdsCsv.split(',').map(idStr => parseInt(idStr, 10)).filter(id => !isNaN(id) && id !== 0)
+        catsPerItem.set(item.id, cats)
+
+        cats.forEach(catId => {
+            catIDs.add(catId)
+        })
+    }
+    const categories = catIDs.size ? await SettingBugetCategory.query()
+        .select('id', 'name')
+        .whereIn('id', Array.from(catIDs)) : []
+
+    const serializedItems = workingItems.map(item => {
+        const itemJson = item.toJSON()
+        const cats = catsPerItem.get(item.id) || []
+        itemJson.categories = categories.filter(cat => cats.includes(cat.id))
+        delete itemJson.categoryIdsCsv
+        return itemJson
+    })
+    return serializedItems
 }

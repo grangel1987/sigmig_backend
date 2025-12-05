@@ -1,3 +1,4 @@
+import Business from '#models/business/business'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -20,11 +21,14 @@ export default class SettingBugetItem extends BaseModel {
     public title?: string | null
 
     // Stores a comma-separated list of category IDs (legacy compatibility)
-    @column({ columnName: 'category_id' })
+    @column({ columnName: 'category_id', serializeAs: 'category_id' })
     public categoryIdsCsv: string
 
     @column()
     public enabled: boolean
+
+    @column({ columnName: 'business_id' })
+    public businessId?: number | null
 
     @column({ columnName: 'created_by' })
     public createdById: number
@@ -37,6 +41,9 @@ export default class SettingBugetItem extends BaseModel {
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     public updatedAt: DateTime
+
+    @column.dateTime({ columnName: 'deleted_at' })
+    public deletedAt: DateTime | null
 
     @beforeCreate()
     public static async setEnabled(model: SettingBugetItem) {
@@ -51,6 +58,9 @@ export default class SettingBugetItem extends BaseModel {
 
     @belongsTo(() => User, { foreignKey: 'updatedById' })
     public updatedBy: BelongsTo<typeof User>
+
+    @belongsTo(() => Business, { foreignKey: 'businessId' })
+    public business: BelongsTo<typeof Business>
 
     public static castDates(_field: string, value: DateTime): string {
         return value.toFormat('dd/MM/yyyy hh:mm:ss a')

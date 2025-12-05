@@ -199,6 +199,7 @@ router.group(() => {
       "/change-status/:id",
       "#controllers/buget/setting_buget_item_controller.changeStatus"
     );
+    router.delete("/delete/:id", "#controllers/buget/setting_buget_item_controller.delete");
     // Convenience endpoints provided by this controller
     router.get("/find-by-type/:id", "#controllers/buget/setting_buget_item_controller.findByType");
     router.get("/find-all", "#controllers/buget/setting_buget_item_controller.findAll");
