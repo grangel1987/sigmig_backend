@@ -21,6 +21,7 @@ export default class SettingBugetItemController {
 
         try {
             const query = SettingBugetItem.query()
+                .whereNull('deleted_at')
                 /*                 .preload('type', (builder) => {
                                     builder.select(['id', 'text'])
                                 }) */
@@ -201,6 +202,34 @@ export default class SettingBugetItemController {
         }
     }
 
+    public async delete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'delete');
+
+        const { params, response, i18n } = ctx
+        const itemId = params.id
+        const dateTime = DateTime.local()
+
+        try {
+            const item = await SettingBugetItem.findOrFail(itemId)
+            item.merge({ deletedAt: dateTime })
+            await item.save()
+
+            return response.status(200).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.delete_ok'),
+                    i18n.formatMessage('messages.ok_title')
+                )
+            })
+        } catch (error) {
+            return response.status(500).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.delete_error'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            })
+        }
+    }
+
     public async findByType(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
@@ -210,6 +239,7 @@ export default class SettingBugetItemController {
             .select(['id', 'value'])
             .where('type_id', typeId)
             .where('enabled', true)
+            .whereNull('deleted_at')
         return items
     }
 
@@ -219,6 +249,7 @@ export default class SettingBugetItemController {
         const items = await SettingBugetItem.query()
             .select(['id', 'type_id', 'value'])
             .where('enabled', true)
+            .whereNull('deleted_at')
         return items
     }
 }

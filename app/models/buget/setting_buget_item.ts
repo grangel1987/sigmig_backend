@@ -38,6 +38,9 @@ export default class SettingBugetItem extends BaseModel {
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     public updatedAt: DateTime
 
+    @column.dateTime({ columnName: 'deleted_at' })
+    public deletedAt: DateTime | null
+
     @beforeCreate()
     public static async setEnabled(model: SettingBugetItem) {
         model.enabled = true

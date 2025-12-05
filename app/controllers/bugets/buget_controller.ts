@@ -7,6 +7,7 @@ import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { bugetChangeClientValidator, bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
+import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
@@ -182,7 +183,15 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, page = 1, limit = 20, enabled } = request.qs()
+    const { page, perPage, status, text, businessId } = await
+      request.validateUsing(
+        vine.compile(vine.object(
+          {
+            ...searchWithStatusSchema.getProperties(),
+            businessId: vine.number().positive().optional()
+          }
+        )
+        ))
 
     let query = Buget.query()
       .preload('client', q =>
@@ -201,11 +210,14 @@ export default class BugetController {
       query = query.where('business_id', businessId)
     }
 
-    if (enabled !== undefined) {
-      query = query.where('enabled', enabled === 'true')
+    if (status !== undefined) {
+      query = query.where('enabled', status === 'enabled')
     }
 
-    const budgets = await query.paginate(page, limit)
+    if (text) query = query.whereLike('nro', `%${text}%`)
+      .orWhereRaw('client.name LIKE ?', [`%${text}%`])
+
+    const budgets = page ? await query.paginate(page, perPage) : await query
 
     return budgets
   }
