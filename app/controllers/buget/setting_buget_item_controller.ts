@@ -2,7 +2,9 @@ import SettingBugetItem from '#models/buget/setting_buget_item'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
+import { ModelPaginator } from '@adonisjs/lucid/orm'
 import vine from '@vinejs/vine'
+import console from 'console'
 import { DateTime } from 'luxon'
 
 export default class SettingBugetItemController {
@@ -41,8 +43,22 @@ export default class SettingBugetItemController {
                 })
 
             const items = await (page ? query.paginate(page, perPage || 10) : query)
-            return items
+
+            const catsPerItem: Map<number, number[]> = new Map()
+            const catIDs = new Set<number>()
+
+            const workingItems = 'all' in items ? items.all() : items
+
+            const serializedItems = await serializeSettingBudgetItemsList(workingItems, catsPerItem, catIDs)
+
+            if (page)
+                return { data: serializedItems, ...(items as ModelPaginator).getMeta() }
+            else
+                return serializedItems
+
         } catch (error) {
+            console.log(error);
+
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.update_error'),
@@ -51,6 +67,8 @@ export default class SettingBugetItemController {
             })
         }
     }
+
+
 
     public async store(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'create');
@@ -282,4 +300,31 @@ export default class SettingBugetItemController {
             })
         return items
     }
+}
+
+async function serializeSettingBudgetItemsList(workingItems: SettingBugetItem[], catsPerItem: Map<number, number[]>, catIDs: Set<number>) {
+    for (let i = 0; i < workingItems.length; i++) {
+        const item = workingItems[i]
+        const categoryIdsCsv = item.categoryIdsCsv
+
+        if (!categoryIdsCsv) continue
+        const cats = categoryIdsCsv.split(',').map(idStr => parseInt(idStr, 10)).filter(id => !isNaN(id) && id !== 0)
+        catsPerItem.set(item.id, cats)
+
+        cats.forEach(catId => {
+            catIDs.add(catId)
+        })
+    }
+    const categories = catIDs.size ? await SettingBugetItem.query()
+        .select('id', 'title', 'value', 'with_title')
+        .whereIn('id', Array.from(catIDs)) : []
+
+    const serializedItems = workingItems.map(item => {
+        const itemJson = item.toJSON()
+        const cats = catsPerItem.get(item.id) || []
+        itemJson.categories = categories.filter(cat => cats.includes(cat.id))
+        delete itemJson.categoryIdsCsv
+        return itemJson
+    })
+    return serializedItems
 }

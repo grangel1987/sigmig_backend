@@ -21,7 +21,7 @@ export default class SettingBugetItem extends BaseModel {
     public title?: string | null
 
     // Stores a comma-separated list of category IDs (legacy compatibility)
-    @column({ columnName: 'category_id' })
+    @column({ columnName: 'category_id', serializeAs: 'category_id' })
     public categoryIdsCsv: string
 
     @column()
