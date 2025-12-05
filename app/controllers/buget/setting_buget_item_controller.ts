@@ -1,3 +1,4 @@
+import SettingBugetCategory from '#models/buget/setting_buget_category'
 import SettingBugetItem from '#models/buget/setting_buget_item'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
@@ -52,7 +53,7 @@ export default class SettingBugetItemController {
             const serializedItems = await serializeSettingBudgetItemsList(workingItems, catsPerItem, catIDs)
 
             if (page)
-                return { data: serializedItems, ...(items as ModelPaginator).getMeta() }
+                return { data: serializedItems, meta: (items as ModelPaginator).getMeta() }
             else
                 return serializedItems
 
@@ -315,8 +316,8 @@ async function serializeSettingBudgetItemsList(workingItems: SettingBugetItem[],
             catIDs.add(catId)
         })
     }
-    const categories = catIDs.size ? await SettingBugetItem.query()
-        .select('id', 'title', 'value', 'with_title')
+    const categories = catIDs.size ? await SettingBugetCategory.query()
+        .select('id', 'name')
         .whereIn('id', Array.from(catIDs)) : []
 
     const serializedItems = workingItems.map(item => {
