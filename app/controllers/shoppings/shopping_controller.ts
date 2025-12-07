@@ -82,7 +82,7 @@ export default class ShoppingController {
                     .orWhereRaw('requested_by LIKE ?', [`%${text}%`])
                     .orWhereHas('provider', (b) => b.whereRaw('name LIKE ?', [`%${text}%`]))
                     .orWhereHas('costCenter', (b) => b.whereRaw('name LIKE ?', [`%${text}%`])
-                        .orWhereRaw('code LIKE ?', [`%${text}%`]))
+                        .orWhereRaw('code LIKE ?', [`${text}%`]))
             })
         }
 
