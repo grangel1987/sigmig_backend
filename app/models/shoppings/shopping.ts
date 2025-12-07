@@ -53,7 +53,7 @@ export default class Shopping extends BaseModel {
     @column()
     public observation: string | null
 
-    @column({ columnName: 'expire_date' })
+    @column({ columnName: 'expire_date', serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
     public expireDate: DateTime
 
     @column({ columnName: 'authorizer_id' })
@@ -71,25 +71,25 @@ export default class Shopping extends BaseModel {
     @column({ columnName: 'is_authorized' })
     public isAuthorized: boolean
 
-    @column.dateTime({ autoCreate: true })
+    @column.dateTime({ autoCreate: true, serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
     public createdAt: DateTime
 
     @column({ columnName: 'created_by' })
     public createdById: number | null
 
-    @column.dateTime({ autoCreate: true, autoUpdate: true })
+    @column.dateTime({ autoCreate: true, autoUpdate: true, serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
     public updatedAt: DateTime
 
     @column({ columnName: 'updated_by' })
     public updatedById: number | null
 
-    @column.dateTime({ columnName: 'deleted_at' })
+    @column.dateTime({ columnName: 'deleted_at', serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
     public deletedAt: DateTime | null
 
     @column({ columnName: 'deleted_by' })
     public deletedById: number | null
 
-    @column.dateTime({ columnName: 'authorizer_at' })
+    @column.dateTime({ columnName: 'authorizer_at', serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
     public authorizerAt: DateTime | null
 
     @belongsTo(() => Business)
@@ -132,6 +132,6 @@ export default class Shopping extends BaseModel {
     }
 
     public static castDates(_field: string, value: DateTime) {
-        return value.toFormat('dd/MM/yyyy hh:mm:ss a')
+        return value.toFormat('yyyy-LL-dd')
     }
 }

@@ -916,8 +916,8 @@ export default class UserController {
           params: vine.object({ userId: vine.number().positive() }),
           email: vine.string().email().optional(),
           employeeId: vine.number().positive().exists({ table: 'employees', column: 'id' })
-            .optional(),
-          // .requiredIfMissing('personalData'),
+            .optional()
+            .requiredIfMissing('personalData'),
           business: vine.array(
             vine.object({
               businessId: vine.number().positive(),
@@ -927,7 +927,8 @@ export default class UserController {
               isAuthorizer: vine.boolean().optional()
             })
           ).optional(),
-          personalData: personalDataPartialSchema.optional(),
+          personalData: personalDataPartialSchema.optional()
+            .requiredIfMissing('employeeId'),
           isAdmin: vine.boolean().optional(),
           isAuthorizer: vine.boolean().optional(),
           signature: vine.file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' }).optional(),
@@ -1069,12 +1070,11 @@ export default class UserController {
       let modifyPersonalData = true
       if (employeeId) {
         const employee = await Employee.findOrFail(employeeId, { client: trx })
-        if (!employee.userId) {
-          modifyPersonalData = false
-          employee.userId = user.id
-          if (employee.personalDataId) user.personalDataId = employee.personalDataId
-          await employee.useTransaction(trx).save()
-        }
+        // Always assign selected employee to this user
+        modifyPersonalData = false
+        employee.userId = user.id
+        if (employee.personalDataId) user.personalDataId = employee.personalDataId
+        await employee.useTransaction(trx).save()
       }
 
 
