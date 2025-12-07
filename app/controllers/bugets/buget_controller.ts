@@ -183,7 +183,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { page, perPage, status, text, startDate, endDate, businessId } = await
+    const { page, perPage, status, text, startDate, endDate, date, businessId } = await
       request.validateUsing(
         vine.compile(vine.object(
           {
@@ -226,6 +226,11 @@ export default class BugetController {
         builder.whereRaw('DATE(created_at) <= ?', [pEndDate])
       }
     }))
+
+    if (date) {
+      const pDate = DateTime.fromJSDate(date).toSQLDate()!
+      query = query.whereRaw('DATE(created_at) = ?', [pDate])
+    }
 
     if (text) query = query
       .whereRaw('nro LIKE ?', [`${text}%`])

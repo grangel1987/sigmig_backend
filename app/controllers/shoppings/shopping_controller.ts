@@ -31,7 +31,7 @@ export default class ShoppingController {
         await PermissionService.requirePermission(ctx, 'shopping', 'view')
 
         const { request } = ctx
-        const { page, perPage, status, text, businessId, providerId, startDate, endDate } = await request.validateUsing(
+        const { page, perPage, status, text, businessId, providerId, startDate, endDate, date } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     ...searchWithStatusSchema.getProperties(),
@@ -80,6 +80,11 @@ export default class ShoppingController {
                 builder.whereRaw('DATE(created_at) <= ?', [pEndDate])
             }
         }))
+
+        if (date) {
+            const pDate = DateTime.fromJSDate(date).toSQLDate()!
+            query = query.whereRaw('DATE(created_at) = ?', [pDate])
+        }
 
 
         if (text) {
