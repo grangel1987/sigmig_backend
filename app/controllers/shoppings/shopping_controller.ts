@@ -70,8 +70,15 @@ export default class ShoppingController {
         }
 
         if (startDate || endDate) query.where((builder => {
-            if (startDate) builder.whereRaw('DATE(created_at) >= ?', [DateTime.fromJSDate(startDate).toSQLDate()!])
-            if (endDate) builder.whereRaw('DATE(created_at) <= ?', [DateTime.fromJSDate(endDate).toSQLDate()!])
+            if (startDate) {
+                const pStartDate = DateTime.fromJSDate(startDate).toSQLDate()!
+
+                builder.whereRaw('DATE(created_at) >= ?', [pStartDate])
+            }
+            if (endDate) {
+                const pEndDate = DateTime.fromJSDate(endDate).toSQLDate()!
+                builder.whereRaw('DATE(created_at) <= ?', [pEndDate])
+            }
         }))
 
 
