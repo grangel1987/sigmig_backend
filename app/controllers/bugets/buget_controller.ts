@@ -221,7 +221,7 @@ export default class BugetController {
 
 
     if (text) query = query.whereRaw('nro LIKE ?', [`%${text}%`])
-      .orWhereRaw('client.name LIKE ?', [`%${text}%`])
+      .orWhereHas('client', (qb) => qb.whereRaw('name LIKE ?', [`%${text}%`]))
 
     const budgets = page ? await query.paginate(page, perPage) : await query
 
