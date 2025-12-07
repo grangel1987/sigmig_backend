@@ -601,6 +601,7 @@ router.group(() => {
 
   // Shopping (protected)
   router.group(() => {
+    router.get('/', '#controllers/shoppings/shopping_controller.index')
     router.post('/store', '#controllers/shoppings/shopping_controller.store')
     router.get('/show/:id', '#controllers/shoppings/shopping_controller.show')
     router.post('/find/number', '#controllers/shoppings/shopping_controller.findByNro')
