@@ -53,7 +53,7 @@ export default class Shopping extends BaseModel {
     @column()
     public observation: string | null
 
-    @column({ columnName: 'expire_date', serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
+    @column.date({ columnName: 'expire_date', serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
     public expireDate: DateTime
 
     @column({ columnName: 'authorizer_id' })
