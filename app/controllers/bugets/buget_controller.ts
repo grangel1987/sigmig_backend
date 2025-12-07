@@ -183,7 +183,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { page, perPage, status, text, businessId } = await
+    const { page, perPage, status, text, startDate, endDate, businessId } = await
       request.validateUsing(
         vine.compile(vine.object(
           {
@@ -214,7 +214,13 @@ export default class BugetController {
       query = query.where('enabled', status === 'enabled')
     }
 
-    if (text) query = query.whereLike('nro', `%${text}%`)
+    if (startDate || endDate) query.where((builder => {
+      if (startDate) builder.whereRaw('DATE(created_at) >= ?', [DateTime.fromJSDate(startDate).toSQLDate()!])
+      if (endDate) builder.whereRaw('DATE(created_at) <= ?', [DateTime.fromJSDate(endDate).toSQLDate()!])
+    }))
+
+
+    if (text) query = query.whereRaw('nro LIKE ?', [`%${text}%`])
       .orWhereRaw('client.name LIKE ?', [`%${text}%`])
 
     const budgets = page ? await query.paginate(page, perPage) : await query

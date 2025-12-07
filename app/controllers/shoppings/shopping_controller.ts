@@ -31,7 +31,7 @@ export default class ShoppingController {
         await PermissionService.requirePermission(ctx, 'shopping', 'view')
 
         const { request } = ctx
-        const { page, perPage, status, text, businessId, providerId } = await request.validateUsing(
+        const { page, perPage, status, text, businessId, providerId, startDate, endDate } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     ...searchWithStatusSchema.getProperties(),
@@ -69,13 +69,20 @@ export default class ShoppingController {
             query = query.where('provider_id', providerId)
         }
 
+        if (startDate || endDate) query.where((builder => {
+            if (startDate) builder.whereRaw('DATE(created_at) >= ?', [DateTime.fromJSDate(startDate).toSQLDate()!])
+            if (endDate) builder.whereRaw('DATE(created_at) <= ?', [DateTime.fromJSDate(endDate).toSQLDate()!])
+        }))
+
+
         if (text) {
             // Search across shopping number, requestedBy, provider name, and cost center code/name
             query = query.where((qb) => {
-                qb.whereLike('nro', `%${text}%`)
-                    .orWhereLike('requested_by', `%${text}%`)
-                    .orWhereHas('provider', (b) => b.whereLike('name', `%${text}%`))
-                    .orWhereHas('costCenter', (b) => b.whereLike('name', `%${text}%`).orWhereLike('code', `%${text}%`))
+                qb.whereRaw('nro LIKE ?', [`%${text}%`])
+                    .orWhereRaw('requested_by LIKE ?', [`%${text}%`])
+                    .orWhereHas('provider', (b) => b.whereRaw('name LIKE ?', [`%${text}%`]))
+                    .orWhereHas('costCenter', (b) => b.whereRaw('name LIKE ?', [`%${text}%`])
+                        .orWhereRaw('code LIKE ?', [`%${text}%`]))
             })
         }
 
