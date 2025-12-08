@@ -183,7 +183,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { page, perPage, status, text, businessId } = await
+    const { page, perPage, status, text, startDate, endDate, date, businessId } = await
       request.validateUsing(
         vine.compile(vine.object(
           {
@@ -214,8 +214,28 @@ export default class BugetController {
       query = query.where('enabled', status === 'enabled')
     }
 
-    if (text) query = query.whereLike('nro', `%${text}%`)
-      .orWhereRaw('client.name LIKE ?', [`%${text}%`])
+
+    if (startDate || endDate) query.where((builder => {
+      if (startDate) {
+        const pStartDate = DateTime.fromJSDate(startDate).toSQLDate()!
+
+        builder.whereRaw('DATE(created_at) >= ?', [pStartDate])
+      }
+      if (endDate) {
+        const pEndDate = DateTime.fromJSDate(endDate).toSQLDate()!
+        builder.whereRaw('DATE(created_at) <= ?', [pEndDate])
+      }
+    }))
+
+    if (date) {
+      const pDate = DateTime.fromJSDate(date).toSQLDate()!
+      query = query.whereRaw('DATE(created_at) = ?', [pDate])
+    }
+
+    if (text) query = query
+      .whereRaw('nro LIKE ?', [`${text}%`])
+      .orWhereHas('client',
+        (qb) => qb.whereRaw('name LIKE ?', [`%${text}%`]))
 
     const budgets = page ? await query.paginate(page, perPage) : await query
 
@@ -524,9 +544,21 @@ export default class BugetController {
   public async searchItems(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
-    const { request } = ctx
+    const { request, auth, response, i18n } = ctx
     const { typeId, categoryId, params } = request.all()
-    const items = await BugetRepository.searchItems(typeId, categoryId, params)
+
+    const user = await auth.authenticate()
+    await user.loadOnce('selectedBusiness')
+    const businessId = user.selectedBusiness?.businessId
+
+    if (!businessId) {
+      return response.status(400).json(MessageFrontEnd(
+        i18n.formatMessage('messages.no_exist'),
+        i18n.formatMessage('messages.error_title')
+      ))
+    }
+
+    const items = await BugetRepository.searchItems(typeId, categoryId, params, businessId)
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 

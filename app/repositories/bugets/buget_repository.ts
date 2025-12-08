@@ -1,5 +1,5 @@
+import SettingBugetItem from '#models/buget/setting_buget_item'
 import Buget from '#models/bugets/buget'
-import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 
 export default class BugetRepository {
@@ -90,22 +90,50 @@ export default class BugetRepository {
         })) */
     }
 
-    public static async searchItems(type_id?: number, category_id?: number, params?: string) {
-        const query = `
-            SELECT
-                setting_buget_items.id,
-                setting_buget_items.value,
-                setting_buget_items.type_id,
-                setting_buget_items.with_title,
-                setting_buget_items.title
-            FROM
-                setting_buget_items
-            WHERE
-                setting_buget_items.enabled=1 
-                ${type_id ? ` AND setting_buget_items.type_id=${type_id}` : ` `} 
-                ${category_id ? ` AND setting_buget_items.category_id=${category_id}` : ` `} 
-                ${params ? ` AND (setting_buget_items.value LIKE "%${params}%" OR setting_buget_items.title LIKE "%${params}%")` : ``} `
-        const result = await db.rawQuery(query)
-        return result.rows ?? result[0]
+    public static async searchItems(type_id?: number, category_id?: number, params?: string, businessId?: number) {
+        const query = SettingBugetItem.query()
+            .select(['id', 'value', 'type_id', 'with_title', 'title'])
+            .where('enabled', true)
+            .whereNull('deleted_at')
+
+        if (type_id) {
+            query.where('type_id', type_id)
+        }
+
+        if (category_id) {
+            query.where('category_id', category_id)
+        }
+
+        if (params) {
+            const likeVal = `%${params}%`
+            query.where((qb) => {
+                qb.whereRaw('value LIKE ?', [likeVal]).orWhereRaw('title LIKE ?', [likeVal])
+            })
+        }
+
+        if (businessId) {
+            query.where((qb) => {
+                qb.whereExists((sub) => {
+                    sub
+                        .from('business_setting_buget_items')
+                        .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                        .where('business_setting_buget_items.business_id', businessId)
+                }).orWhereNotExists((sub) => {
+                    sub
+                        .from('business_setting_buget_items')
+                        .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                })
+            })
+        } else {
+            query.whereNotExists((sub) => {
+                sub
+                    .from('business_setting_buget_items')
+                    .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+            })
+        }
+
+        const result = await query
+
+        return result
     }
 }

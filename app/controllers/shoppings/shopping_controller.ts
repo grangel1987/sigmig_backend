@@ -5,6 +5,7 @@ import PermissionService from '#services/permission_service'
 import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import { searchWithStatusSchema } from '#validators/general'
 import {
     shoppingFindByDateValidator,
     shoppingFindByNameProviderValidator,
@@ -25,6 +26,81 @@ import { DateTime } from 'luxon'
 type MessageFrontEndType = { message: string; title: string }
 
 export default class ShoppingController {
+    /** List shoppings with optional pagination and filtering */
+    public async index(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { request } = ctx
+        const { page, perPage, status, text, businessId, providerId, startDate, endDate, date } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    ...searchWithStatusSchema.getProperties(),
+                    businessId: vine.number().positive().optional(),
+                    providerId: vine.number().positive().optional(),
+                })
+            )
+        )
+
+        let query = Shopping.query()
+            .preload('provider')
+            .preload('createdBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+            .preload('updatedBy', (builder) => {
+                builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            })
+            .orderBy('created_at', 'desc')
+
+        // Prefer explicit input; fall back to Business header
+        const headerBusinessIdRaw = request.header('Business')
+        const headerBusinessId = headerBusinessIdRaw ? Number(headerBusinessIdRaw) : undefined
+
+        if (businessId) {
+            query = query.where('business_id', businessId)
+        } else if (headerBusinessId && !Number.isNaN(headerBusinessId) && headerBusinessId > 0) {
+            query = query.where('business_id', headerBusinessId)
+        }
+
+        if (status !== undefined) {
+            query = query.where('enabled', status === 'enabled')
+        }
+
+        if (providerId) {
+            query = query.where('provider_id', providerId)
+        }
+
+        if (startDate || endDate) query.where((builder => {
+            if (startDate) {
+                const pStartDate = DateTime.fromJSDate(startDate).toSQLDate()!
+
+                builder.whereRaw('DATE(created_at) >= ?', [pStartDate])
+            }
+            if (endDate) {
+                const pEndDate = DateTime.fromJSDate(endDate).toSQLDate()!
+                builder.whereRaw('DATE(created_at) <= ?', [pEndDate])
+            }
+        }))
+
+        if (date) {
+            const pDate = DateTime.fromJSDate(date).toSQLDate()!
+            query = query.whereRaw('DATE(created_at) = ?', [pDate])
+        }
+
+
+        if (text) {
+            // Search across shopping number, requestedBy, provider name, and cost center code/name
+            query = query.where((qb) => {
+                qb.whereRaw('nro LIKE ?', [`%${text}%`])
+                    .orWhereRaw('requested_by LIKE ?', [`%${text}%`])
+                    .orWhereHas('provider', (b) => b.whereRaw('name LIKE ?', [`%${text}%`]))
+                    .orWhereHas('costCenter', (b) => b.whereRaw('name LIKE ?', [`%${text}%`])
+                        .orWhereRaw('code LIKE ?', [`${text}%`]))
+            })
+        }
+
+        const shoppings = page ? await query.paginate(page, perPage) : await query
+        return shoppings
+    }
     /** Store a new shopping (creates shopping and its products) */
     public async store(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'shopping', 'create')

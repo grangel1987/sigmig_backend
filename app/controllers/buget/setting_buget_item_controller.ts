@@ -4,6 +4,7 @@ import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import { ModelPaginator } from '@adonisjs/lucid/orm'
+import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
 import console from 'console'
 import { DateTime } from 'luxon'
@@ -28,14 +29,25 @@ export default class SettingBugetItemController {
                 .whereNull('deleted_at')
                 .andWhere((q) => {
                     if (headerBusinessId) {
-                        q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                        q.whereExists(
+                            q.client!.from('business_setting_buget_items')
+                                .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                                .where('business_setting_buget_items.business_id', headerBusinessId)
+                        ).orWhereNotExists(
+                            q.client!.from('business_setting_buget_items')
+                                .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                        )
                     } else {
-                        q.whereNull('business_id')
+                        q.whereNotExists(
+                            q.client!.from('business_setting_buget_items')
+                                .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                        )
                     }
                 })
                 .preload('type', (builder) => {
                     builder.select(['id', 'text'])
                 })
+                .preload('businesses', (builder) => builder.select(['id', 'name']))
                 .preload('createdBy', (builder) => {
                     builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
@@ -75,23 +87,25 @@ export default class SettingBugetItemController {
         await PermissionService.requirePermission(ctx, 'settings', 'create');
 
         const { request, response, auth, i18n } = ctx
-        const { typeId, value, categoryIds, withTitle, title, businessId } = await request.validateUsing(
+        const { typeId, value, categoryId: categoryId, withTitle, title, businessId, businessIds } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     typeId: vine.number().positive(),
                     value: vine.string().trim(),
-                    categoryIds: vine.array(vine.number().positive()).optional(),
+                    categoryId: vine.array(vine.number().positive()).optional(),
                     withTitle: vine.boolean().optional(),
                     title: vine.string().trim().optional(),
                     businessId: vine.number().positive().optional(),
+                    businessIds: vine.array(vine.number().positive()).optional(),
                 })
             )
         )
 
         const dateTime = DateTime.local()
 
+        const trx = await db.transaction()
         try {
-            const categoriesCsv = (categoryIds || []).join(',') + ',0'
+            const categoriesCsv = (categoryId || []).join(',') + ',0'
 
             const item = await SettingBugetItem.create({
                 typeId,
@@ -105,14 +119,28 @@ export default class SettingBugetItemController {
                 updatedById: auth.user!.id,
                 createdAt: dateTime,
                 updatedAt: dateTime,
-            })
+            }, { client: trx })
 
-            // await item.load('type', (builder) => builder.select(['id', 'text']))
-            await item.load('createdBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
-            await item.load('updatedBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            if (businessIds?.length) {
+                await item.related('businesses').attach(businessIds)
+            }
+
+            await trx.commit()
+
+            await item.load((loader) => {
+                loader
+                    .preload('type', (builder) => builder.select(['id', 'text']))
+                    .preload('businesses', (builder) => builder.select(['id', 'name']))
+                    .preload('createdBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
+                    .preload('updatedBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
             })
 
             return response.status(201).json({
@@ -123,6 +151,7 @@ export default class SettingBugetItemController {
                 )
             })
         } catch (error) {
+            await trx.rollback()
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.store_error'),
@@ -137,7 +166,7 @@ export default class SettingBugetItemController {
 
         const { params, request, response, auth, i18n } = ctx
         const itemId = params.id
-        const { typeId, value, categoryIds, withTitle, title } = await request.validateUsing(
+        const { typeId, value, categoryIds, withTitle, title, businessIds } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     typeId: vine.number().positive().optional(),
@@ -146,14 +175,16 @@ export default class SettingBugetItemController {
                     withTitle: vine.boolean().optional(),
                     title: vine.string().trim().optional(),
                     businessId: vine.number().positive().optional(),
+                    businessIds: vine.array(vine.number().positive()).optional(),
                 })
             )
         )
 
         const dateTime = DateTime.local()
 
+        const trx = await db.transaction()
         try {
-            const item = await SettingBugetItem.findOrFail(itemId)
+            const item = await SettingBugetItem.findOrFail(itemId, { client: trx })
             const categoriesCsv = categoryIds ? categoryIds.join(',') + ',0' : undefined
 
             item.merge({
@@ -166,14 +197,28 @@ export default class SettingBugetItemController {
                 updatedById: auth.user!.id,
                 updatedAt: dateTime,
             })
-            await item.save()
+            await item.useTransaction(trx).save()
 
-            // await item.load('type', (builder) => builder.select(['id', 'text']))
-            await item.load('createdBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
-            await item.load('updatedBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            if (businessIds) {
+                await item.related('businesses').sync(businessIds)
+            }
+
+            await trx.commit()
+
+            await item.load((loader) => {
+                loader
+                    .preload('type', (builder) => builder.select(['id', 'text']))
+                    .preload('businesses', (builder) => builder.select(['id', 'name']))
+                    .preload('createdBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
+                    .preload('updatedBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
             })
 
             return response.status(201).json({
@@ -184,6 +229,7 @@ export default class SettingBugetItemController {
                 )
             })
         } catch (error) {
+            await trx.rollback()
 
             console.log(error);
 
@@ -275,9 +321,19 @@ export default class SettingBugetItemController {
             .whereNull('deleted_at')
             .andWhere((q) => {
                 if (headerBusinessId) {
-                    q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                    q.whereExists(
+                        q.client!.from('business_setting_buget_items')
+                            .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                            .where('business_setting_buget_items.business_id', headerBusinessId)
+                    ).orWhereNotExists(
+                        q.client!.from('business_setting_buget_items')
+                            .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                    )
                 } else {
-                    q.whereNull('business_id')
+                    q.whereNotExists(
+                        q.client!.from('business_setting_buget_items')
+                            .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                    )
                 }
             })
         return items
@@ -294,9 +350,19 @@ export default class SettingBugetItemController {
             .whereNull('deleted_at')
             .andWhere((q) => {
                 if (headerBusinessId) {
-                    q.where('business_id', headerBusinessId).orWhereNull('business_id')
+                    q.whereExists(
+                        q.client!.from('business_setting_buget_items')
+                            .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                            .where('business_setting_buget_items.business_id', headerBusinessId)
+                    ).orWhereNotExists(
+                        q.client!.from('business_setting_buget_items')
+                            .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                    )
                 } else {
-                    q.whereNull('business_id')
+                    q.whereNotExists(
+                        q.client!.from('business_setting_buget_items')
+                            .whereColumn('business_setting_buget_items.setting_buget_item_id', 'setting_buget_items.id')
+                    )
                 }
             })
         return items
