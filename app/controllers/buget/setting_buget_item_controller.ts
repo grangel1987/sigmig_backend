@@ -127,14 +127,21 @@ export default class SettingBugetItemController {
 
             await trx.commit()
 
-            // await item.load('type', (builder) => builder.select(['id', 'text']))
-            await item.load('createdBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            await item.load((loader) => {
+                loader
+                    .preload('type', (builder) => builder.select(['id', 'text']))
+                    .preload('businesses', (builder) => builder.select(['id', 'name']))
+                    .preload('createdBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
+                    .preload('updatedBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
             })
-            await item.load('updatedBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
-            await item.load('businesses', (builder) => builder.select(['id', 'name']))
 
             return response.status(201).json({
                 item,
@@ -198,14 +205,21 @@ export default class SettingBugetItemController {
 
             await trx.commit()
 
-            // await item.load('type', (builder) => builder.select(['id', 'text']))
-            await item.load('createdBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+            await item.load((loader) => {
+                loader
+                    .preload('type', (builder) => builder.select(['id', 'text']))
+                    .preload('businesses', (builder) => builder.select(['id', 'name']))
+                    .preload('createdBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
+                    .preload('updatedBy', (builder) => {
+                        builder
+                            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                            .select(['id', 'personal_data_id', 'email'])
+                    })
             })
-            await item.load('updatedBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
-            await item.load('businesses', (builder) => builder.select(['id', 'name']))
 
             return response.status(201).json({
                 item,
