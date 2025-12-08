@@ -47,6 +47,7 @@ export default class SettingBugetItemController {
                 .preload('type', (builder) => {
                     builder.select(['id', 'text'])
                 })
+                .preload('businesses', (builder) => builder.select(['id', 'name']))
                 .preload('createdBy', (builder) => {
                     builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
@@ -86,12 +87,12 @@ export default class SettingBugetItemController {
         await PermissionService.requirePermission(ctx, 'settings', 'create');
 
         const { request, response, auth, i18n } = ctx
-        const { typeId, value, categoryIds, withTitle, title, businessId, businessIds } = await request.validateUsing(
+        const { typeId, value, categoryId: categoryId, withTitle, title, businessId, businessIds } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     typeId: vine.number().positive(),
                     value: vine.string().trim(),
-                    categoryIds: vine.array(vine.number().positive()).optional(),
+                    categoryId: vine.array(vine.number().positive()).optional(),
                     withTitle: vine.boolean().optional(),
                     title: vine.string().trim().optional(),
                     businessId: vine.number().positive().optional(),
@@ -104,7 +105,7 @@ export default class SettingBugetItemController {
 
         const trx = await db.transaction()
         try {
-            const categoriesCsv = (categoryIds || []).join(',') + ',0'
+            const categoriesCsv = (categoryId || []).join(',') + ',0'
 
             const item = await SettingBugetItem.create({
                 typeId,

@@ -1,7 +1,7 @@
 import Business from '#models/business/business'
 import Setting from '#models/settings/setting'
 import User from '#models/users/user'
-import { BaseModel, beforeCreate, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, belongsTo, column, computed, manyToMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -22,7 +22,7 @@ export default class SettingBugetItem extends BaseModel {
     public title?: string | null
 
     // Stores a comma-separated list of category IDs (legacy compatibility)
-    @column({ columnName: 'category_id', serializeAs: 'category_id' })
+    @column({ columnName: 'category_id', serializeAs: 'category_id_csv' })
     public categoryIdsCsv: string
 
     @column()
@@ -71,6 +71,12 @@ export default class SettingBugetItem extends BaseModel {
         pivotRelatedForeignKey: 'business_id',
     })
     public businesses: ManyToMany<typeof Business>
+
+
+    @computed({ serializeAs: 'category_id' })
+    public get categoryIds() {
+        return this.categoryIdsCsv ? this.categoryIdsCsv.split(',').map(id => parseInt(id)) : []
+    }
 
     public static castDates(_field: string, value: DateTime): string {
         return value.toFormat('dd/MM/yyyy hh:mm:ss a')
