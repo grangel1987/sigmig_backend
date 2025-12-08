@@ -544,9 +544,21 @@ export default class BugetController {
   public async searchItems(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
-    const { request } = ctx
+    const { request, auth, response, i18n } = ctx
     const { typeId, categoryId, params } = request.all()
-    const items = await BugetRepository.searchItems(typeId, categoryId, params)
+
+    const user = await auth.authenticate()
+    await user.loadOnce('selectedBusiness')
+    const businessId = user.selectedBusiness?.businessId
+
+    if (!businessId) {
+      return response.status(400).json(MessageFrontEnd(
+        i18n.formatMessage('messages.no_exist'),
+        i18n.formatMessage('messages.error_title')
+      ))
+    }
+
+    const items = await BugetRepository.searchItems(typeId, categoryId, params, businessId)
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 
