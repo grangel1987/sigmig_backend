@@ -562,6 +562,84 @@ export default class BugetController {
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 
+  // Reactivate an expired/disabled budget, optionally keeping the same nro
+  public async reactivate(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'update')
+
+    const { params, request, auth, response, i18n } = ctx
+    const bugetId = Number(params.id)
+    const { keepSameNro = false } = await request.validateUsing(vine.compile(vine.object({
+      keepSameNro: vine.boolean().optional(),
+    })))
+
+    const trx = await db.transaction()
+    try {
+      const dateTime = await Util.getDateTimes(request)
+
+      // Only allow reactivation of disabled budgets (expired/disabled)
+      const existing = await Buget.query({ client: trx })
+        .where('id', bugetId)
+        .where('enabled', false)
+        .forUpdate()
+        .firstOrFail()
+
+      // Optionally enforce expire check
+      if (existing.expireDate && existing.expireDate > dateTime) {
+        await trx.rollback()
+        return response.status(400).json(MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        ))
+      }
+
+      let nro = existing.nro!
+      if (!keepSameNro) {
+        const last = await trx.from('bugets')
+          .where('business_id', existing.businessId!)
+          .orderBy('id', 'desc')
+          .limit(1)
+        nro = String(last.length > 0 ? parseInt(String(last[0].nro)) + 1 : 1)
+      }
+
+      const token = existing.token || Util.generateToken(16)
+
+      await trx.from('bugets')
+        .where('id', bugetId)
+        .update({
+          enabled: true,
+          nro,
+          token,
+          updated_at: dateTime.toSQL({ includeOffset: false }),
+          updated_by: auth.user!.id,
+        })
+
+      await trx.commit()
+
+      const reactivated = await Buget.findOrFail(bugetId)
+      await reactivated.load('createdBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+      await reactivated.load('updatedBy', (builder) => {
+        builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
+      })
+
+      return response.status(200).json({
+        buget: reactivated,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      await trx.rollback()
+      console.log(error)
+      return response.status(500).json(MessageFrontEnd(
+        i18n.formatMessage('messages.update_error'),
+        i18n.formatMessage('messages.error_title')
+      ))
+    }
+  }
+
   // Update buget and replace related rows (legacy parity)
   public async update(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'update')
