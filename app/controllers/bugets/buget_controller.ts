@@ -602,6 +602,9 @@ export default class BugetController {
       }
 
       const token = existing.token || Util.generateToken(16)
+      const business = await Business.query({ client: trx }).where('id', existing.businessId!).firstOrFail()
+      const daysExpire = business.daysExpireBuget || 0
+      const expireDate = existing.expireDate.plus({ days: daysExpire })
 
       await trx.from('bugets')
         .where('id', bugetId)
@@ -609,6 +612,7 @@ export default class BugetController {
           enabled: true,
           nro,
           token,
+          expire_date: expireDate.toSQLDate(),
           updated_at: dateTime.toSQL({ includeOffset: false }),
           updated_by: auth.user!.id,
         })
