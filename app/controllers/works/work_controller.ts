@@ -218,7 +218,7 @@ export default class WorkController {
   }
 
   public async select(ctx: HttpContext) {
-    await PermissionService.requirePermission(ctx, 'works', 'view')
+    // await PermissionService.requirePermission(ctx, 'works', 'view')
 
     const { auth, response, i18n } = ctx
     try {

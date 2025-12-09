@@ -66,6 +66,7 @@
     "@google-cloud/storage": "^7.17.2",
     "@maximemrf/adonisjs-jwt": "^0.6.1",
     "@vinejs/vine": "^3.0.1",
+    "adonisjs-scheduler": "^2.6.4",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "edge.js": "^6.3.0",

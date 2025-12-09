@@ -353,7 +353,7 @@ export default class ProviderController {
 
     /** Autocomplete: Provider Products */
     async findProductAutoComplete(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'providers', 'view')
+        // await PermissionService.requirePermission(ctx, 'providers', 'view')
 
         const { request } = ctx
         const { val, providerId } = await request.validateUsing(
