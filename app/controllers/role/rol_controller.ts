@@ -67,12 +67,21 @@ export default class RolController {
             )
         )
 
+
+        let fBusinessId = businessId
+
+        if (!fBusinessId) {
+            await auth.user?.loadOnce('selectedBusiness')
+            const selected = auth.user?.selectedBusiness
+            fBusinessId = selected?.id
+        }
+
         const role = await db.transaction(async (trx) => {
 
             const cRole = await Rol.create({
                 name,
                 description,
-                businessId,
+                businessId: fBusinessId,
                 createdById: auth.user!.id,
                 updatedById: auth.user!.id,
             }, { client: trx })
