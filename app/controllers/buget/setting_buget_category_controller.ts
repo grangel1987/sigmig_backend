@@ -157,7 +157,7 @@ export default class SettingBugetCategoryController {
     }
 
     public async select(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'settings', 'view');
+        // await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { response, i18n } = ctx
         try {

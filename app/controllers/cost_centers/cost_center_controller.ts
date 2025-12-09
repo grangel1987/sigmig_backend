@@ -176,7 +176,7 @@ export default class CostCenterController {
   }
 
   public async select(ctx: HttpContext) {
-    await PermissionService.requirePermission(ctx, 'cost_centers', 'view')
+    // await PermissionService.requirePermission(ctx, 'cost_centers', 'view')
 
     const { request } = ctx
     const { params } = await request.validateUsing(vine.compile(vine.object({

@@ -542,7 +542,7 @@ export default class BugetController {
   }
 
   public async searchItems(ctx: HttpContext) {
-    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+    // await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request, auth, response, i18n } = ctx
     const { typeId, categoryId, params } = request.all()

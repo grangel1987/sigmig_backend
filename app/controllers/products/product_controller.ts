@@ -107,7 +107,7 @@ export default class ProductController {
     }
 
     async findAutoComplete(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'products', 'view')
+        // await PermissionService.requirePermission(ctx, 'products', 'view')
 
         const { request, response, i18n } = ctx
         const { val, businessId } = await request.validateUsing(
