@@ -1,3 +1,4 @@
+import BudgetObservation from '#models/bugets/budget_observation'
 import BugetAccount from '#models/bugets/buget_account'
 import BugetDetail from '#models/bugets/buget_detail'
 import BugetItem from '#models/bugets/buget_item'
@@ -18,22 +19,22 @@ export default class Buget extends BaseModel {
     public nro: string
 
     @column({ columnName: 'business_id' })
-    public businessId: number | null
+    public businessId: number
 
     @column({ columnName: 'client_id' })
-    public clientId: number | null
+    public clientId: number
 
     @column()
-    declare token: string | null
+    declare token: string
 
     @column({ columnName: 'currency_id' })
-    public currencyId: number | null
+    public currencyId: number
 
     @column({ columnName: 'currency_symbol' })
-    public currencySymbol: string | null
+    public currencySymbol: string
 
-    @column({ columnName: 'currency_value', serialize: (value: number | null) => Util.truncateToTwoDecimals(value) })
-    public currencyValue: number | null
+    @column({ columnName: 'currency_value', serialize: (value: number) => Util.truncateToTwoDecimals(value) })
+    public currencyValue: number
 
     @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
     public utility: number
@@ -99,6 +100,9 @@ export default class Buget extends BaseModel {
 
     @hasOne(() => BugetDetail, { foreignKey: 'bugetId' })
     public details: HasOne<typeof BugetDetail>
+
+    @hasMany(() => BudgetObservation, { foreignKey: 'bugetId' })
+    public observations: HasMany<typeof BudgetObservation>
 
 
     /**

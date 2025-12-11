@@ -582,6 +582,8 @@ router.group(() => {
   router.group(() => {
     router.get('/', '#controllers/bugets/buget_controller.index')
     router.post('/store', '#controllers/bugets/buget_controller.store')
+    router.get('/:id/observations', '#controllers/bugets/buget_controller.listObservations')
+    router.post('/:id/observations', '#controllers/bugets/buget_controller.addObservation')
     router.get('/:id', '#controllers/bugets/buget_controller.show')
     router.post('/find/number', '#controllers/bugets/buget_controller.findByNro')
     router.post('/find/name', '#controllers/bugets/buget_controller.findByNameClient')
@@ -628,6 +630,8 @@ router.group(() => {
 
   // Bugets (public)
   router.group(() => {
+    router.get('/view/:token/observations', '#controllers/bugets/buget_controller.listObservationsPublic')
+    router.post('/view/:token/observations', '#controllers/bugets/buget_controller.addObservationFromClient')
     router.get('/view/:token', '#controllers/bugets/buget_controller.showPublic')
   })
     .prefix('buget')
