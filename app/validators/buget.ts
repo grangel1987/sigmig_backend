@@ -88,6 +88,7 @@ export const bugetFindByNameClientValidator = vine.compile(
         page: vine.number().optional(),
         perPage: vine.number().optional(),
         status: vine.enum(['enabled', 'disabled']).optional(),
+        budgetStatus: vine.enum(['pending', 'revision', 'reject', 'accept']).optional(),
     })
 )
 
@@ -98,6 +99,7 @@ export const bugetFindByDateValidator = vine.compile(
         page: vine.number().optional(),
         perPage: vine.number().optional(),
         status: vine.enum(['enabled', 'disabled']).optional(),
+        budgetStatus: vine.enum(['pending', 'revision', 'reject', 'accept']).optional(),
 
     })
 )
@@ -111,5 +113,11 @@ export const bugetChangeClientValidator = vine.compile(
 export const bugetObservationValidator = vine.compile(
     vine.object({
         message: vine.string().trim().minLength(1).maxLength(1024),
+    })
+)
+
+export const bugetStatusValidator = vine.compile(
+    vine.object({
+        status: vine.enum(['pending', 'revision', 'reject', 'accept']),
     })
 )

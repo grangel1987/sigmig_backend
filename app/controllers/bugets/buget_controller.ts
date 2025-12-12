@@ -9,7 +9,7 @@ import env from '#start/env'
 import ws from '#start/ws'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
-import { bugetChangeClientValidator, bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetObservationValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
+import { bugetChangeClientValidator, bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetObservationValidator, bugetStatusValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
@@ -186,7 +186,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { page, perPage, status, text, startDate, endDate, date, businessId } = await
+    const { page, perPage, status, text, startDate, endDate, date, businessId, budgetStatus } = await
       request.validateUsing(
         vine.compile(vine.object(
           {
@@ -215,6 +215,10 @@ export default class BugetController {
 
     if (status !== undefined) {
       query = query.where('enabled', status === 'enabled')
+    }
+
+    if (budgetStatus) {
+      query = query.where('status', budgetStatus)
     }
 
 
@@ -384,6 +388,7 @@ export default class BugetController {
       utility: buget.utility,
       discount: buget.discount,
       enabled: !!buget.enabled, // Ensure boolean
+      status: buget.status ?? null,
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business ? {
         name: buget.business.name,
@@ -627,18 +632,18 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, name, page, perPage, status } = await request.validateUsing(bugetFindByNameClientValidator)
-    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''), page, perPage, status)
+    const { businessId, name, page, perPage, status, budgetStatus } = await request.validateUsing(bugetFindByNameClientValidator)
+    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''), page, perPage, status, budgetStatus)
   }
 
   public async findByDate(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, date, page, perPage, status } = await request.validateUsing(bugetFindByDateValidator)
+    const { businessId, date, page, perPage, status, budgetStatus } = await request.validateUsing(bugetFindByDateValidator)
     const dateSql = DateTime.fromJSDate(date).toSQLDate()!
 
-    return await BugetRepository.findByDate(Number(businessId), String(dateSql), page, perPage, status)
+    return await BugetRepository.findByDate(Number(businessId), String(dateSql), page, perPage, status, budgetStatus)
   }
 
   public async delete(ctx: HttpContext) {
@@ -850,6 +855,7 @@ export default class BugetController {
         .update({
           enabled: 0,
           token: null,
+          status: null,
           updated_at: dateTime.toSQL({ includeOffset: false }),
           updated_by: auth.user!.id,
         })
@@ -987,7 +993,7 @@ export default class BugetController {
             }
        */
       const room = roomForToken(buget.token!)
-      ws.io?.to(room).emit('budgets/update', buget)
+      ws.io?.to(room).emit('budget/update', buget)
 
       return response.status(201).json({
         buget,
@@ -1008,6 +1014,59 @@ export default class BugetController {
         )
       )
     }
+  }
+
+  /** Update budget status (auth) */
+  public async updateStatus(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'update')
+    const { params, request, response, i18n } = ctx
+    const bugetId = Number(params.id)
+    const { status } = await request.validateUsing(bugetStatusValidator)
+
+    const buget = await Buget.find(bugetId)
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    buget.status = status ?? null
+    await buget.save()
+
+    if (buget.token) {
+      const room = roomForToken(buget.token)
+      ws.io?.to(room).emit('budget/status', { status: buget.status })
+    }
+
+    return response.status(200).json({ buget })
+  }
+
+  /** Update budget status (public by token) */
+  public async updateStatusPublic(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+    const token = params.token as string
+    const { status } = await request.validateUsing(bugetStatusValidator)
+
+    const buget = await Buget.query().where('token', token).where('enabled', true).first()
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    buget.status = status
+    await buget.save()
+
+    const room = roomForToken(buget.token!)
+    ws.io?.to(room).emit('budget/status', { status: buget.status })
+
+    return response.status(200).json({ buget })
   }
 
   // Change the client of a budget: create a new budget with the new client and archive the previous one

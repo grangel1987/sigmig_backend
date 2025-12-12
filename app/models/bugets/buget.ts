@@ -46,6 +46,9 @@ export default class Buget extends BaseModel {
     public enabled: boolean
 
     @column()
+    public status: 'pending' | 'revision' | 'reject' | 'accept' | null
+
+    @column()
     public prevId: number | null
 
     @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
