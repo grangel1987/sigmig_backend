@@ -1185,8 +1185,10 @@ export default class BugetController {
         )
     }
 
-    buget.status = status ?? null
-    await buget.save()
+    if (status !== undefined) {
+      buget.status = status
+      await buget.save()
+    }
 
     /*     if (buget.token) {
       const room = roomForToken(buget.token)
@@ -1214,8 +1216,10 @@ export default class BugetController {
         )
     }
 
-    buget.status = status
-    await buget.save()
+    if (status !== undefined) {
+      buget.status = status
+      await buget.save()
+    }
 
     /*     const room = roomForToken(buget.token!)
     ws.io?.to(room).emit('budget/status', { status: buget.status })
