@@ -633,7 +633,7 @@ router.group(() => {
   router.group(() => {
     router.get('/view/:token/observations', '#controllers/bugets/buget_controller.listObservationsPublic')
     router.post('/view/:token/observations', '#controllers/bugets/buget_controller.addObservationFromClient')
-    router.patch('/view/:token/status', '#controllers/bugets/buget_controller.updateStatusPublic')
+    router.put('/view/:token/status', '#controllers/bugets/buget_controller.updateStatusPublic')
     router.get('/view/:token', '#controllers/bugets/buget_controller.showPublic')
   })
     .prefix('buget')
