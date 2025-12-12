@@ -38,9 +38,9 @@ const clientDetailsSchema = vine.object({
 export const bugetStoreValidator = vine.compile(
     vine.object({
         businessId: vine.number(),
-        currencySymbol: vine.string().optional().nullable(),
-        currencyId: vine.number().optional().nullable(),
-        currencyValue: vine.number().optional().nullable(),
+        currencySymbol: vine.string().optional(),
+        currencyId: vine.number().optional(),
+        currencyValue: vine.number().optional(),
 
         client: clientSchema,
 
@@ -58,9 +58,9 @@ export const bugetStoreValidator = vine.compile(
 
 export const bugetUpdateValidator = vine.compile(
     vine.object({
-        currencySymbol: vine.string().optional().nullable(),
-        currencyId: vine.number().optional().nullable(),
-        currencyValue: vine.number().optional().nullable(),
+        currencySymbol: vine.string().optional(),
+        currencyId: vine.number().optional(),
+        currencyValue: vine.number().optional(),
 
         products: vine.array(productSchema).optional(),
         items: vine.array(itemSchema).optional(),
@@ -88,6 +88,7 @@ export const bugetFindByNameClientValidator = vine.compile(
         page: vine.number().optional(),
         perPage: vine.number().optional(),
         status: vine.enum(['enabled', 'disabled']).optional(),
+        budgetStatus: vine.enum(['pending', 'revision', 'reject', 'accept']).optional(),
     })
 )
 
@@ -98,6 +99,7 @@ export const bugetFindByDateValidator = vine.compile(
         page: vine.number().optional(),
         perPage: vine.number().optional(),
         status: vine.enum(['enabled', 'disabled']).optional(),
+        budgetStatus: vine.enum(['pending', 'revision', 'reject', 'accept']).optional(),
 
     })
 )
@@ -105,5 +107,17 @@ export const bugetFindByDateValidator = vine.compile(
 export const bugetChangeClientValidator = vine.compile(
     vine.object({
         clientId: vine.number(),
+    })
+)
+
+export const bugetObservationValidator = vine.compile(
+    vine.object({
+        message: vine.string().trim().minLength(1).maxLength(1024),
+    })
+)
+
+export const bugetStatusValidator = vine.compile(
+    vine.object({
+        status: vine.enum(['pending', 'revision', 'reject', 'accept']),
     })
 )

@@ -1,12 +1,15 @@
+import BudgetObservation from '#models/bugets/budget_observation'
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import PermissionService from '#services/permission_service'
+import { roomForToken } from '#services/socket'
 import env from '#start/env'
+import ws from '#start/ws'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
-import { bugetChangeClientValidator, bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
+import { bugetChangeClientValidator, bugetFindByDateValidator, bugetFindByNameClientValidator, bugetFindByNroValidator, bugetObservationValidator, bugetStatusValidator, bugetStoreValidator, bugetUpdateValidator } from '#validators/buget'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
@@ -56,10 +59,10 @@ export default class BugetController {
       const payload = {
         nro: String(nro),
         businessId: Number(businessId),
-        currencySymbol: currencySymbol ?? null,
-        currencyId: currencyId ?? null,
-        currencyValue: currencyValue ?? null,
-        clientId: client?.id ?? null,
+        currencySymbol: currencySymbol,
+        currencyId: currencyId,
+        currencyValue: currencyValue,
+        clientId: client?.id,
         discount: Number(discount) || 0,
         utility: Number(utility) || 0,
         createdAt: dateTime,
@@ -183,7 +186,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { page, perPage, status, text, startDate, endDate, date, businessId } = await
+    const { page, perPage, status, text, startDate, endDate, date, businessId, budgetStatus } = await
       request.validateUsing(
         vine.compile(vine.object(
           {
@@ -212,6 +215,10 @@ export default class BugetController {
 
     if (status !== undefined) {
       query = query.where('enabled', status === 'enabled')
+    }
+
+    if (budgetStatus) {
+      query = query.where('status', budgetStatus)
     }
 
 
@@ -365,14 +372,23 @@ export default class BugetController {
       q.select(['cost_center', 'work', 'observation'])
     })
 
+    await buget.load('observations', (q) => {
+      q.preload('createdBy', (cb) => {
+        cb.select(['id', 'user_id']).preload('user', (u) => {
+          u.select(['id', 'personal_data_id']).preload('personalData', (pd) => pd.select(['id', 'names', 'last_name_p', 'last_name_m']))
+        })
+      })
+    })
+
     // Create a clean serialized version without IDs and timestamps
-    const serialized: any = {
+    const serialized: Record<string, any> = {
       nro: buget.nro,
       currencySymbol: buget.currencySymbol,
       currencyValue: buget.currencyValue,
       utility: buget.utility,
       discount: buget.discount,
       enabled: !!buget.enabled, // Ensure boolean
+      status: buget.status ?? null,
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business ? {
         name: buget.business.name,
@@ -418,7 +434,22 @@ export default class BugetController {
         costCenter: buget.details.costCenter,
         work: buget.details.work,
         observation: buget.details.observation
-      } : null
+      } : null,
+      observations: buget.observations?.map((obs) => {
+        const fullName = !obs.fromClient
+          ? obs.createdBy?.user?.personalData
+            ? `${obs.createdBy.user.personalData.names} ${obs.createdBy.user.personalData.lastNameP} ${obs.createdBy.user.personalData.lastNameM}`.trim()
+            : '---'
+          : null
+
+
+        return {
+          message: obs.message,
+          from: fullName,
+          fromClient: obs.fromClient,
+          createdAt: obs.createdAt?.toFormat('dd/MM/yyyy HH:mm:ss') ?? null,
+        }
+      }) || []
     }
 
     // Add expiration info
@@ -432,6 +463,151 @@ export default class BugetController {
     }
 
     return serialized
+  }
+
+  public async listObservations(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params, response, i18n } = ctx
+    const bugetId = Number(params.id)
+    const buget = await Buget.find(bugetId)
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    const observations = await BudgetObservation.query()
+      .where('buget_id', bugetId)
+      .orderBy('created_at', 'asc')
+
+    return observations.map((obs) => ({
+      ...obs.toJSON(),
+      createdAt: obs.createdAt?.toFormat('dd/MM/yyyy HH:mm:ss') ?? null,
+    }))
+  }
+
+  public async listObservationsPublic(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+    const token = params.token as string
+    const buget = await Buget.query().where('token', token).where('enabled', true).first()
+
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    const observations = await BudgetObservation.query()
+      .where('buget_id', buget.id)
+      .orderBy('created_at', 'asc')
+      .preload('createdBy', (cb) => {
+        cb.select(['id', 'user_id']).preload('user', (u) => {
+          u.select(['id', 'personal_data_id']).preload('personalData', (pd) => pd.select(['id', 'names', 'last_name_p', 'last_name_m']))
+        })
+      })
+
+    return observations.map((obs) => {
+      const fullName = !obs.fromClient
+        ? obs.createdBy?.user?.personalData
+          ? `${obs.createdBy.user.personalData.names} ${obs.createdBy.user.personalData.lastNameP} ${obs.createdBy.user.personalData.lastNameM}`.trim()
+          : null
+        : null
+
+      return {
+        message: obs.message,
+        from: fullName,
+        fromClient: obs.fromClient,
+        createdAt: obs.createdAt?.toFormat('dd/MM/yyyy HH:mm:ss') ?? null,
+      }
+    })
+  }
+
+  public async addObservation(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'update')
+
+    const { params, request, response, i18n, auth } = ctx
+    const bugetId = Number(params.id)
+    const { message } = await request.validateUsing(bugetObservationValidator)
+
+    const buget = await Buget.find(bugetId)
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    const businessUser = await BusinessUser.query()
+      .where('user_id', auth.user!.id)
+      .where('business_id', buget.businessId)
+      .first()
+
+    const observation = await BudgetObservation.create({
+      bugetId,
+      message,
+      fromClient: false,
+      createdById: businessUser?.id ?? null,
+    })
+
+    if (buget.token) {
+      const room = roomForToken(buget.token)
+      const payload = { observation }
+      ws.io?.to(room).emit('budgets/observations/new', payload)
+    }
+
+    return response.status(201).json({
+      observation,
+      ...MessageFrontEnd(
+        i18n.formatMessage('messages.store_ok'),
+        i18n.formatMessage('messages.ok_title')
+      ),
+    })
+  }
+
+  public async addObservationFromClient(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+    const token = params.token as string
+    const { message } = await request.validateUsing(bugetObservationValidator)
+
+    const buget = await Buget.query().where('token', token).where('enabled', true).first()
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    const observation = await BudgetObservation.create({
+      bugetId: buget.id,
+      message,
+      fromClient: true,
+      createdById: null,
+    })
+
+    if (buget.token) {
+      const room = roomForToken(buget.token)
+      const payload = { observation }
+      ws.io?.to(room).emit('budgets/observations/new', payload)
+    }
+
+    return response.status(201).json({
+      observation,
+      ...MessageFrontEnd(
+        i18n.formatMessage('messages.store_ok'),
+        i18n.formatMessage('messages.ok_title')
+      ),
+    })
   }
 
   // Minimal find by number: returns array with a single record similar to legacy
@@ -456,18 +632,18 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, name, page, perPage, status } = await request.validateUsing(bugetFindByNameClientValidator)
-    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''), page, perPage, status)
+    const { businessId, name, page, perPage, status, budgetStatus } = await request.validateUsing(bugetFindByNameClientValidator)
+    return await BugetRepository.findByNameClient(Number(businessId), String(name || ''), page, perPage, status, budgetStatus)
   }
 
   public async findByDate(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request } = ctx
-    const { businessId, date, page, perPage, status } = await request.validateUsing(bugetFindByDateValidator)
+    const { businessId, date, page, perPage, status, budgetStatus } = await request.validateUsing(bugetFindByDateValidator)
     const dateSql = DateTime.fromJSDate(date).toSQLDate()!
 
-    return await BugetRepository.findByDate(Number(businessId), String(dateSql), page, perPage, status)
+    return await BugetRepository.findByDate(Number(businessId), String(dateSql), page, perPage, status, budgetStatus)
   }
 
   public async delete(ctx: HttpContext) {
@@ -679,6 +855,7 @@ export default class BugetController {
         .update({
           enabled: 0,
           token: null,
+          status: null,
           updated_at: dateTime.toSQL({ includeOffset: false }),
           updated_by: auth.user!.id,
         })
@@ -703,9 +880,9 @@ export default class BugetController {
       const buget = await Buget.create({
         nro: String(nro),
         businessId: existingBuget.businessId,
-        currencySymbol: currencySymbol ?? null,
-        currencyId: currencyId ?? null,
-        currencyValue: currencyValue ?? null,
+        currencySymbol: currencySymbol,
+        currencyId: currencyId,
+        currencyValue: currencyValue,
         clientId: existingBuget.clientId,
         discount: Number(discount) || 0,
         utility: Number(utility) || 0,
@@ -815,6 +992,9 @@ export default class BugetController {
               console.log('Error sending budget update notification email:', emailError)
             }
        */
+      const room = roomForToken(buget.token!)
+      ws.io?.to(room).emit('budget/update', buget)
+
       return response.status(201).json({
         buget,
         ...MessageFrontEnd(
@@ -834,6 +1014,59 @@ export default class BugetController {
         )
       )
     }
+  }
+
+  /** Update budget status (auth) */
+  public async updateStatus(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'update')
+    const { params, request, response, i18n } = ctx
+    const bugetId = Number(params.id)
+    const { status } = await request.validateUsing(bugetStatusValidator)
+
+    const buget = await Buget.find(bugetId)
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    buget.status = status ?? null
+    await buget.save()
+
+    if (buget.token) {
+      const room = roomForToken(buget.token)
+      ws.io?.to(room).emit('budget/status', { status: buget.status })
+    }
+
+    return response.status(200).json({ buget })
+  }
+
+  /** Update budget status (public by token) */
+  public async updateStatusPublic(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+    const token = params.token as string
+    const { status } = await request.validateUsing(bugetStatusValidator)
+
+    const buget = await Buget.query().where('token', token).where('enabled', true).first()
+    if (!buget) {
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+
+    buget.status = status
+    await buget.save()
+
+    const room = roomForToken(buget.token!)
+    ws.io?.to(room).emit('budget/status', { status: buget.status })
+
+    return response.status(200).json({ buget })
   }
 
   // Change the client of a budget: create a new budget with the new client and archive the previous one
