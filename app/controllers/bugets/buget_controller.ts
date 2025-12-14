@@ -1098,7 +1098,7 @@ export default class BugetController {
       // Load client data for email
       await buget.load('client', (q) => q.select(['name']))
 
-        /       const clientName = buget.client?.name || ''
+      const clientName = buget.client?.name || ''
       const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
 
       const host = env.get('NODE_ENV') === 'development'
