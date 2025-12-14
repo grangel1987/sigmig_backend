@@ -1098,50 +1098,50 @@ export default class BugetController {
       // Load client data for email
       await buget.load('client', (q) => q.select(['name']))
 
-      const clientName = buget.client?.name || ''
-      const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
-
-      const host = env.get('NODE_ENV') === 'development'
-        ? 'http://212.38.95.163/sigmig/'
-        : 'https://admin.serviciosgenessis.com/'
-      const budgetUrl = host + `client/budget/${buget.token}`
-
-      const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
-      const body = i18n.formatMessage('messages.budget_updated_email_body', {
-        budgetNumber: buget.nro,
-        clientName,
-        expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
-        createdBy: updatedByName
-      })
-      const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
-      const clientLabel = i18n.formatMessage('messages.client')
-      const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
-      const createdByLabel = i18n.formatMessage('messages.updated_by')
-      const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
-      const backupText = i18n.formatMessage('messages.budget_updated_backup_text')
-
-      // Send email notification to super users
-      try {
-        await sendBudgetNotification(business.id, {
-          subject,
-          body,
-          budgetNumber: buget.nro,
-          clientName,
-          expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
-          createdBy: updatedByName,
-          budgetUrl,
-          businessName: business.name,
-          budgetNumberLabel,
-          clientLabel,
-          expirationDateLabel,
-          createdByLabel,
-          viewBudgetLabel,
-          backupText,
-        }, 'emails/budget_updated')
-      } catch (emailError) {
-        // Log email error but don't fail the budget update
-        console.log('Error sending budget update notification email:', emailError)
-      }
+      /*       const clientName = buget.client?.name || ''
+            const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
+      
+            const host = env.get('NODE_ENV') === 'development'
+              ? 'http://212.38.95.163/sigmig/'
+              : 'https://admin.serviciosgenessis.com/'
+            const budgetUrl = host + `client/budget/${buget.token}`
+      
+            const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
+            const body = i18n.formatMessage('messages.budget_updated_email_body', {
+              budgetNumber: buget.nro,
+              clientName,
+              expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+              createdBy: updatedByName
+            })
+            const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
+            const clientLabel = i18n.formatMessage('messages.client')
+            const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
+            const createdByLabel = i18n.formatMessage('messages.updated_by')
+            const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
+            const backupText = i18n.formatMessage('messages.budget_updated_backup_text')
+      
+            // Send email notification to super users
+            try {
+              await sendBudgetNotification(business.id, {
+                subject,
+                body,
+                budgetNumber: buget.nro,
+                clientName,
+                expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+                createdBy: updatedByName,
+                budgetUrl,
+                businessName: business.name,
+                budgetNumberLabel,
+                clientLabel,
+                expirationDateLabel,
+                createdByLabel,
+                viewBudgetLabel,
+                backupText,
+              }, 'emails/budget_updated')
+            } catch (emailError) {
+              // Log email error but don't fail the budget update
+              console.log('Error sending budget update notification email:', emailError)
+            } */
 
       const room = roomForToken(buget.token!)
       ws.io?.to(room).emit('budget/update', buget)
