@@ -4,7 +4,9 @@ import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import PermissionService from '#services/permission_service'
+import { roomForToken } from '#services/socket'
 import env from '#start/env'
+import ws from '#start/ws'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import {
@@ -1096,54 +1098,53 @@ export default class BugetController {
       // Load client data for email
       await buget.load('client', (q) => q.select(['name']))
 
-      // Prepare email payload data for budget update
-      /*       const clientName = buget.client?.name || ''
-            const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
-      
-            const host = env.get('NODE_ENV') === 'development'
-              ? 'http://212.38.95.163/sigmig/'
-              : 'https://admin.serviciosgenessis.com/'
-            const budgetUrl = host + `client/budget/${buget.token}`
-      
-            const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
-            const body = i18n.formatMessage('messages.budget_updated_email_body', {
-              budgetNumber: buget.nro,
-              clientName,
-              expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
-              createdBy: updatedByName
-            })
-            const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
-            const clientLabel = i18n.formatMessage('messages.client')
-            const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
-            const createdByLabel = i18n.formatMessage('messages.updated_by')
-            const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
-            const backupText = i18n.formatMessage('messages.budget_updated_backup_text')
-      
-            // Send email notification to super users
-            try {
-              await sendBudgetNotification(business.id, {
-                subject,
-                body,
-                budgetNumber: buget.nro,
-                clientName,
-                expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
-                createdBy: updatedByName,
-                budgetUrl,
-                businessName: business.name,
-                budgetNumberLabel,
-                clientLabel,
-                expirationDateLabel,
-                createdByLabel,
-                viewBudgetLabel,
-                backupText,
-              }, 'emails/budget_updated')
-            } catch (emailError) {
-              // Log email error but don't fail the budget update
-              console.log('Error sending budget update notification email:', emailError)
-            }
-       */
-      /*       const room = roomForToken(buget.token!)
-      ws.io?.to(room).emit('budget/update', buget) */
+        /       const clientName = buget.client?.name || ''
+      const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
+
+      const host = env.get('NODE_ENV') === 'development'
+        ? 'http://212.38.95.163/sigmig/'
+        : 'https://admin.serviciosgenessis.com/'
+      const budgetUrl = host + `client/budget/${buget.token}`
+
+      const subject = i18n.formatMessage('messages.budget_updated_email_subject', { budgetNumber: buget.nro })
+      const body = i18n.formatMessage('messages.budget_updated_email_body', {
+        budgetNumber: buget.nro,
+        clientName,
+        expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+        createdBy: updatedByName
+      })
+      const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
+      const clientLabel = i18n.formatMessage('messages.client')
+      const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
+      const createdByLabel = i18n.formatMessage('messages.updated_by')
+      const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
+      const backupText = i18n.formatMessage('messages.budget_updated_backup_text')
+
+      // Send email notification to super users
+      try {
+        await sendBudgetNotification(business.id, {
+          subject,
+          body,
+          budgetNumber: buget.nro,
+          clientName,
+          expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+          createdBy: updatedByName,
+          budgetUrl,
+          businessName: business.name,
+          budgetNumberLabel,
+          clientLabel,
+          expirationDateLabel,
+          createdByLabel,
+          viewBudgetLabel,
+          backupText,
+        }, 'emails/budget_updated')
+      } catch (emailError) {
+        // Log email error but don't fail the budget update
+        console.log('Error sending budget update notification email:', emailError)
+      }
+
+      const room = roomForToken(buget.token!)
+      ws.io?.to(room).emit('budget/update', buget)
 
       return response.status(201).json({
         buget,
@@ -1173,29 +1174,42 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'update')
     const { params, request, response, i18n } = ctx
     const bugetId = Number(params.id)
-    const { status } = await request.validateUsing(bugetStatusValidator)
+    const { status, observation } = await request.validateUsing(bugetStatusValidator)
+    const trx = await db.transaction()
+    try {
 
-    const buget = await Buget.find(bugetId)
-    if (!buget) {
-      return response
-        .status(404)
-        .json(
-          MessageFrontEnd(
-            i18n.formatMessage('messages.no_exist'),
-            i18n.formatMessage('messages.error_title')
+
+      const buget = await Buget.find(bugetId)
+      if (observation)
+        await buget?.related('observations').create({
+          message: observation,
+          fromClient: true,
+          createdById: ctx.auth.user?.id ? (await BusinessUser.query().where('user_id', ctx.auth.user.id).where('business_id', buget?.businessId ?? 0).first())?.id ?? null : null,
+        })
+
+      if (!buget) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist'),
+              i18n.formatMessage('messages.error_title')
+            )
           )
-        )
-    }
+      }
 
-    buget.status = status ?? null
-    await buget.save()
+      buget.status = status ?? null
+      await buget.save()
 
-    /*     if (buget.token) {
-      const room = roomForToken(buget.token)
-      ws.io?.to(room).emit('budget/status', { status: buget.status })
+      if (buget.token) {
+        const room = roomForToken(buget.token)
+        ws.io?.to(room).emit('budget/status', { status: buget.status })
+      }
+
+      return response.status(200).json({ buget })
+    } catch (error) {
+
     }
- */
-    return response.status(200).json({ buget })
   }
 
   /** Update budget status (public by token) */

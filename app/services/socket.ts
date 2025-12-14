@@ -1,4 +1,4 @@
-/* import Buget from '#models/bugets/buget'
+import Buget from '#models/bugets/buget'
 import { Server, Socket } from 'socket.io'
 
 export const roomForToken = (token: string) => `budget/${token}`
@@ -60,4 +60,3 @@ export function registerSocketEvents(io: Server) {
         })
     })
 }
- */

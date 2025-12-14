@@ -119,5 +119,6 @@ export const bugetObservationValidator = vine.compile(
 export const bugetStatusValidator = vine.compile(
     vine.object({
         status: vine.enum(['revision', 'reject', 'accept'] as const),
+        observation: vine.string().trim().minLength(1).maxLength(1024).optional(),
     })
 )
