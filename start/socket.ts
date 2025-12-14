@@ -1,5 +1,5 @@
 import Buget from '#models/bugets/buget'
-import ws from '#start/ws'
+import ws from '#services/ws'
 import app from '@adonisjs/core/services/app'
 import { Server, Socket } from 'socket.io'
 
