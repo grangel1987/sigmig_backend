@@ -2,6 +2,7 @@ import SettingBugetCategory from '#models/buget/setting_buget_category'
 import SettingBugetItem from '#models/buget/setting_buget_item'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
@@ -14,12 +15,8 @@ export default class SettingBugetItemController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, response, i18n } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
+        const { page, perPage, status, text } = await request.validateUsing(
+            vine.compile(searchWithStatusSchema
             )
         )
 
@@ -54,6 +51,18 @@ export default class SettingBugetItemController {
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
+
+
+            if (text) query.where((qb) => {
+                const likeVal = `%${text}%`
+                qb.whereRaw('value LIKE ?', [likeVal]).orWhereRaw('title LIKE ?', [likeVal])
+            })
+
+            const items = await (page ? query.paginate(page, perPage || 10) : query)
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const items = await (page ? query.paginate(page, perPage || 10) : query)
 
