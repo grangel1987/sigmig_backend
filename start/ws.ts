@@ -1,11 +1,13 @@
-import { registerSocketEvents } from '#services/socket'
 import server from '@adonisjs/core/services/server'
 import { Server } from 'socket.io'
 class Ws {
     io: Server | undefined
-    public booted = false
+    private booted = false
 
     boot() {
+        /**
+         * Ignore multiple calls to the boot method
+         */
         if (this.booted) {
             return
         }
@@ -16,10 +18,7 @@ class Ws {
                 origin: '*',
             },
         })
-
-        registerSocketEvents(this.io)
     }
 }
 
 export default new Ws()
-
