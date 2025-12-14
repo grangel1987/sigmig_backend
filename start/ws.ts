@@ -3,7 +3,7 @@ import server from '@adonisjs/core/services/server'
 import { Server } from 'socket.io'
 class Ws {
     io: Server | undefined
-    private booted = false
+    public booted = false
 
     boot() {
         if (this.booted) {

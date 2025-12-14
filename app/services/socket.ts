@@ -1,5 +1,9 @@
 import Buget from '#models/bugets/buget'
+import ws from '#start/ws'
 import { Server, Socket } from 'socket.io'
+
+
+if (!ws.booted) ws.boot()
 
 export const roomForToken = (token: string) => `budget/${token}`
 
