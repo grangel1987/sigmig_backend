@@ -58,8 +58,6 @@ export default class SettingBugetItemController {
                 qb.whereRaw('value LIKE ?', [likeVal]).orWhereRaw('title LIKE ?', [likeVal])
             })
 
-            const items = await (page ? query.paginate(page, perPage || 10) : query)
-
             if (status !== undefined) {
                 query.where('enabled', status === 'enabled')
             }
