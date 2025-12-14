@@ -1,6 +1,7 @@
 import Buget from '#models/bugets/buget'
 import BusinessUser from '#models/business/business_user'
-import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeFetch, belongsTo, column, computed } from '@adonisjs/lucid/orm'
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -40,5 +41,13 @@ export default class BudgetObservation extends BaseModel {
             return `${this.createdBy.user.personalData.names} ${this.createdBy.user.personalData.lastNameP} ${this.createdBy.user.personalData.lastNameM}`
         } else return null
 
+    }
+
+    /**
+     * Runs before finding multiple records from the database
+     */
+    @beforeFetch()
+    static sort(observations: ModelQueryBuilderContract<typeof BudgetObservation>) {
+        observations.orderBy('created_at', 'desc')
     }
 }
