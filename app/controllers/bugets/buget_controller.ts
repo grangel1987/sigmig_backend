@@ -7,7 +7,7 @@ import PermissionService from '#services/permission_service'
 import { roomForToken } from '#services/socket'
 import env from '#start/env'
 import ws from '#start/ws'
-import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { default as messageFrontEnd, default as MessageFrontEnd } from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import {
   bugetChangeClientValidator,
@@ -1179,13 +1179,13 @@ export default class BugetController {
     try {
 
 
-      const buget = await Buget.find(bugetId)
+      const buget = await Buget.find(bugetId, { client: trx })
       if (observation)
         await buget?.related('observations').create({
           message: observation,
           fromClient: true,
           createdById: ctx.auth.user?.id ? (await BusinessUser.query().where('user_id', ctx.auth.user.id).where('business_id', buget?.businessId ?? 0).first())?.id ?? null : null,
-        })
+        }, { client: trx })
 
       if (!buget) {
         return response
@@ -1200,7 +1200,7 @@ export default class BugetController {
 
       buget.status = status ?? null
       await buget.save()
-
+      await trx.commit()
       if (buget.token) {
         const room = roomForToken(buget.token)
         ws.io?.to(room).emit('budget/status', { status: buget.status })
@@ -1208,6 +1208,12 @@ export default class BugetController {
 
       return response.status(200).json({ buget })
     } catch (error) {
+      await trx.rollback()
+      console.log(error)
+      return response.internalServerError(messageFrontEnd(
+        i18n.formatMessage('messages.update_error'),
+        i18n.formatMessage('messages.error_title')
+      ))
 
     }
   }
