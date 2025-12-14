@@ -336,6 +336,15 @@ export default class BugetController {
         qq.preload('typeIdentify', (qqq) => qqq.select(['id', 'text']))
       })
     })
+    await buget.load('observations', (q) => {
+      q.preload('createdBy', (cb) => {
+        cb.select(['id', 'user_id']).preload('user', (u) => {
+          u.select(['id', 'personal_data_id']).preload('personalData', (pd) =>
+            pd.select(['id', 'names', 'last_name_p', 'last_name_m'])
+          )
+        })
+      })
+    })
     await buget.load('details')
 
     // Compose legacy-like extras

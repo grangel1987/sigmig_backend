@@ -1,6 +1,6 @@
 import Buget from '#models/bugets/buget'
 import BusinessUser from '#models/business/business_user'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -33,4 +33,12 @@ export default class BudgetObservation extends BaseModel {
 
     @belongsTo(() => Buget, { foreignKey: 'bugetId' })
     public buget: BelongsTo<typeof Buget>
+
+    @computed()
+    public from() {
+        if (this.createdBy?.user?.personalData) {
+            return `${this.createdBy.user.personalData.names} ${this.createdBy.user.personalData.lastNameP} ${this.createdBy.user.personalData.lastNameM}`
+        } else return null
+
+    }
 }
