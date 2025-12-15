@@ -122,7 +122,7 @@ export default class Buget extends BaseModel {
 
     @beforeFetch()
     public static filterDeleted(query: ModelQueryBuilderContract<typeof Buget>) {
-        query.whereNull('deleted_at')
+        query.whereNull('bugets.deleted_at')
     }
 
     public static castDates(field: string, value: DateTime) {
