@@ -752,7 +752,7 @@ export default class BugetController {
       await db
         .from('bugets')
         .where('id', bugetId)
-        .update({ enabled: 0, deleted_at: dateTime.toSQL(), deleted_by: auth.user!.id })
+        .update({ enabled: 0, deleted_at: Util.formatDatetimeToString(dateTime), deleted_by: auth.user!.id })
       return response
         .status(201)
         .json(
