@@ -447,24 +447,24 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business
         ? {
-          name: buget.business.name,
-          url: buget.business.url,
-          email: buget.business.email,
-          identify: buget.business.identify,
-          footer: buget.business.footer,
-          typeIdentify: buget.business.typeIdentify?.text,
-        }
+            name: buget.business.name,
+            url: buget.business.url,
+            email: buget.business.email,
+            identify: buget.business.identify,
+            footer: buget.business.footer,
+            typeIdentify: buget.business.typeIdentify?.text,
+          }
         : null,
       client: buget.client
         ? {
-          name: buget.client.name,
-          identify: buget.client.identify,
-          email: buget.client.email,
-          address: buget.client.address,
-          phone: buget.client.phone,
-          typeIdentify: buget.client.typeIdentify?.text,
-          city: buget.client.city?.name,
-        }
+            name: buget.client.name,
+            identify: buget.client.identify,
+            email: buget.client.email,
+            address: buget.client.address,
+            phone: buget.client.phone,
+            typeIdentify: buget.client.typeIdentify?.text,
+            city: buget.client.city?.name,
+          }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -475,9 +475,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-              name: product.products.name,
-              type: product.products.type?.text,
-            }
+                name: product.products.name,
+                type: product.products.type?.text,
+              }
             : null,
         })) || [],
       items:
@@ -498,10 +498,10 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-          costCenter: buget.details.costCenter,
-          work: buget.details.work,
-          observation: buget.details.observation,
-        }
+            costCenter: buget.details.costCenter,
+            work: buget.details.work,
+            observation: buget.details.observation,
+          }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -752,7 +752,11 @@ export default class BugetController {
       await db
         .from('bugets')
         .where('id', bugetId)
-        .update({ enabled: 0, deleted_at: Util.formatDatetimeToString(dateTime), deleted_by: auth.user!.id })
+        .update({
+          enabled: 0,
+          deleted_at: Util.formatDatetimeToString(dateTime),
+          deleted_by: auth.user!.id,
+        })
       return response
         .status(201)
         .json(
@@ -987,11 +991,7 @@ export default class BugetController {
         keepSameNro = false,
       } = await request.validateUsing(bugetUpdateValidator)
 
-      const existingBuget = await Buget.query({ client: trx })
-        .where('id', bugetId)
-        .where('enabled', true) // Only update enabled budgets
-        .forUpdate() // Lock the row to prevent concurrent updates
-        .firstOrFail()
+      const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
 
       const token = existingBuget.token!
 
@@ -1187,15 +1187,23 @@ export default class BugetController {
     const { status, observation } = await request.validateUsing(bugetStatusValidator)
     const trx = await db.transaction()
     try {
-
-
       const buget = await Buget.find(bugetId, { client: trx })
       if (observation)
-        await buget?.related('observations').create({
-          message: observation,
-          fromClient: true,
-          createdById: ctx.auth.user?.id ? (await BusinessUser.query().where('user_id', ctx.auth.user.id).where('business_id', buget?.businessId ?? 0).first())?.id ?? null : null,
-        }, { client: trx })
+        await buget?.related('observations').create(
+          {
+            message: observation,
+            fromClient: true,
+            createdById: ctx.auth.user?.id
+              ? ((
+                  await BusinessUser.query()
+                    .where('user_id', ctx.auth.user.id)
+                    .where('business_id', buget?.businessId ?? 0)
+                    .first()
+                )?.id ?? null)
+              : null,
+          },
+          { client: trx }
+        )
 
       if (!buget) {
         return response
@@ -1220,11 +1228,12 @@ export default class BugetController {
     } catch (error) {
       await trx.rollback()
       console.log(error)
-      return response.internalServerError(messageFrontEnd(
-        i18n.formatMessage('messages.update_error'),
-        i18n.formatMessage('messages.error_title')
-      ))
-
+      return response.internalServerError(
+        messageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
     }
   }
 
