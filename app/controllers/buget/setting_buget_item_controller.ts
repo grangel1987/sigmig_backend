@@ -313,6 +313,7 @@ export default class SettingBugetItemController {
             console.log(error);
 
             return response.status(500).json({
+                error,
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.delete_error'),
                     i18n.formatMessage('messages.error_title')
