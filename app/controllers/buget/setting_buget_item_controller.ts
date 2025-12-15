@@ -8,6 +8,7 @@ import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
 import console from 'console'
+import console from 'console'
 import { DateTime } from 'luxon'
 
 export default class SettingBugetItemController {
@@ -297,6 +298,7 @@ export default class SettingBugetItemController {
         try {
             const item = await SettingBugetItem.findOrFail(itemId)
             item.merge({ deletedAt: dateTime })
+
             await item.save()
 
             return response.status(200).json({
@@ -306,6 +308,8 @@ export default class SettingBugetItemController {
                 )
             })
         } catch (error) {
+            console.log(error);
+
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.delete_error'),

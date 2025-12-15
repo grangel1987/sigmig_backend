@@ -762,6 +762,7 @@ export default class BugetController {
           )
         )
     } catch (error) {
+      log(error)
       return response
         .status(500)
         .json(
