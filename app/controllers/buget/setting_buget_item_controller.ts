@@ -15,8 +15,9 @@ export default class SettingBugetItemController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, response, i18n } = ctx
-        const { page, perPage, text, status } = await request.validateUsing(vine.compile(searchWithStatusSchema)
-
+        const { page, perPage, status, text } = await request.validateUsing(
+            vine.compile(searchWithStatusSchema
+            )
         )
 
         try {
@@ -55,6 +56,10 @@ export default class SettingBugetItemController {
                 const likeVal = `%${text}%`
                 qb.whereRaw('value LIKE ?', [likeVal]).orWhereRaw('title LIKE ?', [likeVal])
             })
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const items = await (page ? query.paginate(page, perPage || 10) : query)
 
@@ -295,6 +300,7 @@ export default class SettingBugetItemController {
         try {
             const item = await SettingBugetItem.findOrFail(itemId)
             item.merge({ deletedAt: dateTime })
+
             await item.save()
 
             return response.status(200).json({
@@ -304,6 +310,8 @@ export default class SettingBugetItemController {
                 )
             })
         } catch (error) {
+            console.log(error);
+
             return response.status(500).json({
                 ...MessageFrontEnd(
                     i18n.formatMessage('messages.delete_error'),

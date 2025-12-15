@@ -4,8 +4,10 @@ import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import PermissionService from '#services/permission_service'
+import ws from '#services/ws'
 import env from '#start/env'
-import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { roomForToken } from '#start/socket'
+import { default as messageFrontEnd, default as MessageFrontEnd } from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import {
   bugetChangeClientValidator,
@@ -76,6 +78,7 @@ export default class BugetController {
         createdById: auth.user!.id,
         updatedById: auth.user!.id,
         expireDate,
+        status: 'pending' as const,
         enabled: true,
       }
 
@@ -333,6 +336,15 @@ export default class BugetController {
         qq.preload('typeIdentify', (qqq) => qqq.select(['id', 'text']))
       })
     })
+    await buget.load('observations', (q) => {
+      q.preload('createdBy', (cb) => {
+        cb.select(['id', 'user_id']).preload('user', (u) => {
+          u.select(['id', 'personal_data_id']).preload('personalData', (pd) =>
+            pd.select(['id', 'names', 'last_name_p', 'last_name_m'])
+          )
+        })
+      })
+    })
     await buget.load('details')
 
     // Compose legacy-like extras
@@ -435,24 +447,24 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business
         ? {
-            name: buget.business.name,
-            url: buget.business.url,
-            email: buget.business.email,
-            identify: buget.business.identify,
-            footer: buget.business.footer,
-            typeIdentify: buget.business.typeIdentify?.text,
-          }
+          name: buget.business.name,
+          url: buget.business.url,
+          email: buget.business.email,
+          identify: buget.business.identify,
+          footer: buget.business.footer,
+          typeIdentify: buget.business.typeIdentify?.text,
+        }
         : null,
       client: buget.client
         ? {
-            name: buget.client.name,
-            identify: buget.client.identify,
-            email: buget.client.email,
-            address: buget.client.address,
-            phone: buget.client.phone,
-            typeIdentify: buget.client.typeIdentify?.text,
-            city: buget.client.city?.name,
-          }
+          name: buget.client.name,
+          identify: buget.client.identify,
+          email: buget.client.email,
+          address: buget.client.address,
+          phone: buget.client.phone,
+          typeIdentify: buget.client.typeIdentify?.text,
+          city: buget.client.city?.name,
+        }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -463,9 +475,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-                name: product.products.name,
-                type: product.products.type?.text,
-              }
+              name: product.products.name,
+              type: product.products.type?.text,
+            }
             : null,
         })) || [],
       items:
@@ -486,10 +498,10 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-            costCenter: buget.details.costCenter,
-            work: buget.details.work,
-            observation: buget.details.observation,
-          }
+          costCenter: buget.details.costCenter,
+          work: buget.details.work,
+          observation: buget.details.observation,
+        }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -625,11 +637,11 @@ export default class BugetController {
       createdById: businessUser?.id ?? null,
     })
 
-    /*     if (buget.token) {
+    if (buget.token) {
       const room = roomForToken(buget.token)
       const payload = { observation }
-      // ws.io?.to(room).emit('budgets/observations/new', payload)
-    } */
+      ws.io?.to(room).emit('budgets/observations/new', payload)
+    }
 
     return response.status(201).json({
       observation,
@@ -664,11 +676,11 @@ export default class BugetController {
       createdById: null,
     })
 
-    /*     if (buget.token) {
+    if (buget.token) {
       const room = roomForToken(buget.token)
       const payload = { observation }
       ws.io?.to(room).emit('budgets/observations/new', payload)
-    } */
+    }
 
     return response.status(201).json({
       observation,
@@ -740,7 +752,7 @@ export default class BugetController {
       await db
         .from('bugets')
         .where('id', bugetId)
-        .update({ enabled: 0, deleted_at: dateTime.toSQL(), deleted_by: auth.user!.id })
+        .update({ enabled: 0, deleted_at: Util.formatDatetimeToString(dateTime), deleted_by: auth.user!.id })
       return response
         .status(201)
         .json(
@@ -750,6 +762,7 @@ export default class BugetController {
           )
         )
     } catch (error) {
+      log(error)
       return response
         .status(500)
         .json(
@@ -1029,6 +1042,7 @@ export default class BugetController {
           createdAt: dateTime,
           prevId: existingBuget.id,
           token,
+          status: 'pending',
           updatedAt: dateTime,
           createdById: auth.user!.id,
           updatedById: auth.user!.id,
@@ -1094,7 +1108,6 @@ export default class BugetController {
       // Load client data for email
       await buget.load('client', (q) => q.select(['name']))
 
-      // Prepare email payload data for budget update
       /*       const clientName = buget.client?.name || ''
             const updatedByName = buget.updatedBy?.personalData ? `${buget.updatedBy.personalData.names} ${buget.updatedBy.personalData.lastNameP} ${buget.updatedBy.personalData.lastNameM}`.trim() : ''
       
@@ -1138,10 +1151,10 @@ export default class BugetController {
             } catch (emailError) {
               // Log email error but don't fail the budget update
               console.log('Error sending budget update notification email:', emailError)
-            }
-       */
-      /*       const room = roomForToken(buget.token!)
-      ws.io?.to(room).emit('budget/update', buget) */
+            } */
+
+      const room = roomForToken(buget.token!)
+      ws.io?.to(room).emit('budget/update', buget)
 
       return response.status(201).json({
         buget,
@@ -1171,31 +1184,48 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'update')
     const { params, request, response, i18n } = ctx
     const bugetId = Number(params.id)
-    const { status } = await request.validateUsing(bugetStatusValidator)
+    const { status, observation } = await request.validateUsing(bugetStatusValidator)
+    const trx = await db.transaction()
+    try {
 
-    const buget = await Buget.find(bugetId)
-    if (!buget) {
-      return response
-        .status(404)
-        .json(
-          MessageFrontEnd(
-            i18n.formatMessage('messages.no_exist'),
-            i18n.formatMessage('messages.error_title')
+
+      const buget = await Buget.find(bugetId, { client: trx })
+      if (observation)
+        await buget?.related('observations').create({
+          message: observation,
+          fromClient: true,
+          createdById: ctx.auth.user?.id ? (await BusinessUser.query().where('user_id', ctx.auth.user.id).where('business_id', buget?.businessId ?? 0).first())?.id ?? null : null,
+        }, { client: trx })
+
+      if (!buget) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist'),
+              i18n.formatMessage('messages.error_title')
+            )
           )
-        )
-    }
+      }
 
-    if (status !== undefined) {
-      buget.status = status
+      buget.status = status ?? null
       await buget.save()
-    }
+      await trx.commit()
+      if (buget.token) {
+        const room = roomForToken(buget.token)
+        ws.io?.to(room).emit('budget/status', { status: buget.status })
+      }
 
-    /*     if (buget.token) {
-      const room = roomForToken(buget.token)
-      ws.io?.to(room).emit('budget/status', { status: buget.status })
+      return response.status(200).json({ buget })
+    } catch (error) {
+      await trx.rollback()
+      console.log(error)
+      return response.internalServerError(messageFrontEnd(
+        i18n.formatMessage('messages.update_error'),
+        i18n.formatMessage('messages.error_title')
+      ))
+
     }
- */
-    return response.status(200).json({ buget })
   }
 
   /** Update budget status (public by token) */

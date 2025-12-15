@@ -1,7 +1,19 @@
-/* import Buget from '#models/bugets/buget'
+import Buget from '#models/bugets/buget'
+import ws from '#services/ws'
+import app from '@adonisjs/core/services/app'
 import { Server, Socket } from 'socket.io'
 
+
 export const roomForToken = (token: string) => `budget/${token}`
+app.ready(() => {
+    ws.boot()
+    const io = ws.io
+
+    registerSocketEvents(io!)
+
+})
+
+
 
 const safeAck = (ack?: any, payload?: any) => {
     if (typeof ack === 'function') ack(payload)
@@ -60,4 +72,3 @@ export function registerSocketEvents(io: Server) {
         })
     })
 }
- */
