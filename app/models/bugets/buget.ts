@@ -7,7 +7,8 @@ import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import User from '#models/users/user'
 import Util from '#utils/Util'
-import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, beforeFetch, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -118,11 +119,11 @@ export default class Buget extends BaseModel {
 
     }
 
-    /* 
-        @beforeFetch()
-        public static hookName(query: ModelQueryBuilderContract<typeof Buget>) {
-            query.where('bugets.enabled', true).whereNotNull('bugets.token')
-        } */
+
+    @beforeFetch()
+    public static filterDeleted(query: ModelQueryBuilderContract<typeof Buget>) {
+        query.whereNull('deleted_at')
+    }
 
     public static castDates(field: string, value: DateTime) {
         if (field === 'expire_date') return value.toFormat('yyyy-MM-dd')
