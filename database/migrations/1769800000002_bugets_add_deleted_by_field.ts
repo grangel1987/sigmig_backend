@@ -13,7 +13,6 @@ export default class BugetsAddDeletedByField extends BaseSchema {
         this.schema.alterTable(this.tableName, (table) => {
             table
                 .integer('deleted_by')
-                .unsigned()
                 .nullable()
                 .references('users.id')
                 .onDelete('RESTRICT')
