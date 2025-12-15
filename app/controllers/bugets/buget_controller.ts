@@ -637,11 +637,11 @@ export default class BugetController {
       createdById: businessUser?.id ?? null,
     })
 
-    /*     if (buget.token) {
+    if (buget.token) {
       const room = roomForToken(buget.token)
       const payload = { observation }
-      // ws.io?.to(room).emit('budgets/observations/new', payload)
-    } */
+      ws.io?.to(room).emit('budgets/observations/new', payload)
+    }
 
     return response.status(201).json({
       observation,
@@ -676,11 +676,11 @@ export default class BugetController {
       createdById: null,
     })
 
-    /*     if (buget.token) {
+    if (buget.token) {
       const room = roomForToken(buget.token)
       const payload = { observation }
       ws.io?.to(room).emit('budgets/observations/new', payload)
-    } */
+    }
 
     return response.status(201).json({
       observation,
