@@ -82,6 +82,9 @@ export default class SettingController {
 
       return payload
     } catch (error) {
+
+      console.log(error);
+
       logger.error('indicators: Error', { error: error.message })
       return {
         error: MessageFrontEnd(
