@@ -207,8 +207,8 @@ export default class BugetController {
   public async index(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
-    const { request } = ctx
-    const { page, perPage, status, text, startDate, endDate, date, businessId, budgetStatus } =
+    const { request, auth } = ctx
+    const { page, perPage, status, text, startDate, endDate, date, businessId: pBusinessId, budgetStatus } =
       await request.validateUsing(
         vine.compile(
           vine.object({
@@ -231,6 +231,19 @@ export default class BugetController {
           .select(['id', 'personal_data_id', 'email'])
       })
       .orderBy('created_at', 'desc')
+
+
+    let businessId = pBusinessId
+
+    if (!businessId) businessId = Number(request.header('Business'))
+
+    if (!businessId) {
+      const user = auth.getUserOrFail()
+      const businessUser = await user.related('selectedBusiness').query().first()
+      if (businessUser) {
+        businessId = businessUser.id
+      }
+    }
 
     if (businessId) {
       query = query.where('business_id', businessId)
