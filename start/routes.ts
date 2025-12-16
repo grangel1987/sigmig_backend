@@ -50,6 +50,12 @@ router.group(() => {
     router.get("country/:id", "#controllers/settings/setting_controller.findSettingsByCountry")
   }).prefix('setting')
 
+  // Settings web endpoints
+  router.group(() => {
+    router.get("/country/web/:id", "#controllers/settings/setting_controller.findSettingsByCountry")
+    router.get("/indicators", "#controllers/settings/setting_controller.indicators")
+  }).prefix('setting')
+
 
   router.group(() => {
     router.post("/store", "#controllers/business/business_controller.store");
