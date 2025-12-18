@@ -1,6 +1,7 @@
 import SettingLayoff from '#models/layoff/setting_layoff'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
@@ -16,14 +17,7 @@ export default class SettingLayoffController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, response, i18n } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const query = SettingLayoff.query()
@@ -33,6 +27,17 @@ export default class SettingLayoffController {
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.where((qb) => {
+                    qb.whereILike('name', likeVal).orWhereILike('code', likeVal)
+                })
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const layoffs = await (page ? query.paginate(page, perPage || 10) : query)
 

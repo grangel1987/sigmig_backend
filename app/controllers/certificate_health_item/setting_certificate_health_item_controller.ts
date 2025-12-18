@@ -2,9 +2,9 @@ import SettingCertificateHealthItem from '#models/certificate_health_item/settin
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { certificateHealthItemStoreValidator, certificateHealthItemUpdateValidator } from '#validators/certificate_health_item'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
-import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 type MessageFrontEndType = {
@@ -17,14 +17,7 @@ export default class SettingCertificateHealthItemController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, response, i18n } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const query = SettingCertificateHealthItem.query()
@@ -35,6 +28,17 @@ export default class SettingCertificateHealthItemController {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
                 .orderBy('position', 'asc')
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.where((qb) => {
+                    qb.whereILike('name', likeVal).orWhereILike('type', likeVal)
+                })
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const items = await (page ? query.paginate(page, perPage || 10) : query)
 

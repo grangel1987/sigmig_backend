@@ -2,10 +2,10 @@ import SettingSchedule from '#models/schedules/setting_schedule'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import { indexFiltersWithStatus } from '#validators/general'
 import { settingScheduleStoreValidator, settingScheduleUpdateValidator } from '#validators/setting_schedule'
 import { HttpContext } from '@adonisjs/core/http'
 import Database from '@adonisjs/lucid/services/db'
-import vine from '@vinejs/vine'
 
 export default class SettingScheduleController {
     /** List schedules for selected business of current user */
@@ -13,14 +13,7 @@ export default class SettingScheduleController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, auth } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         const userId = auth.user!.id
         const business = await Database.from('business_users').where('selected', true).where('user_id', userId).first()
@@ -35,6 +28,15 @@ export default class SettingScheduleController {
             .preload('updatedBy', (b) => {
                 b.select(['id', 'personal_data_id', 'email']).preload('personalData')
             })
+
+        if (text) {
+            const likeVal = `%${text}%`
+            query.whereILike('name', likeVal)
+        }
+
+        if (status !== undefined) {
+            query.where('enabled', status === 'enabled')
+        }
 
         return page ? query.paginate(page, perPage ?? 10) : query
     }
