@@ -1,0 +1,41 @@
+import User from '#models/users/user'
+import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { DateTime } from 'luxon'
+import NotificationType from './notification_type.js'
+import NotificationUser from './notification_user.js'
+
+export default class Notification extends BaseModel {
+    @column({ isPrimary: true })
+    public id: number
+
+    @column({ columnName: 'notification_type_id' })
+    public notificationTypeId: number | null
+
+    @column({ columnName: 'business_id' })
+    public businessId: number | null
+
+    @column()
+    public title: string
+
+    @column()
+    public body: string | null
+
+    @column()
+    public payload: any | null
+
+    @column({ columnName: 'created_by' })
+    public createdById: number
+
+    @column.dateTime({ autoCreate: true })
+    public createdAt: DateTime
+
+    @belongsTo(() => NotificationType)
+    public type: BelongsTo<typeof NotificationType>
+
+    @belongsTo(() => User, { foreignKey: 'createdById' })
+    public createdBy: BelongsTo<typeof User>
+
+    @hasMany(() => NotificationUser)
+    public recipients: HasMany<typeof NotificationUser>
+}

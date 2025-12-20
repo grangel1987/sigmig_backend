@@ -2,7 +2,9 @@ import BudgetObservation from '#models/bugets/budget_observation'
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
+import NotificationType from '#models/notifications/notification_type'
 import BugetRepository from '#repositories/bugets/buget_repository'
+import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
 import ws from '#services/ws'
 import env from '#start/env'
@@ -125,7 +127,7 @@ export default class BugetController {
       }
 
       await trx.commit()
-
+      await buget.load('client', (q) => q.select(['name', 'id']))
       await buget.load('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -176,6 +178,23 @@ export default class BugetController {
           createdByLabel: i18n.formatMessage('messages.created_by'),
           viewBudgetLabel: i18n.formatMessage('messages.view_budget'),
           backupText: i18n.formatMessage('messages.budget_created_backup_text'),
+        })
+        // DB notification (in-app) concise
+        const type = await NotificationType.findBy('code', 'budget_created')
+        const safeClientName = clientName || '—'
+        await NotificationService.createAndDispatch({
+          typeId: type?.id,
+          businessId,
+          title: `Cotización #${buget.nro} creada`,
+          body: `Cotización #${buget.nro} para ${safeClientName} ha sido creada`,
+          payload: {
+            bugetId: buget.id,
+            nro: buget.nro,
+            businessId,
+            clientName: safeClientName,
+            expireDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+          },
+          createdById: auth.user!.id,
         })
       } catch (emailError) {
         // Log email error but don't fail the budget creation
@@ -460,24 +479,24 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business
         ? {
-            name: buget.business.name,
-            url: buget.business.url,
-            email: buget.business.email,
-            identify: buget.business.identify,
-            footer: buget.business.footer,
-            typeIdentify: buget.business.typeIdentify?.text,
-          }
+          name: buget.business.name,
+          url: buget.business.url,
+          email: buget.business.email,
+          identify: buget.business.identify,
+          footer: buget.business.footer,
+          typeIdentify: buget.business.typeIdentify?.text,
+        }
         : null,
       client: buget.client
         ? {
-            name: buget.client.name,
-            identify: buget.client.identify,
-            email: buget.client.email,
-            address: buget.client.address,
-            phone: buget.client.phone,
-            typeIdentify: buget.client.typeIdentify?.text,
-            city: buget.client.city?.name,
-          }
+          name: buget.client.name,
+          identify: buget.client.identify,
+          email: buget.client.email,
+          address: buget.client.address,
+          phone: buget.client.phone,
+          typeIdentify: buget.client.typeIdentify?.text,
+          city: buget.client.city?.name,
+        }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -488,9 +507,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-                name: product.products.name,
-                type: product.products.type?.text,
-              }
+              name: product.products.name,
+              type: product.products.type?.text,
+            }
             : null,
         })) || [],
       items:
@@ -511,10 +530,10 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-            costCenter: buget.details.costCenter,
-            work: buget.details.work,
-            observation: buget.details.observation,
-          }
+          costCenter: buget.details.costCenter,
+          work: buget.details.work,
+          observation: buget.details.observation,
+        }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -1208,11 +1227,11 @@ export default class BugetController {
             fromClient: true,
             createdById: ctx.auth.user?.id
               ? ((
-                  await BusinessUser.query()
-                    .where('user_id', ctx.auth.user.id)
-                    .where('business_id', buget?.businessId ?? 0)
-                    .first()
-                )?.id ?? null)
+                await BusinessUser.query()
+                  .where('user_id', ctx.auth.user.id)
+                  .where('business_id', buget?.businessId ?? 0)
+                  .first()
+              )?.id ?? null)
               : null,
           },
           { client: trx }
@@ -1229,12 +1248,47 @@ export default class BugetController {
           )
       }
 
+      const previousStatus = buget.status ?? null
       buget.status = status ?? null
       await buget.save()
       await trx.commit()
       if (buget.token) {
         const room = roomForToken(buget.token)
         ws.io?.to(room).emit('budget/status', { status: buget.status })
+      }
+
+      // In-app notification for status change
+
+      const statuses: { 'accept': string, 'reject': string, revision: string, other: string } = {
+        'accept': i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
+        'reject': i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
+        revision: i18n.formatMessage('messages.budget_status_revision', {}, 'puesta en revisión'),
+        other: i18n.formatMessage('messages.budget_status_updated', {}, 'actualizada'),
+      }
+      try {
+        await buget.load('client', (q) => q.select(['name']))
+        const clientName = buget.client?.name || '—'
+        const expireStr = buget.expireDate
+          ? Util.parseToMoment(buget.expireDate, false, { separator: '/', firstYear: false })
+          : ''
+        const statusMsg = statuses[buget.status ?? 'other'] ?? 'sido actualizada'
+        const baseTitle = `Cotización #${buget.nro} ha sido ${statusMsg}`
+        const baseBody = `Cotización #${buget.nro} para ${clientName} ha ${statusMsg}`
+        const payload = { bugetId: buget.id, nro: buget.nro, status: buget.status, previousStatus, businessId: buget.businessId, clientName, expireDate: expireStr }
+
+        // Generic status change
+        const statusType = await NotificationType.findBy('code', 'budget_status_changed')
+        await NotificationService.createAndDispatch({
+          typeId: statusType?.id,
+          businessId: buget.businessId,
+          title: baseTitle,
+          body: baseBody,
+          payload,
+          createdById: ctx.auth.user!.id,
+        })
+
+      } catch (notifyErr) {
+        console.log('Budget status notification error:', notifyErr)
       }
 
       return response.status(200).json({ buget })
@@ -1620,7 +1674,7 @@ export async function sendBudgetNotification(
       if (businessUser.user?.email) {
         await mail.send((message) => {
           message
-            .to('piedraigor@gmail.com' /* businessUser.user!.email */)
+            .to(businessUser.user!.email)
             .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
             .subject(emailData.subject)
             .htmlView(template, emailData)
