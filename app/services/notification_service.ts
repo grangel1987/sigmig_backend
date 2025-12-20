@@ -107,7 +107,7 @@ export default class NotificationService {
         const row = await NotificationUser.findBy({ notificationId, businessUserId })
         if (!row) return null
         row.status = 'read'
-        row.readAt = new Date() as any
+        row.readAt = DateTime.now()
         await row.save()
         return row
     }

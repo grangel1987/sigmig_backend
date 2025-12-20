@@ -1,9 +1,11 @@
+import BusinessUser from '#models/business/business_user'
 import NotificationType from '#models/notifications/notification_type'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { indexFiltersWithStatus } from '#validators/general'
 import { notificationTypeStoreValidator, notificationTypeUpdateValidator } from '#validators/notifications/notification_type'
 import { HttpContext } from '@adonisjs/core/http'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 export default class NotificationTypesController {
@@ -84,6 +86,67 @@ export default class NotificationTypesController {
 
         return response.status(200).json({
             type: t,
+            ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')),
+        })
+    }
+
+    /** Assign business users to a notification type (admin or super of the business) */
+    public async assignUserNotificationTypes(ctx: HttpContext) {
+        const { request, response, auth, i18n } = ctx
+
+        const payload = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    notificationTypeIds: vine.array(vine.number().positive().exists({ table: 'notification_types', column: 'id' })).minLength(1),
+                    params: vine.object({
+                        id: vine.number().positive().exists({ table: 'business_users', column: 'id' }),
+                    })
+                }
+                )
+            ))
+
+        const isAdmin = auth.user?.isAdmin
+
+        // Determine business scope
+        const businessId = request.header('Business')
+
+        if (!isAdmin && !businessId) {
+            return response.status(403).json(
+                MessageFrontEnd(
+                    i18n.formatMessage('messages.no_authorizer_permission'),
+                    i18n.formatMessage('messages.error_title')
+                )
+            )
+        }
+
+        // If not admin, must be super of the scoped business
+        if (!isAdmin && businessId) {
+            const bu = await BusinessUser.query()
+                .where('user_id', auth.user!.id)
+                .where('business_id', businessId)
+                .where('is_super', true)
+                .first()
+            if (!bu) {
+                return response.status(403).json(
+                    MessageFrontEnd(
+                        i18n.formatMessage('messages.no_authorizer_permission'),
+                        i18n.formatMessage('messages.error_title')
+                    )
+                )
+            }
+        }
+
+        const businessUserId = payload.params.id
+
+        const bizUser = await BusinessUser.findOrFail(businessUserId)
+
+        const notificationTypeIds = payload.notificationTypeIds
+        await bizUser.related('notificationTypes').sync(notificationTypeIds, true)
+
+
+        return response.status(200).json({
+            businessUser: bizUser.id,
+            attached: notificationTypeIds,
             ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')),
         })
     }
