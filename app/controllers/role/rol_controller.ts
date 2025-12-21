@@ -58,14 +58,10 @@ export default class RolController {
             return response.ok({ ...pagRes.getMeta(), data: items })
         } else {
             const roles = await rolQ
-            const items = roles.map((r: any) => {
+            const items = roles.map((r) => {
                 const obj = r.serialize()
-                const map: Record<number, { created_at: string | null }> = {}
-                    ; (r.notificationTypes || []).forEach((n: any) => {
-                        const createdAt = n.pivot?.created_at ?? n.$extras?.pivot_created_at ?? null
-                        map[n.id] = { created_at: createdAt }
-                    })
-                obj.notificationTypeIds = map
+
+                obj.notificationTypeIds = r.notificationTypes?.map((n) => n.id) || []
                 delete obj.notificationTypes
                 return obj
             })
@@ -193,7 +189,7 @@ export default class RolController {
             })
             await role.save()
             await role.related('permissions').sync(permissions, true, trx)
-            if (typeof notificationTypeIds !== 'undefined') {
+            if (notificationTypeIds?.length) {
                 const now = DateTime.local().toSQL({ includeOffset: false })
                 const syncPayload: Record<any, any> = {}
                 notificationTypeIds.forEach((id: number) => {
