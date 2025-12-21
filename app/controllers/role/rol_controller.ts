@@ -46,12 +46,8 @@ export default class RolController {
             const pagRes = await rolQ.paginate(page || 1, perPage || 10)
             const items = pagRes.all().map((r: any) => {
                 const obj = r.serialize()
-                const map: Record<number, { created_at: string | null }> = {}
-                    ; (r.notificationTypes || []).forEach((n: any) => {
-                        const createdAt = n.pivot?.created_at ?? n.$extras?.pivot_created_at ?? null
-                        map[n.id] = { created_at: createdAt }
-                    })
-                obj.notificationTypeIds = map
+
+                obj.notificationTypeIds = r.notificationTypes?.map((n: any) => n.id) || []
                 delete obj.notificationTypes
                 return obj
             })
