@@ -97,6 +97,7 @@ export default class NotificationService {
                 }
             } catch (emitErr) {
                 console.log('Notification socket emit error:', emitErr)
+                throw emitErr
             }
         }
 

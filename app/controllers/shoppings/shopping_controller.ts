@@ -197,7 +197,7 @@ export default class ShoppingController {
                 providerName,
                 requestedByName: createdByName,
             })
-
+            let err: any
             // Send email notification to super users
             try {
                 await sendShoppingNotification(businessId, createdEmailData)
@@ -214,10 +214,12 @@ export default class ShoppingController {
             } catch (emailError) {
                 // Log email error but don't fail the shopping creation
                 console.log('Error sending shopping creation notification email:', emailError)
+                err = emailError
             }
 
             return response.status(201).json({
                 shopping,
+                emitErr: err,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
             } as MessageFrontEndType)
         } catch (error) {
