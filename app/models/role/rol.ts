@@ -64,6 +64,7 @@ export default class Rol extends BaseModel {
     pivotTable: 'notification_type_rols',
     pivotForeignKey: 'rol_id',
     pivotRelatedForeignKey: 'notification_type_id',
+    pivotColumns: ['created_at'],
   })
   public notificationTypes: ManyToMany<typeof NotificationType>
 

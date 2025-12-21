@@ -33,7 +33,7 @@ export default class RolController {
                     moduleBuilder.select(['id', 'name'])
                 })
             })
-            .preload('notificationTypes', (builder) => builder.select(['id']))
+            .preload('notificationTypes', (builder) => builder.select(['id']).pivotColumns(['created_at']))
             .preload('createdBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
             .preload('updatedBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
@@ -44,18 +44,28 @@ export default class RolController {
 
         if (page) {
             const pagRes = await rolQ.paginate(page || 1, perPage || 10)
-            const items = pagRes.all().map((r) => {
+            const items = pagRes.all().map((r: any) => {
                 const obj = r.serialize()
-                obj.notificationTypeIds = (r.notificationTypes || []).map((n: any) => n.id)
+                const map: Record<number, { created_at: string | null }> = {}
+                    ; (r.notificationTypes || []).forEach((n: any) => {
+                        const createdAt = n.pivot?.created_at ?? n.$extras?.pivot_created_at ?? null
+                        map[n.id] = { created_at: createdAt }
+                    })
+                obj.notificationTypeIds = map
                 delete obj.notificationTypes
                 return obj
             })
             return response.ok({ ...pagRes.getMeta(), data: items })
         } else {
             const roles = await rolQ
-            const items = roles.map((r) => {
+            const items = roles.map((r: any) => {
                 const obj = r.serialize()
-                obj.notificationTypeIds = (r.notificationTypes || []).map((n: any) => n.id)
+                const map: Record<number, { created_at: string | null }> = {}
+                    ; (r.notificationTypes || []).forEach((n: any) => {
+                        const createdAt = n.pivot?.created_at ?? n.$extras?.pivot_created_at ?? null
+                        map[n.id] = { created_at: createdAt }
+                    })
+                obj.notificationTypeIds = map
                 delete obj.notificationTypes
                 return obj
             })
@@ -100,7 +110,13 @@ export default class RolController {
 
             await cRole.related('permissions').attach(permissions, trx)
             if (notificationTypeIds && notificationTypeIds.length) {
-                await cRole.related('notificationTypes').attach(notificationTypeIds, trx)
+                const now = DateTime.local().toSQL()
+
+                const attachPayload: Record<any, any> = {}
+                notificationTypeIds.forEach((id: number) => {
+                    attachPayload[id] = { created_at: now }
+                })
+                await cRole.related('notificationTypes').attach(attachPayload, trx)
             }
 
             return cRole
@@ -178,7 +194,12 @@ export default class RolController {
             await role.save()
             await role.related('permissions').sync(permissions, true, trx)
             if (typeof notificationTypeIds !== 'undefined') {
-                await role.related('notificationTypes').sync(notificationTypeIds || [], true, trx)
+                const now = DateTime.local().toSQL()
+                const syncPayload: Record<any, any> = {}
+                notificationTypeIds.forEach((id: number) => {
+                    syncPayload[id] = { created_at: now }
+                })
+                await role.related('notificationTypes').sync(syncPayload, true, trx)
             }
             return role
         })
