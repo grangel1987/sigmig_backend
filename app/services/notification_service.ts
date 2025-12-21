@@ -1,5 +1,5 @@
 import Notification from '#models/notifications/notification'
-import NotificationUser from '#models/notifications/notification_user'
+import NotificationBusinessUser from '#models/notifications/notification_business_user'
 import ws from '#services/ws'
 import { notifRoomForUser } from '#start/socket'
 import Database from '@adonisjs/lucid/services/db'
@@ -64,7 +64,7 @@ export default class NotificationService {
 
         if (recipients.length) {
             const now = DateTime.now()
-            await NotificationUser.createMany(
+            await NotificationBusinessUser.createMany(
                 recipients.map((businessUserId) => ({
                     notificationId: notification.id,
                     businessUserId,
@@ -104,7 +104,7 @@ export default class NotificationService {
     }
 
     static async markAsRead(notificationId: number, businessUserId: number) {
-        const row = await NotificationUser.findBy({ notificationId, businessUserId })
+        const row = await NotificationBusinessUser.findBy({ notificationId, businessUserId })
         if (!row) return null
         row.status = 'read'
         row.readAt = DateTime.now()

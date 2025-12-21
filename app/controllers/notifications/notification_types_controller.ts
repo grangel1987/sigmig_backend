@@ -2,9 +2,10 @@ import BusinessUser from '#models/business/business_user'
 import NotificationType from '#models/notifications/notification_type'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
-import { indexFiltersWithStatus } from '#validators/general'
+import { searchWithStatusSchema } from '#validators/general'
 import { notificationTypeStoreValidator, notificationTypeUpdateValidator } from '#validators/notifications/notification_type'
 import { HttpContext } from '@adonisjs/core/http'
+import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
@@ -13,7 +14,12 @@ export default class NotificationTypesController {
         await PermissionService.requirePermission(ctx, 'settings', 'view')
 
         const { request } = ctx
-        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
+        const { page, perPage, text, status, roleId } =
+            await request.validateUsing(
+                vine.compile(vine.object({
+                    ...searchWithStatusSchema.getProperties(),
+                    roleId: vine.number().positive().optional()
+                })))
 
         const query = NotificationType.query()
             .preload('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
@@ -24,6 +30,14 @@ export default class NotificationTypesController {
             query.where((qb) => qb.whereILike('name', like).orWhereILike('code', like).orWhereILike('description', like))
         }
         if (status !== undefined) query.where('enabled', status === 'enabled')
+
+        // If roleId provided, limit types to those associated to the role via notification_type_rols
+        if (roleId) {
+            const rows = await db.from('notification_type_rols').where('rol_id', roleId).select('notification_type_id')
+            const ids = rows.map((r: any) => Number(r.notification_type_id))
+            if (ids.length) query.whereIn('id', ids)
+            else query.whereRaw('1 = 0')
+        }
 
         return page ? query.paginate(page, perPage ?? 10) : query
     }

@@ -2,8 +2,8 @@ import User from '#models/users/user'
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+import NotificationBusinessUser from './notification_business_user.js'
 import NotificationType from './notification_type.js'
-import NotificationUser from './notification_user.js'
 
 export default class Notification extends BaseModel {
     @column({ isPrimary: true })
@@ -36,6 +36,6 @@ export default class Notification extends BaseModel {
     @belongsTo(() => User, { foreignKey: 'createdById' })
     public createdBy: BelongsTo<typeof User>
 
-    @hasMany(() => NotificationUser)
-    public recipients: HasMany<typeof NotificationUser>
+    @hasMany(() => NotificationBusinessUser)
+    public recipients: HasMany<typeof NotificationBusinessUser>
 }

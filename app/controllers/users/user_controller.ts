@@ -666,6 +666,12 @@ export default class UserController {
 
         await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
 
+        // Sync notification types associated to this role to the business user
+        businessUser.useTransaction(trx)
+        const ntRows = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+        const ntIds = ntRows.map((r: any) => Number(r.notification_type_id))
+        if (ntIds.length) await businessUser.related('notificationTypes').sync(ntIds)
+
         const payloadPermission = (bus.permissions || []).map((permId) => ({
           businessUserId: businessUser.id,
           permissionId: permId,
@@ -1046,6 +1052,12 @@ export default class UserController {
               rolId: 1, // Default admin role
             }
             await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+            // Sync notification types from role to business user
+            businessUser.useTransaction(trx)
+            const ntRows2 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+            const ntIds2 = ntRows2.map((r: any) => Number(r.notification_type_id))
+            if (ntIds2.length) await businessUser.related('notificationTypes').sync(ntIds2)
           }
         } else {
           // For non-admin users, update/create for each provided business
@@ -1080,6 +1092,12 @@ export default class UserController {
               rolId: bus.rolId || 0,
             }
             await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+            // Sync notification types from role to business user
+            businessUser.useTransaction(trx)
+            const ntRows3 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+            const ntIds3 = ntRows3.map((r: any) => Number(r.notification_type_id))
+            if (ntIds3.length) await businessUser.related('notificationTypes').sync(ntIds3)
 
             // Update permissions
             await businessUser.related('bussinessUserPermissions').query().delete()
@@ -1860,6 +1878,13 @@ export default class UserController {
           }
 
           await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+          // Sync notification types from role to business user (admin default role)
+          businessUser.useTransaction(trx)
+          const adminNt = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+          const adminNtIds = adminNt.map((r: any) => Number(r.notification_type_id))
+          if (adminNtIds.length) await businessUser.related('notificationTypes').sync(adminNtIds)
+
           selected = false
         }
       } else if (business) {
@@ -1884,6 +1909,12 @@ export default class UserController {
           }
 
           await businessUser.related('businessUserRols').create(businessUserRol, { client: trx })
+
+          // Sync notification types for this role to the created business user
+          businessUser.useTransaction(trx)
+          const ntRows4 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+          const ntIds4 = ntRows4.map((r: any) => Number(r.notification_type_id))
+          if (ntIds4.length) await businessUser.related('notificationTypes').sync(ntIds4)
 
           const payloadPermission = (bus.permissions || []).map((permId) => ({
             businessUserId: businessUser.id,

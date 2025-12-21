@@ -4,7 +4,9 @@ import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 import Notification from './notification.js'
 
-export default class NotificationUser extends BaseModel {
+export default class NotificationBusinessUser extends BaseModel {
+    static tableName = 'notification_business_users'
+
     @column({ isPrimary: true })
     public id: number
 

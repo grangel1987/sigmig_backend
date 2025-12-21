@@ -2,8 +2,8 @@ import Business from '#models/business/business'
 import BusinessUserPermission from '#models/business/business_user_permission'
 import BusinessUserRol from '#models/business/business_user_rol'
 import Notification from '#models/notifications/notification'
+import NotificationBusinessUser from '#models/notifications/notification_business_user'
 import NotificationType from '#models/notifications/notification_type'
-import NotificationUser from '#models/notifications/notification_user'
 import Rol from '#models/role/rol'
 import User from '#models/users/user'
 import { BaseModel, belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
@@ -45,8 +45,8 @@ export default class BusinessUser extends BaseModel {
   @hasMany(() => BusinessUserPermission)
   public bussinessUserPermissions: HasMany<typeof BusinessUserPermission>
 
-  @hasMany(() => NotificationUser)
-  public notificationUsers: HasMany<typeof NotificationUser>
+  @hasMany(() => NotificationBusinessUser)
+  public notificationUsers: HasMany<typeof NotificationBusinessUser>
 
   @manyToMany(() => Notification, {
     pivotTable: 'notification_users',
