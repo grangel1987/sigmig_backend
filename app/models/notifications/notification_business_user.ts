@@ -5,7 +5,7 @@ import { DateTime } from 'luxon'
 import Notification from './notification.js'
 
 export default class NotificationBusinessUser extends BaseModel {
-    static tableName = 'notification_users'
+    static table = 'notification_users'
 
     @column({ isPrimary: true })
     public id: number
