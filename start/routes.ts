@@ -657,7 +657,19 @@ router.group(() => {
     router.put('/update/:booking_id', '#controllers/booking/booking_controller.update')
   }).prefix('booking').middleware(auth)
 
+  // Notifications
+  router.group(() => {
+    router.get('/types', '#controllers/notifications/notification_types_controller.index')
+    router.post('/types/store', '#controllers/notifications/notification_types_controller.store')
+    router.put('/types/update/:id', '#controllers/notifications/notification_types_controller.update')
+    router.post('/types/:id/assign', '#controllers/notifications/notification_types_controller.assignUserNotificationTypes')
 
+    router.get('/my', '#controllers/notifications/notifications_controller.my')
+    router.post('/store', '#controllers/notifications/notifications_controller.store')
+    router.put('/:id/read', '#controllers/notifications/notifications_controller.markRead')
+  })
+    .prefix('notifications')
+    .middleware(auth)
 
 }).prefix('api/v2')
   .where('id', /^[0-9]+$/)
@@ -668,17 +680,5 @@ router.get('/', async () => {
 })
 
 
-// Notifications
-router.group(() => {
-  router.get('/types', '#controllers/notifications/notification_types_controller.index')
-  router.post('/types/store', '#controllers/notifications/notification_types_controller.store')
-  router.put('/types/update/:id', '#controllers/notifications/notification_types_controller.update')
-  router.post('/types/:id/assign', '#controllers/notifications/notification_types_controller.assignUserNotificationTypes')
 
-  router.get('/my', '#controllers/notifications/notifications_controller.my')
-  router.post('/store', '#controllers/notifications/notifications_controller.store')
-  router.put('/:id/read', '#controllers/notifications/notifications_controller.markRead')
-})
-  .prefix('notifications')
-  .middleware(auth)
 

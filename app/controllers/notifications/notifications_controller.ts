@@ -9,7 +9,7 @@ export default class NotificationsController {
     public async my(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view')
 
-        const { request, auth } = ctx
+        const { request, response, auth } = ctx
         const { page, perPage, status } = await request.validateUsing(notificationIndexValidator)
         const headerBusinessIdRaw = request.header('Business')
         const businessId = headerBusinessIdRaw ? Number(headerBusinessIdRaw) : undefined
@@ -29,7 +29,21 @@ export default class NotificationsController {
             .preload('recipients', (b) => b.where('business_user_id', businessUserId))
             .orderBy('id', 'desc')
 
-        return page ? query.paginate(page, perPage ?? 10) : query
+
+        if (page) {
+            const pagRes = await query.paginate(page, perPage ?? 10)
+
+            const serializedNotifications = pagRes.map((notification) => {
+                const serializedNot = { ...notification.serialize(), status: notification.recipients[0]?.status } as any
+                delete serializedNot.recipients
+                return serializedNot
+            })
+            return response.ok(serializedNotifications)
+
+
+        } else {
+            return response.ok(await query)
+        }
     }
 
     public async store(ctx: HttpContext) {
