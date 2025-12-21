@@ -110,7 +110,7 @@ export default class NotificationsController {
             ? await auth.user!.related('businessUser').query().where('business_id', businessId).first()
             : await auth.user!.related('selectedBusiness').query().first()
         const businessUserId = activeBusinessUser?.id ?? 0
-        await db.from('notification_business_users').where('notification_id', id).andWhere('business_user_id', businessUserId).delete()
+        await db.from('notification_users').where('notification_id', id).andWhere('business_user_id', businessUserId).delete()
         return response.ok({ ...messageFrontEnd(i18n.formatMessage('messages.delete_ok'), i18n.formatMessage('messages.ok_title')) })
     }
 }
