@@ -38,7 +38,7 @@ export default class NotificationsController {
                 delete serializedNot.recipients
                 return serializedNot
             })
-            return response.ok(serializedNotifications)
+            return response.ok({ ...pagRes.getMeta(), data: serializedNotifications })
 
 
         } else {
