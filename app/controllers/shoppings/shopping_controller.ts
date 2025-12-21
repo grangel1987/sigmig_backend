@@ -200,7 +200,6 @@ export default class ShoppingController {
             let err: any
             // Send email notification to super users
             try {
-                await sendShoppingNotification(businessId, createdEmailData)
                 // DB notification (in-app)
                 const type = await NotificationType.findBy('code', 'shopping_created')
                 await NotificationService.createAndDispatch({
@@ -211,10 +210,13 @@ export default class ShoppingController {
                     payload: { shoppingId: shopping.id, nro: shopping.nro, businessId },
                     createdById: auth.user!.id,
                 })
+                await sendShoppingNotification(businessId, createdEmailData)
+
             } catch (emailError) {
                 // Log email error but don't fail the shopping creation
                 console.log('Error sending shopping creation notification email:', emailError)
-                err = emailError
+                const dev = env.get('NODE_ENV') === 'development'
+                err = dev ? emailError : Boolean(emailError)
             }
 
             return response.status(201).json({
