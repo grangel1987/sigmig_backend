@@ -33,6 +33,7 @@ export default class RolController {
                     moduleBuilder.select(['id', 'name'])
                 })
             })
+            .preload('notificationTypes', (builder) => builder.select(['id']))
             .preload('createdBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
             .preload('updatedBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
@@ -41,11 +42,25 @@ export default class RolController {
         if (text) rolQ.where('name', 'LIKE', `%${text}%`)
         if (status) rolQ.where('enabled', status === 'enabled' ? 1 : 0)
 
-        const roles = await rolQ
-            .paginate(page || 1, perPage || 10)
-
-
-        return response.ok(roles)
+        if (page) {
+            const pagRes = await rolQ.paginate(page || 1, perPage || 10)
+            const items = pagRes.all().map((r) => {
+                const obj = r.serialize()
+                obj.notificationTypeIds = (r.notificationTypes || []).map((n: any) => n.id)
+                delete obj.notificationTypes
+                return obj
+            })
+            return response.ok({ ...pagRes.getMeta(), data: items })
+        } else {
+            const roles = await rolQ
+            const items = roles.map((r) => {
+                const obj = r.serialize()
+                obj.notificationTypeIds = (r.notificationTypes || []).map((n: any) => n.id)
+                delete obj.notificationTypes
+                return obj
+            })
+            return response.ok(items)
+        }
     }
 
     public async store(ctx: HttpContext) {
