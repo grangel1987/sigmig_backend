@@ -660,6 +660,7 @@ router.group(() => {
   // Notifications
   router.group(() => {
     router.get('/types', '#controllers/notifications/notification_types_controller.index')
+    router.get('/types/my', '#controllers/notifications/notification_types_controller.my')
     router.post('/types/store', '#controllers/notifications/notification_types_controller.store')
     router.put('/types/update/:id', '#controllers/notifications/notification_types_controller.update')
     router.post('/types/:id/assign', '#controllers/notifications/notification_types_controller.assignUserNotificationTypes')

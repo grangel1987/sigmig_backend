@@ -167,4 +167,24 @@ export default class NotificationTypesController {
             ...MessageFrontEnd(i18n.formatMessage('messages.update_ok'), i18n.formatMessage('messages.ok_title')),
         })
     }
+
+    /** Return active notification types for the currently active business user */
+    public async my(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'view')
+
+        const { request, response, auth } = ctx
+        const headerBusinessIdRaw = request.header('Business')
+        const businessId = headerBusinessIdRaw ? Number(headerBusinessIdRaw) : undefined
+
+        const activeBusinessUser = businessId
+            ? await auth.user!.related('businessUser').query().where('business_id', businessId).first()
+            : await auth.user!.related('selectedBusiness').query().first()
+
+        if (!activeBusinessUser) return response.ok([])
+
+        const types = await activeBusinessUser.related('notificationTypes').query().where('enabled', true)
+        return response.ok(types)
+    }
+
+
 }
