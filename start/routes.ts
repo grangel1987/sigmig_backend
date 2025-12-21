@@ -667,6 +667,7 @@ router.group(() => {
     router.get('/my', '#controllers/notifications/notifications_controller.my')
     router.post('/store', '#controllers/notifications/notifications_controller.store')
     router.put('/:id/read', '#controllers/notifications/notifications_controller.markRead')
+    router.put('/:id/delete', '#controllers/notifications/notifications_controller.delete')
   })
     .prefix('notifications')
     .middleware(auth)

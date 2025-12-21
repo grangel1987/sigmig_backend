@@ -30,7 +30,7 @@ export default class Notification extends BaseModel {
     @column({ columnName: 'created_by' })
     public createdById: number
 
-    @column.dateTime({ autoCreate: true })
+    @column.dateTime({ autoCreate: true, serialize: (v: DateTime | null) => v ? v.toFormat('yyyy-MM-dd HH:mm:ss') : null })
     public createdAt: DateTime
 
     @belongsTo(() => NotificationType)

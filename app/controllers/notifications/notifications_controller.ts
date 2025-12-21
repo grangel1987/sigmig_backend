@@ -1,9 +1,10 @@
 import Notification from '#models/notifications/notification'
 import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
-import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { default as messageFrontEnd, default as MessageFrontEnd } from '#utils/MessageFrontEnd'
 import { notificationIndexValidator, notificationStoreValidator } from '#validators/notifications/notification'
 import { HttpContext } from '@adonisjs/core/http'
+import db from '@adonisjs/lucid/services/db'
 
 export default class NotificationsController {
     public async my(ctx: HttpContext) {
@@ -96,5 +97,20 @@ export default class NotificationsController {
         const businessUserId = activeBusinessUser?.id ?? 0
         const updated = await NotificationService.markAsRead(id, businessUserId)
         return updated
+    }
+
+    public async delete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'settings', 'update')
+
+        const { params, response, auth, i18n, request } = ctx
+        const id = Number(params.id)
+        const headerBusinessIdRaw = request.header('Business')
+        const businessId = headerBusinessIdRaw ? Number(headerBusinessIdRaw) : undefined
+        const activeBusinessUser = businessId
+            ? await auth.user!.related('businessUser').query().where('business_id', businessId).first()
+            : await auth.user!.related('selectedBusiness').query().first()
+        const businessUserId = activeBusinessUser?.id ?? 0
+        await db.from('notification_business_users').where('notification_id', id).andWhere('business_user_id', businessUserId).delete()
+        return response.ok({ ...messageFrontEnd(i18n.formatMessage('messages.delete_ok'), i18n.formatMessage('messages.ok_title')) })
     }
 }
