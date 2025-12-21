@@ -131,7 +131,7 @@ export default class RolController {
                 i18n.formatMessage('messages.store_ok'),
                 i18n.formatMessage('messages.ok_title')
             ),
-            data: role
+            data: { ...role.serialize(), notificationTypeIds }
         })
     }
 
@@ -214,7 +214,7 @@ export default class RolController {
                 i18n.formatMessage('messages.updated_ok'),
                 i18n.formatMessage('messages.ok_title')
             ),
-            data: res
+            data: { ...res.serialize(), notificationTypeIds }
         })
     }
 
