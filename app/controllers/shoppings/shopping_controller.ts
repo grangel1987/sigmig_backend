@@ -200,14 +200,16 @@ export default class ShoppingController {
             let err: any
             // Send email notification to super users
             try {
-                // DB notification (in-app)
+                // DB notification (in-app) - concise with date
                 const type = await NotificationType.findBy('code', 'shopping_created')
+                const createdAtStr = Util.formatDatetimeToString(dateTime)
+                const shortBody = `${createdEmailData.subject} — ${shopping.nro} • ${providerName} — ${createdAtStr}`
                 await NotificationService.createAndDispatch({
                     typeId: type?.id,
                     businessId,
                     title: createdEmailData.subject,
-                    body: createdEmailData.body,
-                    payload: { shoppingId: shopping.id, nro: shopping.nro, businessId },
+                    body: shortBody,
+                    payload: { shoppingId: shopping.id, nro: shopping.nro, businessId, created_at: createdAtStr },
                     createdById: auth.user!.id,
                 })
                 await sendShoppingNotification(businessId, createdEmailData)
@@ -372,12 +374,14 @@ export default class ShoppingController {
                 // In-app notification for authorization
                 try {
                     const type = await NotificationType.findBy('code', 'shopping_authorized')
+                    const authAtStr = shop.authorizerAt ? Util.formatDatetimeToString(shop.authorizerAt) : Util.formatDatetimeToString(DateTime.now())
+                    const shortBody = `${authorizedEmailData.subject} — ${shop.nro} • ${providerName} — ${authAtStr}`
                     await NotificationService.createAndDispatch({
                         typeId: type?.id,
                         businessId: shop.businessId,
                         title: authorizedEmailData.subject,
-                        body: authorizedEmailData.body,
-                        payload: { shoppingId: shop.id, nro: shop.nro, authorizedById: shop.authorizerId, businessId: shop.businessId },
+                        body: shortBody,
+                        payload: { shoppingId: shop.id, nro: shop.nro, authorizedById: shop.authorizerId, businessId: shop.businessId, authorized_at: authAtStr },
                         createdById: auth.user!.id,
                     })
                 } catch (notifyErr) {
