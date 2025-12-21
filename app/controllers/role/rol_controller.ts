@@ -110,7 +110,7 @@ export default class RolController {
 
             await cRole.related('permissions').attach(permissions, trx)
             if (notificationTypeIds && notificationTypeIds.length) {
-                const now = DateTime.local().toSQL()
+                const now = DateTime.now().toSQL({ includeOffset: false })
 
                 const attachPayload: Record<any, any> = {}
                 notificationTypeIds.forEach((id: number) => {
@@ -194,7 +194,7 @@ export default class RolController {
             await role.save()
             await role.related('permissions').sync(permissions, true, trx)
             if (typeof notificationTypeIds !== 'undefined') {
-                const now = DateTime.local().toSQL()
+                const now = DateTime.local().toSQL({ includeOffset: false })
                 const syncPayload: Record<any, any> = {}
                 notificationTypeIds.forEach((id: number) => {
                     syncPayload[id] = { created_at: now }
