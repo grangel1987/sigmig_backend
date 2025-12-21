@@ -33,7 +33,7 @@ export default class NotificationsController {
         if (page) {
             const pagRes = await query.paginate(page, perPage ?? 10)
 
-            const serializedNotifications = pagRes.map((notification) => {
+            const serializedNotifications = pagRes.all().map((notification) => {
                 const serializedNot = { ...notification.serialize(), status: notification.recipients[0]?.status } as any
                 delete serializedNot.recipients
                 return serializedNot
