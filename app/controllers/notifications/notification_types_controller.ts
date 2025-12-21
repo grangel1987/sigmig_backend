@@ -22,8 +22,8 @@ export default class NotificationTypesController {
                 })))
 
         const query = NotificationType.query()
-            .preload('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
-            .preload('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
+            .preload('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+            .preload('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
         if (text) {
             const like = `%${text}%`
@@ -64,8 +64,8 @@ export default class NotificationTypesController {
             })
             if (data.businessUsers?.length) await t.related('businessUsers').sync(data.businessUsers)
             if (data.rols?.length) await t.related('rols').sync(data.rols)
-            await t.load('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
-            await t.load('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
+            await t.load('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+            await t.load('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
             return response.status(201).json({
                 type: t,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
@@ -97,6 +97,9 @@ export default class NotificationTypesController {
 
         if (data.businessUsers) await t.related('businessUsers').sync(data.businessUsers)
         if (data.rols) await t.related('rols').sync(data.rols)
+
+        await t.load('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+        await t.load('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
         return response.status(200).json({
             type: t,
