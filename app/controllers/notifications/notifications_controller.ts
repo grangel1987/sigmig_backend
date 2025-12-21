@@ -42,7 +42,14 @@ export default class NotificationsController {
 
 
         } else {
-            return response.ok(await query)
+            const res = await query
+
+            const serializedNotifications = res.map((notification) => {
+                const serializedNot = { ...notification.serialize(), status: notification.recipients[0]?.status } as any
+                delete serializedNot.recipients
+                return serializedNot
+            })
+            return response.ok(serializedNotifications)
         }
     }
 
