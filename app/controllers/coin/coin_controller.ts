@@ -2,6 +2,7 @@ import Coin from '#models/coin/coin'
 import CoinRepository from '#repositories/coin/coin_repository'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -12,14 +13,7 @@ export default class CoinController {
         await PermissionService.requirePermission(ctx, 'coins', 'view');
 
         const { request } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         const query = Coin.query()
             .preload('createdBy', (b) => {
@@ -30,6 +24,12 @@ export default class CoinController {
                 b.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
                     .select(['id', 'personal_data_id', 'email'])
             })
+
+        if (text) {
+            const like = `%${text}%`
+            query.where((qb) => qb.whereILike('name', like).orWhereILike('symbol', like))
+        }
+        if (status !== undefined) query.where('enabled', status === 'enabled')
 
         return page ? query.paginate(page, perPage ?? 10) : query
     }

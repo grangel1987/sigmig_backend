@@ -2,8 +2,8 @@ import Account from '#models/bank/account';
 import PermissionService from '#services/permission_service';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { accountStoreValidator, accountUpdateValidator } from '#validators/bank';
+import { indexFiltersWithStatus } from '#validators/general';
 import { HttpContext } from '@adonisjs/core/http';
-import vine from '@vinejs/vine';
 import { DateTime } from 'luxon';
 
 type MessageFrontEndType = {
@@ -17,14 +17,7 @@ export default class AccountController {
 
         const { request, response, i18n } = ctx
         try {
-            const { page, perPage } = await request.validateUsing(
-                vine.compile(
-                    vine.object({
-                        page: vine.number().positive().optional(),
-                        perPage: vine.number().positive().optional(),
-                    })
-                )
-            )
+            const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
             const baseQuery = Account.query()
                 .preload('typeIdentify', (builder) => {
@@ -42,6 +35,12 @@ export default class AccountController {
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
+
+            if (text) {
+                const like = `%${text}%`
+                baseQuery.where((qb) => qb.whereRaw('number LIKE ?', [like]).orWhereRaw('owner LIKE ?', [like]))
+            }
+            if (status !== undefined) baseQuery.where('enabled', status === 'enabled')
 
             const accounts = await (page ? baseQuery.paginate(page, perPage || 10) : baseQuery)
             return accounts

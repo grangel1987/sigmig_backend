@@ -10,6 +10,7 @@ import env from '#start/env'
 import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import { indexFiltersWithStatus } from '#validators/general'
 import { personalDataPartialSchema, personalDataSchema } from '#validators/personal_data'
 import { HttpContext, Response } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
@@ -1743,14 +1744,7 @@ export default class UserController {
 
     console.log('index')
 
-    const { page, perPage } = await request.validateUsing(
-      vine.compile(
-        vine.object({
-          page: vine.number().positive().optional(),
-          perPage: vine.number().positive().optional(),
-        })
-      )
-    )
+    const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
     const query = User.query()
       .preload('personalData', (q) => q.preload('typeIdentify').preload('city'))
@@ -1760,6 +1754,15 @@ export default class UserController {
           .preload('businessUserRols', (q) => q.preload('rols', (q) => q.select('id', 'name')))
       )
       .preload('employee', (q) => q.preload('business', (business) => business.preload('position')))
+
+    if (text) {
+      const like = `%${text}%`
+      query.where((qb) => {
+        qb.whereILike('email', like).orWhereHas('personalData', (pdQ) => pdQ.whereILike('names', like).orWhereILike('last_name_p', like).orWhereILike('last_name_m', like))
+      })
+    }
+
+    if (status !== undefined) query.where('enabled', status === 'enabled')
 
     const users = page ? await query.paginate(page, perPage ?? 10) : await query
     response.ok(users)
