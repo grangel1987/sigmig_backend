@@ -3,6 +3,7 @@ import Work from '#models/works/work'
 import WorksRepository from '#repositories/works/works_repository'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -19,10 +20,7 @@ export default class WorkController {
 
     const { request, auth, response, i18n } = ctx
 
-    const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
-      page: vine.number().positive().optional(),
-      perPage: vine.number().positive().optional()
-    })))
+    const { page, perPage, text, status } = await request.validateUsing(vine.compile(searchWithStatusSchema))
 
     try {
       const userId = auth.user!.id
@@ -44,6 +42,16 @@ export default class WorkController {
         .preload('updatedBy', (builder) => {
           builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
         })
+
+      if (status)
+        workQuery.where('enabled', status === 'enabled' ? true : false)
+
+      if (text)
+        workQuery.where((query) => {
+          query.where('name', 'like', `%${text}%`)
+            .orWhere('code', 'like', `%${text}%`)
+        })
+
       const works = await (page ? workQuery.paginate(page, perPage || 10) : workQuery)
 
       return works

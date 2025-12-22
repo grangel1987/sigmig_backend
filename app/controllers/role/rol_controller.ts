@@ -33,36 +33,50 @@ export default class RolController {
                     moduleBuilder.select(['id', 'name'])
                 })
             })
-            .preload('createdBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
-            .preload('updatedBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
+            .preload('notificationTypes', (builder) => builder.select(['id']).pivotColumns(['created_at']))
+            .preload('createdBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+            .preload('updatedBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
         if (businessId) rolQ.where('business_id', businessId)
 
         if (text) rolQ.where('name', 'LIKE', `%${text}%`)
         if (status) rolQ.where('enabled', status === 'enabled' ? 1 : 0)
 
-        const roles = await rolQ
-            .paginate(page || 1, perPage || 10)
+        if (page) {
+            const pagRes = await rolQ.paginate(page || 1, perPage || 10)
+            const items = pagRes.all().map((r: any) => {
+                const obj = r.serialize()
 
+                obj.notificationTypeIds = r.notificationTypes?.map((n: any) => n.id) || []
+                delete obj.notificationTypes
+                return obj
+            })
+            return response.ok({ ...pagRes.getMeta(), data: items })
+        } else {
+            const roles = await rolQ
+            const items = roles.map((r) => {
+                const obj = r.serialize()
 
-        return response.ok(roles)
+                obj.notificationTypeIds = r.notificationTypes?.map((n) => n.id) || []
+                delete obj.notificationTypes
+                return obj
+            })
+            return response.ok(items)
+        }
     }
 
     public async store(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'roles', 'create')
 
         const { request, response, auth, i18n } = ctx
-        const { name, description, businessId, permissions } = await request.validateUsing(
+        const { name, description, businessId, permissions, notificationTypeIds } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     name: vine.string().trim().minLength(1).maxLength(250),
                     description: vine.string().trim().optional(),
                     businessId: vine.number().positive().optional(),
-                    permissions: vine.array(vine.number().positive().exists({ table: 'permissions', column: 'id' }))
+                    permissions: vine.array(vine.number().positive().exists({ table: 'permissions', column: 'id' })),
+                    notificationTypeIds: vine.array(vine.number().positive().exists({ table: 'notification_types', column: 'id' })).optional()
                 })
             )
         )
@@ -87,24 +101,29 @@ export default class RolController {
             }, { client: trx })
 
             await cRole.related('permissions').attach(permissions, trx)
+            if (notificationTypeIds && notificationTypeIds.length) {
+                const now = DateTime.now().toSQL({ includeOffset: false })
+
+                const attachPayload: Record<any, any> = {}
+                notificationTypeIds.forEach((id: number) => {
+                    attachPayload[id] = { created_at: now }
+                })
+                await cRole.related('notificationTypes').attach(attachPayload, trx)
+            }
 
             return cRole
         })
 
         await role.load('permissions')
-        if (role.createdById) await role.load('createdBy', (builder) => {
-            builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-        })
-        if (role.updatedById) await role.load('updatedBy', (builder) => {
-            builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-        })
+        if (role.createdById) await role.load('createdBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+        if (role.updatedById) await role.load('updatedBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
         return response.created({
             ...MessageFrontEnd(
                 i18n.formatMessage('messages.store_ok'),
                 i18n.formatMessage('messages.ok_title')
             ),
-            data: role
+            data: { ...role.serialize(), notificationTypeIds }
         })
     }
 
@@ -121,12 +140,8 @@ export default class RolController {
                     moduleBuilder.select(['id', 'name'])
                 })
             })
-            .preload('createdBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
-            .preload('updatedBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
+            .preload('createdBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+            .preload('updatedBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
             .first()
 
         if (!role) {
@@ -143,13 +158,14 @@ export default class RolController {
         await PermissionService.requirePermission(ctx, 'roles', 'update')
 
         const { params, request, response, auth, i18n } = ctx
-        const { name, description, permissions } = await request.validateUsing(
+        const { name, description, permissions, notificationTypeIds } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     name: vine.string().trim().minLength(1).maxLength(250),
                     description: vine.string().trim().optional(),
                     // businessId: vine.number().positive().optional(),
-                    permissions: vine.array(vine.number().positive().exists({ table: 'permissions', column: 'id' }))
+                    permissions: vine.array(vine.number().positive().exists({ table: 'permissions', column: 'id' })),
+                    notificationTypeIds: vine.array(vine.number().positive().exists({ table: 'notification_types', column: 'id' })).optional()
 
                 })
             )
@@ -169,16 +185,20 @@ export default class RolController {
             })
             await role.save()
             await role.related('permissions').sync(permissions, true, trx)
+            if (notificationTypeIds?.length) {
+                const now = DateTime.local().toSQL({ includeOffset: false })
+                const syncPayload: Record<any, any> = {}
+                notificationTypeIds.forEach((id: number) => {
+                    syncPayload[id] = { created_at: now }
+                })
+                await role.related('notificationTypes').sync(syncPayload, true, trx)
+            }
             return role
         })
 
         await res.load('permissions')
-        if (res.createdById) await res.load('createdBy', (builder) => {
-            builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-        })
-        if (res.updatedById) await res.load('updatedBy', (builder) => {
-            builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-        })
+        if (res.createdById) await res.load('createdBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+        if (res.updatedById) await res.load('updatedBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
 
         return response.ok({
@@ -186,7 +206,7 @@ export default class RolController {
                 i18n.formatMessage('messages.updated_ok'),
                 i18n.formatMessage('messages.ok_title')
             ),
-            data: res
+            data: { ...res.serialize(), notificationTypeIds }
         })
     }
 
@@ -358,12 +378,8 @@ export default class RolController {
                     moduleBuilder.select(['id', 'name'])
                 })
             })
-            if (role.createdById) await role.load('createdBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
-            if (role.updatedById) await role.load('updatedBy', (builder) => {
-                builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-            })
+            if (role.createdById) await role.load('createdBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
+            if (role.updatedById) await role.load('updatedBy', (builder) => builder.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
 
             return response.status(200).json({
                 role,

@@ -2,9 +2,9 @@ import SettingAfp from '#models/afp';
 import PermissionService from '#services/permission_service';
 import MessageFrontEnd from '#utils/MessageFrontEnd';
 import { afpStoreValidator, afpUpdateValidator } from '#validators/afp';
+import { indexFiltersWithStatus } from '#validators/general';
 import { HttpContext } from '@adonisjs/core/http';
 import db from '@adonisjs/lucid/services/db';
-import vine from '@vinejs/vine';
 import { DateTime } from 'luxon';
 
 type MessageFrontEndType = {
@@ -17,14 +17,7 @@ export default class SettingAfpController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, response, i18n } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const query = SettingAfp.query()
@@ -35,6 +28,17 @@ export default class SettingAfpController {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
                 .orderBy('id', 'asc')
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.where((qb) => {
+                    qb.whereILike('name', likeVal).orWhereILike('code', likeVal)
+                })
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const afps = await (page ? query.paginate(page, perPage || 10) : query)
 

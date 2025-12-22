@@ -1,5 +1,6 @@
 import SettingBusinessSalary from '#models/business/setting_business_salary'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -11,14 +12,7 @@ type MessageFrontEndType = {
 
 export default class SettingBusinessSalaryController {
     public async index({ request, response, i18n }: HttpContext) {
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const query = SettingBusinessSalary.query()
@@ -28,6 +22,15 @@ export default class SettingBusinessSalaryController {
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.whereILike('name', likeVal)
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const salaries = await (page ? query.paginate(page, perPage || 10) : query)
 

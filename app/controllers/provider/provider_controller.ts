@@ -1,4 +1,5 @@
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 
 import Provider from '#models/provider/provider'
 import ProviderProduct from '#models/provider/provider_product'
@@ -17,14 +18,7 @@ export default class ProviderController {
         await PermissionService.requirePermission(ctx, 'providers', 'view')
 
         const { request, response, i18n } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const query = Provider.query()
@@ -37,6 +31,12 @@ export default class ProviderController {
                         .select(['id', 'personal_data_id', 'email'])
                 )
                 .preload('city', (b) => b.select('id', 'name'))
+
+            if (text) {
+                const like = `%${text}%`
+                query.where((qb) => qb.whereILike('name', like).orWhereILike('email', like))
+            }
+            if (status !== undefined) query.where('enabled', status === 'enabled')
 
             const providers = page ? await query.paginate(page, perPage ?? 10) : await query
 

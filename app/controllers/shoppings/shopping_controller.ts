@@ -1,6 +1,8 @@
 import BusinessUser from '#models/business/business_user'
+import NotificationType from '#models/notifications/notification_type'
 import Shopping from '#models/shoppings/shopping'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
+import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
 import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
@@ -191,45 +193,37 @@ export default class ShoppingController {
                             : 'https://admin.serviciosgenessis.com/'
                         const shoppingUrl = host + `admin/shopping/${shopping.id}` */
 
-            const subject = i18n.formatMessage('messages.shopping_created_email_subject', { shoppingNumber: shopping.nro })
-            const body = i18n.formatMessage('messages.shopping_created_email_body', {
-                shoppingNumber: shopping.nro,
+            const createdEmailData = buildShoppingCreatedEmailData(i18n, shopping, {
                 providerName,
-                expirationDate: shopping.expireDate ? Util.parseToMoment(shopping.expireDate, false, { separator: '/', firstYear: false }) : '',
-                requestedBy: createdByName
+                requestedByName: createdByName,
             })
-            const shoppingNumberLabel = i18n.formatMessage('messages.shopping_number')
-            const providerLabel = i18n.formatMessage('messages.provider')
-            const expirationDateLabel = i18n.formatMessage('messages.expiration_date')
-            const requestedByLabel = i18n.formatMessage('messages.requested_by')
-            const viewShoppingLabel = i18n.formatMessage('messages.view_shopping')
-            const backupText = i18n.formatMessage('messages.shopping_created_backup_text')
-
+            let err: any
             // Send email notification to super users
             try {
-                await sendShoppingNotification(businessId, {
-                    subject,
-                    body,
-                    shoppingNumber: shopping.nro,
-                    providerName,
-                    expirationDate: shopping.expireDate ? Util.parseToMoment(shopping.expireDate, false, { separator: '/', firstYear: false }) : '',
-                    requestedBy: createdByName,
-                    // shoppingUrl,
-                    businessName: shopping.business?.name || '',
-                    shoppingNumberLabel,
-                    providerLabel,
-                    expirationDateLabel,
-                    requestedByLabel,
-                    viewShoppingLabel,
-                    backupText,
+                // DB notification (in-app) - concise with date
+                const type = await NotificationType.findBy('code', 'shopping_created')
+                const createdAtStr = Util.formatDatetimeToString(dateTime)
+                const shortBody = `${createdEmailData.subject} — ${shopping.nro} • ${providerName} — ${createdAtStr}`
+                await NotificationService.createAndDispatch({
+                    typeId: type?.id,
+                    businessId,
+                    title: createdEmailData.subject,
+                    body: shortBody,
+                    payload: { shoppingId: shopping.id, nro: shopping.nro, businessId, created_at: createdAtStr },
+                    createdById: auth.user!.id,
                 })
+                await sendShoppingNotification(businessId, createdEmailData)
+
             } catch (emailError) {
                 // Log email error but don't fail the shopping creation
                 console.log('Error sending shopping creation notification email:', emailError)
+                const dev = env.get('NODE_ENV') === 'development'
+                err = dev ? emailError : Boolean(emailError)
             }
 
             return response.status(201).json({
                 shopping,
+                emitErr: err,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
             } as MessageFrontEndType)
         } catch (error) {
@@ -356,19 +350,10 @@ export default class ShoppingController {
                                     : 'https://admin.serviciosgenessis.com/'
                                 const shoppingUrl = host + `admin/shopping/${shop.id}`
                  */
-                const subject = i18n.formatMessage('messages.shopping_authorized_email_subject', { shoppingNumber: shop.nro })
-                const body = i18n.formatMessage('messages.shopping_authorized_email_body', {
-                    shoppingNumber: shop.nro,
+                const authorizedEmailData = buildShoppingAuthorizedEmailData(i18n, shop, {
                     providerName,
-                    authorizationDate: shop.authorizerAt ? Util.parseToMoment(shop.authorizerAt, false, { separator: '/', firstYear: false }) : '',
-                    authorizedBy: authorizedByName
+                    authorizedByName,
                 })
-                const shoppingNumberLabel = i18n.formatMessage('messages.shopping_number')
-                const providerLabel = i18n.formatMessage('messages.provider')
-                const authorizationDateLabel = i18n.formatMessage('messages.authorization_date')
-                const authorizedByLabel = i18n.formatMessage('messages.authorized_by')
-                const viewShoppingLabel = i18n.formatMessage('messages.view_authorized_shopping')
-                const backupText = i18n.formatMessage('messages.shopping_authorized_backup_text')
 
                 // Send email notification to the creator
                 try {
@@ -377,28 +362,30 @@ export default class ShoppingController {
                             message
                                 .to(shop.createdBy!.email)
                                 .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
-                                .subject(subject)
-                                .htmlView('emails/shopping_authorized', {
-                                    subject,
-                                    body,
-                                    shoppingNumber: shop.nro,
-                                    providerName,
-                                    authorizationDate: shop.authorizerAt ? Util.parseToMoment(shop.authorizerAt, false, { separator: '/', firstYear: false }) : '',
-                                    authorizedBy: authorizedByName,
-                                    // shoppingUrl,
-                                    businessName: shop.business?.name || '',
-                                    shoppingNumberLabel,
-                                    providerLabel,
-                                    authorizationDateLabel,
-                                    authorizedByLabel,
-                                    viewShoppingLabel,
-                                    backupText,
-                                })
+                                .subject(authorizedEmailData.subject)
+                                .htmlView('emails/shopping_authorized', authorizedEmailData)
                         })
                     }
                 } catch (emailError) {
                     // Log email error but don't fail the authorization
                     console.log('Error sending shopping authorization notification email:', emailError)
+                }
+
+                // In-app notification for authorization
+                try {
+                    const type = await NotificationType.findBy('code', 'shopping_authorized')
+                    const authAtStr = shop.authorizerAt ? Util.formatDatetimeToString(shop.authorizerAt) : Util.formatDatetimeToString(DateTime.now())
+                    const shortBody = `${authorizedEmailData.subject} — ${shop.nro} • ${providerName} — ${authAtStr}`
+                    await NotificationService.createAndDispatch({
+                        typeId: type?.id,
+                        businessId: shop.businessId,
+                        title: authorizedEmailData.subject,
+                        body: shortBody,
+                        payload: { shoppingId: shop.id, nro: shop.nro, authorizedById: shop.authorizerId, businessId: shop.businessId, authorized_at: authAtStr },
+                        createdById: auth.user!.id,
+                    })
+                } catch (notifyErr) {
+                    console.log('Shopping authorization notification error:', notifyErr)
                 }
 
                 return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.authorizer_ok'), i18n.formatMessage('messages.ok_title')))
@@ -710,5 +697,65 @@ export async function sendShoppingNotification(businessId: number, emailData: {
                 })
             }
         }
+    }
+}
+
+// Helper: compose email data for shopping creation, mirroring budget flow
+function buildShoppingCreatedEmailData(i18n: HttpContext['i18n'], shopping: Shopping, opts: {
+    providerName: string
+    requestedByName: string
+}) {
+    const expirationDateStr = shopping.expireDate ? Util.parseToMoment(shopping.expireDate, false, { separator: '/', firstYear: false }) : ''
+    const subject = i18n.formatMessage('messages.shopping_created_email_subject', { shoppingNumber: shopping.nro })
+    const body = i18n.formatMessage('messages.shopping_created_email_body', {
+        shoppingNumber: shopping.nro,
+        providerName: opts.providerName,
+        expirationDate: expirationDateStr,
+        requestedBy: opts.requestedByName,
+    })
+    return {
+        subject,
+        body,
+        shoppingNumber: shopping.nro,
+        providerName: opts.providerName,
+        expirationDate: expirationDateStr,
+        requestedBy: opts.requestedByName,
+        businessName: shopping.business?.name || '',
+        shoppingNumberLabel: i18n.formatMessage('messages.shopping_number'),
+        providerLabel: i18n.formatMessage('messages.provider'),
+        expirationDateLabel: i18n.formatMessage('messages.expiration_date'),
+        requestedByLabel: i18n.formatMessage('messages.requested_by'),
+        viewShoppingLabel: i18n.formatMessage('messages.view_shopping'),
+        backupText: i18n.formatMessage('messages.shopping_created_backup_text'),
+    }
+}
+
+// Helper: compose email data for shopping authorization, mirroring budget flow
+function buildShoppingAuthorizedEmailData(i18n: HttpContext['i18n'], shop: Shopping, opts: {
+    providerName: string
+    authorizedByName: string
+}) {
+    const authorizationDateStr = shop.authorizerAt ? Util.parseToMoment(shop.authorizerAt, false, { separator: '/', firstYear: false }) : ''
+    const subject = i18n.formatMessage('messages.shopping_authorized_email_subject', { shoppingNumber: shop.nro })
+    const body = i18n.formatMessage('messages.shopping_authorized_email_body', {
+        shoppingNumber: shop.nro,
+        providerName: opts.providerName,
+        authorizationDate: authorizationDateStr,
+        authorizedBy: opts.authorizedByName,
+    })
+    return {
+        subject,
+        body,
+        shoppingNumber: shop.nro,
+        providerName: opts.providerName,
+        authorizationDate: authorizationDateStr,
+        authorizedBy: opts.authorizedByName,
+        businessName: shop.business?.name || '',
+        shoppingNumberLabel: i18n.formatMessage('messages.shopping_number'),
+        providerLabel: i18n.formatMessage('messages.provider'),
+        authorizationDateLabel: i18n.formatMessage('messages.authorization_date'),
+        authorizedByLabel: i18n.formatMessage('messages.authorized_by'),
+        viewShoppingLabel: i18n.formatMessage('messages.view_authorized_shopping'),
+        backupText: i18n.formatMessage('messages.shopping_authorized_backup_text'),
     }
 }

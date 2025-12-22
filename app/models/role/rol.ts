@@ -1,6 +1,7 @@
 
 import BusinessUser from '#models/business/business_user'
 import BusinessUserRol from '#models/business/business_user_rol'
+import NotificationType from '#models/notifications/notification_type'
 import Permission from '#models/permissions/permission'
 import User from '#models/users/user'
 import { BaseModel, beforeCreate, belongsTo, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
@@ -58,6 +59,14 @@ export default class Rol extends BaseModel {
     pivotRelatedForeignKey: 'business_user_id'
   })
   public businessUsers: ManyToMany<typeof BusinessUser>
+
+  @manyToMany(() => NotificationType, {
+    pivotTable: 'notification_type_rols',
+    pivotForeignKey: 'rol_id',
+    pivotRelatedForeignKey: 'notification_type_id',
+    pivotColumns: ['created_at'],
+  })
+  public notificationTypes: ManyToMany<typeof NotificationType>
 
   @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>

@@ -1,8 +1,8 @@
 import SettingBookingProperty from '#models/booking/setting_booking_property'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { bookingPropertyStoreValidator, bookingPropertyUpdateValidator } from '#validators/booking'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
-import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 type MessageFrontEndType = {
@@ -13,19 +13,27 @@ type MessageFrontEndType = {
 export default class SettingBookingPropertieController {
     public async index({ response, request, i18n }: HttpContext) {
 
-        const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
-            page: vine.number().positive().optional(),
-            perPage: vine.number().positive().optional()
-        })))
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
-            const properties = await SettingBookingProperty.query()
+            const query = SettingBookingProperty.query()
                 .preload('createdBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-                }).paginate(page || 1, perPage || 10)
+                })
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.where((qb) => qb.whereILike('name', likeVal).orWhereILike('description', likeVal))
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
+
+            const properties = await query.paginate(page || 1, perPage || 10)
 
             return properties
         } catch (error) {

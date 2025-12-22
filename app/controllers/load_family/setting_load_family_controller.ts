@@ -1,6 +1,7 @@
 import SettingLoadFamily from '#models/load_family/setting_load_family'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
@@ -15,14 +16,7 @@ export default class SettingLoadFamilyController {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request, response, i18n } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const query = SettingLoadFamily.query()
@@ -32,6 +26,15 @@ export default class SettingLoadFamilyController {
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.whereILike('name', likeVal)
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const loadFamilies = await (page ? query.paginate(page, perPage || 10) : query)
 

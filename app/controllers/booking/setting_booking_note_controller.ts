@@ -1,8 +1,8 @@
 import SettingBookingNote from '#models/booking/setting_booking_note'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { bookingNoteStoreValidator, bookingNoteUpdateValidator } from '#validators/booking'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
-import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 type MessageFrontEndType = {
@@ -13,19 +13,27 @@ type MessageFrontEndType = {
 export default class SettingBookingNoteController {
     public async index({ response, request, i18n }: HttpContext) {
 
-        const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
-            page: vine.number().positive().optional(),
-            perPage: vine.number().positive().optional()
-        })))
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
-            const notes = await SettingBookingNote.query()
+            const query = SettingBookingNote.query()
                 .preload('createdBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
                 .preload('updatedBy', (builder) => {
                     builder.preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-                }).paginate(page || 1, perPage || 10)
+                })
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.whereILike('note', likeVal)
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
+
+            const notes = await query.paginate(page || 1, perPage || 10)
 
             return notes
         } catch (error) {
