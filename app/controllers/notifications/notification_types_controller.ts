@@ -158,9 +158,18 @@ export default class NotificationTypesController {
         const bizUser = await BusinessUser.findOrFail(businessUserId)
 
         const notificationTypeIds = payload.notificationTypeIds
-        await bizUser.related('notificationTypes').sync(notificationTypeIds, true)
 
 
+        if (notificationTypeIds) {
+            const syncPayload: Record<any, { created_at: string }> = {}
+
+            for (const notId of notificationTypeIds) {
+                syncPayload[notId] = { created_at: DateTime.local().toSQL({ includeOffset: false }) }
+
+            }
+            await bizUser.related('notificationTypes').sync(syncPayload, true)
+
+        }
         return response.status(200).json({
             businessUser: bizUser.id,
             attached: notificationTypeIds,
