@@ -859,24 +859,17 @@ export default class BugetController {
 
     const { request } = ctx
     const {
-      dateInitial,
-      dateEnd,
-      businessId,
-      page = 1,
-      limit = 20,
+      businessId, startDate, endDate, page, perPage,
     } = await request.validateUsing(
       vine.compile(
         vine.object({
-          dateInitial: vine.date().optional(),
-          dateEnd: vine.date().optional(),
-          businessId: vine.number(),
-          page: vine.number().optional(),
-          limit: vine.number().optional(),
+          ...searchWithStatusSchema.getProperties(),
+          businessId: vine.number().positive().exists({ table: 'businesses', column: 'id' }),
         })
       )
     )
 
-    return await BugetRepository.report(businessId, dateInitial, dateEnd, page, limit)
+    return await BugetRepository.report(businessId, startDate, endDate, page, perPage)
   }
 
   public async searchItems(ctx: HttpContext) {
