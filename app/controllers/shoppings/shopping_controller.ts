@@ -557,6 +557,22 @@ export default class ShoppingController {
         return shoppings
     }
 
+    public async report(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'viewReports')
+
+        const { request } = ctx
+        const { startDate, endDate, page, perPage,
+        } = await request.validateUsing(
+            vine.compile(
+                searchWithStatusSchema,
+            )
+        )
+
+        const businessId = Number(request.header('Business'))
+
+        return await ShoppingRepository.report(businessId, startDate, endDate, page, perPage)
+    }
+
     /** Update shopping's nro_buget */
     public async updateNroBuget(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'shopping', 'update')
@@ -657,6 +673,8 @@ export default class ShoppingController {
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_error'), i18n.formatMessage('messages.error_title')))
         }
     }
+
+
 }
 
 

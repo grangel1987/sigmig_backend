@@ -624,6 +624,7 @@ router.group(() => {
     router.put('/update/nro-buget/:id', '#controllers/shoppings/shopping_controller.updateNroBuget')
     router.post('/find/name', '#controllers/shoppings/shopping_controller.findByNameProvider')
     router.post('/find/date', '#controllers/shoppings/shopping_controller.findByDate')
+    router.post('/report', '#controllers/shoppings/shopping_controller.report')
     router.get('/share/:id', '#controllers/shoppings/shopping_controller.share')
   })
     .prefix('shopping')

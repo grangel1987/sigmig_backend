@@ -859,15 +859,15 @@ export default class BugetController {
 
     const { request } = ctx
     const {
-      businessId, startDate, endDate, page, perPage,
+      startDate, endDate, page, perPage,
     } = await request.validateUsing(
       vine.compile(
         vine.object({
           ...searchWithStatusSchema.getProperties(),
-          businessId: vine.number().positive().exists({ table: 'businesses', column: 'id' }),
         })
       )
     )
+    const businessId = Number(request.header('Business'))
 
     return await BugetRepository.report(businessId, startDate, endDate, page, perPage)
   }
