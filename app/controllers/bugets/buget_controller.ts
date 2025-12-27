@@ -50,6 +50,8 @@ export default class BugetController {
     } = await request.validateUsing(bugetStoreValidator)
 
     const trx = await db.transaction()
+    const debugId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+    log(`[BUGET STORE ${debugId}] start user=${auth.user?.id} business=${businessId}`)
     try {
       const dateTime = await Util.getDateTimes(request)
       const business = await Business.query({ client: trx }).where('id', businessId).firstOrFail()
@@ -84,6 +86,7 @@ export default class BugetController {
         enabled: true,
       }
 
+      log(`[BUGET STORE ${debugId}] creating buget payload nro=${payload.nro}`)
       const buget = await Buget.create(payload, { client: trx })
 
       // Normalize products to model properties (camelCase)
@@ -115,6 +118,7 @@ export default class BugetController {
         accountId: typeof b === 'object' ? b?.accountId : b,
       }))
 
+      log(`[BUGET STORE ${debugId}] creating related products(${productsRows.length}) items(${itemsRows.length}) banks(${banksRows.length})`)
       await buget.related('products').createMany(productsRows, { client: trx })
       await buget.related('items').createMany(itemsRows, { client: trx })
       await buget.related('banks').createMany(banksRows, { client: trx })
@@ -127,6 +131,7 @@ export default class BugetController {
       }
 
       await trx.commit()
+      log(`[BUGET STORE ${debugId}] commit complete bugetId=${buget.id}`)
       await buget.load('client', (q) => q.select(['name', 'id']))
       await buget.load('createdBy', (builder) => {
         builder

@@ -25,9 +25,11 @@ import {
     employeePermitIdValidator,
     employeeReportValidator,
 } from '#validators/employee'
+import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
@@ -1039,15 +1041,12 @@ export default class EmployeeController {
         await PermissionService.requirePermission(ctx, 'employees', 'viewReports')
 
         const { request } = ctx
+
+        const { page, perPage } = await request.validateUsing(vine.compile(searchWithStatusSchema))
+
         const { condition, expireDate, costCenter, businessId } = await request.validateUsing(employeeReportValidator)
-        const report = await EmployeeRepository.report(condition, expireDate ?? null, costCenter ?? null, businessId)
-        return report.map((r) => ({
-            token: r.token,
-            nombre: r.names,
-            identificacion: `${r.type_identify} ${r.identify}`,
-            apellidos: `${r.last_name_p} ${r.last_name_m}`,
-            estado: r.enabled ? 'Activo' : 'Inactivo',
-        }))
+        const report = await EmployeeRepository.report(condition, expireDate ?? null, costCenter ?? null, businessId, page, perPage)
+        return report
     }
 
     public async inactive(ctx: HttpContext) {
