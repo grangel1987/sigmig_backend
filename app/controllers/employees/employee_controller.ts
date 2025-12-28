@@ -1044,7 +1044,8 @@ export default class EmployeeController {
 
         const { page, perPage } = await request.validateUsing(vine.compile(searchWithStatusSchema))
 
-        const { condition, expireDate, costCenter, businessId } = await request.validateUsing(employeeReportValidator)
+        const businessId = Number(request.header('Business'))
+        const { condition, expireDate, costCenter } = await request.validateUsing(employeeReportValidator)
         const report = await EmployeeRepository.report(condition, expireDate ?? null, costCenter ?? null, businessId, page, perPage)
         return report
     }
