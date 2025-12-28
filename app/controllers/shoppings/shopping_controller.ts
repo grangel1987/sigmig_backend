@@ -572,7 +572,7 @@ export default class ShoppingController {
         const businessId = Number(request.header('Business'))
 
         const data = await ShoppingRepository.report(businessId, startDate, endDate, page, perPage)
-        const metrics = await ShoppingRepository.metricsByCostCenter(businessId, startDate, endDate)
+        const metrics = await ShoppingRepository.metrics(businessId, startDate, endDate)
 
         let payload: Record<string, any> = {}
 

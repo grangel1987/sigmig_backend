@@ -658,6 +658,19 @@ router.group(() => {
     router.put('/update/:booking_id', '#controllers/booking/booking_controller.update')
   }).prefix('booking').middleware(auth)
 
+  // Dashboard (metrics & pending lists)
+  router.group(() => {
+    router.post('/indicators', '#controllers/dashboard/dashboard_controller.indicators')
+    router.group(() => {
+      router.post('/metrics', '#controllers/dashboard/dashboard_controller.budgetsMetrics')
+      router.post('/pending', '#controllers/dashboard/dashboard_controller.pendingBudgets')
+    }).prefix('budgets')
+    router.group(() => {
+      router.post('/metrics', '#controllers/dashboard/dashboard_controller.purchaseOrdersMetrics')
+      router.post('/pending', '#controllers/dashboard/dashboard_controller.pendingPurchaseOrders')
+    }).prefix('shoppings')
+  }).prefix('dashboard').middleware(auth)
+
   // Notifications
   router.group(() => {
     router.get('/types', '#controllers/notifications/notification_types_controller.index')

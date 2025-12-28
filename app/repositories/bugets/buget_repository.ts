@@ -84,7 +84,8 @@ export default class BugetRepository {
         page?: number,
         limit?: number,
         text?: string,
-        budgetStatus?: 'pending' | 'revision' | 'reject' | 'accept'
+        budgetStatus?: 'pending' | 'revision' | 'reject' | 'accept',
+        enabled?: boolean
     ): Promise<ModelPaginatorContract<Buget> | Buget[]> {
 
         const start = dateInitial ? DateTime.fromJSDate(dateInitial,).toSQLDate()! : '1970-01-01'
@@ -104,6 +105,9 @@ export default class BugetRepository {
 
         if (budgetStatus) {
             bgtQ = bgtQ.where('bugets.status', budgetStatus)
+        }
+        if (enabled !== undefined) {
+            bgtQ = bgtQ.where('bugets.enabled', enabled)
         }
 
         if (text) {
@@ -176,7 +180,11 @@ export default class BugetRepository {
         dateEnd?: Date,
         text?: string,
         budgetStatus?: 'pending' | 'revision' | 'reject' | 'accept'
-    ) {
+    ): Promise<{
+        counts: Record<string, number>
+        money: { productsTotal: number; discountsTotal: number; utilityTotal: number; total: number }
+        clients: Array<{ client: string; count: number; productsTotal: number; discountsTotal: number; utilityTotal: number; total: number }>
+    }> {
         const start = dateInitial ? DateTime.fromJSDate(dateInitial).toSQLDate()! : '1970-01-01'
         const end = dateEnd ? DateTime.fromJSDate(dateEnd).toSQLDate()! : '9999-12-31'
         // Aggregate products total, discounts and utility using query builder
@@ -216,29 +224,51 @@ export default class BugetRepository {
             else counts.other += Number(r.cnt)
         }
 
-        // Count by client name (apply same filters)
-        let clientsQuery = Database.from('bugets')
-            .join('clients', 'clients.id', 'bugets.client_id')
-            .where('bugets.business_id', businessId)
-            .whereRaw('DATE(bugets.created_at) BETWEEN ? AND ?', [start, end])
+        // Build a subquery that computes totals per buget (one row per buget)
+        const bugetTotalsSubQuery = Database.from('bugets as b')
+            .leftJoin('buget_products as bp', 'bp.buget_id', 'b.id')
+            .where('b.business_id', businessId)
+            .whereRaw('DATE(b.created_at) BETWEEN ? AND ?', [start, end])
+            .select(
+                'b.id as buget_id',
+                'b.client_id',
+                Database.raw('IFNULL(SUM(bp.amount * bp.count), 0) as products_total'),
+                Database.raw('IFNULL(b.discount, 0) as discounts_total'),
+                Database.raw('IFNULL(b.utility, 0) as utility_total')
+            )
+            .groupBy('b.id')
 
+        // Apply optional filters to the buget-level subquery
         if (budgetStatus) {
-            clientsQuery = clientsQuery.where('bugets.status', budgetStatus)
+            bugetTotalsSubQuery.where('b.status', budgetStatus)
         }
-
         if (text) {
-            clientsQuery = clientsQuery.where((qb) => {
-                qb.whereRaw('bugets.nro LIKE ?', [`${text}%`]).orWhereRaw('clients.name LIKE ?', [`%${text}%`])
+            bugetTotalsSubQuery.where((qb) => {
+                qb.whereRaw('b.nro LIKE ?', [`${text}%`]).orWhereExists((sub) => {
+                    sub.from('clients').whereRaw('clients.id = b.client_id').whereRaw('clients.name LIKE ?', [`%${text}%`])
+                })
             })
         }
 
-        const clientsRows = (await clientsQuery
-            .select('clients.name as client')
-            .count('* as cnt')
-            .groupBy('clients.name')
-            .orderByRaw('cnt desc')) ?? []
+        const clientRows = await Database.from(bugetTotalsSubQuery.as('t'))
+            .join('clients as c', 'c.id', 't.client_id')
+            .select(
+                'c.name as client',
+                Database.raw('COUNT(*) as cnt'),
+                Database.raw('IFNULL(SUM(t.products_total),0) as products_total'),
+                Database.raw('IFNULL(SUM(t.discounts_total),0) as discounts_total'),
+                Database.raw('IFNULL(SUM(t.utility_total),0) as utility_total')
+            )
+            .groupBy('c.name')
+            .orderByRaw('cnt desc')
 
-        const clients: Array<{ client: string; count: number }> = (clientsRows as Array<any>).map((r) => ({ client: r.client, count: Number(r.cnt) }))
+        const clients: Array<{ client: string; count: number; productsTotal: number; discountsTotal: number; utilityTotal: number; total: number }> = (clientRows as Array<any>).map((r) => {
+            const productsTotal = Math.trunc((r.products_total ?? 0) * 100) / 100
+            const discountsTotal = Math.trunc((r.discounts_total ?? 0) * 100) / 100
+            const utilityTotal = Math.trunc((r.utility_total ?? 0) * 100) / 100
+            const total = Math.trunc((productsTotal + utilityTotal - discountsTotal) * 100) / 100
+            return { client: r.client, count: Number(r.cnt), productsTotal, discountsTotal, utilityTotal, total }
+        })
 
         const productsTotal = Math.trunc(totalsRow.products_total * 100) / 100
         const discountsTotal = Math.trunc(totalsRow.discounts_total * 100) / 100

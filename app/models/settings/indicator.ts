@@ -11,7 +11,7 @@ export default class Indicator extends BaseModel {
   @column()
   public value: string | number
 
-  @column.dateTime()
+  @column.dateTime({ serialize: (value: DateTime) => value ? value.toFormat('yyyy-MM-dd') : null })
   public date: DateTime
 
   @column()

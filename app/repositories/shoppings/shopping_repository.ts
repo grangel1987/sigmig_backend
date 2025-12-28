@@ -79,7 +79,32 @@ export default class ShoppingRepository {
     return await q
   }
 
-  public static async metricsByCostCenter(
+  public static async pending(businessId: number, dateInitial?: Date, dateEnd?: Date, page?: number, limit?: number): Promise<ModelPaginatorContract<Shopping> | Shopping[]> {
+    const start = dateInitial ? DateTime.fromJSDate(dateInitial).toSQLDate()! : '1970-01-01'
+    const end = dateEnd ? DateTime.fromJSDate(dateEnd).toSQLDate()! : '9999-12-31'
+
+    const q = Shopping.query()
+      .where('business_id', businessId)
+      .where('is_authorized', false)
+      .where('enabled', true)
+      .whereRaw('DATE(created_at) BETWEEN ? AND ?', [start, end])
+      .preload('provider', (p) => p.select(['id', 'name']))
+      .preload('costCenter', (cc) => cc.select(['id', 'code', 'name']))
+      .preload('authorizer', (a) => {
+        a.select(['id', 'personal_data_id', 'email'])
+        a.preload('personalData', (pd) => pd.select(['names', 'last_name_p', 'last_name_m']))
+      })
+      .select(['id', 'nro', 'provider_id', 'cost_center_id', 'authorizer_id', 'created_at', 'expire_date', 'enabled', 'is_authorized'])
+      .orderBy('created_at', 'desc')
+
+    if (page && limit) {
+      return await q.paginate(page, limit)
+    }
+
+    return await q
+  }
+
+  public static async metrics(
     businessId: number,
     dateInitial?: Date,
     dateEnd?: Date
