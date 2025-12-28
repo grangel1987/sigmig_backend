@@ -12,7 +12,13 @@ export interface EmployeeReportRow {
 }
 
 export default class EmployeeRepository {
-    public static async report(condition: number, expireDate: string | null, costCenterId: number | null, businessId: number, page?: number, perPage?: number) {
+    public static async report(
+        condition: number,
+        expireDate: string | null,
+        costCenterId: number | null,
+        businessId: number,
+        page?: number,
+        perPage?: number) {
         const qb = db.from('employees')
             .select(
                 'employees.id',

@@ -1,5 +1,6 @@
 import Shopping from '#models/shoppings/shopping'
 import Database from '@adonisjs/lucid/services/db'
+import { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
 import { DateTime } from 'luxon'
 
 export default class ShoppingRepository {
@@ -55,7 +56,7 @@ export default class ShoppingRepository {
     return result[0]
   }
 
-  public static async report(businessId: number, dateInitial?: Date, dateEnd?: Date, page?: number, limit?: number) {
+  public static async report(businessId: number, dateInitial?: Date, dateEnd?: Date, page?: number, limit?: number): Promise<ModelPaginatorContract<Shopping> | Shopping[]> {
     const start = dateInitial ? DateTime.fromJSDate(dateInitial).toSQLDate()! : '1970-01-01'
     const end = dateEnd ? DateTime.fromJSDate(dateEnd).toSQLDate()! : '9999-12-31'
 

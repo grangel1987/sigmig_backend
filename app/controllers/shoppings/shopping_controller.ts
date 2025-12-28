@@ -19,6 +19,7 @@ import {
 } from '#validators/shopping'
 import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
+import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
@@ -573,11 +574,15 @@ export default class ShoppingController {
         const data = await ShoppingRepository.report(businessId, startDate, endDate, page, perPage)
         const metrics = await ShoppingRepository.metricsByCostCenter(businessId, startDate, endDate)
 
-        if (data && typeof (data as any).meta !== 'undefined') {
-            return { ...(data as any), metrics }
-        }
+        let payload: Record<string, any> = {}
 
-        return { data, metrics }
+        if (data instanceof ModelPaginator) {
+            payload = { ...data.getMeta(), data: data.all().map((d) => d.serialize()), metrics }
+        }
+        else {
+            payload = { data: data.map((d) => d.serialize()), metrics }
+        }
+        return payload
     }
 
     /** Update shopping's nro_buget */

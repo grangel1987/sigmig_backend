@@ -1,6 +1,7 @@
 import SettingBugetItem from '#models/buget/setting_buget_item'
 import Buget from '#models/bugets/buget'
 import Database from '@adonisjs/lucid/services/db'
+import { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
 import { DateTime } from 'luxon'
 
 export default class BugetRepository {
@@ -84,7 +85,7 @@ export default class BugetRepository {
         limit?: number,
         text?: string,
         budgetStatus?: 'pending' | 'revision' | 'reject' | 'accept'
-    ) {
+    ): Promise<ModelPaginatorContract<Buget> | Buget[]> {
 
         const start = dateInitial ? DateTime.fromJSDate(dateInitial,).toSQLDate()! : '1970-01-01'
         const end = dateEnd ? DateTime.fromJSDate(dateEnd,).toSQLDate()! : '9999-12-31'

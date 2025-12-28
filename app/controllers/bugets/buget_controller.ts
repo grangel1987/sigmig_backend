@@ -23,6 +23,7 @@ import {
 } from '#validators/buget'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
+import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
@@ -872,12 +873,15 @@ export default class BugetController {
     const data = await BugetRepository.report(businessId, startDate, endDate, page, perPage, text, budgetStatus)
     const metrics = await BugetRepository.metrics(businessId, startDate, endDate, text, budgetStatus)
 
-    // Preserve pagination shape when present
-    if (data && typeof (data as any).meta !== 'undefined') {
-      return { ...(data as any), metrics }
-    }
+    let payload: Record<string, any> = {}
 
-    return { data, metrics }
+    if (data instanceof ModelPaginator) {
+      payload = { ...data.getMeta(), data: data.all().map((d) => d.serialize()), metrics }
+    }
+    else {
+      payload = { data: data.map((d) => d.serialize()), metrics }
+    }
+    return payload
   }
 
   public async searchItems(ctx: HttpContext) {
