@@ -570,7 +570,14 @@ export default class ShoppingController {
 
         const businessId = Number(request.header('Business'))
 
-        return await ShoppingRepository.report(businessId, startDate, endDate, page, perPage)
+        const data = await ShoppingRepository.report(businessId, startDate, endDate, page, perPage)
+        const metrics = await ShoppingRepository.metricsByCostCenter(businessId, startDate, endDate)
+
+        if (data && typeof (data as any).meta !== 'undefined') {
+            return { ...(data as any), metrics }
+        }
+
+        return { data, metrics }
     }
 
     /** Update shopping's nro_buget */

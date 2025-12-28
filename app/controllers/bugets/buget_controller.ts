@@ -859,7 +859,7 @@ export default class BugetController {
 
     const { request } = ctx
     const {
-      startDate, endDate, page, perPage,
+      startDate, endDate, page, perPage, text, budgetStatus,
     } = await request.validateUsing(
       vine.compile(
         vine.object({
@@ -869,7 +869,15 @@ export default class BugetController {
     )
     const businessId = Number(request.header('Business'))
 
-    return await BugetRepository.report(businessId, startDate, endDate, page, perPage)
+    const data = await BugetRepository.report(businessId, startDate, endDate, page, perPage, text, budgetStatus)
+    const metrics = await BugetRepository.metrics(businessId, startDate, endDate, text, budgetStatus)
+
+    // Preserve pagination shape when present
+    if (data && typeof (data as any).meta !== 'undefined') {
+      return { ...(data as any), metrics }
+    }
+
+    return { data, metrics }
   }
 
   public async searchItems(ctx: HttpContext) {

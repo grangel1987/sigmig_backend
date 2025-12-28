@@ -77,4 +77,110 @@ export default class ShoppingRepository {
 
     return await q
   }
+
+  public static async metricsByCostCenter(
+    businessId: number,
+    dateInitial?: Date,
+    dateEnd?: Date
+  ): Promise<{
+    totals: {
+      count: number
+      productsTotal: number
+      sendTotal: number
+      otherTotal: number
+      total: number
+    }
+    byCostCenter: Array<{
+      costCenterId: number | null
+      code: string | null
+      name: string | null
+      count: number
+      productsTotal: number
+      sendTotal: number
+      otherTotal: number
+      total: number
+    }>
+  }> {
+    const start = dateInitial ? DateTime.fromJSDate(dateInitial).toSQLDate()! : '1970-01-01'
+    const end = dateEnd ? DateTime.fromJSDate(dateEnd).toSQLDate()! : '9999-12-31'
+    // Overall totals (products sum and other amounts)
+    const totalsRow = (await Database.from('shoppings')
+      .leftJoin('shopping_products as sp', 'sp.shopping_id', 'shoppings.id')
+      .where('shoppings.business_id', businessId)
+      .whereRaw('DATE(shoppings.created_at) BETWEEN ? AND ?', [start, end])
+      .select(
+        Database.raw('IFNULL(SUM(sp.price * sp.count), 0) AS products_total'),
+        Database.raw('IFNULL(SUM(shoppings.send_amount), 0) AS send_total'),
+        Database.raw('IFNULL(SUM(shoppings.other_amount), 0) AS other_total')
+      )
+      .first()) as { products_total: number; send_total: number; other_total: number } | undefined
+
+    const totalsSafe = totalsRow ?? { products_total: 0, send_total: 0, other_total: 0 }
+
+    const overallCountRow = (await Database.from('shoppings')
+      .where('business_id', businessId)
+      .whereRaw('DATE(created_at) BETWEEN ? AND ?', [start, end])
+      .count('* as cnt')
+      .first()) as { cnt: number } | undefined
+
+    const overallCount = Number(overallCountRow?.cnt ?? 0)
+
+    const productsTotal = Math.trunc(totalsSafe.products_total * 100) / 100
+    const sendTotal = Math.trunc(totalsSafe.send_total * 100) / 100
+    const otherTotal = Math.trunc(totalsSafe.other_total * 100) / 100
+    const overallMoneyTotal = productsTotal + sendTotal + otherTotal
+
+    // Aggregation grouped by cost center
+    const rowsByCostCenter = (await Database.from('shoppings')
+      .leftJoin('shopping_products as sp', 'sp.shopping_id', 'shoppings.id')
+      .leftJoin('cost_centers as cc', 'cc.id', 'shoppings.cost_center_id')
+      .where('shoppings.business_id', businessId)
+      .whereRaw('DATE(shoppings.created_at) BETWEEN ? AND ?', [start, end])
+      .select(
+        'shoppings.cost_center_id as costCenterId',
+        'cc.code as costCenterCode',
+        'cc.name as costCenterName',
+        Database.raw('COUNT(DISTINCT shoppings.id) as cnt'),
+        Database.raw('IFNULL(SUM(sp.price * sp.count), 0) as products_total'),
+        Database.raw('IFNULL(SUM(shoppings.send_amount), 0) as send_total'),
+        Database.raw('IFNULL(SUM(shoppings.other_amount), 0) as other_total')
+      )
+      .groupBy('shoppings.cost_center_id', 'cc.code', 'cc.name')
+      .orderByRaw('cnt desc')) as Array<{
+        costCenterId: number | null
+        costCenterCode: string | null
+        costCenterName: string | null
+        cnt: number
+        products_total: number
+        send_total: number
+        other_total: number
+      }>
+
+    const byCostCenter = rowsByCostCenter.map((r) => {
+      const pTotal = Math.trunc((r.products_total ?? 0) * 100) / 100
+      const sTotal = Math.trunc((r.send_total ?? 0) * 100) / 100
+      const oTotal = Math.trunc((r.other_total ?? 0) * 100) / 100
+      return {
+        costCenterId: r.costCenterId,
+        code: r.costCenterCode,
+        name: r.costCenterName,
+        count: Number(r.cnt ?? 0),
+        productsTotal: pTotal,
+        sendTotal: sTotal,
+        otherTotal: oTotal,
+        total: pTotal + sTotal + oTotal,
+      }
+    })
+
+    return {
+      totals: {
+        count: overallCount,
+        productsTotal,
+        sendTotal,
+        otherTotal,
+        total: overallMoneyTotal,
+      },
+      byCostCenter,
+    }
+  }
 }
