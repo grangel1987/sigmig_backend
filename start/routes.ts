@@ -607,10 +607,51 @@ router.group(() => {
       router.put("/reactivate/:id", "#controllers/bugets/buget_controller.reactivate")
     }).prefix('bugets').middleware(auth)
     router.post('/send-email/:id', '#controllers/bugets/buget_controller.sendEmailToClient')
+    router.group(() => {
+      router.post('/payments', '#controllers/bugets/buget_controller.storePayment')
+      router.get('/payments/:id', '#controllers/bugets/buget_controller.showPayment')
+      router.put('/payments/:id', '#controllers/bugets/buget_controller.updatePayment')
+      router.delete('/payments/:id', '#controllers/bugets/buget_controller.deletePayment')
+      router.post('/payments/:id/void', '#controllers/bugets/buget_controller.voidPayment')
+    })
   })
     .prefix('buget')
     .middleware(auth)
 
+  // Config routes
+  router.group(() => {
+    // Ledging Accounts
+    router.group(() => {
+      router.get('/', '#controllers/ledging_accounts/ledging_account_controller.index')
+      router.post('/store', '#controllers/ledging_accounts/ledging_account_controller.store')
+      router.get('/show/:id', '#controllers/ledging_accounts/ledging_account_controller.show')
+      router.put('/update/:id', '#controllers/ledging_accounts/ledging_account_controller.update')
+      router.delete('/delete/:id', '#controllers/ledging_accounts/ledging_account_controller.delete')
+      router.get('/select', '#controllers/ledging_accounts/ledging_account_controller.select')
+    }).prefix('ledging-accounts')
+
+    // Payment Methods
+    router.group(() => {
+      router.get('/', '#controllers/payment_methods/payment_method_controller.index')
+      router.post('/store', '#controllers/payment_methods/payment_method_controller.store')
+      router.get('/show/:id', '#controllers/payment_methods/payment_method_controller.show')
+      router.put('/update/:id', '#controllers/payment_methods/payment_method_controller.update')
+      router.delete('/delete/:id', '#controllers/payment_methods/payment_method_controller.delete')
+      router.get('/select', '#controllers/payment_methods/payment_method_controller.select')
+    }).prefix('payment-methods')
+
+    // Payment Document Types
+    router.group(() => {
+      router.get('/', '#controllers/payment_document_types/payment_document_type_controller.index')
+      router.post('/store', '#controllers/payment_document_types/payment_document_type_controller.store')
+      router.get('/show/:id', '#controllers/payment_document_types/payment_document_type_controller.show')
+      router.put('/update/:id', '#controllers/payment_document_types/payment_document_type_controller.update')
+      router.delete('/delete/:id', '#controllers/payment_document_types/payment_document_type_controller.delete')
+      router.get('/select', '#controllers/payment_document_types/payment_document_type_controller.select')
+    }).prefix('payment-document-types')
+  })
+    .prefix('config')
+    .middleware(auth)
 
   // Shopping (protected)
   router.group(() => {
