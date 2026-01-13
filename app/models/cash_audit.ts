@@ -1,7 +1,7 @@
+import CashAuditLine from '#models/cash_audit_line'
 import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
-import CashAuditLine from './cash_audit_line'
 
 export default class CashAudit extends BaseModel {
     @column({ isPrimary: true })
