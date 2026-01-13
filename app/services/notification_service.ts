@@ -44,7 +44,8 @@ export default class NotificationService {
         businessId?: number
         title: string
         body?: string
-        payload?: any
+        payload?: Record<string, any>
+        meta?: Record<string, any>
         createdById: number
         recipientBusinessUserIds?: number[]
     }) {
@@ -54,6 +55,7 @@ export default class NotificationService {
             title: params.title,
             body: params.body ?? null,
             payload: params.payload ?? null,
+            meta: params.meta ?? null,
             createdById: params.createdById,
         })
 
@@ -84,6 +86,7 @@ export default class NotificationService {
                     typeId: notification.notificationTypeId,
                     businessId: notification.businessId,
                     payload: notification.payload,
+                    meta: notification.meta,
                     createdAt: notification.createdAt,
                     status: 'unread' as const,
                 }

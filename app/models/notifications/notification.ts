@@ -27,6 +27,12 @@ export default class Notification extends BaseModel {
     })
     public payload: Record<string, any> | null
 
+    @column({
+        prepare: (value: any) => typeof value === 'string' ? value : JSON.stringify(value),
+        consume: (value) => typeof value == 'string' ? JSON.parse(value) : value,
+    })
+    public meta: Record<string, any> | null
+
     @column({ columnName: 'created_by' })
     public createdById: number
 

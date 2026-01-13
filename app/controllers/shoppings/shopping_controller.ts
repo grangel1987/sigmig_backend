@@ -211,6 +211,12 @@ export default class ShoppingController {
                     title: createdEmailData.subject,
                     body: shortBody,
                     payload: { shoppingId: shopping.id, nro: shopping.nro, businessId, created_at: createdAtStr },
+                    meta: {
+                        shoppingId: shopping.id,
+                        status: shopping.status,
+                        providerName,
+                        number: shopping.nro,
+                    },
                     createdById: auth.user!.id,
                 })
                 await sendShoppingNotification(businessId, createdEmailData)
@@ -383,6 +389,12 @@ export default class ShoppingController {
                         title: authorizedEmailData.subject,
                         body: shortBody,
                         payload: { shoppingId: shop.id, nro: shop.nro, authorizedById: shop.authorizerId, businessId: shop.businessId, authorized_at: authAtStr },
+                        meta: {
+                            shoppingId: shop.id,
+                            status: shop.status,
+                            providerName,
+                            number: shop.nro,
+                        },
                         createdById: auth.user!.id,
                     })
                 } catch (notifyErr) {

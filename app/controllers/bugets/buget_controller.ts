@@ -200,6 +200,12 @@ export default class BugetController {
             clientName: safeClientName,
             expireDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
           },
+          meta: {
+            budgetId: buget.id,
+            status: buget.status,
+            clientName: safeClientName,
+            number: buget.nro,
+          },
           createdById: auth.user!.id,
         })
       } catch (emailError) {
@@ -1294,6 +1300,13 @@ export default class BugetController {
           title: baseTitle,
           body: baseBody,
           payload,
+          meta: {
+            budgetId: buget.id,
+            status: buget.status,
+            previousStatus,
+            clientName,
+            number: buget.nro,
+          },
           createdById: ctx.auth.user!.id,
         })
 
