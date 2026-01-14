@@ -64,6 +64,8 @@ export default class NotificationService {
             recipients = await this.resolveRecipientsForType(params.typeId, params.businessId)
         }
 
+        console.log(`Notification ${notification.id}: recipients count = ${recipients.length}`)
+
         if (recipients.length) {
             const now = DateTime.now()
             await NotificationBusinessUser.createMany(
@@ -78,12 +80,16 @@ export default class NotificationService {
 
             // Emit socket events to user rooms
             try {
+                // Load the type relationship
+                await notification.load('type')
+
                 // lightweight payload for clients
                 const payload = {
                     id: notification.id,
                     title: notification.title,
                     body: notification.body,
                     typeId: notification.notificationTypeId,
+                    type: notification.type,
                     businessId: notification.businessId,
                     payload: notification.payload,
                     meta: notification.meta,
