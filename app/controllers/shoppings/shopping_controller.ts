@@ -213,7 +213,6 @@ export default class ShoppingController {
                     payload: { shoppingId: shopping.id, nro: shopping.nro, businessId, created_at: createdAtStr },
                     meta: {
                         shoppingId: shopping.id,
-                        status: shopping.status,
                         providerName,
                         number: shopping.nro,
                     },
@@ -391,7 +390,6 @@ export default class ShoppingController {
                         payload: { shoppingId: shop.id, nro: shop.nro, authorizedById: shop.authorizerId, businessId: shop.businessId, authorized_at: authAtStr },
                         meta: {
                             shoppingId: shop.id,
-                            status: shop.status,
                             providerName,
                             number: shop.nro,
                         },
