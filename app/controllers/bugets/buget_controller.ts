@@ -1351,12 +1351,60 @@ export default class BugetController {
         )
     }
 
+    const previousStatus = buget.status ?? null
     buget.status = status
     await buget.save()
 
-    /*     const room = roomForToken(buget.token!)
+    const room = roomForToken(buget.token!)
     ws.io?.to(room).emit('budget/status', { status: buget.status })
- */
+
+    // In-app notification for status change (public update)
+    console.log('[BUDGET STATUS PUBLIC] Starting notification creation for budget:', buget.id)
+
+    const statuses: { 'accept': string, 'reject': string, revision: string, other: string } = {
+      'accept': i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
+      'reject': i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
+      revision: i18n.formatMessage('messages.budget_status_revision', {}, 'puesta en revisión'),
+      other: i18n.formatMessage('messages.budget_status_updated', {}, 'actualizada'),
+    }
+
+    try {
+      console.log('[BUDGET STATUS PUBLIC] Loading client for budget:', buget.id)
+      await buget.load('client', (q) => q.select(['name']))
+      const clientName = buget.client?.name || '—'
+      const expireStr = buget.expireDate
+        ? Util.parseToMoment(buget.expireDate, false, { separator: '/', firstYear: false })
+        : ''
+      const statusMsg = statuses[buget.status ?? 'other'] ?? 'sido actualizada'
+      const baseTitle = `Cotización #${buget.nro} ha sido ${statusMsg}`
+      const baseBody = `Cotización #${buget.nro} para ${clientName} ha ${statusMsg}`
+      const payload = { bugetId: buget.id, nro: buget.nro, status: buget.status, previousStatus, businessId: buget.businessId, clientName, expireDate: expireStr }
+
+      console.log('[BUDGET STATUS PUBLIC] Finding notification type: budget_status_changed')
+      const statusType = await NotificationType.findBy('code', 'budget_status_changed')
+      console.log('[BUDGET STATUS PUBLIC] Notification type found:', statusType?.id, 'Calling createAndDispatch...')
+
+      await NotificationService.createAndDispatch({
+        typeId: statusType?.id,
+        businessId: buget.businessId,
+        title: baseTitle,
+        body: baseBody,
+        payload,
+        meta: {
+          budgetId: buget.id,
+          status: buget.status,
+          previousStatus,
+          clientName,
+          number: buget.nro,
+        },
+        createdById: buget.createdById, // Use the budget creator as notification creator
+      })
+      console.log('[BUDGET STATUS PUBLIC] Notification dispatched successfully')
+
+    } catch (notifyErr) {
+      console.log('Budget status notification error (public):', notifyErr)
+    }
+
     return response.status(200).json({ buget })
   }
 
