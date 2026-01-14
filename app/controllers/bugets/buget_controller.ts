@@ -1274,6 +1274,7 @@ export default class BugetController {
       }
 
       // In-app notification for status change
+      console.log('[BUDGET STATUS] Starting notification creation for budget:', bugetId)
 
       const statuses: { 'accept': string, 'reject': string, revision: string, other: string } = {
         'accept': i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
@@ -1282,6 +1283,7 @@ export default class BugetController {
         other: i18n.formatMessage('messages.budget_status_updated', {}, 'actualizada'),
       }
       try {
+        console.log('[BUDGET STATUS] Loading client for budget:', buget.id)
         await buget.load('client', (q) => q.select(['name']))
         const clientName = buget.client?.name || '—'
         const expireStr = buget.expireDate
@@ -1292,8 +1294,10 @@ export default class BugetController {
         const baseBody = `Cotización #${buget.nro} para ${clientName} ha ${statusMsg}`
         const payload = { bugetId: buget.id, nro: buget.nro, status: buget.status, previousStatus, businessId: buget.businessId, clientName, expireDate: expireStr }
 
+        console.log('[BUDGET STATUS] Finding notification type: budget_status_changed')
         // Generic status change
         const statusType = await NotificationType.findBy('code', 'budget_status_changed')
+        console.log('[BUDGET STATUS] Notification type found:', statusType?.id, 'Calling createAndDispatch...')
         await NotificationService.createAndDispatch({
           typeId: statusType?.id,
           businessId: buget.businessId,
@@ -1309,9 +1313,11 @@ export default class BugetController {
           },
           createdById: ctx.auth.user!.id,
         })
+        console.log('[BUDGET STATUS] Notification dispatched successfully')
 
       } catch (notifyErr) {
         console.log('Budget status notification error:', notifyErr)
+        throw notifyErr
       }
 
       return response.status(200).json({ buget })
