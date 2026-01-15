@@ -93,7 +93,7 @@ export default class NotificationService {
                     businessId: notification.businessId,
                     payload: notification.payload,
                     meta: notification.meta,
-                    createdAt: notification.createdAt,
+                    createdAt: notification.createdAt.toFormat('yyyy-MM-dd HH:mm:ss'),
                     status: 'unread' as const,
                 }
                 // Map business_user_id -> user_id for socket rooms

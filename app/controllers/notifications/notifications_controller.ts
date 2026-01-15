@@ -18,6 +18,7 @@ export default class NotificationsController {
             ? await auth.user!.related('businessUser').query().where('business_id', businessId).first()
             : await auth.user!.related('selectedBusiness').query().first()
         const businessUserId = activeBusinessUser?.id ?? 0
+        const timezone = request.header('Timezone') || 'America/Santiago'
 
         let query = Notification.query()
         const filterBusinessId = businessId ?? activeBusinessUser?.businessId
@@ -37,6 +38,10 @@ export default class NotificationsController {
             const serializedNotifications = pagRes.all().map((notification) => {
                 const serializedNot = { ...notification.serialize(), status: notification.recipients[0]?.status } as any
                 delete serializedNot.recipients
+                // Convert createdAt to request timezone
+                if (serializedNot.createdAt) {
+                    serializedNot.createdAt = notification.createdAt.setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss')
+                }
                 return serializedNot
             })
             return response.ok({ ...pagRes.getMeta(), data: serializedNotifications })
@@ -48,6 +53,10 @@ export default class NotificationsController {
             const serializedNotifications = res.map((notification) => {
                 const serializedNot = { ...notification.serialize(), status: notification.recipients[0]?.status } as any
                 delete serializedNot.recipients
+                // Convert createdAt to request timezone
+                if (serializedNot.createdAt) {
+                    serializedNot.createdAt = notification.createdAt.setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss')
+                }
                 return serializedNot
             })
             return response.ok(serializedNotifications)
@@ -59,6 +68,7 @@ export default class NotificationsController {
 
         const { request, response, auth, i18n } = ctx
         const data = await request.validateUsing(notificationStoreValidator)
+        const timezone = request.header('Timezone') || 'America/Santiago'
 
         try {
             const notification = await NotificationService.createAndDispatch({
@@ -72,8 +82,15 @@ export default class NotificationsController {
             })
 
             await notification.load('type')
+
+            const serialized = notification.serialize()
+            // Convert createdAt to request timezone
+            if (notification.createdAt) {
+                serialized.createdAt = notification.createdAt.setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss')
+            }
+
             return response.status(201).json({
-                notification,
+                notification: serialized,
                 ...MessageFrontEnd(i18n.formatMessage('messages.store_ok'), i18n.formatMessage('messages.ok_title')),
             })
         } catch (error) {
