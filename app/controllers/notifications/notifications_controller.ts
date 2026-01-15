@@ -39,9 +39,7 @@ export default class NotificationsController {
                 const serializedNot = { ...notification.serialize(), status: notification.recipients[0]?.status } as any
                 delete serializedNot.recipients
                 // Convert createdAt to request timezone
-                if (serializedNot.createdAt) {
-                    serializedNot.createdAt = notification.createdAt.setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss')
-                }
+                serializedNot.created_at = notification.createdAt?.setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss')
                 return serializedNot
             })
             return response.ok({ ...pagRes.getMeta(), data: serializedNotifications })
@@ -54,9 +52,8 @@ export default class NotificationsController {
                 const serializedNot = { ...notification.serialize(), status: notification.recipients[0]?.status } as any
                 delete serializedNot.recipients
                 // Convert createdAt to request timezone
-                if (serializedNot.createdAt) {
-                    serializedNot.createdAt = notification.createdAt.setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss')
-                }
+                serializedNot.created_at = notification.createdAt?.setZone(timezone).toFormat('yyyy-MM-dd HH:mm:ss')
+
                 return serializedNot
             })
             return response.ok(serializedNotifications)
