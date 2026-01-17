@@ -2,7 +2,6 @@ import Expense from '#models/expense'
 import LedgerMovement from '#models/ledger_movement'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
-import Util from '#utils/Util'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
@@ -73,14 +72,13 @@ export default class ExpenseController {
     public async store(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'expenses', 'create')
 
-        const { request, response, auth, i18n } = ctx
+        const { request, response, i18n } = ctx
 
         const trx = await db.transaction()
         try {
             const { businessId, date, amount, currencyId, description, accountId, costCenterId, clientId, paymentMethodId, documentTypeId, documentNumber } =
                 await request.validateUsing(expenseStoreValidator)
 
-            const dateTime = await Util.getDateTimes(request)
             const expenseDate = DateTime.fromISO(date)
 
             // Create the expense record
@@ -90,7 +88,7 @@ export default class ExpenseController {
                     date: expenseDate,
                     amount,
                     currencyId,
-                    description: description || null,
+                    description: description,
                     status: 'pending',
                 },
                 { client: trx }
@@ -154,7 +152,7 @@ export default class ExpenseController {
                 .where('id', expenseId)
                 .preload('business', (q) => q.select(['id', 'name']))
                 .preload('currency', (q) => q.select(['id', 'symbol', 'name']))
-                .preload('ledgerMovements', (q) => {
+                .preload('payments', (q) => {
                     q.preload('account')
                         .preload('costCenter')
                         .preload('client')
@@ -204,7 +202,7 @@ export default class ExpenseController {
 
             await expense.load('business', (q) => q.select(['id', 'name']))
             await expense.load('currency', (q) => q.select(['id', 'symbol', 'name']))
-            await expense.load('ledgerMovements', (q) => {
+            await expense.load('payments', (q) => {
                 q.preload('account')
                     .preload('costCenter')
                     .preload('client')
