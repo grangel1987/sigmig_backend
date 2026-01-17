@@ -1658,8 +1658,22 @@ export default class BugetController {
     try {
       const payload = await request.validateUsing(createBudgetPaymentValidator)
 
+      // Generate default concept if not provided
+      let concept = payload.concept
+      if (!concept && payload.budgetId) {
+        const buget = await Buget.query()
+          .where('id', payload.budgetId)
+          .preload('client', (q) => q.select(['id', 'name']))
+          .first()
+
+        if (buget?.client) {
+          concept = `${buget.client.name} cotización #${buget.nro}`
+        }
+      }
+
       const result = await BudgetPaymentService.create({
         ...payload,
+        concept,
         date: DateTime.fromISO(payload.date),
       })
 
