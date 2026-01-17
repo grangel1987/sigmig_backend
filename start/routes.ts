@@ -13,6 +13,66 @@ import { middleware } from './kernel.js'
 
 const auth = middleware.auth()
 
+// API Documentation with Swagger UI (public endpoint)
+router.get('/api-docs', ({ response }) => {
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="SIGMI API Documentation" />
+        <title>SIGMI API Documentation</title>
+        <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+      </head>
+      <body>
+        <div id="swagger-ui"></div>
+        <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin></script>
+        <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" crossorigin></script>
+        <script>
+          window.onload = () => {
+            window.ui = SwaggerUIBundle({
+              url: '/openapi.json',
+              dom_id: '#swagger-ui',
+              deepLinking: true,
+              presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+              ],
+              plugins: [
+                SwaggerUIBundle.plugins.DownloadUrl
+              ],
+              layout: "StandaloneLayout",
+            });
+          };
+        </script>
+      </body>
+    </html>
+  `
+  return response.type('text/html').send(html)
+})
+
+// Serve OpenAPI spec as JSON endpoint
+router.get('/openapi.json', async ({ response }) => {
+  const fs = await import('fs/promises')
+  const path = await import('path')
+  const yaml = await import('yaml')
+  const { fileURLToPath } = await import('url')
+
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = path.dirname(__filename)
+  const specPath = path.join(__dirname, '..', 'openapi.yaml')
+
+  try {
+    const yamlContent = await fs.readFile(specPath, 'utf-8')
+    const spec = yaml.parse(yamlContent)
+    return response.json(spec)
+  } catch (error) {
+    console.error('Error loading OpenAPI spec:', error)
+    return response.status(500).json({ error: 'Failed to load OpenAPI specification' })
+  }
+})
+
 router.group(() => {
   router.group(() => {
     router.post("login", "#controllers/users/user_controller.login")
