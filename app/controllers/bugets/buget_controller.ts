@@ -4,6 +4,7 @@ import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import NotificationType from '#models/notifications/notification_type'
 import BugetRepository from '#repositories/bugets/buget_repository'
+import BudgetPaymentService from '#services/budget_payment_service'
 import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
 import ws from '#services/ws'
@@ -1713,7 +1714,198 @@ export default class BugetController {
         )
     }
   }
+
+  /**
+   * Create a new budget payment
+   * POST /buget/payments
+   */
+  public async storePayment(ctx: HttpContext) {
+    const { request, response, i18n } = ctx
+
+    try {
+      const payload = await request.validateUsing(createBudgetPaymentValidator)
+      const businessId = Number(request.header('Business'))
+      // Generate default concept if not provided
+      let concept = payload.concept
+      if (!concept && payload.budgetId) {
+        const buget = await Buget.query()
+          .where('id', payload.budgetId)
+          .preload('client', (q) => q.select(['id', 'name']))
+          .first()
+
+        if (buget?.client) {
+          concept = `${buget.client.name} cotización #${buget.nro}`
+        }
+      }
+
+      const result = await BudgetPaymentService.create({
+        ...payload, businessId,
+        concept,
+        date: DateTime.fromISO(payload.date),
+      })
+
+      return response.status(201).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.store_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response.status(500).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.store_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+  }
+
+  /**
+   * Get a budget payment with its ledger movement
+   * GET /buget/payments/:id
+   */
+  public async showPayment(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+
+    try {
+      const result = await BudgetPaymentService.findWithLedgerMovement(params.id)
+
+      return response.status(200).json(result)
+    } catch (error) {
+      log(error)
+      return response.status(404).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.no_exist'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+  }
+
+  /**
+   * Update a budget payment
+   * PUT /buget/payments/:id
+   */
+  public async updatePayment(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const payload = await request.validateUsing(updateBudgetPaymentValidator)
+
+      const updateData = { ...payload }
+
+
+      const result = await BudgetPaymentService.update(params.id, updateData)
+
+      return response.status(200).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response.status(500).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+  }
+
+  /**
+   * Delete a budget payment
+   * DELETE /buget/payments/:id
+   */
+  public async deletePayment(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+
+    try {
+      await BudgetPaymentService.delete(params.id)
+
+      return response.status(200).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.delete_ok'),
+          i18n.formatMessage('messages.ok_title')
+        )
+      )
+    } catch (error) {
+      log(error)
+      return response.status(500).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.delete_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+  }
+
+  /**
+   * Void a budget payment
+   * POST /buget/payments/:id/void
+   */
+  public async voidPayment(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+
+    try {
+      const result = await BudgetPaymentService.void(params.id)
+
+      return response.status(200).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response.status(500).json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
+    }
+  }
 }
+
+// Budget Payment validators
+const createBudgetPaymentValidator = vine.compile(
+  vine.object({
+    budgetId: vine.number().optional(),
+    accountId: vine.number().optional(),
+    costCenterId: vine.number().optional(),
+    clientId: vine.number().optional(),
+    date: vine.string(),
+    amount: vine.number(),
+    currencyId: vine.number(),
+    paymentMethodId: vine.number().optional(),
+    documentTypeId: vine.number().optional(),
+    documentNumber: vine.string().optional(),
+    concept: vine.string().optional(),
+    status: vine.enum(['paid', 'pending', 'voided']).optional(),
+  })
+)
+
+const updateBudgetPaymentValidator = vine.compile(
+  vine.object({
+    accountId: vine.number().optional(),
+    costCenterId: vine.number().optional(),
+    clientId: vine.number().optional(),
+    date: vine.string().optional(),
+    amount: vine.number().optional(),
+    currencyId: vine.number().optional(),
+    paymentMethodId: vine.number().optional(),
+    documentTypeId: vine.number().optional(),
+    documentNumber: vine.string().optional(),
+    concept: vine.string().optional(),
+    status: vine.enum(['paid', 'pending', 'voided']).optional(),
+  })
+)
 
 export async function sendBudgetNotification(
   businessId: number,

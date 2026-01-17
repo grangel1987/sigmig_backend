@@ -29,6 +29,7 @@ export default class extends BaseSeeder {
         { id: 17, key: 'countries', name: 'Países', description: 'Gestión de Países' },
         { id: 18, key: 'settings', name: 'Configuraciones', description: 'Configuraciones del Sistema' },
         { id: 19, key: 'rols', name: 'Roles', description: 'Gestión de Roles y Permisos' },
+        { id: 20, key: 'balances', name: 'Ingresos y Egresos', description: 'Movimientos de ingreso y egreso' },
       ]
 
       // Insert modules
@@ -186,6 +187,9 @@ export default class extends BaseSeeder {
         { key: 'create', name: 'Crear', description: 'Crear roles', type: 'rols', moduleId: 19 },
         { key: 'update', name: 'Actualizar', description: 'Actualizar roles', type: 'rols', moduleId: 19 },
         { key: 'delete', name: 'Eliminar', description: 'Eliminar roles', type: 'rols', moduleId: 19 },
+
+        // Balances module (20)
+        { key: 'view', name: 'Ver', description: 'Ver movimientos de ingresos y egresos', type: 'balances', moduleId: 20 },
       ]
 
       // Insert permissions

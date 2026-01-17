@@ -13,6 +13,8 @@ import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations
 import { DateTime } from 'luxon'
 
 export default class Buget extends BaseModel {
+    public static table = 'bugets'
+
     @column({ isPrimary: true })
     public id: number
 
