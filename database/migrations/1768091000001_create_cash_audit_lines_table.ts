@@ -13,7 +13,7 @@ export default class CashAuditLinesSchema extends BaseSchema {
                     .unsigned()
                     .references('cash_audits.id')
                     .onDelete('CASCADE')
-                table.integer('currency_id').unsigned().nullable().references('coins.id').onDelete('RESTRICT')
+                table.integer('currency_id').nullable().references('coins.id').onDelete('RESTRICT')
                 table.decimal('denomination_value', 15, 2).defaultTo(1)
                 table.integer('quantity').unsigned().nullable()
                 table.string('denomination_name').nullable()

@@ -8,8 +8,8 @@ export default class CashAuditsSchema extends BaseSchema {
         if (!exists) {
             this.schema.createTable(this.tableName, (table) => {
                 table.increments('id')
-                table.integer('business_id').unsigned().references('businesses.id').onDelete('RESTRICT')
-                table.integer('performed_by').unsigned().references('users.id').onDelete('RESTRICT')
+                table.bigInteger('business_id').notNullable().references('id').inTable('businesses').onDelete('RESTRICT')
+                table.integer('performed_by')
                 table.timestamp('performed_at', { useTz: true }).notNullable()
                 table.decimal('total_counted', 15, 2).notNullable().defaultTo(0)
                 table.decimal('total_expected', 15, 2).notNullable().defaultTo(0)

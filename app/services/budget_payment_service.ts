@@ -17,6 +17,7 @@ interface CreateBudgetPaymentParams {
     concept?: string
     status?: 'paid' | 'pending' | 'voided'
     createdById?: number
+    businessId?: number
 }
 
 export default class BudgetPaymentService {
@@ -25,7 +26,7 @@ export default class BudgetPaymentService {
      */
     static async create(params: CreateBudgetPaymentParams) {
         const trx = await Database.transaction()
-
+        console.log('Creating budget payment with params:', params)
         try {
             // Create the budget payment record
             const budgetPayment = await BudgetPayment.create(
@@ -42,10 +43,10 @@ export default class BudgetPaymentService {
                 },
                 { client: trx }
             )
-
             // Create the ledger movement linked to this budget payment
             const ledgerMovement = await LedgerMovement.create(
                 {
+                    businessId: params.businessId,
                     budgetPaymentId: budgetPayment.id,
                     accountId: params.accountId,
                     costCenterId: params.costCenterId,

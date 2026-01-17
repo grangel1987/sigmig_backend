@@ -5,10 +5,12 @@ import type { BelongsTo, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class BudgetPayment extends BaseModel {
+  public static table = 'budget_payments'
+
   @column({ isPrimary: true })
   declare id: number
 
-  @column()
+  @column({ columnName: 'budget_id' })
   declare budgetId: number
 
   @belongsTo(() => Buget, { foreignKey: 'budgetId' })
@@ -34,10 +36,10 @@ export default class BudgetPayment extends BaseModel {
   declare deletedAt: DateTime | null
 
   @column()
-  declare deletedBy: number | null
+  declare deletedBy: number
 
   @hasOne(() => LedgerMovement, { foreignKey: 'budgetPaymentId' })
-  declare payment: HasOne<typeof LedgerMovement>
+  public ledgerMovement: HasOne<typeof LedgerMovement>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

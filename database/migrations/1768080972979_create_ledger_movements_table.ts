@@ -9,17 +9,16 @@ export default class LedgerMovementsSchema extends BaseSchema {
     if (!tableExists) {
       this.schema.createTable(this.tableName, (table) => {
         table.increments('id')
-        table.integer('business_id').unsigned().notNullable().references('id').inTable('business').onDelete('RESTRICT')
+        table.bigInteger('business_id').notNullable().references('id').inTable('businesses').onDelete('RESTRICT')
 
-        table.integer('account_id').unsigned().nullable()
-        table.integer('cost_center_id').unsigned().nullable()
-        table.integer('client_id').unsigned().nullable()
-
+        table.integer('account_id').nullable()
+        table.integer('cost_center_id').nullable()
+        table.integer('client_id').nullable()
         table.date('date').notNullable()
 
         // Amount is signed: positive = income, negative = expense
         table.decimal('amount', 15, 2).notNullable()
-        table.integer('currency_id').notNullable().references('currencies.id').onDelete('RESTRICT')
+        table.integer('currency_id').notNullable()
 
         table.integer('payment_method_id').unsigned().nullable().references('payment_methods.id').onDelete('RESTRICT')
         table.integer('document_type_id').unsigned().nullable().references('document_types.id').onDelete('RESTRICT')

@@ -9,7 +9,7 @@ export default class LedgingAccountsSchema extends BaseSchema {
         if (!tableExists) {
             this.schema.createTable(this.tableName, (table) => {
                 table.increments('id')
-                table.integer('business_id').unsigned().notNullable().references('id').inTable('business').onDelete('RESTRICT')
+                table.bigInteger('business_id').notNullable().references('id').inTable('businesses').onDelete('RESTRICT')
                 table.string('name').notNullable()
                 table.enum('type', ['income', 'expense']).notNullable()
 

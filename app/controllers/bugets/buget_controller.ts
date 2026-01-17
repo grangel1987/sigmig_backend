@@ -1657,7 +1657,7 @@ export default class BugetController {
 
     try {
       const payload = await request.validateUsing(createBudgetPaymentValidator)
-
+      const businessId = Number(request.header('Business'))
       // Generate default concept if not provided
       let concept = payload.concept
       if (!concept && payload.budgetId) {
@@ -1672,7 +1672,7 @@ export default class BugetController {
       }
 
       const result = await BudgetPaymentService.create({
-        ...payload,
+        ...payload, businessId,
         concept,
         date: DateTime.fromISO(payload.date),
       })

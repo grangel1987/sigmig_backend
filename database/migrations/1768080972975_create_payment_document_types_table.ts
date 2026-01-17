@@ -10,7 +10,7 @@ export default class DocumentTypesSchema extends BaseSchema {
       this.schema.createTable(this.tableName, (table) => {
         table.increments('id')
 
-        table.integer('business_id').unsigned().references('id').inTable('business').onDelete('RESTRICT')
+        table.bigInteger('business_id').references('id').inTable('businesses').onDelete('RESTRICT')
 
         table.string('name').notNullable()
 

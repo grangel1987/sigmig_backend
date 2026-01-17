@@ -712,6 +712,11 @@ router.group(() => {
     }).prefix('shoppings')
   }).prefix('dashboard').middleware(auth)
 
+  // Balances
+  router.group(() => {
+    router.get('/movements', '#controllers/balances/balances_controller.getMovements')
+  }).prefix('balances').middleware(auth)
+
   // Notifications
   router.group(() => {
     router.get('/types', '#controllers/notifications/notification_types_controller.index')

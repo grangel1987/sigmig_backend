@@ -12,74 +12,77 @@ export default class LedgerMovement extends BaseModel {
   public static table = 'ledger_movements'
 
   @column({ isPrimary: true })
-  public id: number
+  declare id: number
 
   @column()
-  public accountId?: number
+  declare accountId: number
 
   @belongsTo(() => Account, { foreignKey: 'accountId' })
-  public account: BelongsTo<typeof Account>
+  declare account: BelongsTo<typeof Account>
 
   @column()
-  public costCenterId?: number
+  declare costCenterId: number
 
   @belongsTo(() => CostCenter, { foreignKey: 'costCenterId' })
-  public costCenter: BelongsTo<typeof CostCenter>
+  declare costCenter: BelongsTo<typeof CostCenter>
 
   @column()
-  public clientId?: number
+  declare clientId: number
 
   @belongsTo(() => Client, { foreignKey: 'clientId' })
-  public client: BelongsTo<typeof Client>
+  declare client: BelongsTo<typeof Client>
 
   @column.date()
-  public date: DateTime
+  declare date: DateTime
 
   @column({
-    prepare: (value?: number) => (value ?? null),
-    consume: (value?: string | number) =>
+    prepare: (value: number) => (value ?? null),
+    consume: (value: string | number) =>
       value === null || value === undefined ? 0 : Number(value),
   })
-  public amount: number
+  declare amount: number
 
   @column()
-  public currencyId: number
+  declare currencyId: number
 
   @column()
-  public paymentMethodId?: number
+  declare paymentMethodId: number
 
   @belongsTo(() => PaymentMethod, { foreignKey: 'paymentMethodId' })
-  public paymentMethod: BelongsTo<typeof PaymentMethod>
+  declare paymentMethod: BelongsTo<typeof PaymentMethod>
 
   @column()
-  public documentTypeId?: number
+  declare documentTypeId: number
 
   @column()
-  public documentNumber?: string
+  declare documentNumber: string
 
   @column()
-  public concept?: string
+  declare concept: string
 
   @column()
-  public status?: 'paid' | 'pending' | 'voided'
+  declare status: 'paid' | 'pending' | 'voided'
 
   @column()
-  public budgetPaymentId?: number
+  declare businessId: number
+
+  @column()
+  declare budgetPaymentId: number
 
   @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
-  public budgetPayment: BelongsTo<typeof BudgetPayment>
+  declare budgetPayment: BelongsTo<typeof BudgetPayment>
 
   @column()
-  public expenseId?: number
+  declare expenseId: number
 
   @belongsTo(() => Expense, { foreignKey: 'expenseId' })
-  public expense: BelongsTo<typeof Expense>
+  declare expense: BelongsTo<typeof Expense>
 
   @column.dateTime({ autoCreate: true })
-  public createdAt: DateTime
+  declare createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  public updatedAt: DateTime
+  declare updatedAt: DateTime
 
   public isIncome() {
     return this.amount > 0

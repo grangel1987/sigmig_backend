@@ -9,12 +9,12 @@ export default class ExpensesSchema extends BaseSchema {
     if (!tableExists) {
       this.schema.createTable(this.tableName, (table) => {
         table.increments('id')
-        table.integer('business_id').unsigned().notNullable().references('id').inTable('business').onDelete('RESTRICT')
+        table.bigInteger('business_id').notNullable().references('id').inTable('businesses').onDelete('RESTRICT')
 
         table.date('date').notNullable()
 
         table.decimal('amount', 15, 2).notNullable()
-        table.integer('currency_id').notNullable().references('currencies.id').onDelete('RESTRICT')
+        table.integer('currency_id').notNullable()
 
         table.text('description').nullable()
 
