@@ -11,7 +11,7 @@ info:
 servers:
   - url: http://localhost:3000/api/v2
     description: Servidor de Desarrollo Local
-  - url: https://sigmi-api.example.com/api/v2
+  - url: http://93.127.210.103/api/v2
     description: Servidor de Producción
 
 components:
