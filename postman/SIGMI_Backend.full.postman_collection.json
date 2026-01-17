@@ -1,7 +1,7 @@
 {
   "info": {
-    "_postman_id": "ce5ab091-c977-4bde-bbe1-ed02afa37d7d",
-    "name": "SIGMIG Copy",
+    "_postman_id": "9ed7943c-f24b-4ad3-9f48-e882273bf15b",
+    "name": "SIGMIG",
     "description": "Complete Postman collection for SIGMI Backend routes (start/routes.ts)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "49390994"
@@ -386,130 +386,6 @@
                 "setting",
                 "country",
                 ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST buget/payments",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "buget",
-                "payments"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET buget/payments/:id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "buget",
-                "payments",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PUT buget/payments/:id",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "buget",
-                "payments",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "DELETE buget/payments/:id",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "buget",
-                "payments",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST buget/payments/:id/void",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments/:id/void",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "buget",
-                "payments",
-                ":id",
-                "void"
               ],
               "variable": [
                 {
@@ -7854,7 +7730,22 @@
           "name": "POST buget/payments",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Business",
+                "value": "1",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"budgetId\": 123,           // optional; helps auto-generate concept when present\r\n  \"accountId\": 5,            // optional\r\n  \"costCenterId\": 9,         // optional\r\n  \"clientId\": 42,            // optional\r\n  \"date\": \"2026-01-17\",      // ISO date string\r\n  \"amount\": 150000,          // required\r\n  \"currencyId\": 1,           // required (e.g., 1 = CLP)\r\n  \"paymentMethodId\": 1,      // optional\r\n  \"documentTypeId\": 1,       // optional\r\n  \"documentNumber\": \"F12345\",// optional\r\n  \"concept\": \"Pago de anticipo\", // optional; auto-set if omitted and budgetId provided\r\n  \"status\": \"paid\"           // optional; allowed: paid | pending | voided\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments",
               "host": [
@@ -7867,7 +7758,72 @@
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "POST buget/payments",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Business",
+                    "value": "1",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"budgetId\": 123,           // optional; helps auto-generate concept when present\r\n  \"accountId\": 5,            // optional\r\n  \"costCenterId\": 9,         // optional\r\n  \"clientId\": 42,            // optional\r\n  \"date\": \"2026-01-17\",      // ISO date string\r\n  \"amount\": 150000,          // required\r\n  \"currencyId\": 1,           // required (e.g., 1 = CLP)\r\n  \"paymentMethodId\": 1,      // optional\r\n  \"documentTypeId\": 1,       // optional\r\n  \"documentNumber\": \"F12345\",// optional\r\n  \"concept\": \"Pago de anticipo\", // optional; auto-set if omitted and budgetId provided\r\n  \"status\": \"paid\"           // optional; allowed: paid | pending | voided\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "buget",
+                    "payments"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "x-request-id",
+                  "value": "smalf43oo2iycb11xb2lhrgn"
+                },
+                {
+                  "key": "content-length",
+                  "value": "664"
+                },
+                {
+                  "key": "content-type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Date",
+                  "value": "Sat, 17 Jan 2026 14:45:15 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"budgetPayment\": {\n        \"budget_id\": 123,\n        \"amount\": 150000,\n        \"date\": \"2026-01-17\",\n        \"voided\": false,\n        \"voided_at\": null,\n        \"created_at\": \"2026-01-17T14:45:15.028+00:00\",\n        \"updated_at\": \"2026-01-17T14:45:15.029+00:00\",\n        \"id\": 7\n    },\n    \"ledgerMovement\": {\n        \"business_id\": 1,\n        \"budget_payment_id\": 7,\n        \"account_id\": 5,\n        \"cost_center_id\": 9,\n        \"client_id\": 42,\n        \"date\": \"2026-01-17\",\n        \"amount\": 150000,\n        \"currency_id\": 1,\n        \"payment_method_id\": 1,\n        \"document_type_id\": 1,\n        \"document_number\": \"F12345\",\n        \"concept\": \"Pago de anticipo\",\n        \"status\": \"paid\",\n        \"created_at\": \"2026-01-17T14:45:15.032+00:00\",\n        \"updated_at\": \"2026-01-17T14:45:15.033+00:00\",\n        \"id\": 2\n    },\n    \"title\": \"Éxito\",\n    \"message\": \"Creado correctamente.\",\n    \"interceptor\": true,\n    \"plugin\": \"notification\"\n}"
+            }
+          ]
         },
         {
           "name": "GET buget/payments/:id",
@@ -10145,7 +10101,10 @@
           "name": "GET notifications/my",
           "request": {
             "method": "GET",
-            "header": []
+            "header": [],
+            "url": {
+              "raw": ""
+            }
           },
           "response": []
         },
@@ -10366,6 +10325,683 @@
       ]
     },
     {
+      "name": "expenses",
+      "item": [
+        {
+          "name": "GET expenses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses?page=1&perPage=15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "expenses"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "15"
+                },
+                {
+                  "key": "text",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST expenses/store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessId\": 1,\n  \"date\": \"2026-01-17\",\n  \"amount\": 50000,\n  \"currencyId\": 1,\n  \"description\": \"Compra de materiales de oficina\",\n  \"accountId\": 5,\n  \"costCenterId\": 3,\n  \"clientId\": 42,\n  \"paymentMethodId\": 2,\n  \"documentTypeId\": 3,\n  \"documentNumber\": \"F-12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "expenses",
+                "store"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET expenses/show/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/show/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "expenses",
+                "show",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT expenses/status/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"paid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/status/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "expenses",
+                "status",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE expenses/delete/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/delete/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "expenses",
+                "delete",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "payment-methods",
+      "item": [
+        {
+          "name": "GET config/payment-methods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods?page=1&perPage=15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-methods"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST config/payment-methods/store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Transferencia\",\n  \"description\": \"Pago por transferencia bancaria\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-methods",
+                "store"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET config/payment-methods/show/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/show/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-methods",
+                "show",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT config/payment-methods/update/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Transferencia Bancaria\",\n  \"description\": \"Pago por transferencia\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/update/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-methods",
+                "update",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE config/payment-methods/delete/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/delete/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-methods",
+                "delete",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET config/payment-methods/select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-methods",
+                "select"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "payment-document-types",
+      "item": [
+        {
+          "name": "GET config/payment-document-types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types?page=1&perPage=15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-document-types"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST config/payment-document-types/store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Factura\",\n  \"description\": \"Factura comercial\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-document-types",
+                "store"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET config/payment-document-types/show/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/show/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-document-types",
+                "show",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT config/payment-document-types/update/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Factura Electrónica\",\n  \"description\": \"Factura electrónica\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/update/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-document-types",
+                "update",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE config/payment-document-types/delete/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/delete/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-document-types",
+                "delete",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET config/payment-document-types/select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "payment-document-types",
+                "select"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "ledging-accounts",
+      "item": [
+        {
+          "name": "GET config/ledging-accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts?page=1&perPage=15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "ledging-accounts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST config/ledging-accounts/store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessId\": 1,\n  \"name\": \"Ingresos por servicios\",\n  \"type\": \"income\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "ledging-accounts",
+                "store"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET config/ledging-accounts/show/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/show/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "ledging-accounts",
+                "show",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT config/ledging-accounts/update/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ingresos por servicios profesionales\",\n  \"type\": \"income\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/update/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "ledging-accounts",
+                "update",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE config/ledging-accounts/delete/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/delete/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "ledging-accounts",
+                "delete",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET config/ledging-accounts/select",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/select",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "config",
+                "ledging-accounts",
+                "select"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "balances",
       "item": [
         {
@@ -10374,7 +11010,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/balances/movements",
+              "raw": "{{baseUrl}}/{{apiPrefix}}/balances/movements?page=1&perPage=15",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -10382,10 +11018,117 @@
                 "{{apiPrefix}}",
                 "balances",
                 "movements"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Página actual"
+                },
+                {
+                  "key": "perPage",
+                  "value": "15",
+                  "description": "Registros por página"
+                },
+                {
+                  "key": "text",
+                  "value": "",
+                  "description": "Filtra por cliente, cuenta, concepto o número de documento",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filtra por estado del movimiento",
+                  "disabled": true
+                },
+                {
+                  "key": "documentTypeId",
+                  "value": "",
+                  "description": "Filtra por tipo de documento",
+                  "disabled": true
+                },
+                {
+                  "key": "paymentMethodId",
+                  "value": "",
+                  "description": "Filtra por método de pago",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "description": "Filtra por tipo: income (ingreso) o expense (egreso)",
+                  "disabled": true
+                }
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "GET balances/movements",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/{{apiPrefix}}/balances/movements?text&page=1&perPage=15",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "{{apiPrefix}}",
+                    "balances",
+                    "movements"
+                  ],
+                  "query": [
+                    {
+                      "key": "text",
+                      "value": null,
+                      "description": "Filtra egresos/ingresos por cliente, cuenta o concepto."
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "perPage",
+                      "value": "15"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": null,
+              "header": [
+                {
+                  "key": "x-request-id",
+                  "value": "iw7ta3e4c8049hsqvjegxaoy"
+                },
+                {
+                  "key": "content-length",
+                  "value": "750"
+                },
+                {
+                  "key": "content-type",
+                  "value": "application/json; charset=utf-8"
+                },
+                {
+                  "key": "Date",
+                  "value": "Sat, 17 Jan 2026 14:45:35 GMT"
+                },
+                {
+                  "key": "Connection",
+                  "value": "keep-alive"
+                },
+                {
+                  "key": "Keep-Alive",
+                  "value": "timeout=5"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n    \"message\": \"Movimientos obtenidos exitosamente\",\n    \"data\": [\n        {\n            \"id\": 2,\n            \"date\": \"2026-01-17T00:00:00.000+00:00\",\n            \"concept\": \"Pago de anticipo\",\n            \"amount\": 150000,\n            \"absoluteAmount\": 150000,\n            \"type\": \"income\",\n            \"status\": \"paid\",\n            \"currencyId\": 1,\n            \"documentType\": 1,\n            \"documentNumber\": \"F12345\",\n            \"account\": {\n                \"id\": 5,\n                \"name\": \"MANTENCIONES INTEGRALES GENESSIS SPA\"\n            },\n            \"costCenter\": {\n                \"id\": 9,\n                \"name\": \" INFORMÁTICA   \",\n                \"code\": \"009\"\n            },\n            \"client\": {\n                \"id\": 42,\n                \"name\": \"HV INGENIERIA LTDA\"\n            },\n            \"paymentMethod\": {\n                \"id\": 1,\n                \"name\": \"Tarjeta de Débito\"\n            },\n            \"justifications\": [\n                {\n                    \"type\": \"budget_payment\",\n                    \"id\": 7,\n                    \"budgetNumber\": \"540\",\n                    \"clientName\": \"INVERSIONES E INMBOBILARIA MARQUEZ VALDIVIA SPA\",\n                    \"reference\": \"Pago cotización #540\"\n                }\n            ],\n            \"createdAt\": \"2026-01-17T14:45:15.000+00:00\",\n            \"updatedAt\": \"2026-01-17T14:45:15.000+00:00\"\n        }\n    ]\n}"
+            }
+          ]
         }
       ]
     }

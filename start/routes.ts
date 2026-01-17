@@ -653,6 +653,17 @@ router.group(() => {
     .prefix('config')
     .middleware(auth)
 
+  // Expenses
+  router.group(() => {
+    router.get('/', '#controllers/expenses/expense_controller.index')
+    router.post('/store', '#controllers/expenses/expense_controller.store')
+    router.get('/show/:id', '#controllers/expenses/expense_controller.show')
+    router.put('/status/:id', '#controllers/expenses/expense_controller.updateStatus')
+    router.delete('/delete/:id', '#controllers/expenses/expense_controller.delete')
+  })
+    .prefix('expenses')
+    .middleware(auth)
+
   // Shopping (protected)
   router.group(() => {
     router.get('/', '#controllers/shoppings/shopping_controller.index')
