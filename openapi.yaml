@@ -970,6 +970,597 @@ paths:
       security:
         - bearerAuth: []
 
+  /cost-center:
+    get:
+      tags:
+        - Configuración
+      summary: Listar centros de costo
+      description: Obtener todos los centros de costo con paginación
+      operationId: listCostCenters
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de centros de costo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /cost-center/store:
+    post:
+      tags:
+        - Configuración
+      summary: Crear centro de costo
+      description: Crear un nuevo centro de costo
+      operationId: storeCostCenter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                code:
+                  type: string
+                businessId:
+                  type: integer
+      responses:
+        '201':
+          description: Centro de costo creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /cost-center/select/{business_id}:
+    get:
+      tags:
+        - Configuración
+      summary: Lista de selección de centros de costo
+      description: Obtener centros de costo para dropdown/select
+      operationId: selectCostCenters
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de centros de costo
+      security:
+        - bearerAuth: []
+
+  /client:
+    get:
+      tags:
+        - Clientes
+      summary: Listar clientes
+      description: Obtener todos los clientes con paginación
+      operationId: listClients
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /client/store:
+    post:
+      tags:
+        - Clientes
+      summary: Crear cliente
+      description: Crear un nuevo cliente
+      operationId: storeClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                address:
+                  type: string
+      responses:
+        '201':
+          description: Cliente creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /client/show/{id}:
+    get:
+      tags:
+        - Clientes
+      summary: Obtener cliente
+      description: Obtener un cliente específico
+      operationId: showClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del cliente
+        '404':
+          description: No encontrado
+      security:
+        - bearerAuth: []
+
+  /buget:
+    get:
+      tags:
+        - Presupuestos
+      summary: Listar presupuestos
+      description: Obtener todos los presupuestos con paginación
+      operationId: listBudgets
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de presupuestos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /buget/store:
+    post:
+      tags:
+        - Presupuestos
+      summary: Crear presupuesto
+      description: Crear un nuevo presupuesto
+      operationId: storeBudget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                businessId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                items:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '201':
+          description: Presupuesto creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /buget/{id}:
+    get:
+      tags:
+        - Presupuestos
+      summary: Obtener presupuesto
+      description: Obtener un presupuesto específico con todos sus detalles
+      operationId: showBudget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del presupuesto
+        '404':
+          description: No encontrado
+      security:
+        - bearerAuth: []
+
+  /buget/status/{id}:
+    put:
+      tags:
+        - Presupuestos
+      summary: Actualizar estado del presupuesto
+      description: Actualizar el estado de un presupuesto
+      operationId: updateBudgetStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, approved, rejected, completed]
+      responses:
+        '200':
+          description: Estado actualizado
+        '500':
+          description: Error de actualización
+      security:
+        - bearerAuth: []
+
+  /employee/store:
+    post:
+      tags:
+        - Empleados
+      summary: Crear empleado
+      description: Crear un nuevo empleado
+      operationId: storeEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                businessId:
+                  type: integer
+      responses:
+        '201':
+          description: Empleado creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /employee/{token}/{business_id}:
+    get:
+      tags:
+        - Empleados
+      summary: Obtener empleado
+      description: Obtener un empleado específico por token y empresa
+      operationId: showEmployee
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del empleado
+        '404':
+          description: No encontrado
+      security:
+        - bearerAuth: []
+
+  /product:
+    get:
+      tags:
+        - Productos
+      summary: Listar productos
+      description: Obtener todos los productos con paginación
+      operationId: listProducts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /product/store:
+    post:
+      tags:
+        - Productos
+      summary: Crear producto
+      description: Crear un nuevo producto
+      operationId: storeProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+      responses:
+        '201':
+          description: Producto creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /provider:
+    get:
+      tags:
+        - Proveedores
+      summary: Listar proveedores
+      description: Obtener todos los proveedores con paginación
+      operationId: listProviders
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de proveedores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /provider/store:
+    post:
+      tags:
+        - Proveedores
+      summary: Crear proveedor
+      description: Crear un nuevo proveedor
+      operationId: storeProvider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: Proveedor creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /shopping:
+    get:
+      tags:
+        - Compras
+      summary: Listar órdenes de compra
+      description: Obtener todas las órdenes de compra con paginación
+      operationId: listShoppingOrders
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de órdenes de compra
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /shopping/store:
+    post:
+      tags:
+        - Compras
+      summary: Crear orden de compra
+      description: Crear una nueva orden de compra
+      operationId: storeShoppingOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerId:
+                  type: integer
+                businessId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Orden de compra creada
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /dashboard/indicators:
+    post:
+      tags:
+        - Dashboard
+      summary: Obtener indicadores
+      description: Obtener indicadores del dashboard
+      operationId: getDashboardIndicators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Indicadores del dashboard
+      security:
+        - bearerAuth: []
+
+  /dashboard/budgets/metrics:
+    post:
+      tags:
+        - Dashboard
+      summary: Métricas de presupuestos
+      description: Obtener métricas de presupuestos
+      operationId: getBudgetsMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Métricas de presupuestos
+      security:
+        - bearerAuth: []
+
+  /dashboard/shoppings/metrics:
+    post:
+      tags:
+        - Dashboard
+      summary: Métricas de compras
+      description: Obtener métricas de órdenes de compra
+      operationId: getShoppingsMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Métricas de compras
+      security:
+        - bearerAuth: []
+
   /expenses:
     get:
       tags:
