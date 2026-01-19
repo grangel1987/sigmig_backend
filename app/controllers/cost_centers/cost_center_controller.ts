@@ -1,7 +1,7 @@
 import CostCenter from '#models/cost_centers/cost_center'
 import CostCenterRepository from '#repositories/cost_centers/cost_center_repository'
 import PermissionService from '#services/permission_service'
-import { indexFiltersWithStatus } from '#validators/general'
+import { searchWithStatusSchema } from '#validators/general'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -20,7 +20,11 @@ export default class CostCenterController {
 
     const { request, response, auth } = ctx
 
-    const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
+    const { page, perPage, text, status, accounting } = await request.validateUsing(vine.compile(
+      vine.object({
+        ...searchWithStatusSchema.getProperties(), accounting: vine.boolean().optional()
+
+      })))
 
     try {
       const userId = auth.user!.id
@@ -42,6 +46,10 @@ export default class CostCenterController {
       if (text) {
         const like = `%${text}%`
         query.where((qb) => qb.whereRaw('name LIKE ?', [like]).orWhereRaw('code LIKE ?', [like]))
+      }
+
+      if (typeof accounting === 'boolean') {
+        query.where('accounting', accounting)
       }
 
       if (status !== undefined) query.where('enabled', status === 'enabled')

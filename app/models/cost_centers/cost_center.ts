@@ -14,6 +14,9 @@ export default class CostCenter extends BaseModel {
   public code: string  // Changed to snake_case
 
   @column()
+  declare accounting: boolean
+
+  @column()
   public name: string
 
   @column()
