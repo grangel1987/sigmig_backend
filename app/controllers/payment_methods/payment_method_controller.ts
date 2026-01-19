@@ -112,7 +112,7 @@ export default class PaymentMethodController {
             const method = await PaymentMethod.findOrFail(params.id)
 
             method.name = name
-            method.description = description
+            method.description = description ? description : ''
             method.updatedAt = DateTime.now()
 
             await method.save()
