@@ -45,16 +45,18 @@ export default class PaymentMethodController {
         const { request, response, i18n } = ctx
 
         try {
-            const { name } = await request.validateUsing(
+            const { name, description } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
+                        description: vine.string().trim().optional(),
                     })
                 )
             )
 
             const method = await PaymentMethod.create({
                 name,
+                description,
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
             })
@@ -98,10 +100,11 @@ export default class PaymentMethodController {
         const { request, params, response, i18n } = ctx
 
         try {
-            const { name } = await request.validateUsing(
+            const { name, description } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
+                        description: vine.string().trim().optional(),
                     })
                 )
             )
@@ -109,6 +112,7 @@ export default class PaymentMethodController {
             const method = await PaymentMethod.findOrFail(params.id)
 
             method.name = name
+            method.description = description
             method.updatedAt = DateTime.now()
 
             await method.save()
