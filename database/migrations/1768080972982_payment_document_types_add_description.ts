@@ -1,7 +1,7 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class PaymentMethodsSchema extends BaseSchema {
-  protected tableName = 'payment_methods'
+  protected tableName = 'document_types'
 
   public async up() {
     const hasColumn = await this.schema.hasColumn(this.tableName, 'description')
