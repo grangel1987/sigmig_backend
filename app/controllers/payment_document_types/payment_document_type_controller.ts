@@ -49,6 +49,7 @@ export default class PaymentDocumentTypeController {
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
+                        description: vine.string().trim().optional(),
                     })
                 )
             )
@@ -102,6 +103,7 @@ export default class PaymentDocumentTypeController {
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
+                        description: vine.string().trim().optional(),
                     })
                 )
             )
