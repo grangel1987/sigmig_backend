@@ -50,17 +50,19 @@ export default class LedgingAccountController {
         const { request, response, i18n } = ctx
 
         try {
-            const { name, type } = await request.validateUsing(
+            const { name, type, businessId } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
                         type: vine.enum(['income', 'expense']),
+                        businessId: vine.number().positive().exists({ table: 'businesses', column: 'id' }),
                     })
                 )
             )
 
             const account = await LedgingAccount.create({
                 name,
+                businessId,
                 type,
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
