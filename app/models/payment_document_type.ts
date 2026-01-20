@@ -2,6 +2,8 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
 export default class PaymentDocumentType extends BaseModel {
+  public static table = 'document_types'
+
   @column({ isPrimary: true })
   declare id: number
 
