@@ -45,7 +45,7 @@ export default class PaymentDocumentTypeController {
         const { request, response, i18n } = ctx
 
         try {
-            const { name } = await request.validateUsing(
+            const { name, description } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
@@ -56,6 +56,7 @@ export default class PaymentDocumentTypeController {
 
             const type = await PaymentDocumentType.create({
                 name,
+                description,
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
             })
@@ -99,7 +100,7 @@ export default class PaymentDocumentTypeController {
         const { request, params, response, i18n } = ctx
 
         try {
-            const { name } = await request.validateUsing(
+            const { name, description } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
@@ -111,6 +112,7 @@ export default class PaymentDocumentTypeController {
             const type = await PaymentDocumentType.findOrFail(params.id)
 
             type.name = name
+            type.description = description || ''
             type.updatedAt = DateTime.now()
 
             await type.save()
