@@ -48,9 +48,9 @@ export default class CostCenterController {
         query.where((qb) => qb.whereRaw('name LIKE ?', [like]).orWhereRaw('code LIKE ?', [like]))
       }
 
-      if (typeof accounting === 'boolean') {
-        query.where('accounting', accounting)
-      }
+      if (accounting !== undefined)
+        query.where('accounting', Boolean(accounting))
+
 
       if (status !== undefined) query.where('enabled', status === 'enabled')
 
@@ -65,10 +65,11 @@ export default class CostCenterController {
     await PermissionService.requirePermission(ctx, 'cost_centers', 'create')
 
     const { auth, request, response, i18n } = ctx
-    const { businessId, name, code } = await request.validateUsing(vine.compile(vine.object({
+    const { businessId, name, code, accounting } = await request.validateUsing(vine.compile(vine.object({
       businessId: vine.number().positive(),
       name: vine.string().trim(),
       code: vine.string().trim(),
+      accounting: vine.boolean().optional(),
     })))
     const dateTime = DateTime.local()
 
@@ -76,6 +77,7 @@ export default class CostCenterController {
       const data = {
         businessId,
         name,
+        accounting,
         code,
         createdAt: dateTime,
         updatedAt: dateTime,
@@ -107,9 +109,10 @@ export default class CostCenterController {
 
     const { params, request, response, auth, i18n } = ctx
     const costCenterId = params.id
-    const { name, code } = await request.validateUsing(vine.compile(vine.object({
+    const { name, code, accounting } = await request.validateUsing(vine.compile(vine.object({
       name: vine.string().trim().optional(),
       code: vine.string().trim().optional(),
+      accounting: vine.boolean().optional(),
     })))
     const dateTime = DateTime.local()
 
@@ -117,6 +120,7 @@ export default class CostCenterController {
       const costCenter = await CostCenter.findOrFail(costCenterId)
 
       costCenter.merge({
+        accounting,
         name,
         code,
         updatedAt: dateTime,
