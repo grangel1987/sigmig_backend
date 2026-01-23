@@ -2005,7 +2005,7 @@ export default class UserController {
       })
     } catch (error) {
       await trx.rollback()
-      console.error(error)
+      console.log(error)
       if (createdFiles.length)
         await Promise.all(createdFiles.map((file) => Google.deleteFile(file)))
       return response.status(500).json({
