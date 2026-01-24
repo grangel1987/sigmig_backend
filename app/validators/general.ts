@@ -10,6 +10,7 @@ export const searchWithStatusSchema = vine.object({
     status: vine.enum(['enabled', 'disabled'] as const).optional(),
     roleId: vine.number().positive().optional(),
     budgetStatus: vine.enum(['pending', 'revision', 'reject', 'accept'] as const).optional(),
+    businessId: vine.number().positive().optional(),
 });
 export const indexFiltersWithStatus = vine.compile(
     searchWithStatusSchema

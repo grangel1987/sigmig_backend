@@ -16,10 +16,11 @@ export default class RolController {
 
         const { request, response } = ctx
 
-        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
-        let businessId
+        const { page, perPage, text, status, businessId: businessIdFromQuery } = await request.validateUsing(indexFiltersWithStatus)
+        let businessId = businessIdFromQuery
+        businessId ??= Number(request.header('Business'))
 
-        businessId = request.header('Business')
+
         if (!businessId) {
             await ctx.auth.user?.loadOnce('selectedBusiness')
             const selected = ctx.auth.user?.selectedBusiness
