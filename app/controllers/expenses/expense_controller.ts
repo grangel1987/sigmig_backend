@@ -97,6 +97,7 @@ export default class ExpenseController {
             // Create the associated ledger movement (negative amount for expense)
             const ledgerMovement = await LedgerMovement.create(
                 {
+                    businessId,
                     accountId,
                     costCenterId,
                     clientId,
