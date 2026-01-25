@@ -79,7 +79,7 @@ export default class LedgerMovement extends BaseModel {
   @belongsTo(() => Expense, { foreignKey: 'expenseId' })
   declare expense: BelongsTo<typeof Expense>
 
-  @belongsTo(() => PaymentDocumentType)
+  @belongsTo(() => PaymentDocumentType, { foreignKey: 'documentTypeId' })
   declare documentType: BelongsTo<typeof PaymentDocumentType>
 
   @column.dateTime({ autoCreate: true })
