@@ -37,6 +37,7 @@ export default class ExpenseController {
                     q.preload('account')
                         .preload('costCenter')
                         .preload('paymentMethod')
+                        .preload('documentType')
                 })
                 .orderBy('date', 'desc')
 
@@ -161,6 +162,8 @@ export default class ExpenseController {
                             q.preload('city')
                                 .preload('typeIdentify'))
                         .preload('paymentMethod')
+                        .preload('documentType')
+
                 })
                 .firstOrFail()
 

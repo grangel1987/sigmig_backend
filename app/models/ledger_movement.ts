@@ -7,6 +7,7 @@ import PaymentMethod from '#models/payment_method'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+import PaymentDocumentType from './payment_document_type.js'
 
 export default class LedgerMovement extends BaseModel {
   public static table = 'ledger_movements'
@@ -77,6 +78,9 @@ export default class LedgerMovement extends BaseModel {
 
   @belongsTo(() => Expense, { foreignKey: 'expenseId' })
   declare expense: BelongsTo<typeof Expense>
+
+  @belongsTo(() => PaymentDocumentType)
+  declare documentType: BelongsTo<typeof PaymentDocumentType>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
