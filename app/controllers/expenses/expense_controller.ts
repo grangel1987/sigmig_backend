@@ -25,12 +25,13 @@ export default class ExpenseController {
                 vine.compile(
                     vine.object({
                         ...searchWithStatusSchema.getProperties(),
+                        status: vine.enum(['paid', 'pending', 'canceled'] as const).optional(),
                     })
                 )
             )
 
             let query = Expense.query()
-                .preload('business', (q) => q.select(['id', 'name']))
+                .preload('business', q => q.preload('typeIdentify'))
                 .preload('currency', (q) => q.select(['id', 'symbol', 'name']))
                 .preload('payments', (q) => {
                     q.preload('account')
@@ -151,12 +152,14 @@ export default class ExpenseController {
         try {
             const expense = await Expense.query()
                 .where('id', expenseId)
-                .preload('business', (q) => q.select(['id', 'name']))
+                .preload('business', (q) => q.preload('typeIdentify'))
                 .preload('currency', (q) => q.select(['id', 'symbol', 'name']))
                 .preload('payments', (q) => {
                     q.preload('account')
                         .preload('costCenter')
-                        .preload('client')
+                        .preload('client', q =>
+                            q.preload('city')
+                                .preload('typeIdentify'))
                         .preload('paymentMethod')
                 })
                 .firstOrFail()
