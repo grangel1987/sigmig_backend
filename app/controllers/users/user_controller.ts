@@ -1198,7 +1198,10 @@ export default class UserController {
           pd.nationalityId = rPersonalData.nationalityId ?? null
           pd.cityId = rPersonalData.cityId ?? null
           pd.address = rPersonalData.address ?? null
-          pd.phone = rPersonalData.phone ?? user.email
+          // Only update phone when provided; never fall back to email (20-char column)
+          if (rPersonalData.phone !== undefined) {
+            pd.phone = rPersonalData.phone ?? null
+          }
           pd.movil = rPersonalData.movil ?? null
           pd.email = rPersonalData.email ?? user.email
           pd.updatedAt = dateTime

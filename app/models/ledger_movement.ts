@@ -1,4 +1,3 @@
-import Account from '#models/bank/account'
 import BudgetPayment from '#models/budget_payment'
 import Client from '#models/clients/client'
 import CostCenter from '#models/cost_centers/cost_center'
@@ -7,6 +6,7 @@ import PaymentMethod from '#models/payment_method'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+import LedgingAccount from './ledging_account.js'
 import PaymentDocumentType from './payment_document_type.js'
 
 export default class LedgerMovement extends BaseModel {
@@ -18,8 +18,8 @@ export default class LedgerMovement extends BaseModel {
   @column()
   declare accountId: number
 
-  @belongsTo(() => Account, { foreignKey: 'accountId' })
-  declare account: BelongsTo<typeof Account>
+  @belongsTo(() => LedgingAccount, { foreignKey: 'accountId' })
+  declare account: BelongsTo<typeof LedgingAccount>
 
   @column()
   declare costCenterId: number
