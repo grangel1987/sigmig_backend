@@ -668,7 +668,10 @@ export default class UserController {
 
         // Sync notification types associated to this role to the business user
         businessUser.useTransaction(trx)
-        const ntRows = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+        const ntRows = await db
+          .from('notification_type_rols')
+          .where('rol_id', businessUserRol.rolId)
+          .select('notification_type_id')
         const ntIds = ntRows.map((r: any) => Number(r.notification_type_id))
         if (ntIds.length) {
           const ntData: any = {}
@@ -891,7 +894,7 @@ export default class UserController {
             pd.nationalityId = rPersonalData.nationalityId ?? null
             pd.cityId = rPersonalData.cityId ?? null
             pd.address = rPersonalData.address ?? null
-            pd.phone = rPersonalData.phone ?? user.email
+            pd.phone = rPersonalData.phone ?? ''
             pd.movil = rPersonalData.movil ?? null
             pd.email = rPersonalData.email ?? user.email
             pd.updatedAt = dateTime
@@ -1061,7 +1064,10 @@ export default class UserController {
 
             // Sync notification types from role to business user
             businessUser.useTransaction(trx)
-            const ntRows2 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+            const ntRows2 = await db
+              .from('notification_type_rols')
+              .where('rol_id', businessUserRol.rolId)
+              .select('notification_type_id')
             const ntIds2 = ntRows2.map((r: any) => Number(r.notification_type_id))
             if (ntIds2.length) {
               const ntData2: any = {}
@@ -1107,7 +1113,10 @@ export default class UserController {
 
             // Sync notification types from role to business user
             businessUser.useTransaction(trx)
-            const ntRows3 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+            const ntRows3 = await db
+              .from('notification_type_rols')
+              .where('rol_id', businessUserRol.rolId)
+              .select('notification_type_id')
             const ntIds3 = ntRows3.map((r: any) => Number(r.notification_type_id))
             if (ntIds3.length) {
               const ntData3: any = {}
@@ -1794,7 +1803,12 @@ export default class UserController {
     if (text) {
       const like = `%${text}%`
       query.where((qb) => {
-        qb.whereILike('email', like).orWhereHas('personalData', (pdQ) => pdQ.whereILike('names', like).orWhereILike('last_name_p', like).orWhereILike('last_name_m', like))
+        qb.whereILike('email', like).orWhereHas('personalData', (pdQ) =>
+          pdQ
+            .whereILike('names', like)
+            .orWhereILike('last_name_p', like)
+            .orWhereILike('last_name_m', like)
+        )
       })
     }
 
@@ -1899,7 +1913,10 @@ export default class UserController {
 
           // Sync notification types from role to business user (admin default role)
           businessUser.useTransaction(trx)
-          const adminNt = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+          const adminNt = await db
+            .from('notification_type_rols')
+            .where('rol_id', businessUserRol.rolId)
+            .select('notification_type_id')
           const adminNtIds = adminNt.map((r: any) => Number(r.notification_type_id))
           if (adminNtIds.length) {
             const adminNtData: any = {}
@@ -1936,7 +1953,10 @@ export default class UserController {
 
           // Sync notification types for this role to the created business user
           businessUser.useTransaction(trx)
-          const ntRows4 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+          const ntRows4 = await db
+            .from('notification_type_rols')
+            .where('rol_id', businessUserRol.rolId)
+            .select('notification_type_id')
           const ntIds4 = ntRows4.map((r: any) => Number(r.notification_type_id))
           if (ntIds4.length) {
             const ntData4: any = {}
