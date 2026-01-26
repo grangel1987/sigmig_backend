@@ -120,7 +120,9 @@ export default class BugetController {
         accountId: typeof b === 'object' ? b?.accountId : b,
       }))
 
-      log(`[BUGET STORE ${debugId}] creating related products(${productsRows.length}) items(${itemsRows.length}) banks(${banksRows.length})`)
+      log(
+        `[BUGET STORE ${debugId}] creating related products(${productsRows.length}) items(${itemsRows.length}) banks(${banksRows.length})`
+      )
       await buget.related('products').createMany(productsRows, { client: trx })
       await buget.related('items').createMany(itemsRows, { client: trx })
       await buget.related('banks').createMany(banksRows, { client: trx })
@@ -240,15 +242,24 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
     const { request, auth } = ctx
-    const { page, perPage, status, text, startDate, endDate, date, businessId: pBusinessId, budgetStatus } =
-      await request.validateUsing(
-        vine.compile(
-          vine.object({
-            ...searchWithStatusSchema.getProperties(),
-            businessId: vine.number().positive().optional(),
-          })
-        )
+    const {
+      page,
+      perPage,
+      status,
+      text,
+      startDate,
+      endDate,
+      date,
+      businessId: pBusinessId,
+      budgetStatus,
+    } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          ...searchWithStatusSchema.getProperties(),
+          businessId: vine.number().positive().optional(),
+        })
       )
+    )
 
     let query = Buget.query()
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
@@ -262,8 +273,17 @@ export default class BugetController {
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
           .select(['id', 'personal_data_id', 'email'])
       })
+      .preload('payments', (pQ: any) => {
+        pQ.preload('ledgerMovement', (lmQ: any) => {
+          lmQ
+            .preload('account')
+            .preload('costCenter')
+            .preload('client')
+            .preload('paymentMethod')
+            .preload('documentType')
+        })
+      })
       .orderBy('created_at', 'desc')
-
 
     let businessId = pBusinessId
 
@@ -391,6 +411,16 @@ export default class BugetController {
       })
     })
     await buget.load('details')
+    await buget.load('payments', (pQ: any) => {
+      pQ.preload('ledgerMovement', (lmQ: any) => {
+        lmQ
+          .preload('account')
+          .preload('costCenter')
+          .preload('client')
+          .preload('paymentMethod')
+          .preload('documentType')
+      })
+    })
 
     // Compose legacy-like extras
     const serialized: any = buget.serialize()
@@ -492,24 +522,24 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business
         ? {
-          name: buget.business.name,
-          url: buget.business.url,
-          email: buget.business.email,
-          identify: buget.business.identify,
-          footer: buget.business.footer,
-          typeIdentify: buget.business.typeIdentify?.text,
-        }
+            name: buget.business.name,
+            url: buget.business.url,
+            email: buget.business.email,
+            identify: buget.business.identify,
+            footer: buget.business.footer,
+            typeIdentify: buget.business.typeIdentify?.text,
+          }
         : null,
       client: buget.client
         ? {
-          name: buget.client.name,
-          identify: buget.client.identify,
-          email: buget.client.email,
-          address: buget.client.address,
-          phone: buget.client.phone,
-          typeIdentify: buget.client.typeIdentify?.text,
-          city: buget.client.city?.name,
-        }
+            name: buget.client.name,
+            identify: buget.client.identify,
+            email: buget.client.email,
+            address: buget.client.address,
+            phone: buget.client.phone,
+            typeIdentify: buget.client.typeIdentify?.text,
+            city: buget.client.city?.name,
+          }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -520,9 +550,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-              name: product.products.name,
-              type: product.products.type?.text,
-            }
+                name: product.products.name,
+                type: product.products.type?.text,
+              }
             : null,
         })) || [],
       items:
@@ -543,10 +573,10 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-          costCenter: buget.details.costCenter,
-          work: buget.details.work,
-          observation: buget.details.observation,
-        }
+            costCenter: buget.details.costCenter,
+            work: buget.details.work,
+            observation: buget.details.observation,
+          }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -866,9 +896,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
 
     const { request } = ctx
-    const {
-      startDate, endDate, page, perPage, text, budgetStatus,
-    } = await request.validateUsing(
+    const { startDate, endDate, page, perPage, text, budgetStatus } = await request.validateUsing(
       vine.compile(
         vine.object({
           ...searchWithStatusSchema.getProperties(),
@@ -877,15 +905,28 @@ export default class BugetController {
     )
     const businessId = Number(request.header('Business'))
 
-    const data = await BugetRepository.report(businessId, startDate, endDate, page, perPage, text, budgetStatus)
-    const metrics = await BugetRepository.metrics(businessId, startDate, endDate, text, budgetStatus)
+    const data = await BugetRepository.report(
+      businessId,
+      startDate,
+      endDate,
+      page,
+      perPage,
+      text,
+      budgetStatus
+    )
+    const metrics = await BugetRepository.metrics(
+      businessId,
+      startDate,
+      endDate,
+      text,
+      budgetStatus
+    )
 
     let payload: Record<string, any> = {}
 
     if (data instanceof ModelPaginator) {
       payload = { ...data.getMeta(), data: data.all().map((d) => d.serialize()), metrics }
-    }
-    else {
+    } else {
       payload = { data: data.map((d) => d.serialize()), metrics }
     }
     return payload
@@ -1244,11 +1285,11 @@ export default class BugetController {
             fromClient: true,
             createdById: ctx.auth.user?.id
               ? ((
-                await BusinessUser.query()
-                  .where('user_id', ctx.auth.user.id)
-                  .where('business_id', buget?.businessId ?? 0)
-                  .first()
-              )?.id ?? null)
+                  await BusinessUser.query()
+                    .where('user_id', ctx.auth.user.id)
+                    .where('business_id', buget?.businessId ?? 0)
+                    .first()
+                )?.id ?? null)
               : null,
           },
           { client: trx }
@@ -1277,9 +1318,9 @@ export default class BugetController {
       // In-app notification for status change
       console.log('[BUDGET STATUS] Starting notification creation for budget:', bugetId)
 
-      const statuses: { 'accept': string, 'reject': string, revision: string, other: string } = {
-        'accept': i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
-        'reject': i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
+      const statuses: { accept: string; reject: string; revision: string; other: string } = {
+        accept: i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
+        reject: i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
         revision: i18n.formatMessage('messages.budget_status_revision', {}, 'puesta en revisión'),
         other: i18n.formatMessage('messages.budget_status_updated', {}, 'actualizada'),
       }
@@ -1293,12 +1334,24 @@ export default class BugetController {
         const statusMsg = statuses[buget.status ?? 'other'] ?? 'sido actualizada'
         const baseTitle = `Cotización #${buget.nro} ha sido ${statusMsg}`
         const baseBody = `Cotización #${buget.nro} para ${clientName} ha ${statusMsg}`
-        const payload = { bugetId: buget.id, nro: buget.nro, status: buget.status, previousStatus, businessId: buget.businessId, clientName, expireDate: expireStr }
+        const payload = {
+          bugetId: buget.id,
+          nro: buget.nro,
+          status: buget.status,
+          previousStatus,
+          businessId: buget.businessId,
+          clientName,
+          expireDate: expireStr,
+        }
 
         console.log('[BUDGET STATUS] Finding notification type: budget_status_changed')
         // Generic status change
         const statusType = await NotificationType.findBy('code', 'budget_status_changed')
-        console.log('[BUDGET STATUS] Notification type found:', statusType?.id, 'Calling createAndDispatch...')
+        console.log(
+          '[BUDGET STATUS] Notification type found:',
+          statusType?.id,
+          'Calling createAndDispatch...'
+        )
         await NotificationService.createAndDispatch({
           typeId: statusType?.id,
           businessId: buget.businessId,
@@ -1315,7 +1368,6 @@ export default class BugetController {
           createdById: ctx.auth.user!.id,
         })
         console.log('[BUDGET STATUS] Notification dispatched successfully')
-
       } catch (notifyErr) {
         console.log('Budget status notification error:', notifyErr)
         throw notifyErr
@@ -1362,9 +1414,9 @@ export default class BugetController {
     // In-app notification for status change (public update)
     console.log('[BUDGET STATUS PUBLIC] Starting notification creation for budget:', buget.id)
 
-    const statuses: { 'accept': string, 'reject': string, revision: string, other: string } = {
-      'accept': i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
-      'reject': i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
+    const statuses: { accept: string; reject: string; revision: string; other: string } = {
+      accept: i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
+      reject: i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
       revision: i18n.formatMessage('messages.budget_status_revision', {}, 'puesta en revisión'),
       other: i18n.formatMessage('messages.budget_status_updated', {}, 'actualizada'),
     }
@@ -1379,11 +1431,23 @@ export default class BugetController {
       const statusMsg = statuses[buget.status ?? 'other'] ?? 'sido actualizada'
       const baseTitle = `Cotización #${buget.nro} ha sido ${statusMsg}`
       const baseBody = `Cotización #${buget.nro} para ${clientName} ha ${statusMsg}`
-      const payload = { bugetId: buget.id, nro: buget.nro, status: buget.status, previousStatus, businessId: buget.businessId, clientName, expireDate: expireStr }
+      const payload = {
+        bugetId: buget.id,
+        nro: buget.nro,
+        status: buget.status,
+        previousStatus,
+        businessId: buget.businessId,
+        clientName,
+        expireDate: expireStr,
+      }
 
       console.log('[BUDGET STATUS PUBLIC] Finding notification type: budget_status_changed')
       const statusType = await NotificationType.findBy('code', 'budget_status_changed')
-      console.log('[BUDGET STATUS PUBLIC] Notification type found:', statusType?.id, 'Calling createAndDispatch...')
+      console.log(
+        '[BUDGET STATUS PUBLIC] Notification type found:',
+        statusType?.id,
+        'Calling createAndDispatch...'
+      )
 
       await NotificationService.createAndDispatch({
         typeId: statusType?.id,
@@ -1401,7 +1465,6 @@ export default class BugetController {
         createdById: buget.createdById, // Use the budget creator as notification creator
       })
       console.log('[BUDGET STATUS PUBLIC] Notification dispatched successfully')
-
     } catch (notifyErr) {
       console.log('Budget status notification error (public):', notifyErr)
     }
@@ -1739,7 +1802,8 @@ export default class BugetController {
       }
 
       const result = await BudgetPaymentService.create({
-        ...payload, businessId,
+        ...payload,
+        businessId,
         concept,
         date: DateTime.fromISO(payload.date),
       })
@@ -1753,12 +1817,14 @@ export default class BugetController {
       })
     } catch (error) {
       log(error)
-      return response.status(500).json(
-        MessageFrontEnd(
-          i18n.formatMessage('messages.store_error'),
-          i18n.formatMessage('messages.error_title')
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.store_error'),
+            i18n.formatMessage('messages.error_title')
+          )
         )
-      )
     }
   }
 
@@ -1775,12 +1841,14 @@ export default class BugetController {
       return response.status(200).json(result)
     } catch (error) {
       log(error)
-      return response.status(404).json(
-        MessageFrontEnd(
-          i18n.formatMessage('messages.no_exist'),
-          i18n.formatMessage('messages.error_title')
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          )
         )
-      )
     }
   }
 
@@ -1796,7 +1864,6 @@ export default class BugetController {
 
       const updateData = { ...payload }
 
-
       const result = await BudgetPaymentService.update(params.id, updateData)
 
       return response.status(200).json({
@@ -1808,12 +1875,14 @@ export default class BugetController {
       })
     } catch (error) {
       log(error)
-      return response.status(500).json(
-        MessageFrontEnd(
-          i18n.formatMessage('messages.update_error'),
-          i18n.formatMessage('messages.error_title')
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          )
         )
-      )
     }
   }
 
@@ -1827,20 +1896,24 @@ export default class BugetController {
     try {
       await BudgetPaymentService.delete(params.id)
 
-      return response.status(200).json(
-        MessageFrontEnd(
-          i18n.formatMessage('messages.delete_ok'),
-          i18n.formatMessage('messages.ok_title')
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.delete_ok'),
+            i18n.formatMessage('messages.ok_title')
+          )
         )
-      )
     } catch (error) {
       log(error)
-      return response.status(500).json(
-        MessageFrontEnd(
-          i18n.formatMessage('messages.delete_error'),
-          i18n.formatMessage('messages.error_title')
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.delete_error'),
+            i18n.formatMessage('messages.error_title')
+          )
         )
-      )
     }
   }
 
@@ -1863,12 +1936,14 @@ export default class BugetController {
       })
     } catch (error) {
       log(error)
-      return response.status(500).json(
-        MessageFrontEnd(
-          i18n.formatMessage('messages.update_error'),
-          i18n.formatMessage('messages.error_title')
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          )
         )
-      )
     }
   }
 }

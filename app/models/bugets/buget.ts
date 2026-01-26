@@ -1,3 +1,4 @@
+import BudgetPayment from '#models/budget_payment'
 import BudgetObservation from '#models/bugets/budget_observation'
 import BugetAccount from '#models/bugets/buget_account'
 import BugetDetail from '#models/bugets/buget_detail'
@@ -7,128 +8,144 @@ import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import User from '#models/users/user'
 import Util from '#utils/Util'
-import { BaseModel, beforeCreate, beforeFetch, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import {
+  BaseModel,
+  beforeCreate,
+  beforeFetch,
+  belongsTo,
+  column,
+  hasMany,
+  hasOne,
+} from '@adonisjs/lucid/orm'
 import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class Buget extends BaseModel {
-    public static table = 'bugets'
+  public static table = 'bugets'
 
-    @column({ isPrimary: true })
-    public id: number
+  @column({ isPrimary: true })
+  public id: number
 
-    @column()
-    public nro: string
+  @column()
+  public nro: string
 
-    @column({ columnName: 'business_id' })
-    public businessId: number
+  @column({ columnName: 'business_id' })
+  public businessId: number
 
-    @column({ columnName: 'client_id' })
-    public clientId: number
+  @column({ columnName: 'client_id' })
+  public clientId: number
 
-    @column()
-    declare token: string
+  @column()
+  declare token: string
 
-    @column({ columnName: 'currency_id' })
-    public currencyId: number
+  @column({ columnName: 'currency_id' })
+  public currencyId: number
 
-    @column({ columnName: 'currency_symbol' })
-    public currencySymbol: string
+  @column({ columnName: 'currency_symbol' })
+  public currencySymbol: string
 
-    @column({ columnName: 'currency_value', serialize: (value: number) => Util.truncateToTwoDecimals(value) })
-    public currencyValue: number
+  @column({
+    columnName: 'currency_value',
+    serialize: (value: number) => Util.truncateToTwoDecimals(value),
+  })
+  public currencyValue: number
 
-    @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
-    public utility: number
+  @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
+  public utility: number
 
-    @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
-    public discount: number
+  @column({ serialize: (value: number) => Util.truncateToTwoDecimals(value) })
+  public discount: number
 
-    @column()
-    public enabled: boolean
+  @column()
+  public enabled: boolean
 
-    @column()
-    public status: 'pending' | 'revision' | 'reject' | 'accept' | null
+  @column()
+  public status: 'pending' | 'revision' | 'reject' | 'accept' | null
 
-    @column()
-    public prevId: number | null
+  @column()
+  public prevId: number | null
 
-    @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
-    public createdAt: DateTime
+  @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
+  public createdAt: DateTime
 
-    @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
-    public updatedAt: DateTime
+  @column.dateTime({ serialize: (value: DateTime) => value?.toFormat('yyyy/LL/dd') })
+  public updatedAt: DateTime
 
-    @column({ columnName: 'created_by' })
-    public createdById: number
+  @column({ columnName: 'created_by' })
+  public createdById: number
 
-    @column({ columnName: 'updated_by' })
-    public updatedById: number
+  @column({ columnName: 'updated_by' })
+  public updatedById: number
 
-    @column.dateTime({ columnName: 'expire_date', serialize: (value: DateTime) => value?.toFormat('dd/MM/yyyy') })
-    public expireDate: DateTime
+  @column.dateTime({
+    columnName: 'expire_date',
+    serialize: (value: DateTime) => value?.toFormat('dd/MM/yyyy'),
+  })
+  public expireDate: DateTime
 
-    @column.dateTime({ columnName: 'deleted_at', serialize: (value: DateTime) => value?.toFormat('dd/MM/yyyy') })
-    public deletedAt: DateTime | null
+  @column.dateTime({
+    columnName: 'deleted_at',
+    serialize: (value: DateTime) => value?.toFormat('dd/MM/yyyy'),
+  })
+  public deletedAt: DateTime | null
 
-    @column({ columnName: 'deleted_by' })
-    public deletedById: number | null
+  @column({ columnName: 'deleted_by' })
+  public deletedById: number | null
 
-    @beforeCreate()
-    public static setDefaults(model: Buget) {
-        if (model.enabled === undefined) model.enabled = true
-    }
+  @beforeCreate()
+  public static setDefaults(model: Buget) {
+    if (model.enabled === undefined) model.enabled = true
+  }
 
-    @belongsTo(() => Business, { foreignKey: 'businessId' })
-    public business: BelongsTo<typeof Business>
+  @belongsTo(() => Business, { foreignKey: 'businessId' })
+  public business: BelongsTo<typeof Business>
 
-    @belongsTo(() => Client, { foreignKey: 'clientId' })
-    public client: BelongsTo<typeof Client>
+  @belongsTo(() => Client, { foreignKey: 'clientId' })
+  public client: BelongsTo<typeof Client>
 
-    @belongsTo(() => User, { foreignKey: 'createdById' })
-    public createdBy: BelongsTo<typeof User>
+  @belongsTo(() => User, { foreignKey: 'createdById' })
+  public createdBy: BelongsTo<typeof User>
 
-    @belongsTo(() => User, { foreignKey: 'updatedById' })
-    public updatedBy: BelongsTo<typeof User>
+  @belongsTo(() => User, { foreignKey: 'updatedById' })
+  public updatedBy: BelongsTo<typeof User>
 
-    @belongsTo(() => User, { foreignKey: 'deletedById' })
-    public deletedBy: BelongsTo<typeof User>
+  @belongsTo(() => User, { foreignKey: 'deletedById' })
+  public deletedBy: BelongsTo<typeof User>
 
-    @hasMany(() => BugetProduct, { foreignKey: 'bugetId' })
-    public products: HasMany<typeof BugetProduct>
+  @hasMany(() => BugetProduct, { foreignKey: 'bugetId' })
+  public products: HasMany<typeof BugetProduct>
 
-    @hasMany(() => BugetItem, { foreignKey: 'bugetId' })
-    public items: HasMany<typeof BugetItem>
+  @hasMany(() => BugetItem, { foreignKey: 'bugetId' })
+  public items: HasMany<typeof BugetItem>
 
-    @hasMany(() => BugetAccount, { foreignKey: 'bugetId' })
-    public banks: HasMany<typeof BugetAccount>
+  @hasMany(() => BugetAccount, { foreignKey: 'bugetId' })
+  public banks: HasMany<typeof BugetAccount>
 
-    @hasOne(() => BugetDetail, { foreignKey: 'bugetId' })
-    public details: HasOne<typeof BugetDetail>
+  @hasOne(() => BugetDetail, { foreignKey: 'bugetId' })
+  public details: HasOne<typeof BugetDetail>
 
-    @hasMany(() => BudgetObservation, { foreignKey: 'bugetId' })
-    public observations: HasMany<typeof BudgetObservation>
+  @hasMany(() => BudgetObservation, { foreignKey: 'bugetId' })
+  public observations: HasMany<typeof BudgetObservation>
 
+  @hasMany(() => BudgetPayment, { foreignKey: 'budgetId' })
+  public payments: HasMany<typeof BudgetPayment>
 
-    /**
-     * Runs before creating a new record
-     */
-    @beforeCreate()
-    public static async setToken(bdt: Buget) {
+  /**
+   * Runs before creating a new record
+   */
+  @beforeCreate()
+  public static async setToken(bdt: Buget) {
+    if (!bdt.token) bdt.token = Util.generateToken(16)
+  }
 
-        if (!bdt.token) bdt.token = Util.generateToken(16)
+  @beforeFetch()
+  public static filterDeleted(query: ModelQueryBuilderContract<typeof Buget>) {
+    query.whereNull('bugets.deleted_at')
+  }
 
-    }
-
-
-    @beforeFetch()
-    public static filterDeleted(query: ModelQueryBuilderContract<typeof Buget>) {
-        query.whereNull('bugets.deleted_at')
-    }
-
-    public static castDates(field: string, value: DateTime) {
-        if (field === 'expire_date') return value.toFormat('yyyy-MM-dd')
-        return value.toFormat('dd/MM/yyyy hh:mm:ss a')
-    }
+  public static castDates(field: string, value: DateTime) {
+    if (field === 'expire_date') return value.toFormat('yyyy-MM-dd')
+    return value.toFormat('dd/MM/yyyy hh:mm:ss a')
+  }
 }
