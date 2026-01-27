@@ -162,7 +162,7 @@ export default class BalancesController {
                 // Related entities
                 account: movement.account ? {
                     id: movement.account.id,
-                    name: movement.account.owner,
+                    name: movement.account.name,
                 } : null,
 
                 costCenter: movement.costCenter ? {
