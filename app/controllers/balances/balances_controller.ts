@@ -16,15 +16,16 @@ export default class BalancesController {
         const { request, response, i18n } = ctx
 
         try {
-            const { page, perPage, status, text, documentTypeId, paymentMethodId, type } = await request.validateUsing(
+            const { page, perPage, status, text, documentTypeId, currencyId, paymentMethodId, type } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         page: vine.number().optional(),
                         perPage: vine.number().optional(),
                         text: vine.string().optional(),
                         status: vine.string().optional(),
-                        documentTypeId: vine.number().optional(),
                         paymentMethodId: vine.number().optional(),
+                        documentTypeId: vine.number().optional(),
+                        currencyId: vine.number().optional(),
                         type: vine.enum(['income', 'expense']).optional(),
                     })
                 )
@@ -32,6 +33,7 @@ export default class BalancesController {
 
             let query = LedgerMovement.query()
                 .preload('account')
+                .preload('currency')
                 .preload('costCenter')
                 .preload('client')
                 .preload('paymentMethod')
@@ -67,6 +69,10 @@ export default class BalancesController {
 
             if (paymentMethodId !== undefined) {
                 query = query.where('payment_method_id', paymentMethodId)
+            }
+
+            if (currencyId !== undefined) {
+                query = query.where('currency_id', currencyId)
             }
 
             if (type !== undefined) {
@@ -180,7 +186,11 @@ export default class BalancesController {
                     id: movement.paymentMethod.id,
                     name: movement.paymentMethod.name,
                 } : null,
-
+                currency: movement.currency ? {
+                    id: movement.currency.id,
+                    name: movement.currency.name,
+                    symbol: movement.currency.symbol,
+                } : null,
                 // Justifications
                 justifications,
 

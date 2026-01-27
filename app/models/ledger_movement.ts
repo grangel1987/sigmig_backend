@@ -1,5 +1,7 @@
 import BudgetPayment from '#models/budget_payment'
+import Business from '#models/business/business'
 import Client from '#models/clients/client'
+import Coin from '#models/coin/coin'
 import CostCenter from '#models/cost_centers/cost_center'
 import Expense from '#models/expense'
 import PaymentMethod from '#models/payment_method'
@@ -46,6 +48,9 @@ export default class LedgerMovement extends BaseModel {
   @column()
   declare currencyId: number
 
+  @belongsTo(() => Coin, { foreignKey: 'currencyId' })
+  declare currency: BelongsTo<typeof Coin>
+
   @column()
   declare paymentMethodId: number
 
@@ -66,6 +71,9 @@ export default class LedgerMovement extends BaseModel {
 
   @column()
   declare businessId: number
+
+  @belongsTo(() => Business, { foreignKey: 'businessId' })
+  declare business: BelongsTo<typeof Business>
 
   @column()
   declare budgetPaymentId: number
