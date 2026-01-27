@@ -66,7 +66,10 @@ export default class LedgerMovement extends BaseModel {
   @column()
   declare concept: string
 
-  @column()
+  @column({
+    prepare: (value: string) => value === 'voided' ? 'canceled' : value,
+    serialize: (value: string) => value === 'canceled' ? 'voided' : value
+  })
   declare status: 'paid' | 'pending' | 'voided'
 
   @column()
