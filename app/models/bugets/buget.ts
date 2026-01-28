@@ -154,14 +154,16 @@ export default class Buget extends BaseModel {
    * Note: Requires products and items to be preloaded before calling
    */
   public getTotalAmount(): number {
-    const productsTotal = this.products.reduce((sum, product) => {
-      return sum + (product.amount || 0) * (product.countPerson || 1)
-    }, 0)
+    const productsTotal =
+      this.products?.reduce((sum, product) => {
+        return sum + (product.amount || 0) * (product.countPerson || 1)
+      }, 0) || 0
 
-    const itemsTotal = this.items.reduce((sum, item) => {
-      const itemValue = parseFloat(String(item.value || 0))
-      return sum + itemValue
-    }, 0)
+    const itemsTotal =
+      this.items?.reduce((sum, item) => {
+        const itemValue = Number.parseFloat(String(item.value || 0))
+        return sum + itemValue
+      }, 0) || 0
 
     const subtotal = productsTotal + itemsTotal
     const discountAmount = subtotal * (this.discount / 100)
@@ -175,9 +177,11 @@ export default class Buget extends BaseModel {
    * Note: Requires payments to be preloaded before calling
    */
   public getTotalPaid(): number {
-    return this.payments
-      .filter((payment) => !payment.voided && !payment.deletedAt)
-      .reduce((sum, payment) => sum + (payment.amount || 0), 0)
+    return (
+      this.payments
+        ?.filter((payment) => !payment.voided && !payment.deletedAt)
+        .reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
+    )
   }
 
   /**
@@ -191,15 +195,13 @@ export default class Buget extends BaseModel {
     totalPaid: number
     isBudgetCurrency: boolean
   }> {
-    const validPayments = this.payments.filter(
-      (payment) => !payment.voided && !payment.deletedAt && payment.ledgerMovement
-    )
+    const validPayments =
+      this.payments?.filter(
+        (payment) => !payment.voided && !payment.deletedAt && payment.ledgerMovement
+      ) || []
 
     // Group by currency
-    const byCurrency = new Map<
-      number,
-      { symbol: string; name: string; total: number }
-    >()
+    const byCurrency = new Map<number, { symbol: string; name: string; total: number }>()
 
     validPayments.forEach((payment) => {
       const currencyId = payment.ledgerMovement.currencyId
@@ -233,7 +235,9 @@ export default class Buget extends BaseModel {
    * Note: Requires payments with ledgerMovement.currency to be preloaded
    */
   public getTotalPaidInBudgetCurrency(): number {
-    return this.payments
+    const payments = this.payments ?? []
+
+    return payments
       .filter(
         (payment) =>
           !payment.voided &&
