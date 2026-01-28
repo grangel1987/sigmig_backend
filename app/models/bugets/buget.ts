@@ -148,4 +148,130 @@ export default class Buget extends BaseModel {
     if (field === 'expire_date') return value.toFormat('yyyy-MM-dd')
     return value.toFormat('dd/MM/yyyy hh:mm:ss a')
   }
+
+  /**
+   * Get total budget amount (calculated from products + items - discount + utility)
+   * Note: Requires products and items to be preloaded before calling
+   */
+  public getTotalAmount(): number {
+    const productsTotal = this.products.reduce((sum, product) => {
+      return sum + (product.amount || 0) * (product.countPerson || 1)
+    }, 0)
+
+    const itemsTotal = this.items.reduce((sum, item) => {
+      const itemValue = parseFloat(String(item.value || 0))
+      return sum + itemValue
+    }, 0)
+
+    const subtotal = productsTotal + itemsTotal
+    const discountAmount = subtotal * (this.discount / 100)
+    const utilityAmount = subtotal * (this.utility / 100)
+
+    return subtotal - discountAmount + utilityAmount
+  }
+
+  /**
+   * Get total paid amount (excluding voided payments)
+   * Note: Requires payments to be preloaded before calling
+   */
+  public getTotalPaid(): number {
+    return this.payments
+      .filter((payment) => !payment.voided && !payment.deletedAt)
+      .reduce((sum, payment) => sum + (payment.amount || 0), 0)
+  }
+
+  /**
+   * Get payment totals grouped by currency
+   * Note: Requires payments with ledgerMovement.currency to be preloaded
+   */
+  public getPaymentTotalsByCurrency(): Array<{
+    currencyId: number
+    currencySymbol: string
+    currencyName: string
+    totalPaid: number
+    isBudgetCurrency: boolean
+  }> {
+    const validPayments = this.payments.filter(
+      (payment) => !payment.voided && !payment.deletedAt && payment.ledgerMovement
+    )
+
+    // Group by currency
+    const byCurrency = new Map<
+      number,
+      { symbol: string; name: string; total: number }
+    >()
+
+    validPayments.forEach((payment) => {
+      const currencyId = payment.ledgerMovement.currencyId
+      const currency = payment.ledgerMovement.currency
+      const amount = payment.amount || 0
+
+      if (byCurrency.has(currencyId)) {
+        const existing = byCurrency.get(currencyId)!
+        existing.total += amount
+      } else {
+        byCurrency.set(currencyId, {
+          symbol: currency?.symbol || '',
+          name: currency?.name || '',
+          total: amount,
+        })
+      }
+    })
+
+    // Convert to array
+    return Array.from(byCurrency.entries()).map(([currencyId, data]) => ({
+      currencyId,
+      currencySymbol: data.symbol,
+      currencyName: data.name,
+      totalPaid: data.total,
+      isBudgetCurrency: currencyId === this.currencyId,
+    }))
+  }
+
+  /**
+   * Get total paid in the budget's currency only
+   * Note: Requires payments with ledgerMovement.currency to be preloaded
+   */
+  public getTotalPaidInBudgetCurrency(): number {
+    return this.payments
+      .filter(
+        (payment) =>
+          !payment.voided &&
+          !payment.deletedAt &&
+          payment.ledgerMovement &&
+          payment.ledgerMovement.currencyId === this.currencyId
+      )
+      .reduce((sum, payment) => sum + (payment.amount || 0), 0)
+  }
+
+  /**
+   * Get remaining balance to be paid (in budget currency)
+   * Note: Requires products, items, and payments to be preloaded before calling
+   */
+  public getRemainingBalance(): number {
+    const total = this.getTotalAmount()
+    const paid = this.getTotalPaidInBudgetCurrency()
+    return total - paid
+  }
+
+  /**
+   * Get payment completion percentage (based on budget currency only)
+   * Note: Requires products, items, and payments to be preloaded before calling
+   */
+  public getPaymentPercentage(): number {
+    const total = this.getTotalAmount()
+    if (total === 0) return 0
+
+    const paid = this.getTotalPaidInBudgetCurrency()
+    return (paid / total) * 100
+  }
+
+  /**
+   * Check if budget is fully paid
+   * Note: Requires products, items, and payments to be preloaded before calling
+   */
+  public isFullyPaid(): boolean {
+    const remaining = this.getRemainingBalance()
+    return remaining <= 0.01 // Allow for minor rounding differences
+  }
 }

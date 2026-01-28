@@ -252,11 +252,13 @@ export default class BugetController {
       date,
       businessId: pBusinessId,
       budgetStatus,
+      includePaymentTotals,
     } = await request.validateUsing(
       vine.compile(
         vine.object({
           ...searchWithStatusSchema.getProperties(),
           businessId: vine.number().positive().optional(),
+          includePaymentTotals: vine.boolean().optional(),
         })
       )
     )
@@ -335,7 +337,101 @@ export default class BugetController {
 
     const budgets = page ? await query.paginate(page, perPage) : await query
 
-    return budgets
+    // Add payment summary to each budget (conditionally based on query param)
+    if (budgets instanceof ModelPaginator) {
+      const budgetsWithPayments = budgets.all().map((budget) => {
+        const total = budget.getTotalAmount()
+        const remaining = budget.getRemainingBalance()
+        const percentage = budget.getPaymentPercentage()
+        const isFullyPaid = budget.isFullyPaid()
+
+        const paymentSummary: any = {
+          total: Util.truncateToTwoDecimals(total),
+          remaining: Util.truncateToTwoDecimals(remaining),
+          percentage: Util.truncateToTwoDecimals(percentage),
+          isFullyPaid,
+          budgetCurrency: budget.currencySymbol,
+        }
+
+        // Include payment totals only if requested
+        if (includePaymentTotals) {
+          const paidInBudgetCurrency = budget.getTotalPaidInBudgetCurrency()
+          const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
+
+          paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
+          paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
+            (pc: {
+              currencyId: number
+              currencySymbol: string
+              currencyName: string
+              totalPaid: number
+              isBudgetCurrency: boolean
+            }) => ({
+              currencyId: pc.currencyId,
+              currencySymbol: pc.currencySymbol,
+              currencyName: pc.currencyName,
+              totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+              isBudgetCurrency: pc.isBudgetCurrency,
+            })
+          )
+        }
+
+        return {
+          ...budget.serialize(),
+          paymentSummary,
+        }
+      })
+
+      return {
+        ...budgets.serialize(),
+        data: budgetsWithPayments,
+      }
+    } else {
+      const budgetsWithPayments = budgets.map((budget) => {
+        const total = budget.getTotalAmount()
+        const remaining = budget.getRemainingBalance()
+        const percentage = budget.getPaymentPercentage()
+        const isFullyPaid = budget.isFullyPaid()
+
+        const paymentSummary: any = {
+          total: Util.truncateToTwoDecimals(total),
+          remaining: Util.truncateToTwoDecimals(remaining),
+          percentage: Util.truncateToTwoDecimals(percentage),
+          isFullyPaid,
+          budgetCurrency: budget.currencySymbol,
+        }
+
+        // Include payment totals only if requested
+        if (includePaymentTotals) {
+          const paidInBudgetCurrency = budget.getTotalPaidInBudgetCurrency()
+          const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
+
+          paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
+          paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
+            (pc: {
+              currencyId: number
+              currencySymbol: string
+              currencyName: string
+              totalPaid: number
+              isBudgetCurrency: boolean
+            }) => ({
+              currencyId: pc.currencyId,
+              currencySymbol: pc.currencySymbol,
+              currencyName: pc.currencyName,
+              totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+              isBudgetCurrency: pc.isBudgetCurrency,
+            })
+          )
+        }
+
+        return {
+          ...budget.serialize(),
+          paymentSummary,
+        }
+      })
+
+      return budgetsWithPayments
+    }
   }
 
   // Show details matching legacy shape (expired flag and formatted date)
@@ -438,6 +534,39 @@ export default class BugetController {
       serialized.expired = true
       serialized.expire_date_format = ''
     }
+
+    // Add payment summary
+    const total = buget.getTotalAmount()
+    const paidInBudgetCurrency = buget.getTotalPaidInBudgetCurrency()
+    const remaining = buget.getRemainingBalance()
+    const percentage = buget.getPaymentPercentage()
+    const isFullyPaid = buget.isFullyPaid()
+    const paymentTotalsByCurrency = buget.getPaymentTotalsByCurrency()
+
+    serialized.paymentSummary = {
+      total: Util.truncateToTwoDecimals(total),
+      paidInBudgetCurrency: Util.truncateToTwoDecimals(paidInBudgetCurrency),
+      remaining: Util.truncateToTwoDecimals(remaining),
+      percentage: Util.truncateToTwoDecimals(percentage),
+      isFullyPaid,
+      budgetCurrency: buget.currencySymbol,
+      paymentTotalsByCurrency: paymentTotalsByCurrency.map(
+        (pc: {
+          currencyId: number
+          currencySymbol: string
+          currencyName: string
+          totalPaid: number
+          isBudgetCurrency: boolean
+        }) => ({
+          currencyId: pc.currencyId,
+          currencySymbol: pc.currencySymbol,
+          currencyName: pc.currencyName,
+          totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+          isBudgetCurrency: pc.isBudgetCurrency,
+        })
+      ),
+    }
+
     return serialized
   }
 

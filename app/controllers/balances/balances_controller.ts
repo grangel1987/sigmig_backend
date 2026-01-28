@@ -37,6 +37,7 @@ export default class BalancesController {
                 .preload('costCenter')
                 .preload('client')
                 .preload('paymentMethod')
+                .preload('documentType')
                 .preload('budgetPayment', (q: any) => {
                     q.preload('budget', (bq: any) => {
                         bq.preload('client', (cq: any) => {
@@ -152,7 +153,6 @@ export default class BalancesController {
                     reference: `Gasto #${movement.expense.id}`,
                 })
             }
-
             return {
                 id: movement.id,
                 date: movement.date,
@@ -162,7 +162,7 @@ export default class BalancesController {
                 type: isIncome ? 'income' : 'expense',
                 status: movement.status,
                 currencyId: movement.currencyId,
-                documentType: movement.documentTypeId,
+                documentTypeId: movement.documentTypeId,
                 documentNumber: movement.documentNumber,
 
                 // Related entities
@@ -190,6 +190,10 @@ export default class BalancesController {
                     id: movement.currency.id,
                     name: movement.currency.name,
                     symbol: movement.currency.symbol,
+                } : null,
+                documentType: movement.documentType ? {
+                    id: movement.documentType.id,
+                    name: movement.documentType.name,
                 } : null,
                 // Justifications
                 justifications,
