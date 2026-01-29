@@ -7,6 +7,7 @@ import BugetProduct from '#models/bugets/buget_product'
 import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import User from '#models/users/user'
+import CurrencyConversionService from '#services/currency_conversion_service'
 import Util from '#utils/Util'
 import {
   BaseModel,
@@ -231,42 +232,67 @@ export default class Buget extends BaseModel {
   }
 
   /**
-   * Get total paid in the budget's currency only
-   * Note: Requires payments with ledgerMovement.currency to be preloaded
+   * Get total paid in the budget's currency, converting from other currencies as needed
+   * Uses indicator exchange rates from the payment creation date
+   * Note: Requires payments with ledgerMovement and currency to be preloaded
    */
-  public getTotalPaidInBudgetCurrency(): number {
+  public async getTotalPaidInBudgetCurrency(): Promise<number> {
     const payments = this.payments ?? []
 
-    return payments
-      .filter(
-        (payment) =>
-          !payment.voided &&
-          !payment.deletedAt &&
-          payment.ledgerMovement &&
-          payment.ledgerMovement.currencyId === this.currencyId
+    let totalInBudgetCurrency = 0
+
+    for (const payment of payments) {
+      // Skip voided and deleted payments
+      if (payment.voided || payment.deletedAt || !payment.ledgerMovement) {
+        continue
+      }
+
+      const paymentCurrencyId = payment.ledgerMovement.currencyId
+      const paymentAmount = payment.amount || 0
+
+      // If payment is already in budget currency, add directly
+      if (paymentCurrencyId === this.currencyId) {
+        totalInBudgetCurrency += paymentAmount
+        continue
+      }
+
+      // Otherwise, convert using indicator rates from payment date
+      const convertedAmount = await CurrencyConversionService.convertAmount(
+        paymentAmount,
+        paymentCurrencyId,
+        this.currencyId,
+        payment.createdAt
       )
-      .reduce((sum, payment) => sum + (payment.amount || 0), 0)
+
+      // If conversion fails, skip this payment (log could be added here)
+      if (convertedAmount !== null) {
+        totalInBudgetCurrency += convertedAmount
+      }
+    }
+
+    return totalInBudgetCurrency
   }
 
   /**
    * Get remaining balance to be paid (in budget currency)
+   * Converts all payments to budget currency using indicator rates
    * Note: Requires products, items, and payments to be preloaded before calling
    */
-  public getRemainingBalance(): number {
+  public async getRemainingBalance(): Promise<number> {
     const total = this.getTotalAmount()
-    const paid = this.getTotalPaidInBudgetCurrency()
+    const paid = await this.getTotalPaidInBudgetCurrency()
     return total - paid
   }
 
   /**
-   * Get payment completion percentage (based on budget currency only)
+   * Get payment completion percentage (based on budget currency with conversion)
    * Note: Requires products, items, and payments to be preloaded before calling
    */
-  public getPaymentPercentage(): number {
+  public async getPaymentPercentage(): Promise<number> {
     const total = this.getTotalAmount()
     if (total === 0) return 0
 
-    const paid = this.getTotalPaidInBudgetCurrency()
+    const paid = await this.getTotalPaidInBudgetCurrency()
     return (paid / total) * 100
   }
 
@@ -274,8 +300,8 @@ export default class Buget extends BaseModel {
    * Check if budget is fully paid
    * Note: Requires products, items, and payments to be preloaded before calling
    */
-  public isFullyPaid(): boolean {
-    const remaining = this.getRemainingBalance()
+  public async isFullyPaid(): Promise<boolean> {
+    const remaining = await this.getRemainingBalance()
     return remaining <= 0.01 // Allow for minor rounding differences
   }
 }

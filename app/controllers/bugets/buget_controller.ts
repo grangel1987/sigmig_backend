@@ -341,98 +341,104 @@ export default class BugetController {
 
     // Add payment summary to each budget (conditionally based on query param)
     if (budgets instanceof ModelPaginator) {
-      const budgetsWithPayments = budgets.all().map((budget) => {
-        const total = budget.getTotalAmount()
-        const remaining = budget.getRemainingBalance()
-        const percentage = budget.getPaymentPercentage()
-        const isFullyPaid = budget.isFullyPaid()
+      const budgetsWithPayments = await Promise.all(
+        budgets.all().map(async (budget) => {
+          const total = budget.getTotalAmount()
+          const remaining = await budget.getRemainingBalance()
+          const percentage = await budget.getPaymentPercentage()
+          const isFullyPaid = await budget.isFullyPaid()
 
-        const paymentSummary: any = {
-          total: Util.truncateToTwoDecimals(total),
-          remaining: Util.truncateToTwoDecimals(remaining),
-          percentage: Util.truncateToTwoDecimals(percentage),
-          isFullyPaid,
-          budgetCurrency: budget.currencySymbol,
-        }
+          const paymentSummary: any = {
+            total: Util.truncateToTwoDecimals(total),
+            remaining: Util.truncateToTwoDecimals(remaining),
+            percentage: Util.truncateToTwoDecimals(percentage),
+            isFullyPaid,
+            budgetCurrency: budget.currencySymbol,
+          }
 
-        // Include payment totals only if requested
-        if (includePaymentTotals) {
-          const paidInBudgetCurrency = budget.getTotalPaidInBudgetCurrency()
-          const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
+          // Include payment totals only if requested
+          if (includePaymentTotals) {
+            const paidInBudgetCurrency = await budget.getTotalPaidInBudgetCurrency()
+            const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
 
-          paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
-          paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
-            (pc: {
-              currencyId: number
-              currencySymbol: string
-              currencyName: string
-              totalPaid: number
-              isBudgetCurrency: boolean
-            }) => ({
-              currencyId: pc.currencyId,
-              currencySymbol: pc.currencySymbol,
-              currencyName: pc.currencyName,
-              totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
-              isBudgetCurrency: pc.isBudgetCurrency,
-            })
-          )
-        }
+            paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
+            paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
+              (pc: {
+                currencyId: number
+                currencySymbol: string
+                currencyName: string
+                totalPaid: number
+                isBudgetCurrency: boolean
+              }) => ({
+                currencyId: pc.currencyId,
+                currencySymbol: pc.currencySymbol,
+                currencyName: pc.currencyName,
+                totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+                isBudgetCurrency: pc.isBudgetCurrency,
+              })
+            )
+          }
 
-        return {
-          ...budget.serialize(),
-          paymentSummary,
-        }
-      })
+          return {
+            ...budget.serialize(),
+            paymentSummary,
+          }
+        })
+      )
 
       return {
         ...budgets.serialize(),
         data: budgetsWithPayments,
       }
     } else {
-      const budgetsWithPayments = budgets.map((budget) => {
-        const total = budget.getTotalAmount()
-        const remaining = budget.getRemainingBalance()
-        const percentage = budget.getPaymentPercentage()
-        const isFullyPaid = budget.isFullyPaid()
+      const budgetsWithPayments = await Promise.all(
+        budgets.map(async (budget) => {
+          const total = budget.getTotalAmount()
+          const remaining = await budget.getRemainingBalance()
+          const percentage = await budget.getPaymentPercentage()
+          const isFullyPaid = await budget.isFullyPaid()
 
-        const paymentSummary: any = {
-          total: Util.truncateToTwoDecimals(total),
-          remaining: Util.truncateToTwoDecimals(remaining),
-          percentage: Util.truncateToTwoDecimals(percentage),
-          isFullyPaid,
-          budgetCurrency: budget.currencySymbol,
-        }
+          const paymentSummary: any = {
+            total: Util.truncateToTwoDecimals(total),
+            remaining: Util.truncateToTwoDecimals(remaining),
+            percentage: Util.truncateToTwoDecimals(percentage),
+            isFullyPaid,
+            budgetCurrency: budget.currencySymbol,
+          }
 
-        // Include payment totals only if requested
-        if (includePaymentTotals) {
-          const paidInBudgetCurrency = budget.getTotalPaidInBudgetCurrency()
-          const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
+          // Include payment totals only if requested
+          if (includePaymentTotals) {
+            const paidInBudgetCurrency = await budget.getTotalPaidInBudgetCurrency()
+            const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
 
-          paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
-          paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
-            (pc: {
-              currencyId: number
-              currencySymbol: string
-              currencyName: string
-              totalPaid: number
-              isBudgetCurrency: boolean
-            }) => ({
-              currencyId: pc.currencyId,
-              currencySymbol: pc.currencySymbol,
-              currencyName: pc.currencyName,
-              totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
-              isBudgetCurrency: pc.isBudgetCurrency,
-            })
-          )
-        }
+            paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
+            paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
+              (pc: {
+                currencyId: number
+                currencySymbol: string
+                currencyName: string
+                totalPaid: number
+                isBudgetCurrency: boolean
+              }) => ({
+                currencyId: pc.currencyId,
+                currencySymbol: pc.currencySymbol,
+                currencyName: pc.currencyName,
+                totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+                isBudgetCurrency: pc.isBudgetCurrency,
+              })
+            )
+          }
 
-        return {
-          ...budget.serialize(),
-          paymentSummary,
-        }
-      })
+          return {
+            ...budget.serialize(),
+            paymentSummary,
+          }
+        })
+      )
 
-      return budgetsWithPayments
+      return {
+        data: budgetsWithPayments,
+      }
     }
   }
 
@@ -539,10 +545,10 @@ export default class BugetController {
 
     // Add payment summary
     const total = buget.getTotalAmount()
-    const paidInBudgetCurrency = buget.getTotalPaidInBudgetCurrency()
-    const remaining = buget.getRemainingBalance()
-    const percentage = buget.getPaymentPercentage()
-    const isFullyPaid = buget.isFullyPaid()
+    const paidInBudgetCurrency = await buget.getTotalPaidInBudgetCurrency()
+    const remaining = await buget.getRemainingBalance()
+    const percentage = await buget.getPaymentPercentage()
+    const isFullyPaid = await buget.isFullyPaid()
     const paymentTotalsByCurrency = buget.getPaymentTotalsByCurrency()
 
     serialized.paymentSummary = {
@@ -656,24 +662,24 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business
         ? {
-            name: buget.business.name,
-            url: buget.business.url,
-            email: buget.business.email,
-            identify: buget.business.identify,
-            footer: buget.business.footer,
-            typeIdentify: buget.business.typeIdentify?.text,
-          }
+          name: buget.business.name,
+          url: buget.business.url,
+          email: buget.business.email,
+          identify: buget.business.identify,
+          footer: buget.business.footer,
+          typeIdentify: buget.business.typeIdentify?.text,
+        }
         : null,
       client: buget.client
         ? {
-            name: buget.client.name,
-            identify: buget.client.identify,
-            email: buget.client.email,
-            address: buget.client.address,
-            phone: buget.client.phone,
-            typeIdentify: buget.client.typeIdentify?.text,
-            city: buget.client.city?.name,
-          }
+          name: buget.client.name,
+          identify: buget.client.identify,
+          email: buget.client.email,
+          address: buget.client.address,
+          phone: buget.client.phone,
+          typeIdentify: buget.client.typeIdentify?.text,
+          city: buget.client.city?.name,
+        }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -684,9 +690,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-                name: product.products.name,
-                type: product.products.type?.text,
-              }
+              name: product.products.name,
+              type: product.products.type?.text,
+            }
             : null,
         })) || [],
       items:
@@ -707,10 +713,10 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-            costCenter: buget.details.costCenter,
-            work: buget.details.work,
-            observation: buget.details.observation,
-          }
+          costCenter: buget.details.costCenter,
+          work: buget.details.work,
+          observation: buget.details.observation,
+        }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -1419,11 +1425,11 @@ export default class BugetController {
             fromClient: true,
             createdById: ctx.auth.user?.id
               ? ((
-                  await BusinessUser.query()
-                    .where('user_id', ctx.auth.user.id)
-                    .where('business_id', buget?.businessId ?? 0)
-                    .first()
-                )?.id ?? null)
+                await BusinessUser.query()
+                  .where('user_id', ctx.auth.user.id)
+                  .where('business_id', buget?.businessId ?? 0)
+                  .first()
+              )?.id ?? null)
               : null,
           },
           { client: trx }

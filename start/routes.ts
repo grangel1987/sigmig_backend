@@ -783,6 +783,16 @@ router.group(() => {
     }).prefix('shoppings')
   }).prefix('dashboard').middleware(auth)
 
+  // Cash Audits
+  router.group(() => {
+    router.get('/', '#controllers/cash_audits/cash_audit_controller.index')
+    router.get('/show/:id', '#controllers/cash_audits/cash_audit_controller.show')
+    router.post('/store', '#controllers/cash_audits/cash_audit_controller.store')
+    router.put('/update/:id', '#controllers/cash_audits/cash_audit_controller.update')
+    router.delete('/delete/:id', '#controllers/cash_audits/cash_audit_controller.destroy')
+    router.put('/restore/:id', '#controllers/cash_audits/cash_audit_controller.restore')
+  }).prefix('cash-audits').middleware(auth)
+
   // Balances
   router.group(() => {
     router.get('/movements', '#controllers/balances/balances_controller.getMovements')

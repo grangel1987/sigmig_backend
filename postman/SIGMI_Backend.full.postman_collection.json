@@ -481,6 +481,11 @@
                 "key": "Content-Type",
                 "value": "multipart/form-data",
                 "disabled": true
+              },
+              {
+                "key": "Business",
+                "value": "1",
+                "type": "text"
               }
             ],
             "body": {
@@ -488,7 +493,7 @@
               "formdata": [
                 {
                   "key": "email",
-                  "value": "p.iedra.ig.o.r@gmail.com",
+                  "value": "p.ied.ra.ig.o.r@gmail.com",
                   "type": "text"
                 },
                 {
@@ -510,7 +515,8 @@
                 {
                   "key": "signature",
                   "type": "file",
-                  "src": "/C:/Users/piedr/OneDrive/Imágenes/Capturas de pantalla/Screenshot 2025-09-14 153536.png"
+                  "src": "/C:/Users/piedr/OneDrive/Imágenes/Capturas de pantalla/Screenshot 2025-09-14 153536.png",
+                  "disabled": true
                 },
                 {
                   "key": "personalDataId",
@@ -590,7 +596,8 @@
                 {
                   "key": "personalData.photo",
                   "type": "file",
-                  "src": "/D:/users/Igor/Downloads/gangstabob.jpg"
+                  "src": "/D:/users/Igor/Downloads/gangstabob.jpg",
+                  "disabled": true
                 },
                 {
                   "key": "business[0][rolId]",
@@ -10325,48 +10332,48 @@
       ]
     },
     {
-      "name": "expenses",
+      "name": "cash-audits",
       "item": [
         {
-          "name": "GET expenses",
+          "name": "GET cash-audits",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses?page=1&perPage=15",
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "{{apiPrefix}}",
-                "expenses"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "perPage",
-                  "value": "15"
-                },
-                {
-                  "key": "text",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "status",
-                  "value": "",
-                  "disabled": true
-                }
+                "cash-audits"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "POST expenses/store",
+          "name": "GET cash-audits/show/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/show/{{cashAuditId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "cash-audits",
+                "show",
+                "{{cashAuditId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST cash-audits/store",
           "request": {
             "method": "POST",
             "header": [
@@ -10377,16 +10384,16 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"businessId\": 1,\n  \"date\": \"2026-01-17\",\n  \"amount\": 50000,\n  \"currencyId\": 1,\n  \"description\": \"Compra de materiales de oficina\",\n  \"accountId\": 5,\n  \"costCenterId\": 3,\n  \"clientId\": 42,\n  \"paymentMethodId\": 2,\n  \"documentTypeId\": 3,\n  \"documentNumber\": \"F-12345\"\n}"
+              "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/store",
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/store",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "{{apiPrefix}}",
-                "expenses",
+                "cash-audits",
                 "store"
               ]
             }
@@ -10394,33 +10401,7 @@
           "response": []
         },
         {
-          "name": "GET expenses/show/:id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/show/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "expenses",
-                "show",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PUT expenses/status/:id",
+          "name": "PUT cash-audits/update/:id",
           "request": {
             "method": "PUT",
             "header": [
@@ -10431,569 +10412,58 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"paid\"\n}"
+              "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/status/:id",
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/update/{{cashAuditId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "{{apiPrefix}}",
-                "expenses",
-                "status",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "DELETE expenses/delete/:id",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/expenses/delete/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "expenses",
-                "delete",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "payment-methods",
-      "item": [
-        {
-          "name": "GET config/payment-methods",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods?page=1&perPage=15",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-methods"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "perPage",
-                  "value": "15"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST config/payment-methods/store",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Transferencia\",\n  \"description\": \"Pago por transferencia bancaria\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/store",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-methods",
-                "store"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET config/payment-methods/show/:id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/show/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-methods",
-                "show",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PUT config/payment-methods/update/:id",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Transferencia Bancaria\",\n  \"description\": \"Pago por transferencia\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/update/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-methods",
+                "cash-audits",
                 "update",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
+                "{{cashAuditId}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "DELETE config/payment-methods/delete/:id",
+          "name": "DELETE cash-audits/delete/:id",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/delete/:id",
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/delete/{{cashAuditId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "{{apiPrefix}}",
-                "config",
-                "payment-methods",
+                "cash-audits",
                 "delete",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
+                "{{cashAuditId}}"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "GET config/payment-methods/select",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-methods/select",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-methods",
-                "select"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "payment-document-types",
-      "item": [
-        {
-          "name": "GET config/payment-document-types",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types?page=1&perPage=15",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-document-types"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "perPage",
-                  "value": "15"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST config/payment-document-types/store",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Factura\",\n  \"description\": \"Factura comercial\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/store",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-document-types",
-                "store"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET config/payment-document-types/show/:id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/show/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-document-types",
-                "show",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PUT config/payment-document-types/update/:id",
+          "name": "PUT cash-audits/restore/:id",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Factura Electrónica\",\n  \"description\": \"Factura electrónica\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/update/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-document-types",
-                "update",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "DELETE config/payment-document-types/delete/:id",
-          "request": {
-            "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/delete/:id",
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/restore/{{cashAuditId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "{{apiPrefix}}",
-                "config",
-                "payment-document-types",
-                "delete",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET config/payment-document-types/select",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/payment-document-types/select",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "payment-document-types",
-                "select"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "ledging-accounts",
-      "item": [
-        {
-          "name": "GET config/ledging-accounts",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts?page=1&perPage=15",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "ledging-accounts"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "perPage",
-                  "value": "15"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST config/ledging-accounts/store",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"businessId\": 1,\n  \"name\": \"Ingresos por servicios\",\n  \"type\": \"income\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/store",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "ledging-accounts",
-                "store"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET config/ledging-accounts/show/:id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/show/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "ledging-accounts",
-                "show",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PUT config/ledging-accounts/update/:id",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Ingresos por servicios profesionales\",\n  \"type\": \"income\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/update/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "ledging-accounts",
-                "update",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "DELETE config/ledging-accounts/delete/:id",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/delete/:id",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "ledging-accounts",
-                "delete",
-                ":id"
-              ],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "1"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET config/ledging-accounts/select",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/config/ledging-accounts/select",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "{{apiPrefix}}",
-                "config",
-                "ledging-accounts",
-                "select"
+                "cash-audits",
+                "restore",
+                "{{cashAuditId}}"
               ]
             }
           },
@@ -11010,7 +10480,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/{{apiPrefix}}/balances/movements?page=1&perPage=15",
+              "raw": "{{baseUrl}}/{{apiPrefix}}/balances/movements?text&page=1&perPage=15",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -11021,44 +10491,20 @@
               ],
               "query": [
                 {
+                  "key": "text",
+                  "value": null,
+                  "description": "Filtra egresos/ingresos por cliente, cuenta o concepto.",
+                  "type": "text"
+                },
+                {
                   "key": "page",
                   "value": "1",
-                  "description": "Página actual"
+                  "type": "text"
                 },
                 {
                   "key": "perPage",
                   "value": "15",
-                  "description": "Registros por página"
-                },
-                {
-                  "key": "text",
-                  "value": "",
-                  "description": "Filtra por cliente, cuenta, concepto o número de documento",
-                  "disabled": true
-                },
-                {
-                  "key": "status",
-                  "value": "",
-                  "description": "Filtra por estado del movimiento",
-                  "disabled": true
-                },
-                {
-                  "key": "documentTypeId",
-                  "value": "",
-                  "description": "Filtra por tipo de documento",
-                  "disabled": true
-                },
-                {
-                  "key": "paymentMethodId",
-                  "value": "",
-                  "description": "Filtra por método de pago",
-                  "disabled": true
-                },
-                {
-                  "key": "type",
-                  "value": "",
-                  "description": "Filtra por tipo: income (ingreso) o expense (egreso)",
-                  "disabled": true
+                  "type": "text"
                 }
               ]
             }
@@ -11131,6 +10577,158 @@
           ]
         }
       ]
+    },
+    {
+      "name": "cash-audits",
+      "item": [
+        {
+          "name": "GET cash-audits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits?page=1&perPage=15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "cash-audits"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "perPage",
+                  "value": "15",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST cash-audits/store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/store",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "cash-audits",
+                "store"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET cash-audits/show/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/show/{{cashAuditId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "cash-audits",
+                "show",
+                "{{cashAuditId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT cash-audits/update/:id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/update/{{cashAuditId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "cash-audits",
+                "update",
+                "{{cashAuditId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE cash-audits/delete/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/delete/{{cashAuditId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "cash-audits",
+                "delete",
+                "{{cashAuditId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT cash-audits/restore/:id",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/cash-audits/restore/{{cashAuditId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "cash-audits",
+                "restore",
+                "{{cashAuditId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "auth": {
@@ -11154,6 +10752,10 @@
     },
     {
       "key": "authToken",
+      "value": ""
+    },
+    {
+      "key": "cashAuditId",
       "value": ""
     }
   ]

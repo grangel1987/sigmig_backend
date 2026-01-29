@@ -253,6 +253,71 @@ components:
             name:
               type: string
 
+    CashAuditLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        cashAuditId:
+          type: integer
+        currencyId:
+          type: integer
+          nullable: true
+        denominationValue:
+          type: number
+          nullable: true
+        denominationName:
+          type: string
+          nullable: true
+        quantity:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        subtotal:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CashAudit:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+          nullable: true
+        performedBy:
+          type: integer
+          nullable: true
+        performedAt:
+          type: string
+          format: date-time
+        totalCounted:
+          type: number
+        totalExpected:
+          type: number
+        difference:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashAuditLine'
+
 paths:
   /account/login:
     post:
@@ -2004,6 +2069,344 @@ paths:
                     type: string
         '500':
           description: Error al anular
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits:
+    get:
+      tags:
+        - Arqueo
+      summary: Listar auditorías de caja
+      description: Obtener listado de auditorías de caja con filtros opcionales
+      operationId: getCashAudits
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditorías obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CashAudit'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          description: Error al obtener auditorías
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/show/{id}:
+    get:
+      tags:
+        - Arqueo
+      summary: Obtener auditoría de caja por ID
+      description: Obtener una auditoría de caja específica con sus líneas
+      operationId: getCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditoría obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CashAudit'
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/store:
+    post:
+      tags:
+        - Arqueo
+      summary: Crear auditoría de caja
+      description: Crear una nueva auditoría de caja con líneas
+      operationId: createCashAudit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                performedAt:
+                  type: string
+                  format: date-time
+                totalCounted:
+                  type: number
+                totalExpected:
+                  type: number
+                notes:
+                  type: string
+                  nullable: true
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      currencyId:
+                        type: integer
+                        nullable: true
+                      denominationValue:
+                        type: number
+                        nullable: true
+                      denominationName:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                        nullable: true
+                      amount:
+                        type: number
+                        nullable: true
+                      subtotal:
+                        type: number
+              required:
+                - totalCounted
+                - totalExpected
+      responses:
+        '201':
+          description: Auditoría creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CashAudit'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al crear auditoría
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/update/{id}:
+    put:
+      tags:
+        - Arqueo
+      summary: Actualizar auditoría de caja
+      description: Actualizar una auditoría de caja existente y sus líneas
+      operationId: updateCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                performedAt:
+                  type: string
+                  format: date-time
+                totalCounted:
+                  type: number
+                totalExpected:
+                  type: number
+                notes:
+                  type: string
+                  nullable: true
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      currencyId:
+                        type: integer
+                        nullable: true
+                      denominationValue:
+                        type: number
+                        nullable: true
+                      denominationName:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                        nullable: true
+                      amount:
+                        type: number
+                        nullable: true
+                      subtotal:
+                        type: number
+              required:
+                - totalCounted
+                - totalExpected
+      responses:
+        '200':
+          description: Auditoría actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CashAudit'
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al actualizar auditoría
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/delete/{id}:
+    delete:
+      tags:
+        - Arqueo
+      summary: Eliminar auditoría de caja
+      description: Eliminar una auditoría de caja y sus líneas
+      operationId: deleteCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditoría eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar auditoría
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/restore/{id}:
+    put:
+      tags:
+        - Arqueo
+      summary: Restaurar auditoría de caja
+      description: Restaurar una auditoría de caja previamente eliminada
+      operationId: restoreCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditoría restaurada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: La tabla no soporta soft-delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al restaurar auditoría
           content:
             application/json:
               schema:

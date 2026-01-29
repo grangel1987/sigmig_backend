@@ -11,19 +11,16 @@ export default class CashAuditLine extends BaseModel {
     declare cashAuditId: number
 
     @column()
-    declare kind: 'cash' | 'platform'
-
-    @column()
     declare currencyId: number | null
 
     @column()
     declare denominationValue: number | null
 
     @column()
-    declare quantity: number | null
+    declare denominationName: string | null
 
     @column()
-    declare platformName: string | null
+    declare quantity: number | null
 
     @column()
     declare amount: number | null
