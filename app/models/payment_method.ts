@@ -18,6 +18,9 @@ export default class PaymentMethod extends BaseModel {
   @column()
   public description: string
 
+  @column()
+  public disabled: boolean
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

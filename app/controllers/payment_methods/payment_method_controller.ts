@@ -9,12 +9,13 @@ export default class PaymentMethodController {
         const { request, response, i18n } = ctx
 
         try {
-            const { page, perPage, text } = await request.validateUsing(
+            const { page, perPage, text, status } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         page: vine.number().optional(),
                         perPage: vine.number().optional(),
                         text: vine.string().optional(),
+                        status: vine.enum(['enabled', 'disabled', 'all']).optional(),
                     })
                 )
             )
@@ -24,6 +25,14 @@ export default class PaymentMethodController {
             if (text) {
                 query.where('name', 'LIKE', `%${text}%`)
             }
+
+            // Filter by status (default: show only enabled)
+            if (status === 'disabled') {
+                query.where('disabled', true)
+            } else if (status === 'enabled' || !status) {
+                query.where('disabled', false)
+            }
+            // If status === 'all', don't add any filter
 
             query.orderBy('name', 'asc')
 
@@ -57,6 +66,7 @@ export default class PaymentMethodController {
             const method = await PaymentMethod.create({
                 name,
                 description,
+                disabled: false,
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
             })
@@ -140,7 +150,11 @@ export default class PaymentMethodController {
 
         try {
             const method = await PaymentMethod.findOrFail(params.id)
-            await method.delete()
+
+            // Soft delete by setting disabled to true
+            method.disabled = true
+            method.updatedAt = DateTime.now()
+            await method.save()
 
             return response.status(200).json(
                 MessageFrontEnd(
@@ -160,10 +174,28 @@ export default class PaymentMethodController {
     }
 
     public async select(ctx: HttpContext) {
-        const { response, i18n } = ctx
+        const { request, response, i18n } = ctx
 
         try {
-            const methods = await PaymentMethod.query().orderBy('name', 'asc')
+            const { status } = await request.validateUsing(
+                vine.compile(
+                    vine.object({
+                        status: vine.enum(['enabled', 'disabled', 'all']).optional(),
+                    })
+                )
+            )
+
+            const query = PaymentMethod.query()
+
+            // Filter by status (default: show only enabled)
+            if (status === 'disabled') {
+                query.where('disabled', true)
+            } else if (status === 'enabled' || !status) {
+                query.where('disabled', false)
+            }
+            // If status === 'all', don't add any filter
+
+            const methods = await query.orderBy('name', 'asc')
 
             return response.status(200).json(methods.map((m) => ({ text: m.name, value: m.id })))
         } catch (error) {
