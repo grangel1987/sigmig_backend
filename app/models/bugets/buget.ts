@@ -6,6 +6,7 @@ import BugetItem from '#models/bugets/buget_item'
 import BugetProduct from '#models/bugets/buget_product'
 import Business from '#models/business/business'
 import Client from '#models/clients/client'
+import CostCenter from '#models/cost_centers/cost_center'
 import User from '#models/users/user'
 import CurrencyConversionService from '#services/currency_conversion_service'
 import Util from '#utils/Util'
@@ -36,6 +37,23 @@ export default class Buget extends BaseModel {
 
   @column({ columnName: 'client_id' })
   public clientId: number
+
+  @column({ columnName: 'cost_center_id' })
+  public costCenterId: number | null
+
+  @column()
+  public info: {
+    name?: string
+    email?: string
+    paymentTerm?: number
+    sendCondition?: number
+    sendAmount?: number
+    otherAmount?: number
+    observation?: string
+    daysExpireBuget?: number
+    authorizerId?: number
+    nroBuget?: string
+  } | null
 
   @column()
   declare token: string
@@ -104,6 +122,9 @@ export default class Buget extends BaseModel {
 
   @belongsTo(() => Client, { foreignKey: 'clientId' })
   public client: BelongsTo<typeof Client>
+
+  @belongsTo(() => CostCenter, { foreignKey: 'costCenterId' })
+  public costCenter: BelongsTo<typeof CostCenter>
 
   @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
