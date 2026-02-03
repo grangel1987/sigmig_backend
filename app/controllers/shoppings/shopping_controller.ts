@@ -144,7 +144,7 @@ export default class ShoppingController {
                 updatedById: auth.user!.id,
                 expireDate: Util.getDateAddDays(dateTime, info.daysExpireBuget ?? 0),
                 authorizerId: info.authorizerId,
-                nroBuget: info.nroBuget,
+                nroBuget: info.nroBudget,
                 token: randomUUID(),
             }
 
@@ -286,8 +286,9 @@ export default class ShoppingController {
                             sendAmount: vine.number().min(0).optional(),
                             otherAmount: vine.number().min(0).optional(),
                             observation: vine.string().trim().optional(),
+                            daysExpireBuget: vine.number().min(0).optional(),
                             authorizerId: vine.number().positive().optional(),
-                            nroBuget: vine.string().trim().maxLength(50).optional(),
+                            nroBudget: vine.string().trim().maxLength(50).optional(),
                         }).optional(),
                     })
                 )
@@ -341,7 +342,7 @@ export default class ShoppingController {
                     otherAmount: info?.otherAmount ?? existing.otherAmount,
                     observation: info?.observation ?? existing.observation,
                     authorizerId: existing.isAuthorized ? existing.authorizerId : (info?.authorizerId ?? existing.authorizerId),
-                    nroBuget: info?.nroBuget ?? existing.nroBuget,
+                    nroBuget: info?.nroBudget ?? existing.nroBuget,
                     token: token ?? randomUUID(),
                     enabled: true,
                     isAuthorized: existing.isAuthorized ?? false,
