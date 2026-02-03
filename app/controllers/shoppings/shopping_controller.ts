@@ -253,7 +253,7 @@ export default class ShoppingController {
             const {
                 provider,
                 products = [],
-                cost_center: costCenter,
+                costCenter,
                 work,
                 info,
                 rounding,
@@ -274,7 +274,7 @@ export default class ShoppingController {
                                 quantity: vine.number().positive().optional(),
                             })
                         ).optional(),
-                        cost_center: vine.number().positive().optional(),
+                        costCenter: vine.number().positive().optional(),
                         work: vine.number().positive().optional(),
                         rounding: vine.number().optional(),
                         currencySymbol: vine.string().trim().minLength(1).maxLength(50).optional(),
