@@ -1,0 +1,37 @@
+import BudgetPayment from '#models/budget_payment'
+import BugetItem from '#models/bugets/buget_item'
+import BugetProduct from '#models/bugets/buget_product'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+
+export default class BudgetPaymentLine extends BaseModel {
+  public static table = 'budget_payment_lines'
+
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column({ columnName: 'budget_payment_id' })
+  declare budgetPaymentId: number
+
+  @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
+  declare budgetPayment: BelongsTo<typeof BudgetPayment>
+
+  @column({ columnName: 'buget_product_id' })
+  declare bugetProductId: number | null
+
+  @belongsTo(() => BugetProduct, { foreignKey: 'bugetProductId' })
+  declare bugetProduct: BelongsTo<typeof BugetProduct>
+
+  @column({ columnName: 'buget_item_id' })
+  declare bugetItemId: number | null
+
+  @belongsTo(() => BugetItem, { foreignKey: 'bugetItemId' })
+  declare bugetItem: BelongsTo<typeof BugetItem>
+
+  @column({
+    prepare: (value?: number) => (value ?? null),
+    consume: (value?: string | number) =>
+      value === null || value === undefined ? null : Number(value),
+  })
+  declare amount: number | null
+}

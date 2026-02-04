@@ -45,11 +45,13 @@ export default class PaymentDocumentTypeController {
         const { request, response, i18n } = ctx
 
         try {
-            const { name, description } = await request.validateUsing(
+            const { name, description, code, isProjected } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
                         description: vine.string().trim().optional(),
+                        code: vine.string().trim().optional(),
+                        isProjected: vine.boolean().optional(),
                     })
                 )
             )
@@ -57,6 +59,8 @@ export default class PaymentDocumentTypeController {
             const type = await PaymentDocumentType.create({
                 name,
                 description,
+                code: code || '',
+                isProjected: isProjected ?? false,
                 createdAt: DateTime.now(),
                 updatedAt: DateTime.now(),
             })
@@ -100,11 +104,13 @@ export default class PaymentDocumentTypeController {
         const { request, params, response, i18n } = ctx
 
         try {
-            const { name, description } = await request.validateUsing(
+            const { name, description, code, isProjected } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
                         description: vine.string().trim().optional(),
+                        code: vine.string().trim().optional(),
+                        isProjected: vine.boolean().optional(),
                     })
                 )
             )
@@ -113,6 +119,8 @@ export default class PaymentDocumentTypeController {
 
             type.name = name
             type.description = description || ''
+            if (code !== undefined) type.code = code || ''
+            if (isProjected !== undefined) type.isProjected = isProjected
             type.updatedAt = DateTime.now()
 
             await type.save()

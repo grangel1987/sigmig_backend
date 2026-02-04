@@ -76,7 +76,6 @@ export default class UserController {
         passVerify = await hash.use('bcrypt').verify(pass, password)
       } else passVerify = await user.verifyPassword(password)
 
-      console.log({ passVerify, isBcrypt })
 
       if (!passVerify) {
         return response.status(500).json({

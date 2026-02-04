@@ -211,7 +211,12 @@ export default class Buget extends BaseModel {
   public getTotalPaid(): number {
     return (
       this.payments
-        ?.filter((payment) => !payment.voided && !payment.deletedAt)
+        ?.filter(
+          (payment) =>
+            !payment.voided &&
+            !payment.deletedAt &&
+            (!payment.ledgerMovement || !payment.ledgerMovement.isProjected)
+        )
         .reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0
     )
   }

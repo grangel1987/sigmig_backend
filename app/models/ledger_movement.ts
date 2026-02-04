@@ -63,6 +63,12 @@ export default class LedgerMovement extends BaseModel {
   @column()
   declare documentNumber: string
 
+  @column({ columnName: 'is_projected' })
+  declare isProjected: boolean
+
+  @column.dateTime({ columnName: 'received_at' })
+  declare receivedAt: DateTime | null
+
   @column()
   declare concept: string
 

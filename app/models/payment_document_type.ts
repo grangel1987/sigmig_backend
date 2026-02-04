@@ -16,6 +16,12 @@ export default class PaymentDocumentType extends BaseModel {
   @column()
   declare description: string
 
+  @column()
+  declare code: string
+
+  @column({ columnName: 'is_projected' })
+  declare isProjected: boolean
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

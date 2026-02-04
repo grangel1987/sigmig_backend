@@ -1295,6 +1295,7 @@ export default class BugetController {
         currencyValue,
         currencySymbol,
         keepSameNro = false,
+
       } = await request.validateUsing(bugetUpdateValidator)
 
       const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
@@ -1746,6 +1747,7 @@ export default class BugetController {
           clientId: clientId,
           discount: existingBuget.discount,
           utility: existingBuget.utility,
+          info: existingBuget.info,
           createdAt: dateTime,
           prevId: existingBuget.id,
           // DO NOT set token here - allow @beforeCreate to set a new token
@@ -2007,6 +2009,18 @@ export default class BugetController {
     try {
       const payload = await request.validateUsing(createBudgetPaymentValidator)
       const businessId = Number(request.header('Business'))
+      const linesTotal =
+        payload.lines?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
+      const amount = payload.amount ?? linesTotal
+
+      if (!amount || amount <= 0) {
+        return response.status(400).json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.store_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+      }
       // Generate default concept if not provided
       let concept = payload.concept
       if (!concept && payload.budgetId) {
@@ -2022,6 +2036,7 @@ export default class BugetController {
 
       const result = await BudgetPaymentService.create({
         ...payload,
+        amount,
         businessId,
         concept,
         date: DateTime.fromISO(payload.date),
@@ -2175,13 +2190,24 @@ const createBudgetPaymentValidator = vine.compile(
     costCenterId: vine.number().optional(),
     clientId: vine.number().optional(),
     date: vine.string(),
-    amount: vine.number(),
+    amount: vine.number().optional(),
     currencyId: vine.number(),
     paymentMethodId: vine.number().optional(),
     documentTypeId: vine.number().optional(),
     documentNumber: vine.string().optional(),
     concept: vine.string().optional(),
     status: vine.enum(['paid', 'pending', 'voided']).optional(),
+    isProjected: vine.boolean().optional(),
+    receivedAt: vine.string().optional().nullable(),
+    lines: vine
+      .array(
+        vine.object({
+          bugetProductId: vine.number().optional().nullable(),
+          bugetItemId: vine.number().optional().nullable(),
+          amount: vine.number().optional().nullable(),
+        })
+      )
+      .optional(),
   })
 )
 
@@ -2198,6 +2224,17 @@ const updateBudgetPaymentValidator = vine.compile(
     documentNumber: vine.string().optional(),
     concept: vine.string().optional(),
     status: vine.enum(['paid', 'pending', 'voided']).optional(),
+    isProjected: vine.boolean().optional(),
+    receivedAt: vine.string().optional().nullable(),
+    lines: vine
+      .array(
+        vine.object({
+          bugetProductId: vine.number().optional().nullable(),
+          bugetItemId: vine.number().optional().nullable(),
+          amount: vine.number().optional().nullable(),
+        })
+      )
+      .optional(),
   })
 )
 

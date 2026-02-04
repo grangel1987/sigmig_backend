@@ -1,7 +1,8 @@
+import BudgetPaymentLine from '#models/budget_payment_line'
 import Buget from '#models/bugets/buget'
 import LedgerMovement from '#models/ledger_movement'
-import { BaseModel, belongsTo, column, hasOne } from '@adonisjs/lucid/orm'
-import type { BelongsTo, HasOne } from '@adonisjs/lucid/types/relations'
+import { BaseModel, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export default class BudgetPayment extends BaseModel {
@@ -40,6 +41,9 @@ export default class BudgetPayment extends BaseModel {
 
   @hasOne(() => LedgerMovement, { foreignKey: 'budgetPaymentId' })
   public ledgerMovement: HasOne<typeof LedgerMovement>
+
+  @hasMany(() => BudgetPaymentLine, { foreignKey: 'budgetPaymentId' })
+  public lines: HasMany<typeof BudgetPaymentLine>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

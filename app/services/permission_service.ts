@@ -25,7 +25,6 @@ export default class PermissionService {
 
     // A) Check if user is admin
     if (user?.isAdmin) {
-      console.log('User is admin')
       return true
     }
 
