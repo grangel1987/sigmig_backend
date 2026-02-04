@@ -39,6 +39,7 @@ export default class BugetController {
     // Expect camelCase input keys only
     const {
       businessId,
+      costCenterId,
       currencySymbol,
       currencyId,
       currencyValue,
@@ -49,6 +50,7 @@ export default class BugetController {
       banks = [],
       discount = 0,
       utility = 0,
+      info,
     } = await request.validateUsing(bugetStoreValidator)
 
     const trx = await db.transaction()
@@ -73,12 +75,14 @@ export default class BugetController {
       const payload = {
         nro: String(nro),
         businessId: Number(businessId),
+        costCenterId: costCenterId ?? null,
         currencySymbol: currencySymbol,
         currencyId: currencyId,
         currencyValue: currencyValue,
         clientId: client?.id,
         discount: Number(discount) || 0,
         utility: Number(utility) || 0,
+        info: info ?? null,
         createdAt: dateTime,
         updatedAt: dateTime,
         createdById: auth.user!.id,
@@ -662,24 +666,24 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       business: buget.business
         ? {
-            name: buget.business.name,
-            url: buget.business.url,
-            email: buget.business.email,
-            identify: buget.business.identify,
-            footer: buget.business.footer,
-            typeIdentify: buget.business.typeIdentify?.text,
-          }
+          name: buget.business.name,
+          url: buget.business.url,
+          email: buget.business.email,
+          identify: buget.business.identify,
+          footer: buget.business.footer,
+          typeIdentify: buget.business.typeIdentify?.text,
+        }
         : null,
       client: buget.client
         ? {
-            name: buget.client.name,
-            identify: buget.client.identify,
-            email: buget.client.email,
-            address: buget.client.address,
-            phone: buget.client.phone,
-            typeIdentify: buget.client.typeIdentify?.text,
-            city: buget.client.city?.name,
-          }
+          name: buget.client.name,
+          identify: buget.client.identify,
+          email: buget.client.email,
+          address: buget.client.address,
+          phone: buget.client.phone,
+          typeIdentify: buget.client.typeIdentify?.text,
+          city: buget.client.city?.name,
+        }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -690,9 +694,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-                name: product.products.name,
-                type: product.products.type?.text,
-              }
+              name: product.products.name,
+              type: product.products.type?.text,
+            }
             : null,
         })) || [],
       items:
@@ -713,9 +717,9 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-            work: buget.details.work,
-            observation: buget.details.observation,
-          }
+          work: buget.details.work,
+          observation: buget.details.observation,
+        }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -1213,7 +1217,9 @@ export default class BugetController {
         banks = [],
         discount,
         utility,
+        costCenterId,
         clientDetails,
+        info,
         currencyId,
         currencyValue,
         currencySymbol,
@@ -1262,12 +1268,14 @@ export default class BugetController {
         {
           nro: String(nro),
           businessId: existingBuget.businessId,
+          costCenterId: costCenterId ?? existingBuget.costCenterId ?? null,
           currencySymbol: currencySymbol,
           currencyId: currencyId,
           currencyValue: currencyValue,
           clientId: existingBuget.clientId,
           discount: Number(discount) || 0,
           utility: Number(utility) || 0,
+          info: info ?? existingBuget.info ?? null,
           createdAt: dateTime,
           prevId: existingBuget.id,
           token,
@@ -1424,11 +1432,11 @@ export default class BugetController {
             fromClient: true,
             createdById: ctx.auth.user?.id
               ? ((
-                  await BusinessUser.query()
-                    .where('user_id', ctx.auth.user.id)
-                    .where('business_id', buget?.businessId ?? 0)
-                    .first()
-                )?.id ?? null)
+                await BusinessUser.query()
+                  .where('user_id', ctx.auth.user.id)
+                  .where('business_id', buget?.businessId ?? 0)
+                  .first()
+              )?.id ?? null)
               : null,
           },
           { client: trx }
