@@ -733,6 +733,7 @@ router.group(() => {
     router.put('/update/:shop_id', '#controllers/shoppings/shopping_controller.update')
     router.post('/authorizer', '#controllers/shoppings/shopping_controller.authorizer')
     router.put('/delete/:shop_id', '#controllers/shoppings/shopping_controller.delete')
+    router.put('/reactivate/:id', '#controllers/shoppings/shopping_controller.reactivate')
     router.put('/update/nro-buget/:id', '#controllers/shoppings/shopping_controller.updateNroBuget')
     router.post('/find/name', '#controllers/shoppings/shopping_controller.findByNameProvider')
     router.post('/find/date', '#controllers/shoppings/shopping_controller.findByDate')

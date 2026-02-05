@@ -1,3 +1,4 @@
+import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import NotificationType from '#models/notifications/notification_type'
 import Shopping from '#models/shoppings/shopping'
@@ -143,7 +144,7 @@ export default class ShoppingController {
                 updatedById: auth.user!.id,
                 expireDate: Util.getDateAddDays(dateTime, info.daysExpireBuget ?? 0),
                 authorizerId: info.authorizerId,
-                nroBuget: info.nroBuget,
+                nroBuget: info.nroBudget,
                 token: randomUUID(),
             }
 
@@ -246,31 +247,114 @@ export default class ShoppingController {
         const { params, request, response, auth, i18n } = ctx
         const { shop_id } = await shoppingShopIdParamValidator.validate(params)
         const trx = await db.transaction()
-        const dateTime = await Util.getDateTimes(request)
 
         try {
-            const { provider, products, cost_center: costCenter, work, info, rounding } = request.all() as any
-            const shop = await Shopping.findOrFail(shop_id)
+            const dateTime = await Util.getDateTimes(request)
+            const {
+                provider,
+                products = [],
+                costCenter,
+                work,
+                info,
+                rounding,
+                currencySymbol,
+                keepSameNro = false,
+            } = await request.validateUsing(
+                vine.compile(
+                    vine.object({
+                        provider: vine.object({ id: vine.number().positive() }).optional(),
+                        products: vine.array(
+                            vine.object({
+                                id: vine.number().positive().optional(),
+                                name: vine.string().trim().optional(),
+                                code: vine.string().trim().optional(),
+                                price: vine.number().min(0).optional(),
+                                tax: vine.number().range([0, 100]).optional(),
+                                count: vine.number().positive().optional(),
+                                quantity: vine.number().positive().optional(),
+                            })
+                        ).optional(),
+                        costCenter: vine.number().positive().optional(),
+                        work: vine.number().positive().optional(),
+                        rounding: vine.number().optional(),
+                        currencySymbol: vine.string().trim().minLength(1).maxLength(50).optional(),
+                        keepSameNro: vine.boolean().optional(),
+                        info: vine.object({
+                            name: vine.string().trim().minLength(1).optional(),
+                            paymentTerm: vine.number().positive().optional(),
+                            sendCondition: vine.number().positive().optional(),
+                            sendAmount: vine.number().min(0).optional(),
+                            otherAmount: vine.number().min(0).optional(),
+                            observation: vine.string().trim().optional(),
+                            daysExpireBuget: vine.number().min(0).optional(),
+                            authorizerId: vine.number().positive().optional(),
+                            nroBudget: vine.string().trim().maxLength(50).optional(),
+                        }).optional(),
+                    })
+                )
+            )
 
-            shop.costCenterId = costCenter ?? null
-            shop.workId = work ?? null
-            shop.requestedBy = info?.name ?? shop.requestedBy
-            shop.nroBuget = info?.nroBuget ?? shop.nroBuget
-            shop.authorizerId = shop.isAuthorized ? shop.authorizerId : (info?.authorizerId ?? shop.authorizerId)
-            shop.paymentTermId = info?.paymentTerm ?? shop.paymentTermId
-            shop.sendConditionId = info?.sendCondition ?? shop.sendConditionId
-            shop.sendAmount = info?.sendAmount ?? shop.sendAmount
-            shop.otherAmount = info?.otherAmount ?? shop.otherAmount
-            shop.observation = info?.observation ?? shop.observation
-            shop.providerId = provider?.id ?? shop.providerId
-            shop.rounding = rounding ?? shop.rounding
-            shop.updatedAt = dateTime
-            shop.updatedById = auth.user!.id
+            const existing = await Shopping.query({ client: trx }).where('id', shop_id).firstOrFail()
+            const token = existing.token
 
-            await shop.useTransaction(trx).save()
+            await trx
+                .from('shoppings')
+                .where('id', shop_id)
+                .update({
+                    enabled: false,
+                    token: null,
+                    updated_at: dateTime.toSQL({ includeOffset: false }),
+                    updated_by: auth.user!.id,
+                })
 
-            // Remove old products and insert new ones
-            await trx.from('shopping_products').where('shopping_id', shop_id).delete()
+            const business = await Business.query({ client: trx })
+                .where('id', existing.businessId!)
+                .firstOrFail()
+            const daysExpire = business.daysExpireBuget || 0
+            const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
+            const expireDate = DateTime.fromISO(expireDateISO)
+
+            let nro: string
+            if (keepSameNro) {
+                nro = existing.nro!
+            } else {
+                const last = await trx
+                    .from('shoppings')
+                    .where('business_id', existing.businessId!)
+                    .orderBy('id', 'desc')
+                    .limit(1)
+                nro = String(last.length > 0 ? Number(last[0].nro) + 1 : 1)
+            }
+
+            const shopping = await Shopping.create(
+                {
+                    nro: String(nro),
+                    businessId: existing.businessId,
+                    currencySymbol: currencySymbol ?? existing.currencySymbol,
+                    providerId: provider?.id ?? existing.providerId,
+                    costCenterId: costCenter ?? existing.costCenterId,
+                    workId: work ?? existing.workId,
+                    rounding: rounding ?? existing.rounding,
+                    requestedBy: info?.name ?? existing.requestedBy,
+                    paymentTermId: info?.paymentTerm ?? existing.paymentTermId,
+                    sendConditionId: info?.sendCondition ?? existing.sendConditionId,
+                    sendAmount: info?.sendAmount ?? existing.sendAmount,
+                    otherAmount: info?.otherAmount ?? existing.otherAmount,
+                    observation: info?.observation ?? existing.observation,
+                    authorizerId: existing.isAuthorized ? existing.authorizerId : (info?.authorizerId ?? existing.authorizerId),
+                    nroBuget: info?.nroBudget ?? existing.nroBuget,
+                    token: token ?? randomUUID(),
+                    enabled: true,
+                    isAuthorized: existing.isAuthorized ?? false,
+                    authorizerAt: existing.authorizerAt,
+                    createdAt: dateTime,
+                    updatedAt: dateTime,
+                    createdById: auth.user!.id,
+                    updatedById: auth.user!.id,
+                    expireDate,
+                },
+                { client: trx }
+            )
 
             const productsRows = (products || []).map((p: any) => {
                 const productId = Number(p.id)
@@ -283,14 +367,12 @@ export default class ShoppingController {
             })
 
             if (productsRows.length) {
-                await shop.related('products').createMany(productsRows, { client: trx })
+                await shopping.related('products').createMany(productsRows, { client: trx })
             }
 
             await trx.commit()
 
-            // Reload the shopping with preloads
-            const updatedShop = await Shopping.findOrFail(shop_id)
-            // Preload authorizer with personalData if authorizerId exists
+            const updatedShop = await Shopping.findOrFail(shopping.id)
             if (updatedShop.authorizerId) {
                 await updatedShop.load('authorizer', (b) => {
                     b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
@@ -545,6 +627,106 @@ export default class ShoppingController {
         } catch (error) {
             console.error(error)
             return response.status(500).json(MessageFrontEnd(i18n.formatMessage('messages.delete_error'), i18n.formatMessage('messages.error_title')))
+        }
+    }
+
+    // Reactivate a disabled shopping, optionally keeping the same nro
+    public async reactivate(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'update')
+
+        const { params, request, auth, response, i18n } = ctx
+        const shopId = Number(params.id)
+        const { keepSameNro = false } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    keepSameNro: vine.boolean().optional(),
+                })
+            )
+        )
+
+        const trx = await db.transaction()
+        try {
+            const dateTime = await Util.getDateTimes(request)
+
+            const existing = await Shopping.query({ client: trx })
+                .where('id', shopId)
+                .where('enabled', false)
+                .forUpdate()
+                .firstOrFail()
+
+            if (existing.expireDate && existing.expireDate > dateTime) {
+                await trx.rollback()
+                return response
+                    .status(400)
+                    .json(
+                        MessageFrontEnd(
+                            i18n.formatMessage('messages.no_exist'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    )
+            }
+
+            let nro = existing.nro!
+            if (!keepSameNro) {
+                const last = await trx
+                    .from('shoppings')
+                    .where('business_id', existing.businessId!)
+                    .orderBy('id', 'desc')
+                    .limit(1)
+                nro = String(last.length > 0 ? Number(last[0].nro) + 1 : 1)
+            }
+
+            const token = existing.token || randomUUID()
+            const business = await Business.query({ client: trx })
+                .where('id', existing.businessId!)
+                .firstOrFail()
+            const daysExpire = business.daysExpireBuget || 0
+            const expireDate = existing.expireDate.plus({ days: daysExpire })
+
+            await trx
+                .from('shoppings')
+                .where('id', shopId)
+                .update({
+                    enabled: true,
+                    nro,
+                    token,
+                    expire_date: expireDate.toSQLDate(),
+                    updated_at: dateTime.toSQL({ includeOffset: false }),
+                    updated_by: auth.user!.id,
+                })
+
+            await trx.commit()
+
+            const reactivated = await Shopping.findOrFail(shopId)
+            await reactivated.load('createdBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+            await reactivated.load('updatedBy', (builder) => {
+                builder
+                    .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+                    .select(['id', 'personal_data_id', 'email'])
+            })
+
+            return response.status(200).json({
+                shopping: reactivated,
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.update_ok'),
+                    i18n.formatMessage('messages.ok_title')
+                ),
+            })
+        } catch (error) {
+            await trx.rollback()
+            console.error(error)
+            return response
+                .status(500)
+                .json(
+                    MessageFrontEnd(
+                        i18n.formatMessage('messages.update_error'),
+                        i18n.formatMessage('messages.error_title')
+                    )
+                )
         }
     }
 
