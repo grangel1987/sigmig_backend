@@ -41,7 +41,10 @@ export default class Buget extends BaseModel {
   @column({ columnName: 'cost_center_id' })
   public costCenterId: number | null
 
-  @column()
+  @column({
+    consume: v => typeof v === 'string' ? JSON.parse(v) : v,
+    prepare: v => typeof v === 'object' ? JSON.stringify(v) : v
+  })
   public info: {
     name?: string
     email?: string
