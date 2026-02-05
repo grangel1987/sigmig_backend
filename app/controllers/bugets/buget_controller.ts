@@ -258,12 +258,14 @@ export default class BugetController {
       businessId: pBusinessId,
       budgetStatus,
       includePaymentTotals,
+      includeAllInfo,
     } = await request.validateUsing(
       vine.compile(
         vine.object({
           ...searchWithStatusSchema.getProperties(),
           businessId: vine.number().positive().optional(),
           includePaymentTotals: vine.boolean().optional(),
+          includeAllInfo: vine.boolean().optional(),
         })
       )
     )
@@ -384,8 +386,22 @@ export default class BugetController {
             )
           }
 
+          const serialized = budget.serialize()
+
+          // Load paymentTerm and sendCondition from info field if requested
+          if (includeAllInfo && serialized.info) {
+            const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
+            const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+
+            serialized.info = {
+              ...serialized.info,
+              paymentTermData: paymentTerm ? paymentTerm.serialize() : null,
+              sendConditionData: sendCondition ? sendCondition.serialize() : null,
+            }
+          }
+
           return {
-            ...budget.serialize(),
+            ...serialized,
             paymentSummary,
           }
         })
@@ -434,8 +450,22 @@ export default class BugetController {
             )
           }
 
+          const serialized = budget.serialize()
+
+          // Load paymentTerm and sendCondition from info field if requested
+          if (includeAllInfo && serialized.info) {
+            const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
+            const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+
+            serialized.info = {
+              ...serialized.info,
+              paymentTermData: paymentTerm ? paymentTerm.serialize() : null,
+              sendConditionData: sendCondition ? sendCondition.serialize() : null,
+            }
+          }
+
           return {
-            ...budget.serialize(),
+            ...serialized,
             paymentSummary,
           }
         })
