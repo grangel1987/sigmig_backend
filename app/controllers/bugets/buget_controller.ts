@@ -3,6 +3,7 @@ import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import NotificationType from '#models/notifications/notification_type'
+import Setting from '#models/settings/setting'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import BudgetPaymentService from '#services/budget_payment_service'
 import NotificationService from '#services/notification_service'
@@ -535,6 +536,19 @@ export default class BugetController {
 
     // Compose legacy-like extras
     const serialized: any = buget.serialize()
+
+    // Load paymentTerm and sendCondition from info field and add to info object
+    if (serialized.info) {
+      const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
+      const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+
+      serialized.info = {
+        ...serialized.info,
+        paymentTermData: paymentTerm ? paymentTerm.serialize() : null,
+        sendConditionData: sendCondition ? sendCondition.serialize() : null,
+      }
+    }
+
     const expireDate = buget.expireDate
     if (expireDate) {
       serialized.expired = expireDate >= now ? false : true
@@ -654,6 +668,10 @@ export default class BugetController {
       })
     })
 
+    // Load paymentTerm and sendCondition from info field
+    const paymentTerm = buget.info?.paymentTerm ? await Setting.find(buget.info.paymentTerm) : null
+    const sendCondition = buget.info?.sendCondition ? await Setting.find(buget.info.sendCondition) : null
+
     // Create a clean serialized version without IDs and timestamps
     const serialized: Record<string, any> = {
       nro: buget.nro,
@@ -664,6 +682,11 @@ export default class BugetController {
       enabled: !!buget.enabled, // Ensure boolean
       status: buget.status ?? null,
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
+      info: buget.info ? {
+        ...buget.info,
+        paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
+        sendConditionData: sendCondition ? { id: sendCondition.id, text: sendCondition.text } : null,
+      } : null,
       business: buget.business
         ? {
           name: buget.business.name,
