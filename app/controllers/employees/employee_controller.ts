@@ -369,6 +369,8 @@ export default class EmployeeController {
                     await trx.rollback()
                     return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
                 }
+                // Assign employee to user when provided from employee-side
+                employeeData.userId = user.id
                 employeeData.personalDataId = user.personalDataId
             } else if (personalData) {
                 let imageData: Record<string, any> = {}
@@ -597,6 +599,12 @@ export default class EmployeeController {
                     await trx.rollback()
                     return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
                 }
+                if (employee.userId && employee.userId !== user.id) {
+                    await trx.rollback()
+                    return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.exist_user_for_employee'), i18n.formatMessage('messages.error_title')))
+                }
+                // Assign employee to user when provided from employee-side
+                employeePatch.userId = user.id
                 employeePatch.personalDataId = user.personalDataId
             } else if (personalData) {
                 let imageData: Record<string, any> = {}
