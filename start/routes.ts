@@ -641,6 +641,7 @@ router.group(() => {
     router.put('/update/photo/:id', '#controllers/users/user_controller.updatePhoto')
     router.delete('/delete/signature/:id', '#controllers/users/user_controller.deleteSignature')
     router.delete('/delete/photo/:id', '#controllers/users/user_controller.deletePhoto')
+    router.post('/findAutoComplete', '#controllers/users/user_controller.findAutoComplete')
   }).prefix('user').middleware(auth)
 
 

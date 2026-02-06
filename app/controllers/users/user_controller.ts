@@ -1786,6 +1786,18 @@ export default class UserController {
     response.ok(permissions)
   }
 
+  // POST /user/findAutoComplete
+  public async findAutoComplete(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'view')
+
+    const { request } = ctx
+    const { val } = await request.validateUsing(
+      vine.compile(vine.object({ val: vine.string().trim() }))
+    )
+    const result = await UserRepository.findAutoComplete(val)
+    return result
+  }
+
   public async index(ctx: HttpContext) {
     const { request, response } = ctx
     await PermissionService.requirePermission(ctx, 'users', 'view')
