@@ -272,6 +272,7 @@ export default class BugetController {
 
     let query = Buget.query()
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
+      .preload('costCenter')
       .preload('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -512,6 +513,7 @@ export default class BugetController {
       ])
       q.preload('typeIdentify', (qq) => qq.select(['text', 'id']))
     })
+    await buget.load('costCenter')
     await buget.load('client', (q) => {
       q.select([
         'id',
@@ -656,6 +658,8 @@ export default class BugetController {
       q.select(['name', 'url', 'email', 'identify', 'footer', 'type_identify_id'])
       q.preload('typeIdentify', (qq) => qq.select(['text']))
     })
+
+    await buget.load('costCenter')
 
     await buget.load('client', (q) => {
       q.select(['name', 'identify', 'email', 'address', 'phone', 'identify_type_id', 'city_id'])
@@ -971,6 +975,7 @@ export default class BugetController {
     const budgetRes = await Buget.query()
       .where('business_id', businessId)
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
+      .preload('costCenter')
       .where('nro', number)
       // .where('enabled', true)
       .orderBy('id', 'desc')
