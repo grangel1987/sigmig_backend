@@ -668,9 +668,18 @@ export default class UserController {
 
         // Sync notification types associated to this role to the business user
         businessUser.useTransaction(trx)
-        const ntRows = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+        const ntRows = await db
+          .from('notification_type_rols')
+          .where('rol_id', businessUserRol.rolId)
+          .select('notification_type_id')
         const ntIds = ntRows.map((r: any) => Number(r.notification_type_id))
-        if (ntIds.length) await businessUser.related('notificationTypes').sync(ntIds)
+        if (ntIds.length) {
+          const ntData: any = {}
+          for (const ntId of ntIds) {
+            ntData[ntId] = { created_at: DateTime.now().toSQL({ includeOffset: false }) }
+          }
+          await businessUser.related('notificationTypes').sync(ntData)
+        }
 
         const payloadPermission = (bus.permissions || []).map((permId) => ({
           businessUserId: businessUser.id,
@@ -885,7 +894,7 @@ export default class UserController {
             pd.nationalityId = rPersonalData.nationalityId ?? null
             pd.cityId = rPersonalData.cityId ?? null
             pd.address = rPersonalData.address ?? null
-            pd.phone = rPersonalData.phone ?? user.email
+            pd.phone = rPersonalData.phone ?? ''
             pd.movil = rPersonalData.movil ?? null
             pd.email = rPersonalData.email ?? user.email
             pd.updatedAt = dateTime
@@ -1055,9 +1064,18 @@ export default class UserController {
 
             // Sync notification types from role to business user
             businessUser.useTransaction(trx)
-            const ntRows2 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+            const ntRows2 = await db
+              .from('notification_type_rols')
+              .where('rol_id', businessUserRol.rolId)
+              .select('notification_type_id')
             const ntIds2 = ntRows2.map((r: any) => Number(r.notification_type_id))
-            if (ntIds2.length) await businessUser.related('notificationTypes').sync(ntIds2)
+            if (ntIds2.length) {
+              const ntData2: any = {}
+              for (const ntId of ntIds2) {
+                ntData2[ntId] = { created_at: DateTime.now().toSQL({ includeOffset: false }) }
+              }
+              await businessUser.related('notificationTypes').sync(ntData2)
+            }
           }
         } else {
           // For non-admin users, update/create for each provided business
@@ -1095,9 +1113,18 @@ export default class UserController {
 
             // Sync notification types from role to business user
             businessUser.useTransaction(trx)
-            const ntRows3 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+            const ntRows3 = await db
+              .from('notification_type_rols')
+              .where('rol_id', businessUserRol.rolId)
+              .select('notification_type_id')
             const ntIds3 = ntRows3.map((r: any) => Number(r.notification_type_id))
-            if (ntIds3.length) await businessUser.related('notificationTypes').sync(ntIds3)
+            if (ntIds3.length) {
+              const ntData3: any = {}
+              for (const ntId of ntIds3) {
+                ntData3[ntId] = { created_at: DateTime.now().toSQL({ includeOffset: false }) }
+              }
+              await businessUser.related('notificationTypes').sync(ntData3)
+            }
 
             // Update permissions
             await businessUser.related('bussinessUserPermissions').query().delete()
@@ -1171,7 +1198,10 @@ export default class UserController {
           pd.nationalityId = rPersonalData.nationalityId ?? null
           pd.cityId = rPersonalData.cityId ?? null
           pd.address = rPersonalData.address ?? null
-          pd.phone = rPersonalData.phone ?? user.email
+          // Only update phone when provided; never fall back to email (20-char column)
+          if (rPersonalData.phone !== undefined) {
+            pd.phone = rPersonalData.phone ?? null
+          }
           pd.movil = rPersonalData.movil ?? null
           pd.email = rPersonalData.email ?? user.email
           pd.updatedAt = dateTime
@@ -1756,6 +1786,18 @@ export default class UserController {
     response.ok(permissions)
   }
 
+  // POST /user/findAutoComplete
+  public async findAutoComplete(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'users', 'view')
+
+    const { request } = ctx
+    const { val } = await request.validateUsing(
+      vine.compile(vine.object({ val: vine.string().trim() }))
+    )
+    const result = await UserRepository.findAutoComplete(val)
+    return result
+  }
+
   public async index(ctx: HttpContext) {
     const { request, response } = ctx
     await PermissionService.requirePermission(ctx, 'users', 'view')
@@ -1776,7 +1818,12 @@ export default class UserController {
     if (text) {
       const like = `%${text}%`
       query.where((qb) => {
-        qb.whereILike('email', like).orWhereHas('personalData', (pdQ) => pdQ.whereILike('names', like).orWhereILike('last_name_p', like).orWhereILike('last_name_m', like))
+        qb.whereILike('email', like).orWhereHas('personalData', (pdQ) =>
+          pdQ
+            .whereILike('names', like)
+            .orWhereILike('last_name_p', like)
+            .orWhereILike('last_name_m', like)
+        )
       })
     }
 
@@ -1881,9 +1928,18 @@ export default class UserController {
 
           // Sync notification types from role to business user (admin default role)
           businessUser.useTransaction(trx)
-          const adminNt = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+          const adminNt = await db
+            .from('notification_type_rols')
+            .where('rol_id', businessUserRol.rolId)
+            .select('notification_type_id')
           const adminNtIds = adminNt.map((r: any) => Number(r.notification_type_id))
-          if (adminNtIds.length) await businessUser.related('notificationTypes').sync(adminNtIds)
+          if (adminNtIds.length) {
+            const adminNtData: any = {}
+            for (const ntId of adminNtIds) {
+              adminNtData[ntId] = { created_at: DateTime.now().toSQL({ includeOffset: false }) }
+            }
+            await businessUser.related('notificationTypes').sync(adminNtData)
+          }
 
           selected = false
         }
@@ -1912,9 +1968,18 @@ export default class UserController {
 
           // Sync notification types for this role to the created business user
           businessUser.useTransaction(trx)
-          const ntRows4 = await db.from('notification_type_rols').where('rol_id', businessUserRol.rolId).select('notification_type_id')
+          const ntRows4 = await db
+            .from('notification_type_rols')
+            .where('rol_id', businessUserRol.rolId)
+            .select('notification_type_id')
           const ntIds4 = ntRows4.map((r: any) => Number(r.notification_type_id))
-          if (ntIds4.length) await businessUser.related('notificationTypes').sync(ntIds4)
+          if (ntIds4.length) {
+            const ntData4: any = {}
+            for (const ntId of ntIds4) {
+              ntData4[ntId] = { created_at: DateTime.now().toSQL({ includeOffset: false }) }
+            }
+            await businessUser.related('notificationTypes').sync(ntData4)
+          }
 
           const payloadPermission = (bus.permissions || []).map((permId) => ({
             businessUserId: businessUser.id,
@@ -2005,7 +2070,7 @@ export default class UserController {
       })
     } catch (error) {
       await trx.rollback()
-      console.error(error)
+      console.log(error)
       if (createdFiles.length)
         await Promise.all(createdFiles.map((file) => Google.deleteFile(file)))
       return response.status(500).json({

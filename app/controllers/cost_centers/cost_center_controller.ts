@@ -1,7 +1,7 @@
 import CostCenter from '#models/cost_centers/cost_center'
 import CostCenterRepository from '#repositories/cost_centers/cost_center_repository'
 import PermissionService from '#services/permission_service'
-import { indexFiltersWithStatus } from '#validators/general'
+import { searchWithStatusSchema } from '#validators/general'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -20,7 +20,11 @@ export default class CostCenterController {
 
     const { request, response, auth } = ctx
 
-    const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
+    const { page, perPage, text, status, accounting } = await request.validateUsing(vine.compile(
+      vine.object({
+        ...searchWithStatusSchema.getProperties(), accounting: vine.boolean().optional()
+
+      })))
 
     try {
       const userId = auth.user!.id
@@ -44,6 +48,10 @@ export default class CostCenterController {
         query.where((qb) => qb.whereRaw('name LIKE ?', [like]).orWhereRaw('code LIKE ?', [like]))
       }
 
+      if (accounting !== undefined)
+        query.where('accounting', Boolean(accounting))
+
+
       if (status !== undefined) query.where('enabled', status === 'enabled')
 
       const costCenters = await query.paginate(page || 1, perPage || 10)
@@ -57,10 +65,11 @@ export default class CostCenterController {
     await PermissionService.requirePermission(ctx, 'cost_centers', 'create')
 
     const { auth, request, response, i18n } = ctx
-    const { businessId, name, code } = await request.validateUsing(vine.compile(vine.object({
+    const { businessId, name, code, accounting } = await request.validateUsing(vine.compile(vine.object({
       businessId: vine.number().positive(),
       name: vine.string().trim(),
       code: vine.string().trim(),
+      accounting: vine.boolean().optional(),
     })))
     const dateTime = DateTime.local()
 
@@ -68,6 +77,7 @@ export default class CostCenterController {
       const data = {
         businessId,
         name,
+        accounting,
         code,
         createdAt: dateTime,
         updatedAt: dateTime,
@@ -99,9 +109,10 @@ export default class CostCenterController {
 
     const { params, request, response, auth, i18n } = ctx
     const costCenterId = params.id
-    const { name, code } = await request.validateUsing(vine.compile(vine.object({
+    const { name, code, accounting } = await request.validateUsing(vine.compile(vine.object({
       name: vine.string().trim().optional(),
       code: vine.string().trim().optional(),
+      accounting: vine.boolean().optional(),
     })))
     const dateTime = DateTime.local()
 
@@ -109,6 +120,7 @@ export default class CostCenterController {
       const costCenter = await CostCenter.findOrFail(costCenterId)
 
       costCenter.merge({
+        accounting,
         name,
         code,
         updatedAt: dateTime,

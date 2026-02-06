@@ -19,10 +19,12 @@ export default class NotificationService {
             directQuery = directQuery.where('business_users.business_id', businessId)
         }
         const direct = await directQuery
+        console.log(`Direct business_users for type ${typeId}:`, direct.length)
         for (const u of direct) businessUserIds.push(u.business_user_id)
 
         const rolRows = await Database.from('notification_type_rols').where('notification_type_id', typeId)
         const rolIds = rolRows.map((r) => r.rol_id)
+        console.log(`Roles for type ${typeId}:`, rolIds.length, rolIds)
         if (rolIds.length) {
             // Find business_users via roles, optionally filtered by business
             let query = Database.from('business_user_rols').whereIn('rol_id', rolIds)
@@ -32,10 +34,13 @@ export default class NotificationService {
             }
             query = query.select('business_users.id as business_user_id')
             const rows = await query
+            console.log(`Business_users via roles for type ${typeId}:`, rows.length)
             for (const row of rows) businessUserIds.push(row.business_user_id)
         }
 
-        return [...new Set(businessUserIds)]
+        const uniqueRecipients = [...new Set(businessUserIds)]
+        console.log(`Total unique recipients for type ${typeId}:`, uniqueRecipients.length)
+        return uniqueRecipients
     }
 
     /** Create a notification and attach recipients */
@@ -44,7 +49,8 @@ export default class NotificationService {
         businessId?: number
         title: string
         body?: string
-        payload?: any
+        payload?: Record<string, any>
+        meta?: Record<string, any>
         createdById: number
         recipientBusinessUserIds?: number[]
     }) {
@@ -54,13 +60,17 @@ export default class NotificationService {
             title: params.title,
             body: params.body ?? null,
             payload: params.payload ?? null,
+            meta: params.meta ?? null,
             createdById: params.createdById,
         })
 
         let recipients: number[] = params.recipientBusinessUserIds ?? []
         if (!recipients.length && params.typeId) {
+            console.log(`Resolving recipients for typeId=${params.typeId}, businessId=${params.businessId}`)
             recipients = await this.resolveRecipientsForType(params.typeId, params.businessId)
         }
+
+        console.log(`Notification ${notification.id}: recipients count = ${recipients.length}`)
 
         if (recipients.length) {
             const now = DateTime.now()
@@ -76,15 +86,20 @@ export default class NotificationService {
 
             // Emit socket events to user rooms
             try {
+                // Load the type relationship
+                await notification.load('type')
+
                 // lightweight payload for clients
                 const payload = {
                     id: notification.id,
                     title: notification.title,
                     body: notification.body,
                     typeId: notification.notificationTypeId,
+                    type: notification.type,
                     businessId: notification.businessId,
                     payload: notification.payload,
-                    createdAt: notification.createdAt,
+                    meta: notification.meta,
+                    createdAt: notification.createdAt.toFormat('yyyy-MM-dd HH:mm:ss'),
                     status: 'unread' as const,
                 }
                 // Map business_user_id -> user_id for socket rooms

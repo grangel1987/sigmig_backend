@@ -37,9 +37,24 @@ const clientDetailsSchema = vine
   })
   .optional()
 
+const infoSchema = vine
+  .object({
+    name: vine.string().trim().minLength(1).optional(),
+    email: vine.string().trim().email().optional(),
+    paymentTerm: vine.number().positive().optional(),
+    sendCondition: vine.number().positive().optional(),
+    sendAmount: vine.number().min(0).optional(),
+    otherAmount: vine.number().min(0).optional(),
+    observation: vine.string().trim().optional(),
+    daysExpire: vine.number().min(0).optional(),
+    authorizerId: vine.number().positive().optional(),
+  })
+  .optional()
+
 export const bugetStoreValidator = vine.compile(
   vine.object({
     businessId: vine.number(),
+    costCenterId: vine.number().positive().optional().nullable(),
     currencySymbol: vine.string().optional(),
     currencyId: vine.number().optional(),
     currencyValue: vine.number().optional(),
@@ -54,12 +69,14 @@ export const bugetStoreValidator = vine.compile(
     utility: vine.number().optional(),
 
     clientDetails: clientDetailsSchema,
+    info: infoSchema,
     keepSameNro: vine.boolean().optional(),
   })
 )
 
 export const bugetUpdateValidator = vine.compile(
   vine.object({
+    costCenterId: vine.number().positive().optional().nullable(),
     currencySymbol: vine.string().optional(),
     currencyId: vine.number().optional(),
     currencyValue: vine.number().optional(),
@@ -72,6 +89,7 @@ export const bugetUpdateValidator = vine.compile(
     utility: vine.number().optional(),
 
     clientDetails: clientDetailsSchema,
+    info: infoSchema,
     keepSameNro: vine.boolean().optional(),
   })
 )

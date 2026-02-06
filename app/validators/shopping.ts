@@ -31,7 +31,7 @@ export const shoppingStoreValidator = vine.compile(
             observation: vine.string().trim().optional(),
             daysExpireBuget: vine.number().min(0).optional(),
             authorizerId: vine.number().positive().optional(),
-            nroBuget: vine.string().trim().maxLength(50).optional(),
+            nroBudget: vine.string().trim().maxLength(50).optional(),
         }),
     })
 )

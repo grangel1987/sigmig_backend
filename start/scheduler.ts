@@ -1,14 +1,8 @@
 
-import Buget from '#models/bugets/buget';
-import scheduler from 'adonisjs-scheduler/services/main';
-import { DateTime } from 'luxon';
+import BudgetExpirationService from '#services/budget_expiration_service'
+import scheduler from 'adonisjs-scheduler/services/main'
 
-
+// Run daily to disable expired budgets (keeps logic centralized in service)
 scheduler.call(async () => {
-    const today = DateTime.now().toSQLDate()!
-    await Buget.query()
-        .where('enabled', true)
-        .whereNotNull('expire_date')
-        .where('expire_date', '<=', today)
-        .update({ enabled: false })
+    await BudgetExpirationService.disableExpiredBudgets()
 }).dailyAt('02:00')
