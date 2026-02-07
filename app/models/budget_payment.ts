@@ -27,6 +27,9 @@ export default class BudgetPayment extends BaseModel {
   @column.date()
   declare date: DateTime
 
+  @column.date({ columnName: 'due_date' })
+  declare dueDate: DateTime | null
+
   @column()
   declare voided: boolean
 
