@@ -2240,10 +2240,7 @@ const createBudgetPaymentValidator = vine.compile(
     details: vine
       .array(
         vine.object({
-          bugetProductId: vine.number().optional()
-            .requiredIfMissing('bugetItemId').nullable(),
-          bugetItemId: vine.number().optional()
-            .requiredIfMissing('bugetProductId').nullable(),
+          bugetProductId: vine.number().optional(),
           amount: vine.number().optional().nullable(),
         })
       )

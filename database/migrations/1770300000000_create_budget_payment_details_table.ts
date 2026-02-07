@@ -24,12 +24,6 @@ export default class CreateBudgetpaymentDetailsTable extends BaseSchema {
         /*          .references('buget_products.id')
                  .onDelete('RESTRICT') */
 
-        table
-          .integer('buget_item_id')
-          .unsigned()
-          .nullable()
-        /* .references('buget_items.id')
-        .onDelete('RESTRICT') */
 
         table.decimal('amount', 15, 2).nullable()
 
@@ -38,7 +32,6 @@ export default class CreateBudgetpaymentDetailsTable extends BaseSchema {
 
         table.index(['budget_payment_id'], 'budget_payment_details_payment_idx')
         table.index(['buget_product_id'], 'budget_payment_details_product_idx')
-        table.index(['buget_item_id'], 'budget_payment_details_item_idx')
       })
     }
   }

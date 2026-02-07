@@ -1,5 +1,4 @@
 import BudgetPayment from '#models/budget_payment'
-import BugetItem from '#models/bugets/buget_item'
 import BugetProduct from '#models/bugets/buget_product'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -21,12 +20,6 @@ export default class BudgetpaymentDetail extends BaseModel {
 
   @belongsTo(() => BugetProduct, { foreignKey: 'bugetProductId' })
   declare bugetProduct: BelongsTo<typeof BugetProduct>
-
-  @column({ columnName: 'buget_item_id' })
-  declare bugetItemId: number | null
-
-  @belongsTo(() => BugetItem, { foreignKey: 'bugetItemId' })
-  declare bugetItem: BelongsTo<typeof BugetItem>
 
   @column({
     prepare: (value?: number) => (value ?? null),
