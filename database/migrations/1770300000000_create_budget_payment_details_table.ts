@@ -14,21 +14,22 @@ export default class CreateBudgetpaymentDetailsTable extends BaseSchema {
           .integer('budget_payment_id')
           .unsigned()
           .notNullable()
-          .references('budget_payments.id')
-          .onDelete('CASCADE')
+        /*           .references('budget_payments.id')
+                  .onDelete('CASCADE') */
 
         table
           .integer('buget_product_id')
+          .unsigned()
           .nullable()
-          .references('buget_products.id')
-          .onDelete('RESTRICT')
+        /*          .references('buget_products.id')
+                 .onDelete('RESTRICT') */
 
         table
           .integer('buget_item_id')
           .unsigned()
           .nullable()
-          .references('buget_items.id')
-          .onDelete('RESTRICT')
+        /* .references('buget_items.id')
+        .onDelete('RESTRICT') */
 
         table.decimal('amount', 15, 2).nullable()
 
