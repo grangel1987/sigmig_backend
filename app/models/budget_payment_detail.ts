@@ -4,8 +4,8 @@ import BugetProduct from '#models/bugets/buget_product'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
-export default class BudgetPaymentLine extends BaseModel {
-  public static table = 'budget_payment_lines'
+export default class BudgetpaymentDetail extends BaseModel {
+  public static table = 'budget_payment_details'
 
   @column({ isPrimary: true })
   declare id: number

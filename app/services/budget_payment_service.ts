@@ -1,5 +1,5 @@
 import BudgetPayment from '#models/budget_payment'
-import BudgetPaymentLine from '#models/budget_payment_line'
+import BudgetpaymentDetail from '#models/budget_payment_detail'
 import LedgerMovement from '#models/ledger_movement'
 import PaymentDocumentType from '#models/payment_document_type'
 import handleDate from '#utils/HandleDate'
@@ -76,7 +76,7 @@ export default class BudgetPaymentService {
                     amount: line.amount ?? null,
                 }))
 
-                await BudgetPaymentLine.createMany(linesPayload, { client: trx })
+                await BudgetpaymentDetail.createMany(linesPayload, { client: trx })
             }
             const documentType = params.documentTypeId
                 ? await PaymentDocumentType.query({ client: trx })
@@ -163,7 +163,7 @@ export default class BudgetPaymentService {
             await budgetPayment.save()
 
             if (params.lines?.length) {
-                await BudgetPaymentLine.query({ client: trx })
+                await BudgetpaymentDetail.query({ client: trx })
                     .where('budget_payment_id', budgetPaymentId)
                     .delete()
 
@@ -174,7 +174,7 @@ export default class BudgetPaymentService {
                     amount: line.amount ?? null,
                 }))
 
-                await BudgetPaymentLine.createMany(linesPayload, { client: trx })
+                await BudgetpaymentDetail.createMany(linesPayload, { client: trx })
             }
 
             // Find and update the related ledger movement

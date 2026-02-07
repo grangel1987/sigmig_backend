@@ -2009,9 +2009,9 @@ export default class BugetController {
     try {
       const payload = await request.validateUsing(createBudgetPaymentValidator)
       const businessId = Number(request.header('Business'))
-      const linesTotal =
-        payload.lines?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
-      const amount = payload.amount ?? linesTotal
+      const detailsTotal =
+        payload.details?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
+      const amount = payload.amount ?? detailsTotal
 
       if (!amount || amount <= 0) {
         return response.status(400).json(
@@ -2237,7 +2237,7 @@ const createBudgetPaymentValidator = vine.compile(
     status: vine.enum(['paid', 'pending', 'voided']).optional(),
     isProjected: vine.boolean().optional(),
     receivedAt: vine.string().optional().nullable(),
-    lines: vine
+    details: vine
       .array(
         vine.object({
           bugetProductId: vine.number().optional()
@@ -2266,7 +2266,7 @@ const updateBudgetPaymentValidator = vine.compile(
     status: vine.enum(['paid', 'pending', 'voided']).optional(),
     isProjected: vine.boolean().optional(),
     receivedAt: vine.string().optional().nullable(),
-    lines: vine
+    details: vine
       .array(
         vine.object({
           bugetProductId: vine.number().optional().nullable(),

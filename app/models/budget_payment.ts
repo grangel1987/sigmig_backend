@@ -1,4 +1,4 @@
-import BudgetPaymentLine from '#models/budget_payment_line'
+import BudgetpaymentDetail from '#models/budget_payment_detail'
 import Buget from '#models/bugets/buget'
 import LedgerMovement from '#models/ledger_movement'
 import { BaseModel, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
@@ -42,8 +42,8 @@ export default class BudgetPayment extends BaseModel {
   @hasOne(() => LedgerMovement, { foreignKey: 'budgetPaymentId' })
   public ledgerMovement: HasOne<typeof LedgerMovement>
 
-  @hasMany(() => BudgetPaymentLine, { foreignKey: 'budgetPaymentId' })
-  public lines: HasMany<typeof BudgetPaymentLine>
+  @hasMany(() => BudgetpaymentDetail, { foreignKey: 'budgetPaymentId' })
+  public details: HasMany<typeof BudgetpaymentDetail>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

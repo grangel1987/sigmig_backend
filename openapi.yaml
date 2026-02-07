@@ -206,9 +206,9 @@ components:
           type: array
           description: Líneas de pago que especifican qué items del presupuesto se están pagando
           items:
-            $ref: '#/components/schemas/BudgetPaymentLine'
+            $ref: '#/components/schemas/BudgetpaymentDetail'
 
-    BudgetPaymentLine:
+    BudgetpaymentDetail:
       type: object
       properties:
         bugetProductId:
@@ -2063,7 +2063,7 @@ paths:
                   type: array
                   description: Líneas de pago que especifican qué items del presupuesto se están pagando
                   items:
-                    $ref: '#/components/schemas/BudgetPaymentLine'
+                    $ref: '#/components/schemas/BudgetpaymentDetail'
       responses:
         '200':
           description: Pago de presupuesto actualizado
