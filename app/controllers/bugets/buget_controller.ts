@@ -2180,6 +2180,44 @@ export default class BugetController {
         )
     }
   }
+
+  /**
+   * Make a projected payment effective by assigning a document number
+   * POST /buget/payments/:id/make-effective
+   */
+  public async makePaymentEffective(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const { documentNumber } = await request.validateUsing(
+        vine.compile(
+          vine.object({
+            documentNumber: vine.string().minLength(1),
+          })
+        )
+      )
+
+      const result = await BudgetPaymentService.makeEffective(params.id, documentNumber)
+
+      return response.status(200).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
 }
 
 // Budget Payment validators
@@ -2202,8 +2240,10 @@ const createBudgetPaymentValidator = vine.compile(
     lines: vine
       .array(
         vine.object({
-          bugetProductId: vine.number().optional().nullable(),
-          bugetItemId: vine.number().optional().nullable(),
+          bugetProductId: vine.number().optional()
+            .requiredIfMissing('bugetItemId').nullable(),
+          bugetItemId: vine.number().optional()
+            .requiredIfMissing('bugetProductId').nullable(),
           amount: vine.number().optional().nullable(),
         })
       )

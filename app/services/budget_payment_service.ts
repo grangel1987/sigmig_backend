@@ -2,6 +2,7 @@ import BudgetPayment from '#models/budget_payment'
 import BudgetPaymentLine from '#models/budget_payment_line'
 import LedgerMovement from '#models/ledger_movement'
 import PaymentDocumentType from '#models/payment_document_type'
+import handleDate from '#utils/HandleDate'
 import BudgetPaymentValidator from '#validators/budget_payment_validator'
 import Database from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
@@ -83,27 +84,19 @@ export default class BudgetPaymentService {
                     .first()
                 : null
 
-            const hasDocumentNumber = Boolean(params.documentNumber?.trim())
-            const isProjected = params.isProjected ?? documentType?.isProjected ?? false
-            const forcedPaid = hasDocumentNumber && params.status !== 'voided'
-            const status = forcedPaid ? 'paid' : params.status ?? 'pending'
-            const receivedAt = forcedPaid
-                ? params.receivedAt
-                    ? DateTime.isDateTime(params.receivedAt)
-                        ? params.receivedAt
-                        : typeof params.receivedAt === 'string'
-                            ? DateTime.fromISO(params.receivedAt)
-                            : DateTime.fromJSDate(params.receivedAt)
-                    : DateTime.now()
-                : params.receivedAt === undefined || params.receivedAt === null
-                    ? null
-                    : DateTime.isDateTime(params.receivedAt)
-                        ? params.receivedAt
-                        : typeof params.receivedAt === 'string'
-                            ? DateTime.fromISO(params.receivedAt)
-                            : DateTime.fromJSDate(params.receivedAt)
 
-            const finalIsProjected = forcedPaid ? false : isProjected
+
+            const hasDocumentNumber = Boolean(params.documentNumber?.trim())
+            const isProjected = hasDocumentNumber
+                ? false
+                : params.isProjected ?? documentType?.isProjected ?? false
+
+            const status = hasDocumentNumber && params.status !== 'voided'
+                ? 'paid'
+                : params.status ?? 'pending'
+
+            const receivedAt = params.receivedAt ? handleDate(params.receivedAt) : (status === 'paid' ? DateTime.now() : null)
+
 
             // Create the ledger movement linked to this budget payment
             const ledgerMovement = await LedgerMovement.create(
@@ -113,11 +106,7 @@ export default class BudgetPaymentService {
                     accountId: params.accountId,
                     costCenterId: params.costCenterId,
                     clientId: params.clientId,
-                    date: DateTime.isDateTime(params.date)
-                        ? params.date
-                        : typeof params.date === 'string'
-                            ? DateTime.fromISO(params.date)
-                            : DateTime.fromJSDate(params.date),
+                    date: handleDate(params.date),
                     amount: params.amount,
                     currencyId: params.currencyId,
                     paymentMethodId: params.paymentMethodId,
@@ -125,7 +114,7 @@ export default class BudgetPaymentService {
                     documentNumber: params.documentNumber,
                     concept: params.concept,
                     status,
-                    isProjected: finalIsProjected,
+                    isProjected,
                     receivedAt,
                 },
                 { client: trx }
@@ -342,6 +331,39 @@ export default class BudgetPaymentService {
     }
 
     /**
+     * Convert a projected payment to effective by assigning a document number
+     */
+    static async makeEffective(budgetPaymentId: number, documentNumber: string) {
+        const trx = await Database.transaction()
+
+        try {
+            const budgetPayment = await BudgetPayment.findOrFail(budgetPaymentId, { client: trx })
+
+            // Find and update the related ledger movement
+            const ledgerMovement = await LedgerMovement.query({ client: trx })
+                .where('budget_payment_id', budgetPaymentId)
+                .firstOrFail()
+
+            // Update ledger movement to mark as effective
+            ledgerMovement.documentNumber = documentNumber
+            ledgerMovement.isProjected = false
+            ledgerMovement.status = 'paid'
+            ledgerMovement.receivedAt = DateTime.now()
+            await ledgerMovement.useTransaction(trx).save()
+
+            await trx.commit()
+
+            return {
+                budgetPayment,
+                ledgerMovement,
+            }
+        } catch (error) {
+            await trx.rollback()
+            throw error
+        }
+    }
+
+    /**
      * Get budget payment status with validation info
      * Returns total, paid, remaining amounts and payment progress
      */
@@ -349,4 +371,3 @@ export default class BudgetPaymentService {
         return await BudgetPaymentValidator.getBudgetPaymentStatus(budgetId)
     }
 }
-

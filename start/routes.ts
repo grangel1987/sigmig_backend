@@ -674,6 +674,7 @@ router.group(() => {
       router.put('/payments/:id', '#controllers/bugets/buget_controller.updatePayment')
       router.delete('/payments/:id', '#controllers/bugets/buget_controller.deletePayment')
       router.post('/payments/:id/void', '#controllers/bugets/buget_controller.voidPayment')
+      router.post('/payments/:id/make-effective', '#controllers/bugets/buget_controller.makePaymentEffective')
     })
   })
     .prefix('buget')

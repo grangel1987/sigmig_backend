@@ -16,7 +16,7 @@ export default class BalancesController {
         const { request, response, i18n } = ctx
 
         try {
-            const { page, perPage, status, text, documentTypeId, currencyId, paymentMethodId, type } = await request.validateUsing(
+            const { page, perPage, status, text, documentTypeId, isProjected, currencyId, paymentMethodId, type } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         page: vine.number().optional(),
@@ -25,6 +25,7 @@ export default class BalancesController {
                         status: vine.string().optional(),
                         paymentMethodId: vine.number().optional(),
                         documentTypeId: vine.number().optional(),
+                        isProjected: vine.boolean().optional(),
                         currencyId: vine.number().optional(),
                         type: vine.enum(['income', 'expense']).optional(),
                     })
@@ -74,6 +75,10 @@ export default class BalancesController {
 
             if (currencyId !== undefined) {
                 query = query.where('currency_id', currencyId)
+            }
+
+            if (typeof isProjected === 'boolean') {
+                query = query.where('is_projected', isProjected)
             }
 
             if (type !== undefined) {
