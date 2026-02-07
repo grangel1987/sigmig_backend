@@ -7746,7 +7746,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"budgetId\": 123,           // optional; helps auto-generate concept when present\r\n  \"accountId\": 5,            // optional\r\n  \"costCenterId\": 9,         // optional\r\n  \"clientId\": 42,            // optional\r\n  \"date\": \"2026-01-17\",      // ISO date string\r\n  \"amount\": 150000,          // required\r\n  \"currencyId\": 1,           // required (e.g., 1 = CLP)\r\n  \"paymentMethodId\": 1,      // optional\r\n  \"documentTypeId\": 1,       // optional\r\n  \"documentNumber\": \"F12345\",// optional\r\n  \"concept\": \"Pago de anticipo\", // optional; auto-set if omitted and budgetId provided\r\n  \"status\": \"paid\"           // optional; allowed: paid | pending | voided\r\n}",
+              "raw": "{\r\n  \"budgetId\": 123,           // optional; helps auto-generate concept when present\r\n  \"accountId\": 5,            // optional\r\n  \"costCenterId\": 9,         // optional\r\n  \"clientId\": 42,            // optional\r\n  \"date\": \"2026-01-17\",      // ISO date string\r\n  \"amount\": 150000,          // optional; calculated from lines if omitted\r\n  \"currencyId\": 1,           // required (e.g., 1 = CLP)\r\n  \"paymentMethodId\": 1,      // optional\r\n  \"documentTypeId\": 1,       // optional\r\n  \"documentNumber\": \"F12345\",// optional; if provided, payment is marked as 'paid' and not projected\r\n  \"concept\": \"Pago de anticipo\", // optional; auto-set if omitted and budgetId provided\r\n  \"status\": \"paid\"           // optional; allowed: paid | pending | voided\r\n  \"isProjected\": true,       // optional; marks payment as projected. Ignored if documentNumber provided\r\n  \"receivedAt\": \"2026-01-17T10:00:00.000Z\", // optional; ISO datetime string\r\n  \"lines\": [\r\n    {\r\n      \"bugetProductId\": 1,    // optional; either this or bugetItemId must be provided\r\n      \"bugetItemId\": null,    // optional; either this or bugetProductId must be provided\r\n      \"amount\": 75000         // optional; amount paid for this item\r\n    },\r\n    {\r\n      \"bugetProductId\": null,\r\n      \"bugetItemId\": 2,\r\n      \"amount\": 75000\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -7779,7 +7779,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n  \"budgetId\": 123,           // optional; helps auto-generate concept when present\r\n  \"accountId\": 5,            // optional\r\n  \"costCenterId\": 9,         // optional\r\n  \"clientId\": 42,            // optional\r\n  \"date\": \"2026-01-17\",      // ISO date string\r\n  \"amount\": 150000,          // required\r\n  \"currencyId\": 1,           // required (e.g., 1 = CLP)\r\n  \"paymentMethodId\": 1,      // optional\r\n  \"documentTypeId\": 1,       // optional\r\n  \"documentNumber\": \"F12345\",// optional\r\n  \"concept\": \"Pago de anticipo\", // optional; auto-set if omitted and budgetId provided\r\n  \"status\": \"paid\"           // optional; allowed: paid | pending | voided\r\n}",
+                  "raw": "{\r\n  \"budgetId\": 123,           // optional; helps auto-generate concept when present\r\n  \"accountId\": 5,            // optional\r\n  \"costCenterId\": 9,         // optional\r\n  \"clientId\": 42,            // optional\r\n  \"date\": \"2026-01-17\",      // ISO date string\r\n  \"amount\": 150000,          // optional; calculated from lines if omitted\r\n  \"currencyId\": 1,           // required (e.g., 1 = CLP)\r\n  \"paymentMethodId\": 1,      // optional\r\n  \"documentTypeId\": 1,       // optional\r\n  \"documentNumber\": \"F12345\",// optional; if provided, payment is marked as 'paid' and not projected\r\n  \"concept\": \"Pago de anticipo\", // optional; auto-set if omitted and budgetId provided\r\n  \"status\": \"paid\"           // optional; allowed: paid | pending | voided\r\n  \"isProjected\": true,       // optional; marks payment as projected. Ignored if documentNumber provided\r\n  \"receivedAt\": \"2026-01-17T10:00:00.000Z\", // optional; ISO datetime string\r\n  \"lines\": [\r\n    {\r\n      \"bugetProductId\": 1,    // optional; either this or bugetItemId must be provided\r\n      \"bugetItemId\": null,    // optional; either this or bugetProductId must be provided\r\n      \"amount\": 75000         // optional; amount paid for this item\r\n    },\r\n    {\r\n      \"bugetProductId\": null,\r\n      \"bugetItemId\": 2,\r\n      \"amount\": 75000\r\n    }\r\n  ]\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -7862,7 +7862,21 @@
           "name": "PUT buget/payments/:id",
           "request": {
             "method": "PUT",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"accountId\": 5,            // optional\r\n  \"costCenterId\": 9,         // optional\r\n  \"clientId\": 42,            // optional\r\n  \"date\": \"2026-01-17\",      // optional; ISO date string\r\n  \"amount\": 150000,          // optional\r\n  \"currencyId\": 1,           // optional\r\n  \"paymentMethodId\": 1,      // optional\r\n  \"documentTypeId\": 1,       // optional\r\n  \"documentNumber\": \"F12345\",// optional\r\n  \"concept\": \"Updated concept\", // optional\r\n  \"status\": \"pending\"        // optional; allowed: paid | pending | voided\r\n  \"isProjected\": false,      // optional; toggle projected status\r\n  \"receivedAt\": \"2026-01-17T10:00:00.000Z\", // optional; ISO datetime string\r\n  \"lines\": [\r\n    {\r\n      \"bugetProductId\": 1,    // optional; either this or bugetItemId\r\n      \"bugetItemId\": null,    // optional; either this or bugetProductId\r\n      \"amount\": 150000        // optional\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments/:id",
               "host": [
@@ -7926,6 +7940,47 @@
                 "payments",
                 ":id",
                 "void"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST buget/payments/:id/settle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"documentNumber\": \"F-001-00012345\"  // required; the document number to assign to the payment\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/{{apiPrefix}}/buget/payments/:id/settle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{apiPrefix}}",
+                "buget",
+                "payments",
+                ":id",
+                "settle"
               ],
               "variable": [
                 {

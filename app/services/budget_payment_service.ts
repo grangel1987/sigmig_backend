@@ -333,7 +333,7 @@ export default class BudgetPaymentService {
     /**
      * Convert a projected payment to effective by assigning a document number
      */
-    static async makeEffective(budgetPaymentId: number, documentNumber: string) {
+    static async settle(budgetPaymentId: number, documentNumber: string) {
         const trx = await Database.transaction()
 
         try {

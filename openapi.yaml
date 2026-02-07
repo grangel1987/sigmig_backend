@@ -159,30 +159,74 @@ components:
       properties:
         budgetId:
           type: integer
+          description: ID del presupuesto
         accountId:
           type: integer
+          description: ID de la cuenta contable
         costCenterId:
           type: integer
+          description: ID del centro de costo
         clientId:
           type: integer
+          description: ID del cliente
         date:
           type: string
           format: date
+          description: Fecha del pago
         amount:
           type: number
+          description: Monto del pago (opcional si se calcula desde las líneas)
         currencyId:
           type: integer
+          description: ID de la moneda
         paymentMethodId:
           type: integer
+          description: ID del método de pago
         documentTypeId:
           type: integer
+          description: ID del tipo de documento
         documentNumber:
           type: string
+          description: Número de documento. Si se proporciona, el pago se marca como 'pagado' y no proyectado
         concept:
           type: string
+          description: Concepto del pago (auto-generado si no se proporciona y budgetId existe)
         status:
           type: string
           enum: [paid, pending, voided]
+          description: Estado del pago
+        isProjected:
+          type: boolean
+          description: Marca el pago como proyectado (ignorado si documentNumber está presente)
+        receivedAt:
+          type: string
+          format: date-time
+          description: Fecha-hora de recepción
+        lines:
+          type: array
+          description: Líneas de pago que especifican qué items del presupuesto se están pagando
+          items:
+            $ref: '#/components/schemas/BudgetPaymentLine'
+
+    BudgetPaymentLine:
+      type: object
+      properties:
+        bugetProductId:
+          type: integer
+          nullable: true
+          description: ID del producto presupuestal (debe proporcionar esto o bugetItemId)
+        bugetItemId:
+          type: integer
+          nullable: true
+          description: ID del item presupuestal (debe proporcionar esto o bugetProductId)
+        amount:
+          type: number
+          nullable: true
+          description: Monto pagado para este item
+      required:
+        - bugetProductId
+        - bugetItemId
+      description: Una línea de pago que vincula el pago a un item específico del presupuesto
 
     PaymentMethod:
       type: object
@@ -1876,7 +1920,7 @@ paths:
       tags:
         - Pagos de Presupuesto
       summary: Crear pago de presupuesto
-      description: Crear un nuevo pago de presupuesto
+      description: Crear un nuevo pago de presupuesto, opcionalmente proyectado. Puede especificarse qué items del presupuesto se están pagando mediante el array 'lines'.
       operationId: storeBudgetPayment
       requestBody:
         required: true
@@ -1897,6 +1941,15 @@ paths:
               documentNumber: F12345
               concept: Pago de anticipo
               status: paid
+              isProjected: false
+              receivedAt: '2026-01-17T10:00:00.000Z'
+              lines:
+                - bugetProductId: 1
+                  bugetItemId: null
+                  amount: 75000
+                - bugetProductId: null
+                  bugetItemId: 2
+                  amount: 75000
       responses:
         '201':
           description: Pago de presupuesto creado
@@ -1914,6 +1967,8 @@ paths:
                   date:
                     type: string
                     format: date
+                  isProjected:
+                    type: boolean
                   message:
                     type: string
         '500':
@@ -1997,6 +2052,18 @@ paths:
                 status:
                   type: string
                   enum: [paid, pending, voided]
+                isProjected:
+                  type: boolean
+                  description: Alternar estado proyectado del pago
+                receivedAt:
+                  type: string
+                  format: date-time
+                  description: Fecha-hora de recepción
+                lines:
+                  type: array
+                  description: Líneas de pago que especifican qué items del presupuesto se están pagando
+                  items:
+                    $ref: '#/components/schemas/BudgetPaymentLine'
       responses:
         '200':
           description: Pago de presupuesto actualizado
@@ -2069,6 +2136,58 @@ paths:
                     type: string
         '500':
           description: Error al anular
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /buget/payments/{id}/settle:
+    post:
+      tags:
+        - Pagos de Presupuesto
+      summary: Hacer efectivo pago proyectado
+      description: Convertir un pago proyectado a efectivo asignándole un número de documento
+      operationId: settlePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                documentNumber:
+                  type: string
+                  description: Número de documento a asignar
+              required:
+                - documentNumber
+            example:
+              documentNumber: F-001-00012345
+      responses:
+        '200':
+          description: Pago convertido a efectivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  budgetPayment:
+                    type: object
+                    description: Datos del pago de presupuesto
+                  ledgerMovement:
+                    type: object
+                    description: Movimiento contable asociado (ahora marcado como efectivo)
+                  message:
+                    type: string
+        '500':
+          description: Error al hacer efectivo
           content:
             application/json:
               schema:

@@ -2183,9 +2183,9 @@ export default class BugetController {
 
   /**
    * Make a projected payment effective by assigning a document number
-   * POST /buget/payments/:id/make-effective
+   * POST /buget/payments/:id/settle
    */
-  public async makePaymentEffective(ctx: HttpContext) {
+  public async settlePayment(ctx: HttpContext) {
     const { params, request, response, i18n } = ctx
 
     try {
@@ -2197,7 +2197,7 @@ export default class BugetController {
         )
       )
 
-      const result = await BudgetPaymentService.makeEffective(params.id, documentNumber)
+      const result = await BudgetPaymentService.settle(params.id, documentNumber)
 
       return response.status(200).json({
         ...result,
