@@ -41,6 +41,7 @@ export default class BugetController {
     const {
       businessId,
       costCenterId,
+      workId,
       currencySymbol,
       currencyId,
       currencyValue,
@@ -77,6 +78,7 @@ export default class BugetController {
         nro: String(nro),
         businessId: Number(businessId),
         costCenterId: costCenterId ?? null,
+        workId: workId ?? null,
         currencySymbol: currencySymbol,
         currencyId: currencyId,
         currencyValue: currencyValue,
@@ -273,6 +275,7 @@ export default class BugetController {
     let query = Buget.query()
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
+      .preload('work', (w) => w.select(['id', 'code', 'name']))
       .preload('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -514,6 +517,7 @@ export default class BugetController {
       q.preload('typeIdentify', (qq) => qq.select(['text', 'id']))
     })
     await buget.load('costCenter')
+    await buget.load('work', (w) => w.select(['id', 'code', 'name']))
     await buget.load('client', (q) => {
       q.select([
         'id',
@@ -660,6 +664,7 @@ export default class BugetController {
     })
 
     await buget.load('costCenter')
+    await buget.load('work', (w) => w.select(['id', 'code', 'name']))
 
     await buget.load('client', (q) => {
       q.select(['name', 'identify', 'email', 'address', 'phone', 'identify_type_id', 'city_id'])
@@ -716,6 +721,13 @@ export default class BugetController {
       enabled: !!buget.enabled, // Ensure boolean
       status: buget.status ?? null,
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
+      work: buget.work
+        ? {
+          id: buget.work.id,
+          code: buget.work.code,
+          name: buget.work.name,
+        }
+        : null,
       info: buget.info ? {
         ...buget.info,
         paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
@@ -1276,6 +1288,7 @@ export default class BugetController {
         discount,
         utility,
         costCenterId,
+        workId,
         clientDetails,
         info,
         currencyId,
@@ -1327,6 +1340,7 @@ export default class BugetController {
           nro: String(nro),
           businessId: existingBuget.businessId,
           costCenterId: costCenterId ?? existingBuget.costCenterId ?? null,
+          workId: workId ?? existingBuget.workId ?? null,
           currencySymbol: currencySymbol,
           currencyId: currencyId,
           currencyValue: currencyValue,

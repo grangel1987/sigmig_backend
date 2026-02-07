@@ -21,6 +21,7 @@ export default class BugetRepository {
       })
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
+      .preload('work', (w) => w.select(['id', 'code', 'name']))
       .orderBy('created_at', 'desc')
 
     if (status !== undefined) query = query.where('bugets.enabled', status === 'enabled')
@@ -50,6 +51,7 @@ export default class BugetRepository {
       .where('business_id', businessId)
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
+      .preload('work', (w) => w.select(['id', 'code', 'name']))
       .orderBy('created_at', 'desc')
 
     if (date === today) {
@@ -89,6 +91,7 @@ export default class BugetRepository {
       .whereRaw('DATE(created_at) BETWEEN ? AND ?', [start, end])
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
+      .preload('work', (w) => w.select(['id', 'code', 'name']))
       .preload('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))

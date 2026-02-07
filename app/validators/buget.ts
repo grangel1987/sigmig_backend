@@ -55,6 +55,7 @@ export const bugetStoreValidator = vine.compile(
   vine.object({
     businessId: vine.number(),
     costCenterId: vine.number().positive().optional().nullable(),
+    workId: vine.number().positive().optional().nullable(),
     currencySymbol: vine.string().optional(),
     currencyId: vine.number().optional(),
     currencyValue: vine.number().optional(),
@@ -77,6 +78,7 @@ export const bugetStoreValidator = vine.compile(
 export const bugetUpdateValidator = vine.compile(
   vine.object({
     costCenterId: vine.number().positive().optional().nullable(),
+    workId: vine.number().positive().optional().nullable(),
     currencySymbol: vine.string().optional(),
     currencyId: vine.number().optional(),
     currencyValue: vine.number().optional(),
