@@ -8,6 +8,7 @@ import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import CostCenter from '#models/cost_centers/cost_center'
 import User from '#models/users/user'
+import Work from '#models/works/work'
 import CurrencyConversionService from '#services/currency_conversion_service'
 import Util from '#utils/Util'
 import {
@@ -40,6 +41,9 @@ export default class Buget extends BaseModel {
 
   @column({ columnName: 'cost_center_id' })
   public costCenterId: number | null
+
+  @column({ columnName: 'work_id' })
+  public workId: number | null
 
   @column({
     consume: v => typeof v === 'string' ? JSON.parse(v) : v,
@@ -128,6 +132,9 @@ export default class Buget extends BaseModel {
 
   @belongsTo(() => CostCenter, { foreignKey: 'costCenterId' })
   public costCenter: BelongsTo<typeof CostCenter>
+
+  @belongsTo(() => Work, { foreignKey: 'workId' })
+  public work: BelongsTo<typeof Work>
 
   @belongsTo(() => User, { foreignKey: 'createdById' })
   public createdBy: BelongsTo<typeof User>
