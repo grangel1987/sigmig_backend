@@ -274,9 +274,8 @@ export default class BudgetPaymentService {
     static async findWithLedgerMovement(budgetPaymentId: number) {
         const budgetPayment = await BudgetPayment.query()
             .where('id', budgetPaymentId)
-            .preload('lines', (q) => {
+            .preload('details', (q) => {
                 q.preload('bugetProduct')
-                q.preload('bugetItem')
             })
             .firstOrFail()
 

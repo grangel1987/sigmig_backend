@@ -43,10 +43,10 @@ export default class BudgetPayment extends BaseModel {
   declare deletedBy: number
 
   @hasOne(() => LedgerMovement, { foreignKey: 'budgetPaymentId' })
-  public ledgerMovement: HasOne<typeof LedgerMovement>
+  declare ledgerMovement: HasOne<typeof LedgerMovement>
 
   @hasMany(() => BudgetpaymentDetail, { foreignKey: 'budgetPaymentId' })
-  public details: HasMany<typeof BudgetpaymentDetail>
+  declare details: HasMany<typeof BudgetpaymentDetail>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

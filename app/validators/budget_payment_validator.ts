@@ -37,7 +37,7 @@ export default class BudgetPaymentValidator {
                 .where('id', budgetId)
                 .preload('products')
                 .preload('items')
-                .preload('payments', (pQ) => {
+                .preload('payments', (pQ: any) => {
                     pQ.preload('ledgerMovement')
                 })
                 .firstOrFail()
@@ -103,7 +103,7 @@ export default class BudgetPaymentValidator {
                 .where('id', existingPayment.budgetId)
                 .preload('products')
                 .preload('items')
-                .preload('payments', (pQ) => {
+                .preload('payments', (pQ: any) => {
                     pQ.preload('ledgerMovement')
                 })
                 .firstOrFail()
@@ -171,7 +171,7 @@ export default class BudgetPaymentValidator {
                 .where('id', budgetId)
                 .preload('products')
                 .preload('items')
-                .preload('payments', (pQ) => {
+                .preload('payments', (pQ: any) => {
                     pQ.preload('ledgerMovement')
                 })
                 .firstOrFail()
