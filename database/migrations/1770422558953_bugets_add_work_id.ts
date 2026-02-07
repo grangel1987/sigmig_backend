@@ -11,22 +11,14 @@ export default class BugetsAddWorkId extends BaseSchema {
     if (hasColumn) return
 
     this.schema.alterTable(this.tableName, (table) => {
-      table
-        .integer('work_id')
-        .unsigned()
-        .nullable()
-        .references('works.id')
-        .onDelete('RESTRICT')
+      table.integer('work_id').unsigned().nullable()
     })
   }
 
   public async down() {
-    const hasTable = await this.schema.hasTable(this.tableName)
-    if (!hasTable) return
 
     const hasColumn = await this.schema.hasColumn(this.tableName, 'work_id')
     if (!hasColumn) return
-
     this.schema.alterTable(this.tableName, (table) => {
       table.dropColumn('work_id')
     })
