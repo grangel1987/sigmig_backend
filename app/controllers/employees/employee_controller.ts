@@ -25,9 +25,11 @@ import {
     employeePermitIdValidator,
     employeeReportValidator,
 } from '#validators/employee'
+import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import emitter from '@adonisjs/core/services/emitter'
 import db from '@adonisjs/lucid/services/db'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 // groupBy replacement (simple utility) so we avoid external dependency
 const groupBy = (arr: any[], keys: string[]) => {
@@ -367,6 +369,8 @@ export default class EmployeeController {
                     await trx.rollback()
                     return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
                 }
+                // Assign employee to user when provided from employee-side
+                employeeData.userId = user.id
                 employeeData.personalDataId = user.personalDataId
             } else if (personalData) {
                 let imageData: Record<string, any> = {}
@@ -595,6 +599,12 @@ export default class EmployeeController {
                     await trx.rollback()
                     return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
                 }
+                if (employee.userId && employee.userId !== user.id) {
+                    await trx.rollback()
+                    return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.exist_user_for_employee'), i18n.formatMessage('messages.error_title')))
+                }
+                // Assign employee to user when provided from employee-side
+                employeePatch.userId = user.id
                 employeePatch.personalDataId = user.personalDataId
             } else if (personalData) {
                 let imageData: Record<string, any> = {}
@@ -1039,15 +1049,13 @@ export default class EmployeeController {
         await PermissionService.requirePermission(ctx, 'employees', 'viewReports')
 
         const { request } = ctx
-        const { condition, expireDate, costCenter, businessId } = await request.validateUsing(employeeReportValidator)
-        const report = await EmployeeRepository.report(condition, expireDate ?? null, costCenter ?? null, businessId)
-        return report.map((r) => ({
-            token: r.token,
-            nombre: r.names,
-            identificacion: `${r.type_identify} ${r.identify}`,
-            apellidos: `${r.last_name_p} ${r.last_name_m}`,
-            estado: r.enabled ? 'Activo' : 'Inactivo',
-        }))
+
+        const { page, perPage } = await request.validateUsing(vine.compile(searchWithStatusSchema))
+
+        const businessId = Number(request.header('Business'))
+        const { condition, expireDate, costCenter } = await request.validateUsing(employeeReportValidator)
+        const report = await EmployeeRepository.report(condition, expireDate ?? null, costCenter ?? null, businessId, page, perPage)
+        return report
     }
 
     public async inactive(ctx: HttpContext) {

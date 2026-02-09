@@ -72,6 +72,7 @@ EOF
                             npm install
                             npm run build
                             cp .env build/
+                            cp openapi.yaml build/
                             pm2 restart 0
                             echo "::MIGRATION_FAILED::false"
                         """

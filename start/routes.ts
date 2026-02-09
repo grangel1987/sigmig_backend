@@ -13,6 +13,66 @@ import { middleware } from './kernel.js'
 
 const auth = middleware.auth()
 
+// API Documentation with Swagger UI (public endpoint)
+router.get('/api-docs', ({ response }) => {
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="SIGMI API Documentation" />
+        <title>SIGMI API Documentation</title>
+        <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+      </head>
+      <body>
+        <div id="swagger-ui"></div>
+        <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin></script>
+        <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" crossorigin></script>
+        <script>
+          window.onload = () => {
+            window.ui = SwaggerUIBundle({
+              url: '/openapi.json',
+              dom_id: '#swagger-ui',
+              deepLinking: true,
+              presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+              ],
+              plugins: [
+                SwaggerUIBundle.plugins.DownloadUrl
+              ],
+              layout: "StandaloneLayout",
+            });
+          };
+        </script>
+      </body>
+    </html>
+  `
+  return response.type('text/html').send(html)
+})
+
+// Serve OpenAPI spec as JSON endpoint
+router.get('/openapi.json', async ({ response }) => {
+  const fs = await import('fs/promises')
+  const path = await import('path')
+  const yaml = await import('yaml')
+  const { fileURLToPath } = await import('url')
+
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = path.dirname(__filename)
+  const specPath = path.join(__dirname, '..', 'openapi.yaml')
+
+  try {
+    const yamlContent = await fs.readFile(specPath, 'utf-8')
+    const spec = yaml.parse(yamlContent)
+    return response.json(spec)
+  } catch (error) {
+    console.error('Error loading OpenAPI spec:', error)
+    return response.status(500).json({ error: 'Failed to load OpenAPI specification' })
+  }
+})
+
 router.group(() => {
   router.group(() => {
     router.post("login", "#controllers/users/user_controller.login")
@@ -48,6 +108,12 @@ router.group(() => {
 
   router.group(() => {
     router.get("country/:id", "#controllers/settings/setting_controller.findSettingsByCountry")
+  }).prefix('setting')
+
+  // Settings web endpoints
+  router.group(() => {
+    router.get("/country/web/:id", "#controllers/settings/setting_controller.findSettingsByCountry")
+    router.get("/indicators", "#controllers/settings/setting_controller.indicators")
   }).prefix('setting')
 
 
@@ -575,6 +641,7 @@ router.group(() => {
     router.put('/update/photo/:id', '#controllers/users/user_controller.updatePhoto')
     router.delete('/delete/signature/:id', '#controllers/users/user_controller.deleteSignature')
     router.delete('/delete/photo/:id', '#controllers/users/user_controller.deletePhoto')
+    router.post('/findAutoComplete', '#controllers/users/user_controller.findAutoComplete')
   }).prefix('user').middleware(auth)
 
 
@@ -601,10 +668,63 @@ router.group(() => {
       router.put("/reactivate/:id", "#controllers/bugets/buget_controller.reactivate")
     }).prefix('bugets').middleware(auth)
     router.post('/send-email/:id', '#controllers/bugets/buget_controller.sendEmailToClient')
+    router.group(() => {
+      router.post('/payments', '#controllers/bugets/buget_controller.storePayment')
+      router.get('/payments/:id', '#controllers/bugets/buget_controller.showPayment')
+      router.put('/payments/:id', '#controllers/bugets/buget_controller.updatePayment')
+      router.delete('/payments/:id', '#controllers/bugets/buget_controller.deletePayment')
+      router.post('/payments/:id/void', '#controllers/bugets/buget_controller.voidPayment')
+      router.post('/payments/:id/settle', '#controllers/bugets/buget_controller.settlePayment')
+    })
   })
     .prefix('buget')
     .middleware(auth)
 
+  // Config routes
+  router.group(() => {
+    // Ledging Accounts
+    router.group(() => {
+      router.get('/', '#controllers/ledging_accounts/ledging_account_controller.index')
+      router.post('/store', '#controllers/ledging_accounts/ledging_account_controller.store')
+      router.get('/show/:id', '#controllers/ledging_accounts/ledging_account_controller.show')
+      router.put('/update/:id', '#controllers/ledging_accounts/ledging_account_controller.update')
+      router.delete('/delete/:id', '#controllers/ledging_accounts/ledging_account_controller.delete')
+      router.get('/select', '#controllers/ledging_accounts/ledging_account_controller.select')
+    }).prefix('ledging-accounts')
+
+    // Payment Methods
+    router.group(() => {
+      router.get('/', '#controllers/payment_methods/payment_method_controller.index')
+      router.post('/store', '#controllers/payment_methods/payment_method_controller.store')
+      router.get('/show/:id', '#controllers/payment_methods/payment_method_controller.show')
+      router.put('/update/:id', '#controllers/payment_methods/payment_method_controller.update')
+      router.delete('/delete/:id', '#controllers/payment_methods/payment_method_controller.delete')
+      router.get('/select', '#controllers/payment_methods/payment_method_controller.select')
+    }).prefix('payment-methods')
+
+    // Payment Document Types
+    router.group(() => {
+      router.get('/', '#controllers/payment_document_types/payment_document_type_controller.index')
+      router.post('/store', '#controllers/payment_document_types/payment_document_type_controller.store')
+      router.get('/show/:id', '#controllers/payment_document_types/payment_document_type_controller.show')
+      router.put('/update/:id', '#controllers/payment_document_types/payment_document_type_controller.update')
+      router.delete('/delete/:id', '#controllers/payment_document_types/payment_document_type_controller.delete')
+      router.get('/select', '#controllers/payment_document_types/payment_document_type_controller.select')
+    }).prefix('payment-document-types')
+  })
+    .prefix('config')
+    .middleware(auth)
+
+  // Expenses
+  router.group(() => {
+    router.get('/', '#controllers/expenses/expense_controller.index')
+    router.post('/store', '#controllers/expenses/expense_controller.store')
+    router.get('/show/:id', '#controllers/expenses/expense_controller.show')
+    router.put('/status/:id', '#controllers/expenses/expense_controller.updateStatus')
+    router.delete('/delete/:id', '#controllers/expenses/expense_controller.delete')
+  })
+    .prefix('expenses')
+    .middleware(auth)
 
   // Shopping (protected)
   router.group(() => {
@@ -615,9 +735,11 @@ router.group(() => {
     router.put('/update/:shop_id', '#controllers/shoppings/shopping_controller.update')
     router.post('/authorizer', '#controllers/shoppings/shopping_controller.authorizer')
     router.put('/delete/:shop_id', '#controllers/shoppings/shopping_controller.delete')
+    router.put('/reactivate/:id', '#controllers/shoppings/shopping_controller.reactivate')
     router.put('/update/nro-buget/:id', '#controllers/shoppings/shopping_controller.updateNroBuget')
     router.post('/find/name', '#controllers/shoppings/shopping_controller.findByNameProvider')
     router.post('/find/date', '#controllers/shoppings/shopping_controller.findByDate')
+    router.post('/report', '#controllers/shoppings/shopping_controller.report')
     router.get('/share/:id', '#controllers/shoppings/shopping_controller.share')
   })
     .prefix('shopping')
@@ -651,7 +773,49 @@ router.group(() => {
     router.put('/update/:booking_id', '#controllers/booking/booking_controller.update')
   }).prefix('booking').middleware(auth)
 
+  // Dashboard (metrics & pending lists)
+  router.group(() => {
+    router.post('/indicators', '#controllers/dashboard/dashboard_controller.indicators')
+    router.group(() => {
+      router.post('/metrics', '#controllers/dashboard/dashboard_controller.budgetsMetrics')
+      router.post('/pending', '#controllers/dashboard/dashboard_controller.pendingBudgets')
+    }).prefix('budgets')
+    router.group(() => {
+      router.post('/metrics', '#controllers/dashboard/dashboard_controller.purchaseOrdersMetrics')
+      router.post('/pending', '#controllers/dashboard/dashboard_controller.pendingPurchaseOrders')
+    }).prefix('shoppings')
+  }).prefix('dashboard').middleware(auth)
 
+  // Cash Audits
+  router.group(() => {
+    router.get('/', '#controllers/cash_audits/cash_audit_controller.index')
+    router.get('/show/:id', '#controllers/cash_audits/cash_audit_controller.show')
+    router.post('/store', '#controllers/cash_audits/cash_audit_controller.store')
+    router.put('/update/:id', '#controllers/cash_audits/cash_audit_controller.update')
+    router.delete('/delete/:id', '#controllers/cash_audits/cash_audit_controller.destroy')
+    router.put('/restore/:id', '#controllers/cash_audits/cash_audit_controller.restore')
+  }).prefix('cash-audits').middleware(auth)
+
+  // Balances
+  router.group(() => {
+    router.get('/movements', '#controllers/balances/balances_controller.getMovements')
+  }).prefix('balances').middleware(auth)
+
+  // Notifications
+  router.group(() => {
+    router.get('/types', '#controllers/notifications/notification_types_controller.index')
+    router.get('/types/my', '#controllers/notifications/notification_types_controller.my')
+    router.post('/types/store', '#controllers/notifications/notification_types_controller.store')
+    router.put('/types/update/:id', '#controllers/notifications/notification_types_controller.update')
+    router.post('/types/:id/assign', '#controllers/notifications/notification_types_controller.assignUserNotificationTypes')
+
+    router.get('/my', '#controllers/notifications/notifications_controller.my')
+    router.post('/store', '#controllers/notifications/notifications_controller.store')
+    router.put('/:id/read', '#controllers/notifications/notifications_controller.markRead')
+    router.put('/:id/delete', '#controllers/notifications/notifications_controller.delete')
+  })
+    .prefix('notifications')
+    .middleware(auth)
 
 }).prefix('api/v2')
   .where('id', /^[0-9]+$/)
@@ -660,4 +824,7 @@ router.get('/', async () => {
     hello: 'world',
   }
 })
+
+
+
 

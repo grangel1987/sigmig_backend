@@ -5,6 +5,7 @@ import { Server, Socket } from 'socket.io'
 
 
 export const roomForToken = (token: string) => `budget/${token}`
+export const notifRoomForUser = (userId: number) => `user/${userId}/notifications`
 app.ready(() => {
     ws.boot()
     const io = ws.io
@@ -67,6 +68,31 @@ export function registerSocketEvents(io: Server) {
                 await leaveBudgetRoom(socket, token, ack)
             } catch (error) {
                 console.error('budget/leave error', error)
+                safeAck(ack, { ok: false, error: 'unexpected_error' })
+            }
+        })
+
+        // Notifications: simple user-based rooms
+        socket.on('notifications/join', async ({ userId }, ack) => {
+            try {
+                if (!userId || typeof userId !== 'number') return safeAck(ack, { ok: false, error: 'missing_user_id' })
+                const room = notifRoomForUser(userId)
+                await socket.join(room)
+                safeAck(ack, { ok: true, room })
+            } catch (error) {
+                console.error('notifications/join error', error)
+                safeAck(ack, { ok: false, error: 'unexpected_error' })
+            }
+        })
+
+        socket.on('notifications/leave', async ({ userId }, ack) => {
+            try {
+                if (!userId || typeof userId !== 'number') return safeAck(ack, { ok: false, error: 'missing_user_id' })
+                const room = notifRoomForUser(userId)
+                await socket.leave(room)
+                safeAck(ack, { ok: true, room })
+            } catch (error) {
+                console.error('notifications/leave error', error)
                 safeAck(ack, { ok: false, error: 'unexpected_error' })
             }
         })

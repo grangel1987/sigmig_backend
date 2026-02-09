@@ -3,10 +3,9 @@ import CountryRepository from '#repositories/countries/country_repository'
 import PermissionService from '#services/permission_service'
 import messageFrontEnd from '#utils/MessageFrontEnd'
 import { countryUpdateValidator } from '#validators/country'
+import { indexFiltersWithStatus } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
-import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
-import { log } from 'node:console'
 
 export default class CountryController {
   public async index(ctx: HttpContext) {
@@ -14,21 +13,18 @@ export default class CountryController {
 
     const { request } = ctx
 
-    const { page, perPage, text } = await request.validateUsing(
-      vine.compile(
-        vine.object({
-          page: vine.number().positive().optional(),
-          perPage: vine.number().positive().optional(),
-          text: vine.string().trim().optional(),
-        })
-      )
-    )
-    let query = Country.query()
-
-    log(text)
+    const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
+    const query = Country.query()
 
     if (text) {
-      query.where('name', 'LIKE', `${text}%`)
+      const likeVal = `%${text}%`
+      query.where((qb) => {
+        qb.whereILike('name', likeVal).orWhereILike('nationality', likeVal).orWhereILike('code', likeVal)
+      })
+    }
+
+    if (status !== undefined) {
+      query.where('enabled', status === 'enabled')
     }
 
     const countries = await query

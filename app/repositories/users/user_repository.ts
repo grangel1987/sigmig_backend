@@ -1,6 +1,6 @@
 import User from "#models/users/user"
 import Util from "#utils/Util"
-import db from '@adonisjs/lucid/services/db'
+import { default as Database, default as db } from '@adonisjs/lucid/services/db'
 import { DateTime } from "luxon"
 
 /* interface BusinessItem {
@@ -254,5 +254,31 @@ export default class UserRepository {
 
     const result = await db.rawQuery(query)
     return result[0] || []
+  }
+
+  /** Autocomplete for Users */
+  static async findAutoComplete(val: string, page?: number, perPage = 20) {
+    const valBinding = `%${val}%`
+
+    let query = User.query()
+      .select([
+        'users.id',
+        Database.raw("CONCAT(personal_data.names, ' ', personal_data.last_name_p, ' ', personal_data.last_name_m) AS full_name"),
+        'users.email'
+      ])
+      .join('personal_data', 'users.personal_data_id', 'personal_data.id')
+      .where('users.enabled', true)
+      .where((builder) => {
+        builder
+          .where('users.email', 'LIKE', valBinding)
+          .orWhere('personal_data.names', 'LIKE', valBinding)
+          .orWhere('personal_data.last_name_p', 'LIKE', valBinding)
+          .orWhere('personal_data.last_name_m', 'LIKE', valBinding)
+      })
+
+    if (page)
+      return await query.paginate(page, perPage)
+    else
+      return await query.limit(perPage)
   }
 }

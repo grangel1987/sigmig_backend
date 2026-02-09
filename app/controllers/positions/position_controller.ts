@@ -2,9 +2,9 @@ import BusinessUser from '#models/business/business_user'
 import Position from '#models/positions/position'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import { indexFiltersWithStatus } from '#validators/general'
 import { positionStoreValidator, positionUpdateValidator } from '#validators/position'
 import { HttpContext } from '@adonisjs/core/http'
-import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 type Message = { message: string; title: string }
@@ -14,14 +14,7 @@ export default class PositionController {
         await PermissionService.requirePermission(ctx, 'positions', 'view')
 
         const { auth, response, i18n, request } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const userId = auth.user!.id
@@ -44,6 +37,9 @@ export default class PositionController {
                         .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
                         .select(['id', 'personal_data_id', 'email'])
                 })
+
+            if (text) baseQuery.where('name', 'LIKE', `%${text}%`)
+            if (status !== undefined) baseQuery.where('enabled', status === 'enabled')
 
             const positions = await (page ? baseQuery.paginate(page, perPage || 10) : baseQuery)
             return positions

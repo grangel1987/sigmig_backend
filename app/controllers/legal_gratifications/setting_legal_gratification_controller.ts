@@ -2,28 +2,30 @@ import SettingLegalGratification from '#models/legal_gratifications/setting_lega
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
+import { indexFiltersWithStatus } from '#validators/general'
 import { settingLegalGratificationStoreValidator, settingLegalGratificationUpdateValidator } from '#validators/setting_legal_gratification'
 import { HttpContext } from '@adonisjs/core/http'
-import vine from '@vinejs/vine'
 
 export default class SettingLegalGratificationController {
     async index(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view');
 
         const { request } = ctx
-        const { page, perPage } = await request.validateUsing(
-            vine.compile(
-                vine.object({
-                    page: vine.number().positive().optional(),
-                    perPage: vine.number().positive().optional(),
-                })
-            )
-        )
+        const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
         try {
             const query = SettingLegalGratification.query()
                 .preload('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
                 .preload('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData'))
+
+            if (text) {
+                const likeVal = `%${text}%`
+                query.whereILike('name', likeVal)
+            }
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             return page ? query.paginate(page, perPage ?? 10) : query
         } catch (error) {

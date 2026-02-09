@@ -2,6 +2,7 @@ import City from '#models/cities/City'
 import CityRepository from '#repositories/cities/city_repository'
 import PermissionService from '#services/permission_service'
 import Util from '#utils/Util'
+import { indexFiltersWithStatus } from '#validators/general'
 import { Exception } from '@adonisjs/core/exceptions'
 import { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
@@ -19,12 +20,9 @@ export default class CityController {
 
     const { request, response } = ctx
 
-    const { page, perPage } = await request.validateUsing(vine.compile(vine.object({
-      page: vine.number().positive().optional(),
-      perPage: vine.number().positive().optional()
-    })))
+    const { page, perPage, text, status } = await request.validateUsing(indexFiltersWithStatus)
 
-    const cities = await City.query()
+    let query = City.query()
       .preload('country', (builder) => {
         builder.select(['id', 'name'])
       })
@@ -33,7 +31,16 @@ export default class CityController {
       })
       .preload('updatedBy', (builder) => {
         builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
-      }).paginate(page || 1, perPage || 10)
+      })
+
+    if (text) {
+      const like = `%${text}%`
+      query.whereILike('name', like)
+    }
+
+    if (status !== undefined) query.where('enabled', status === 'enabled')
+
+    const cities = await query.paginate(page || 1, perPage || 10)
 
     return response.ok(cities)
   }

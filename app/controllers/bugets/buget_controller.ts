@@ -2,7 +2,11 @@ import BudgetObservation from '#models/bugets/budget_observation'
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
+import NotificationType from '#models/notifications/notification_type'
+import Setting from '#models/settings/setting'
 import BugetRepository from '#repositories/bugets/buget_repository'
+import BudgetPaymentService from '#services/budget_payment_service'
+import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
 import ws from '#services/ws'
 import env from '#start/env'
@@ -21,6 +25,7 @@ import {
 } from '#validators/buget'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
+import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
@@ -35,6 +40,8 @@ export default class BugetController {
     // Expect camelCase input keys only
     const {
       businessId,
+      costCenterId,
+      workId,
       currencySymbol,
       currencyId,
       currencyValue,
@@ -45,9 +52,12 @@ export default class BugetController {
       banks = [],
       discount = 0,
       utility = 0,
+      info,
     } = await request.validateUsing(bugetStoreValidator)
 
     const trx = await db.transaction()
+    const debugId = `${Date.now()}-${Math.floor(Math.random() * 10000)}`
+    log(`[BUGET STORE ${debugId}] start user=${auth.user?.id} business=${businessId}`)
     try {
       const dateTime = await Util.getDateTimes(request)
       const business = await Business.query({ client: trx }).where('id', businessId).firstOrFail()
@@ -67,12 +77,15 @@ export default class BugetController {
       const payload = {
         nro: String(nro),
         businessId: Number(businessId),
+        costCenterId: costCenterId ?? null,
+        workId: workId ?? null,
         currencySymbol: currencySymbol,
         currencyId: currencyId,
         currencyValue: currencyValue,
         clientId: client?.id,
         discount: Number(discount) || 0,
         utility: Number(utility) || 0,
+        info: info ?? null,
         createdAt: dateTime,
         updatedAt: dateTime,
         createdById: auth.user!.id,
@@ -82,6 +95,7 @@ export default class BugetController {
         enabled: true,
       }
 
+      log(`[BUGET STORE ${debugId}] creating buget payload nro=${payload.nro}`)
       const buget = await Buget.create(payload, { client: trx })
 
       // Normalize products to model properties (camelCase)
@@ -113,6 +127,9 @@ export default class BugetController {
         accountId: typeof b === 'object' ? b?.accountId : b,
       }))
 
+      log(
+        `[BUGET STORE ${debugId}] creating related products(${productsRows.length}) items(${itemsRows.length}) banks(${banksRows.length})`
+      )
       await buget.related('products').createMany(productsRows, { client: trx })
       await buget.related('items').createMany(itemsRows, { client: trx })
       await buget.related('banks').createMany(banksRows, { client: trx })
@@ -125,7 +142,8 @@ export default class BugetController {
       }
 
       await trx.commit()
-
+      log(`[BUGET STORE ${debugId}] commit complete bugetId=${buget.id}`)
+      await buget.load('client', (q) => q.select(['name', 'id']))
       await buget.load('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -177,6 +195,29 @@ export default class BugetController {
           viewBudgetLabel: i18n.formatMessage('messages.view_budget'),
           backupText: i18n.formatMessage('messages.budget_created_backup_text'),
         })
+        // DB notification (in-app) concise
+        const type = await NotificationType.findBy('code', 'budget_created')
+        const safeClientName = clientName || '—'
+        await NotificationService.createAndDispatch({
+          typeId: type?.id,
+          businessId,
+          title: `Cotización #${buget.nro} creada`,
+          body: `Cotización #${buget.nro} para ${safeClientName} ha sido creada`,
+          payload: {
+            bugetId: buget.id,
+            nro: buget.nro,
+            businessId,
+            clientName: safeClientName,
+            expireDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+          },
+          meta: {
+            budgetId: buget.id,
+            status: buget.status,
+            clientName: safeClientName,
+            number: buget.nro,
+          },
+          createdById: auth.user!.id,
+        })
       } catch (emailError) {
         // Log email error but don't fail the budget creation
         console.log('Error sending budget creation notification email:', emailError)
@@ -207,19 +248,34 @@ export default class BugetController {
   public async index(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
-    const { request } = ctx
-    const { page, perPage, status, text, startDate, endDate, date, businessId, budgetStatus } =
-      await request.validateUsing(
-        vine.compile(
-          vine.object({
-            ...searchWithStatusSchema.getProperties(),
-            businessId: vine.number().positive().optional(),
-          })
-        )
+    const { request, auth } = ctx
+    const {
+      page,
+      perPage,
+      status,
+      text,
+      startDate,
+      endDate,
+      date,
+      businessId: pBusinessId,
+      budgetStatus,
+      includePaymentTotals,
+      includeAllInfo,
+    } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          ...searchWithStatusSchema.getProperties(),
+          businessId: vine.number().positive().optional(),
+          includePaymentTotals: vine.boolean().optional(),
+          includeAllInfo: vine.boolean().optional(),
+        })
       )
+    )
 
     let query = Buget.query()
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
+      .preload('costCenter')
+      .preload('work', (w) => w.select(['id', 'code', 'name']))
       .preload('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -230,7 +286,32 @@ export default class BugetController {
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
           .select(['id', 'personal_data_id', 'email'])
       })
+      .preload('products')
+      .preload('items')
+      .preload('payments', (pQ: any) => {
+        pQ.preload('ledgerMovement', (lmQ: any) => {
+          lmQ
+            .preload('account')
+            .preload('currency')
+            .preload('costCenter')
+            .preload('client')
+            .preload('paymentMethod')
+            .preload('documentType')
+        })
+      })
       .orderBy('created_at', 'desc')
+
+    let businessId = pBusinessId
+
+    if (!businessId) businessId = Number(request.header('Business'))
+
+    if (!businessId) {
+      const user = auth.getUserOrFail()
+      const businessUser = await user.related('selectedBusiness').query().first()
+      if (businessUser) {
+        businessId = businessUser.id
+      }
+    }
 
     if (businessId) {
       query = query.where('business_id', businessId)
@@ -269,7 +350,143 @@ export default class BugetController {
 
     const budgets = page ? await query.paginate(page, perPage) : await query
 
-    return budgets
+    // Add payment summary to each budget (conditionally based on query param)
+    if (budgets instanceof ModelPaginator) {
+      const budgetsWithPayments = await Promise.all(
+        budgets.all().map(async (budget) => {
+          const total = budget.getTotalAmount()
+          const remaining = await budget.getRemainingBalance()
+          const percentage = await budget.getPaymentPercentage()
+          const isFullyPaid = await budget.isFullyPaid()
+
+          const paymentSummary: any = {
+            total: Util.truncateToTwoDecimals(total),
+            remaining: Util.truncateToTwoDecimals(remaining),
+            percentage: Util.truncateToTwoDecimals(percentage),
+            isFullyPaid,
+            budgetCurrency: budget.currencySymbol,
+          }
+
+          // Include payment totals only if requested
+          if (includePaymentTotals) {
+            const paidInBudgetCurrency = await budget.getTotalPaidInBudgetCurrency()
+            const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
+
+            paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
+            paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
+              (pc: {
+                currencyId: number
+                currencySymbol: string
+                currencyName: string
+                totalPaid: number
+                isBudgetCurrency: boolean
+              }) => ({
+                currencyId: pc.currencyId,
+                currencySymbol: pc.currencySymbol,
+                currencyName: pc.currencyName,
+                totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+                isBudgetCurrency: pc.isBudgetCurrency,
+              })
+            )
+          }
+
+          const serialized = budget.serialize()
+
+          // Load paymentTerm and sendCondition from info field if requested
+          if (includeAllInfo && serialized.info) {
+            const paymentTerm = serialized.info.paymentTerm
+              ? await Setting.find(serialized.info.paymentTerm)
+              : null
+            const sendCondition = serialized.info.sendCondition
+              ? await Setting.find(serialized.info.sendCondition)
+              : null
+
+            serialized.info = {
+              ...serialized.info,
+              paymentTermData: paymentTerm ? paymentTerm.serialize() : null,
+              sendConditionData: sendCondition ? sendCondition.serialize() : null,
+            }
+          }
+
+          return {
+            ...serialized,
+            paymentSummary,
+          }
+        })
+      )
+
+      return {
+        ...budgets.serialize(),
+        data: budgetsWithPayments,
+      }
+    } else {
+      const budgetsWithPayments = await Promise.all(
+        budgets.map(async (budget) => {
+          const total = budget.getTotalAmount()
+          const remaining = await budget.getRemainingBalance()
+          const percentage = await budget.getPaymentPercentage()
+          const isFullyPaid = await budget.isFullyPaid()
+
+          const paymentSummary: any = {
+            total: Util.truncateToTwoDecimals(total),
+            remaining: Util.truncateToTwoDecimals(remaining),
+            percentage: Util.truncateToTwoDecimals(percentage),
+            isFullyPaid,
+            budgetCurrency: budget.currencySymbol,
+          }
+
+          // Include payment totals only if requested
+          if (includePaymentTotals) {
+            const paidInBudgetCurrency = await budget.getTotalPaidInBudgetCurrency()
+            const paymentTotalsByCurrency = budget.getPaymentTotalsByCurrency()
+
+            paymentSummary.paidInBudgetCurrency = Util.truncateToTwoDecimals(paidInBudgetCurrency)
+            paymentSummary.paymentTotalsByCurrency = paymentTotalsByCurrency.map(
+              (pc: {
+                currencyId: number
+                currencySymbol: string
+                currencyName: string
+                totalPaid: number
+                isBudgetCurrency: boolean
+              }) => ({
+                currencyId: pc.currencyId,
+                currencySymbol: pc.currencySymbol,
+                currencyName: pc.currencyName,
+                totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+                isBudgetCurrency: pc.isBudgetCurrency,
+              })
+            )
+          }
+
+          const serialized = budget.serialize()
+
+          // Load paymentTerm and sendCondition from info field if requested
+          if (includeAllInfo && serialized.info) {
+            const paymentTerm = serialized.info.paymentTerm
+              ? await Setting.find(serialized.info.paymentTerm)
+              : null
+            const sendCondition = serialized.info.sendCondition
+              ? await Setting.find(serialized.info.sendCondition)
+              : null
+
+            serialized.info = {
+              ...serialized.info,
+              paymentTermData: paymentTerm ? paymentTerm.serialize() : null,
+              sendConditionData: sendCondition ? sendCondition.serialize() : null,
+            }
+          }
+
+          return {
+            ...serialized,
+            paymentSummary,
+          }
+        })
+      )
+
+      return {
+        data: budgetsWithPayments,
+      }
+    }
   }
 
   // Show details matching legacy shape (expired flag and formatted date)
@@ -307,6 +524,8 @@ export default class BugetController {
       ])
       q.preload('typeIdentify', (qq) => qq.select(['text', 'id']))
     })
+    await buget.load('costCenter')
+    await buget.load('work', (w) => w.select(['id', 'code', 'name']))
     await buget.load('client', (q) => {
       q.select([
         'id',
@@ -345,10 +564,39 @@ export default class BugetController {
         })
       })
     })
+
     await buget.load('details')
+    await buget.load('payments', (pQ: any) => {
+      pQ.preload('ledgerMovement', (lmQ: any) => {
+        lmQ
+          .preload('account')
+          .preload('currency')
+          .preload('costCenter')
+          .preload('client')
+          .preload('paymentMethod')
+          .preload('documentType')
+      })
+    })
 
     // Compose legacy-like extras
     const serialized: any = buget.serialize()
+
+    // Load paymentTerm and sendCondition from info field and add to info object
+    if (serialized.info) {
+      const paymentTerm = serialized.info.paymentTerm
+        ? await Setting.find(serialized.info.paymentTerm)
+        : null
+      const sendCondition = serialized.info.sendCondition
+        ? await Setting.find(serialized.info.sendCondition)
+        : null
+
+      serialized.info = {
+        ...serialized.info,
+        paymentTermData: paymentTerm ? paymentTerm.serialize() : null,
+        sendConditionData: sendCondition ? sendCondition.serialize() : null,
+      }
+    }
+
     const expireDate = buget.expireDate
     if (expireDate) {
       serialized.expired = expireDate >= now ? false : true
@@ -360,6 +608,39 @@ export default class BugetController {
       serialized.expired = true
       serialized.expire_date_format = ''
     }
+
+    // Add payment summary
+    const total = buget.getTotalAmount()
+    const paidInBudgetCurrency = await buget.getTotalPaidInBudgetCurrency()
+    const remaining = await buget.getRemainingBalance()
+    const percentage = await buget.getPaymentPercentage()
+    const isFullyPaid = await buget.isFullyPaid()
+    const paymentTotalsByCurrency = buget.getPaymentTotalsByCurrency()
+
+    serialized.paymentSummary = {
+      total: Util.truncateToTwoDecimals(total),
+      paidInBudgetCurrency: Util.truncateToTwoDecimals(paidInBudgetCurrency),
+      remaining: Util.truncateToTwoDecimals(remaining),
+      percentage: Util.truncateToTwoDecimals(percentage),
+      isFullyPaid,
+      budgetCurrency: buget.currencySymbol,
+      paymentTotalsByCurrency: paymentTotalsByCurrency.map(
+        (pc: {
+          currencyId: number
+          currencySymbol: string
+          currencyName: string
+          totalPaid: number
+          isBudgetCurrency: boolean
+        }) => ({
+          currencyId: pc.currencyId,
+          currencySymbol: pc.currencySymbol,
+          currencyName: pc.currencyName,
+          totalPaid: Util.truncateToTwoDecimals(pc.totalPaid),
+          isBudgetCurrency: pc.isBudgetCurrency,
+        })
+      ),
+    }
+
     return serialized
   }
 
@@ -393,6 +674,9 @@ export default class BugetController {
       q.select(['name', 'url', 'email', 'identify', 'footer', 'type_identify_id'])
       q.preload('typeIdentify', (qq) => qq.select(['text']))
     })
+
+    await buget.load('costCenter')
+    await buget.load('work', (w) => w.select(['id', 'code', 'name']))
 
     await buget.load('client', (q) => {
       q.select(['name', 'identify', 'email', 'address', 'phone', 'identify_type_id', 'city_id'])
@@ -435,6 +719,12 @@ export default class BugetController {
       })
     })
 
+    // Load paymentTerm and sendCondition from info field
+    const paymentTerm = buget.info?.paymentTerm ? await Setting.find(buget.info.paymentTerm) : null
+    const sendCondition = buget.info?.sendCondition
+      ? await Setting.find(buget.info.sendCondition)
+      : null
+
     // Create a clean serialized version without IDs and timestamps
     const serialized: Record<string, any> = {
       nro: buget.nro,
@@ -445,6 +735,22 @@ export default class BugetController {
       enabled: !!buget.enabled, // Ensure boolean
       status: buget.status ?? null,
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
+      work: buget.work
+        ? {
+            id: buget.work.id,
+            code: buget.work.code,
+            name: buget.work.name,
+          }
+        : null,
+      info: buget.info
+        ? {
+            ...buget.info,
+            paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
+            sendConditionData: sendCondition
+              ? { id: sendCondition.id, text: sendCondition.text }
+              : null,
+          }
+        : null,
       business: buget.business
         ? {
             name: buget.business.name,
@@ -498,7 +804,6 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-            costCenter: buget.details.costCenter,
             work: buget.details.work,
             observation: buget.details.observation,
           }
@@ -700,6 +1005,7 @@ export default class BugetController {
     const budgetRes = await Buget.query()
       .where('business_id', businessId)
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
+      .preload('costCenter')
       .where('nro', number)
       // .where('enabled', true)
       .orderBy('id', 'desc')
@@ -821,25 +1127,40 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
 
     const { request } = ctx
-    const {
-      dateInitial,
-      dateEnd,
-      businessId,
-      page = 1,
-      limit = 20,
-    } = await request.validateUsing(
+    const { startDate, endDate, page, perPage, text, budgetStatus } = await request.validateUsing(
       vine.compile(
         vine.object({
-          dateInitial: vine.date().optional(),
-          dateEnd: vine.date().optional(),
-          businessId: vine.number(),
-          page: vine.number().optional(),
-          limit: vine.number().optional(),
+          ...searchWithStatusSchema.getProperties(),
         })
       )
     )
+    const businessId = Number(request.header('Business'))
 
-    return await BugetRepository.report(businessId, dateInitial, dateEnd, page, limit)
+    const data = await BugetRepository.report(
+      businessId,
+      startDate,
+      endDate,
+      page,
+      perPage,
+      text,
+      budgetStatus
+    )
+    const metrics = await BugetRepository.metrics(
+      businessId,
+      startDate,
+      endDate,
+      text,
+      budgetStatus
+    )
+
+    let payload: Record<string, any> = {}
+
+    if (data instanceof ModelPaginator) {
+      payload = { ...data.getMeta(), data: data.all().map((d) => d.serialize()), metrics }
+    } else {
+      payload = { data: data.map((d) => d.serialize()), metrics }
+    }
+    return payload
   }
 
   public async searchItems(ctx: HttpContext) {
@@ -984,7 +1305,10 @@ export default class BugetController {
         banks = [],
         discount,
         utility,
+        costCenterId,
+        workId,
         clientDetails,
+        info,
         currencyId,
         currencyValue,
         currencySymbol,
@@ -1033,12 +1357,15 @@ export default class BugetController {
         {
           nro: String(nro),
           businessId: existingBuget.businessId,
+          costCenterId: costCenterId ?? existingBuget.costCenterId ?? null,
+          workId: workId ?? existingBuget.workId ?? null,
           currencySymbol: currencySymbol,
           currencyId: currencyId,
           currencyValue: currencyValue,
           clientId: existingBuget.clientId,
           discount: Number(discount) || 0,
           utility: Number(utility) || 0,
+          info: info ?? existingBuget.info ?? null,
           createdAt: dateTime,
           prevId: existingBuget.id,
           token,
@@ -1216,12 +1543,71 @@ export default class BugetController {
           )
       }
 
+      const previousStatus = buget.status ?? null
       buget.status = status ?? null
       await buget.save()
       await trx.commit()
       if (buget.token) {
         const room = roomForToken(buget.token)
         ws.io?.to(room).emit('budget/status', { status: buget.status })
+      }
+
+      // In-app notification for status change
+      console.log('[BUDGET STATUS] Starting notification creation for budget:', bugetId)
+
+      const statuses: { accept: string; reject: string; revision: string; other: string } = {
+        accept: i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
+        reject: i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
+        revision: i18n.formatMessage('messages.budget_status_revision', {}, 'puesta en revisión'),
+        other: i18n.formatMessage('messages.budget_status_updated', {}, 'actualizada'),
+      }
+      try {
+        console.log('[BUDGET STATUS] Loading client for budget:', buget.id)
+        await buget.load('client', (q) => q.select(['name']))
+        const clientName = buget.client?.name || '—'
+        const expireStr = buget.expireDate
+          ? Util.parseToMoment(buget.expireDate, false, { separator: '/', firstYear: false })
+          : ''
+        const statusMsg = statuses[buget.status ?? 'other'] ?? 'sido actualizada'
+        const baseTitle = `Cotización #${buget.nro} ha sido ${statusMsg}`
+        const baseBody = `Cotización #${buget.nro} para ${clientName} ha ${statusMsg}`
+        const payload = {
+          bugetId: buget.id,
+          nro: buget.nro,
+          status: buget.status,
+          previousStatus,
+          businessId: buget.businessId,
+          clientName,
+          expireDate: expireStr,
+        }
+
+        console.log('[BUDGET STATUS] Finding notification type: budget_status_changed')
+        // Generic status change
+        const statusType = await NotificationType.findBy('code', 'budget_status_changed')
+        console.log(
+          '[BUDGET STATUS] Notification type found:',
+          statusType?.id,
+          'Calling createAndDispatch...'
+        )
+        await NotificationService.createAndDispatch({
+          typeId: statusType?.id,
+          businessId: buget.businessId,
+          title: baseTitle,
+          body: baseBody,
+          payload,
+          meta: {
+            budgetId: buget.id,
+            status: buget.status,
+            previousStatus,
+            clientName,
+            number: buget.nro,
+          },
+          createdById: ctx.auth.user!.id,
+        })
+        console.log('[BUDGET STATUS] Notification dispatched successfully')
+      } catch (notifyErr) {
+        console.log('Budget status notification error:', notifyErr)
+        throw notifyErr
       }
 
       return response.status(200).json({ buget })
@@ -1255,14 +1641,71 @@ export default class BugetController {
         )
     }
 
-    if (status !== undefined) {
-      buget.status = status
-      await buget.save()
+    const previousStatus = buget.status ?? null
+    buget.status = status
+    await buget.save()
+
+    const room = roomForToken(buget.token!)
+    ws.io?.to(room).emit('budget/status', { status: buget.status })
+
+    // In-app notification for status change (public update)
+    console.log('[BUDGET STATUS PUBLIC] Starting notification creation for budget:', buget.id)
+
+    const statuses: { accept: string; reject: string; revision: string; other: string } = {
+      accept: i18n.formatMessage('messages.budget_status_accepted', {}, 'aceptada'),
+      reject: i18n.formatMessage('messages.budget_status_rejected', {}, 'rechazada'),
+      revision: i18n.formatMessage('messages.budget_status_revision', {}, 'puesta en revisión'),
+      other: i18n.formatMessage('messages.budget_status_updated', {}, 'actualizada'),
     }
 
-    /*     const room = roomForToken(buget.token!)
-    ws.io?.to(room).emit('budget/status', { status: buget.status })
- */
+    try {
+      console.log('[BUDGET STATUS PUBLIC] Loading client for budget:', buget.id)
+      await buget.load('client', (q) => q.select(['name']))
+      const clientName = buget.client?.name || '—'
+      const expireStr = buget.expireDate
+        ? Util.parseToMoment(buget.expireDate, false, { separator: '/', firstYear: false })
+        : ''
+      const statusMsg = statuses[buget.status ?? 'other'] ?? 'sido actualizada'
+      const baseTitle = `Cotización #${buget.nro} ha sido ${statusMsg}`
+      const baseBody = `Cotización #${buget.nro} para ${clientName} ha ${statusMsg}`
+      const payload = {
+        bugetId: buget.id,
+        nro: buget.nro,
+        status: buget.status,
+        previousStatus,
+        businessId: buget.businessId,
+        clientName,
+        expireDate: expireStr,
+      }
+
+      console.log('[BUDGET STATUS PUBLIC] Finding notification type: budget_status_changed')
+      const statusType = await NotificationType.findBy('code', 'budget_status_changed')
+      console.log(
+        '[BUDGET STATUS PUBLIC] Notification type found:',
+        statusType?.id,
+        'Calling createAndDispatch...'
+      )
+
+      await NotificationService.createAndDispatch({
+        typeId: statusType?.id,
+        businessId: buget.businessId,
+        title: baseTitle,
+        body: baseBody,
+        payload,
+        meta: {
+          budgetId: buget.id,
+          status: buget.status,
+          previousStatus,
+          clientName,
+          number: buget.nro,
+        },
+        createdById: buget.createdById, // Use the budget creator as notification creator
+      })
+      console.log('[BUDGET STATUS PUBLIC] Notification dispatched successfully')
+    } catch (notifyErr) {
+      console.log('Budget status notification error (public):', notifyErr)
+    }
+
     return response.status(200).json({ buget })
   }
 
@@ -1321,6 +1764,7 @@ export default class BugetController {
           clientId: clientId,
           discount: existingBuget.discount,
           utility: existingBuget.utility,
+          info: existingBuget.info,
           createdAt: dateTime,
           prevId: existingBuget.id,
           // DO NOT set token here - allow @beforeCreate to set a new token
@@ -1571,7 +2015,283 @@ export default class BugetController {
         )
     }
   }
+
+  /**
+   * Create a new budget payment
+   * POST /buget/payments
+   */
+  public async storePayment(ctx: HttpContext) {
+    const { request, response, i18n } = ctx
+
+    try {
+      const payload = await request.validateUsing(createBudgetPaymentValidator)
+      const businessId = Number(request.header('Business'))
+      const detailsTotal = payload.details?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
+      const amount = payload.amount ?? detailsTotal
+
+      if (!amount || amount <= 0) {
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.store_error'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+      // Generate default concept if not provided
+      let concept = payload.concept
+      if (!concept && payload.budgetId) {
+        const buget = await Buget.query()
+          .where('id', payload.budgetId)
+          .preload('client', (q) => q.select(['id', 'name']))
+          .first()
+
+        if (buget?.client) {
+          concept = `${buget.client.name} cotización #${buget.nro}`
+        }
+      }
+
+      const result = await BudgetPaymentService.create({
+        ...payload,
+        amount,
+        businessId,
+        concept,
+        date: DateTime.fromISO(payload.date),
+      })
+
+      return response.status(201).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.store_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.store_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  /**
+   * Get a budget payment with its ledger movement
+   * GET /buget/payments/:id
+   */
+  public async showPayment(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+
+    try {
+      const result = await BudgetPaymentService.findWithLedgerMovement(params.id)
+
+      return response.status(200).json(result)
+    } catch (error) {
+      log(error)
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  /**
+   * Update a budget payment
+   * PUT /buget/payments/:id
+   */
+  public async updatePayment(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const payload = await request.validateUsing(updateBudgetPaymentValidator)
+
+      const updateData = { ...payload }
+
+      const result = await BudgetPaymentService.update(params.id, updateData)
+
+      return response.status(200).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  /**
+   * Delete a budget payment
+   * DELETE /buget/payments/:id
+   */
+  public async deletePayment(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+
+    try {
+      await BudgetPaymentService.delete(params.id)
+
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.delete_ok'),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+    } catch (error) {
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.delete_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  /**
+   * Void a budget payment
+   * POST /buget/payments/:id/void
+   */
+  public async voidPayment(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+
+    try {
+      const result = await BudgetPaymentService.void(params.id)
+
+      return response.status(200).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  /**
+   * Make a projected payment effective by assigning a document number
+   * POST /buget/payments/:id/settle
+   */
+  public async settlePayment(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const { documentNumber } = await request.validateUsing(
+        vine.compile(
+          vine.object({
+            documentNumber: vine.string().minLength(1),
+          })
+        )
+      )
+
+      const result = await BudgetPaymentService.settle(params.id, documentNumber)
+
+      return response.status(200).json({
+        ...result,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
 }
+
+// Budget Payment validators
+const createBudgetPaymentValidator = vine.compile(
+  vine.object({
+    budgetId: vine.number().optional(),
+    accountId: vine.number().optional(),
+    costCenterId: vine.number().optional(),
+    clientId: vine.number().optional(),
+    date: vine.string(),
+    amount: vine.number().optional(),
+    currencyId: vine.number(),
+    paymentMethodId: vine.number().optional(),
+    documentTypeId: vine.number().optional(),
+    documentNumber: vine.string().optional(),
+    concept: vine.string().optional(),
+    status: vine.enum(['paid', 'pending', 'voided']).optional(),
+    isProjected: vine.boolean().optional(),
+    receivedAt: vine.string().optional().nullable(),
+    details: vine
+      .array(
+        vine.object({
+          bugetProductId: vine.number().optional(),
+          amount: vine.number().optional().nullable(),
+        })
+      )
+      .optional(),
+  })
+)
+
+const updateBudgetPaymentValidator = vine.compile(
+  vine.object({
+    accountId: vine.number().optional(),
+    costCenterId: vine.number().optional(),
+    clientId: vine.number().optional(),
+    date: vine.string().optional(),
+    amount: vine.number().optional(),
+    currencyId: vine.number().optional(),
+    paymentMethodId: vine.number().optional(),
+    documentTypeId: vine.number().optional(),
+    documentNumber: vine.string().optional(),
+    concept: vine.string().optional(),
+    status: vine.enum(['paid', 'pending', 'voided']).optional(),
+    isProjected: vine.boolean().optional(),
+    receivedAt: vine.string().optional().nullable(),
+    details: vine
+      .array(
+        vine.object({
+          bugetProductId: vine.number().optional().nullable(),
+          bugetItemId: vine.number().optional().nullable(),
+          amount: vine.number().optional().nullable(),
+        })
+      )
+      .optional(),
+  })
+)
 
 export async function sendBudgetNotification(
   businessId: number,
@@ -1609,7 +2329,7 @@ export async function sendBudgetNotification(
       if (businessUser.user?.email) {
         await mail.send((message) => {
           message
-            .to('piedraigor@gmail.com' /* businessUser.user!.email */)
+            .to(businessUser.user!.email)
             .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
             .subject(emailData.subject)
             .htmlView(template, emailData)

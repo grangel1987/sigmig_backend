@@ -1,0 +1,2534 @@
+openapi: 3.0.0
+info:
+  title: API Backend SIGMI
+  version: '1.0.0'
+  description: API REST completa para SIGMI Backend - Sistema de gestión de presupuestos, gastos y operaciones financieras
+  contact:
+    name: Equipo de Desarrollo SIGMI
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api/v2
+    description: Servidor de Desarrollo Local
+  - url: http://93.127.210.103/api/v2
+    description: Servidor de Producción
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT del endpoint de inicio de sesión
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        title:
+          type: string
+      required:
+        - message
+        - title
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        perPage:
+          type: integer
+        currentPage:
+          type: integer
+        lastPage:
+          type: integer
+        hasMorePages:
+          type: boolean
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: object
+          properties:
+            token:
+              type: string
+            type:
+              type: string
+              example: Bearer
+            expiresIn:
+              type: integer
+        refreshToken:
+          type: string
+        userData:
+          type: object
+          properties:
+            id:
+              type: integer
+            email:
+              type: string
+            fullName:
+              type: string
+
+    LedgerMovement:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        concept:
+          type: string
+        amount:
+          type: number
+        absoluteAmount:
+          type: number
+        type:
+          type: string
+          enum: [income, expense]
+        status:
+          type: string
+          enum: [paid, pending, voided]
+        currencyId:
+          type: integer
+        documentType:
+          type: integer
+        documentNumber:
+          type: string
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        costCenter:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            code:
+              type: string
+        client:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        paymentMethod:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        justifications:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [budget_payment, expense]
+              id:
+                type: integer
+              reference:
+                type: string
+              description:
+                type: string
+              budgetNumber:
+                type: string
+              clientName:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BudgetPayment:
+      type: object
+      properties:
+        budgetId:
+          type: integer
+          description: ID del presupuesto
+        accountId:
+          type: integer
+          description: ID de la cuenta contable
+        costCenterId:
+          type: integer
+          description: ID del centro de costo
+        clientId:
+          type: integer
+          description: ID del cliente
+        date:
+          type: string
+          format: date
+          description: Fecha del pago
+        amount:
+          type: number
+          description: Monto del pago (opcional si se calcula desde las líneas)
+        currencyId:
+          type: integer
+          description: ID de la moneda
+        paymentMethodId:
+          type: integer
+          description: ID del método de pago
+        documentTypeId:
+          type: integer
+          description: ID del tipo de documento
+        documentNumber:
+          type: string
+          description: Número de documento. Si se proporciona, el pago se marca como 'pagado' y no proyectado
+        concept:
+          type: string
+          description: Concepto del pago (auto-generado si no se proporciona y budgetId existe)
+        status:
+          type: string
+          enum: [paid, pending, voided]
+          description: Estado del pago
+        isProjected:
+          type: boolean
+          description: Marca el pago como proyectado (ignorado si documentNumber está presente)
+        receivedAt:
+          type: string
+          format: date-time
+          description: Fecha-hora de recepción
+        lines:
+          type: array
+          description: Líneas de pago que especifican qué items del presupuesto se están pagando
+          items:
+            $ref: '#/components/schemas/BudgetpaymentDetail'
+
+    BudgetpaymentDetail:
+      type: object
+      properties:
+        bugetProductId:
+          type: integer
+          nullable: true
+          description: ID del producto presupuestal (debe proporcionar esto o bugetItemId)
+        bugetItemId:
+          type: integer
+          nullable: true
+          description: ID del item presupuestal (debe proporcionar esto o bugetProductId)
+        amount:
+          type: number
+          nullable: true
+          description: Monto pagado para este item
+      required:
+        - bugetProductId
+        - bugetItemId
+      description: Una línea de pago que vincula el pago a un item específico del presupuesto
+
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+
+    PaymentDocumentType:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+
+    LedgingAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [income, expense]
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        date:
+          type: string
+          format: date
+        amount:
+          type: number
+        currencyId:
+          type: integer
+        description:
+          type: string
+        status:
+          type: string
+          enum: [paid, pending, canceled]
+        business:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        currency:
+          type: object
+          properties:
+            id:
+              type: integer
+            symbol:
+              type: string
+            name:
+              type: string
+
+    CashAuditLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        cashAuditId:
+          type: integer
+        currencyId:
+          type: integer
+          nullable: true
+        denominationValue:
+          type: number
+          nullable: true
+        denominationName:
+          type: string
+          nullable: true
+        quantity:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        subtotal:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CashAudit:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+          nullable: true
+        performedBy:
+          type: integer
+          nullable: true
+        performedAt:
+          type: string
+          format: date-time
+        totalCounted:
+          type: number
+        totalExpected:
+          type: number
+        difference:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashAuditLine'
+
+paths:
+  /account/login:
+    post:
+      tags:
+        - Autenticación
+      summary: Inicio de sesión de usuario
+      description: Autenticar usuario con correo electrónico y contraseña
+      operationId: accountLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+              required:
+                - email
+                - password
+            example:
+              email: user@example.com
+              password: password123
+      responses:
+        '200':
+          description: Inicio de sesión exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+
+  /balances/movements:
+    get:
+      tags:
+        - Balances
+      summary: Listar movimientos contables
+      description: Obtener movimientos contables con filtrado y paginación opcionales
+      operationId: getBalancesMovements
+      parameters:
+        - name: page
+          in: query
+          description: Número de página para la paginación
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          description: Registros por página
+          schema:
+            type: integer
+            default: 15
+        - name: text
+          in: query
+          description: Buscar por cliente, cuenta, concepto o número de documento
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filtrar por estado del movimiento
+          schema:
+            type: string
+            enum: [paid, pending, voided]
+        - name: documentTypeId
+          in: query
+          description: Filtrar por tipo de documento de pago
+          schema:
+            type: integer
+        - name: paymentMethodId
+          in: query
+          description: Filtrar por método de pago
+          schema:
+            type: integer
+        - name: type
+          in: query
+          description: Filtrar por tipo de movimiento
+          schema:
+            type: string
+            enum: [income, expense]
+      responses:
+        '200':
+          description: Lista de movimientos contables
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LedgerMovement'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+              example:
+                message: Movimientos obtenidos exitosamente
+                data:
+                  - id: 1
+                    date: '2026-01-17'
+                    concept: Pago cotización #1001
+                    amount: 150000
+                    absoluteAmount: 150000
+                    type: income
+                    status: paid
+                meta:
+                  total: 100
+                  perPage: 15
+                  currentPage: 1
+                  lastPage: 7
+        '500':
+          description: Error del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-methods:
+    get:
+      tags:
+        - Configuración
+      summary: Listar métodos de pago
+      description: Obtener todos los métodos de pago con paginación
+      operationId: listPaymentMethods
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de métodos de pago
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethod'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /config/payment-methods/store:
+    post:
+      tags:
+        - Configuración
+      summary: Crear método de pago
+      description: Crear un nuevo método de pago
+      operationId: storePaymentMethod
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+              required:
+                - name
+            example:
+              name: Transferencia
+              description: Pago por transferencia bancaria
+      responses:
+        '201':
+          description: Método de pago creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '500':
+          description: Error de creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-methods/show/{id}:
+    get:
+      tags:
+        - Configuración
+      summary: Obtener método de pago
+      description: Obtener un método de pago específico
+      operationId: showPaymentMethod
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del método de pago
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-methods/update/{id}:
+    put:
+      tags:
+        - Configuración
+      summary: Actualizar método de pago
+      description: Actualizar un método de pago existente
+      operationId: updatePaymentMethod
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+            example:
+              name: Transferencia Bancaria
+              description: Pago por transferencia
+      responses:
+        '200':
+          description: Método de pago actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+        '500':
+          description: Error de actualización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-methods/delete/{id}:
+    delete:
+      tags:
+        - Configuración
+      summary: Eliminar método de pago
+      description: Eliminar un método de pago
+      operationId: deletePaymentMethod
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Método de pago eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-methods/select:
+    get:
+      tags:
+        - Configuración
+      summary: Lista de selección de métodos de pago
+      description: Obtener métodos de pago para dropdown/select
+      operationId: selectPaymentMethods
+      responses:
+        '200':
+          description: Lista de métodos de pago
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+      security:
+        - bearerAuth: []
+
+  /config/payment-document-types:
+    get:
+      tags:
+        - Configuración
+      summary: Listar tipos de documento de pago
+      description: Obtener todos los tipos de documento de pago con paginación
+      operationId: listPaymentDocumentTypes
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de tipos de documento de pago
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentDocumentType'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /config/payment-document-types/store:
+    post:
+      tags:
+        - Configuración
+      summary: Crear tipo de documento de pago
+      description: Crear un nuevo tipo de documento de pago
+      operationId: storePaymentDocumentType
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+              required:
+                - name
+            example:
+              name: Factura
+              description: Factura comercial
+      responses:
+        '201':
+          description: Tipo de documento creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDocumentType'
+        '500':
+          description: Error de creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-document-types/show/{id}:
+    get:
+      tags:
+        - Configuración
+      summary: Obtener tipo de documento de pago
+      description: Obtener un tipo de documento de pago específico
+      operationId: showPaymentDocumentType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del tipo de documento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDocumentType'
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-document-types/update/{id}:
+    put:
+      tags:
+        - Configuración
+      summary: Actualizar tipo de documento de pago
+      description: Actualizar un tipo de documento de pago existente
+      operationId: updatePaymentDocumentType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+            example:
+              name: Factura Electrónica
+              description: Factura electrónica
+      responses:
+        '200':
+          description: Tipo de documento actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentDocumentType'
+        '500':
+          description: Error de actualización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-document-types/delete/{id}:
+    delete:
+      tags:
+        - Configuración
+      summary: Eliminar tipo de documento de pago
+      description: Eliminar un tipo de documento de pago
+      operationId: deletePaymentDocumentType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Tipo de documento eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/payment-document-types/select:
+    get:
+      tags:
+        - Configuración
+      summary: Lista de selección de tipos de documento de pago
+      description: Obtener tipos de documento de pago para dropdown/select
+      operationId: selectPaymentDocumentTypes
+      responses:
+        '200':
+          description: Lista de tipos de documento
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentDocumentType'
+      security:
+        - bearerAuth: []
+
+  /config/ledging-accounts:
+    get:
+      tags:
+        - Configuración
+      summary: Listar cuentas contables
+      description: Obtener todas las cuentas contables con paginación
+      operationId: listLedgingAccounts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de cuentas contables
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LedgingAccount'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /config/ledging-accounts/store:
+    post:
+      tags:
+        - Configuración
+      summary: Crear cuenta contable
+      description: Crear una nueva cuenta contable
+      operationId: storeLedgingAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [income, expense]
+              required:
+                - businessId
+                - name
+                - type
+            example:
+              businessId: 1
+              name: Ingresos por servicios
+              type: income
+      responses:
+        '201':
+          description: Cuenta contable creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgingAccount'
+        '500':
+          description: Error de creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/ledging-accounts/show/{id}:
+    get:
+      tags:
+        - Configuración
+      summary: Obtener cuenta contable
+      description: Obtener una cuenta contable específica
+      operationId: showLedgingAccount
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles de la cuenta contable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgingAccount'
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/ledging-accounts/update/{id}:
+    put:
+      tags:
+        - Configuración
+      summary: Actualizar cuenta contable
+      description: Actualizar una cuenta contable existente
+      operationId: updateLedgingAccount
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [income, expense]
+            example:
+              name: Ingresos por servicios profesionales
+              type: income
+      responses:
+        '200':
+          description: Cuenta contable actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgingAccount'
+        '500':
+          description: Error de actualización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/ledging-accounts/delete/{id}:
+    delete:
+      tags:
+        - Configuración
+      summary: Eliminar cuenta contable
+      description: Eliminar una cuenta contable
+      operationId: deleteLedgingAccount
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cuenta contable eliminada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /config/ledging-accounts/select:
+    get:
+      tags:
+        - Configuración
+      summary: Lista de selección de cuentas contables
+      description: Obtener cuentas contables para dropdown/select
+      operationId: selectLedgingAccounts
+      responses:
+        '200':
+          description: Lista de cuentas contables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgingAccount'
+      security:
+        - bearerAuth: []
+
+  /cost-center:
+    get:
+      tags:
+        - Configuración
+      summary: Listar centros de costo
+      description: Obtener todos los centros de costo con paginación
+      operationId: listCostCenters
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de centros de costo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /cost-center/store:
+    post:
+      tags:
+        - Configuración
+      summary: Crear centro de costo
+      description: Crear un nuevo centro de costo
+      operationId: storeCostCenter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                code:
+                  type: string
+                businessId:
+                  type: integer
+      responses:
+        '201':
+          description: Centro de costo creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /cost-center/select/{business_id}:
+    get:
+      tags:
+        - Configuración
+      summary: Lista de selección de centros de costo
+      description: Obtener centros de costo para dropdown/select
+      operationId: selectCostCenters
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de centros de costo
+      security:
+        - bearerAuth: []
+
+  /client:
+    get:
+      tags:
+        - Clientes
+      summary: Listar clientes
+      description: Obtener todos los clientes con paginación
+      operationId: listClients
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /client/store:
+    post:
+      tags:
+        - Clientes
+      summary: Crear cliente
+      description: Crear un nuevo cliente
+      operationId: storeClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                address:
+                  type: string
+      responses:
+        '201':
+          description: Cliente creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /client/show/{id}:
+    get:
+      tags:
+        - Clientes
+      summary: Obtener cliente
+      description: Obtener un cliente específico
+      operationId: showClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del cliente
+        '404':
+          description: No encontrado
+      security:
+        - bearerAuth: []
+
+  /buget:
+    get:
+      tags:
+        - Presupuestos
+      summary: Listar presupuestos
+      description: Obtener todos los presupuestos con paginación
+      operationId: listBudgets
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de presupuestos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /buget/store:
+    post:
+      tags:
+        - Presupuestos
+      summary: Crear presupuesto
+      description: Crear un nuevo presupuesto
+      operationId: storeBudget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                businessId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                items:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '201':
+          description: Presupuesto creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /buget/{id}:
+    get:
+      tags:
+        - Presupuestos
+      summary: Obtener presupuesto
+      description: Obtener un presupuesto específico con todos sus detalles
+      operationId: showBudget
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del presupuesto
+        '404':
+          description: No encontrado
+      security:
+        - bearerAuth: []
+
+  /buget/status/{id}:
+    put:
+      tags:
+        - Presupuestos
+      summary: Actualizar estado del presupuesto
+      description: Actualizar el estado de un presupuesto
+      operationId: updateBudgetStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, approved, rejected, completed]
+      responses:
+        '200':
+          description: Estado actualizado
+        '500':
+          description: Error de actualización
+      security:
+        - bearerAuth: []
+
+  /employee/store:
+    post:
+      tags:
+        - Empleados
+      summary: Crear empleado
+      description: Crear un nuevo empleado
+      operationId: storeEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                businessId:
+                  type: integer
+      responses:
+        '201':
+          description: Empleado creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /employee/{token}/{business_id}:
+    get:
+      tags:
+        - Empleados
+      summary: Obtener empleado
+      description: Obtener un empleado específico por token y empresa
+      operationId: showEmployee
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del empleado
+        '404':
+          description: No encontrado
+      security:
+        - bearerAuth: []
+
+  /product:
+    get:
+      tags:
+        - Productos
+      summary: Listar productos
+      description: Obtener todos los productos con paginación
+      operationId: listProducts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /product/store:
+    post:
+      tags:
+        - Productos
+      summary: Crear producto
+      description: Crear un nuevo producto
+      operationId: storeProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                price:
+                  type: number
+      responses:
+        '201':
+          description: Producto creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /provider:
+    get:
+      tags:
+        - Proveedores
+      summary: Listar proveedores
+      description: Obtener todos los proveedores con paginación
+      operationId: listProviders
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de proveedores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /provider/store:
+    post:
+      tags:
+        - Proveedores
+      summary: Crear proveedor
+      description: Crear un nuevo proveedor
+      operationId: storeProvider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: Proveedor creado
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /shopping:
+    get:
+      tags:
+        - Compras
+      summary: Listar órdenes de compra
+      description: Obtener todas las órdenes de compra con paginación
+      operationId: listShoppingOrders
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: Lista de órdenes de compra
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+      security:
+        - bearerAuth: []
+
+  /shopping/store:
+    post:
+      tags:
+        - Compras
+      summary: Crear orden de compra
+      description: Crear una nueva orden de compra
+      operationId: storeShoppingOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerId:
+                  type: integer
+                businessId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Orden de compra creada
+        '500':
+          description: Error de creación
+      security:
+        - bearerAuth: []
+
+  /dashboard/indicators:
+    post:
+      tags:
+        - Dashboard
+      summary: Obtener indicadores
+      description: Obtener indicadores del dashboard
+      operationId: getDashboardIndicators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Indicadores del dashboard
+      security:
+        - bearerAuth: []
+
+  /dashboard/budgets/metrics:
+    post:
+      tags:
+        - Dashboard
+      summary: Métricas de presupuestos
+      description: Obtener métricas de presupuestos
+      operationId: getBudgetsMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Métricas de presupuestos
+      security:
+        - bearerAuth: []
+
+  /dashboard/shoppings/metrics:
+    post:
+      tags:
+        - Dashboard
+      summary: Métricas de compras
+      description: Obtener métricas de órdenes de compra
+      operationId: getShoppingsMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Métricas de compras
+      security:
+        - bearerAuth: []
+
+  /expenses:
+    get:
+      tags:
+        - Gastos
+      summary: Listar gastos
+      description: Obtener todos los gastos con filtrado y paginación opcionales
+      operationId: listExpenses
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: text
+          in: query
+          description: Buscar por descripción
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filtrar por estado
+          schema:
+            type: string
+            enum: [paid, pending, canceled]
+      responses:
+        '200':
+          description: Lista de gastos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Expense'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          description: Error del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /expenses/store:
+    post:
+      tags:
+        - Gastos
+      summary: Crear gasto
+      description: Crear un nuevo gasto con movimiento contable asociado
+      operationId: storeExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                amount:
+                  type: number
+                  minimum: 0
+                currencyId:
+                  type: integer
+                description:
+                  type: string
+                accountId:
+                  type: integer
+                costCenterId:
+                  type: integer
+                clientId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                documentTypeId:
+                  type: integer
+                documentNumber:
+                  type: string
+              required:
+                - businessId
+                - date
+                - amount
+                - currencyId
+            example:
+              businessId: 1
+              date: '2026-01-17'
+              amount: 50000
+              currencyId: 1
+              description: Compra de materiales de oficina
+              accountId: 5
+              costCenterId: 3
+              clientId: 42
+              paymentMethodId: 2
+              documentTypeId: 3
+              documentNumber: F-12345
+      responses:
+        '201':
+          description: Gasto creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expense:
+                    $ref: '#/components/schemas/Expense'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+        '500':
+          description: Error de creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /expenses/show/{id}:
+    get:
+      tags:
+        - Gastos
+      summary: Obtener gasto
+      description: Obtener un gasto específico con sus movimientos contables
+      operationId: showExpense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del gasto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expense:
+                    $ref: '#/components/schemas/Expense'
+                  ledgerMovements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LedgerMovement'
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /expenses/status/{id}:
+    put:
+      tags:
+        - Gastos
+      summary: Actualizar estado del gasto
+      description: Actualizar el estado del gasto y sus movimientos contables asociados
+      operationId: updateExpenseStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [paid, pending, canceled]
+              required:
+                - status
+            example:
+              status: paid
+      responses:
+        '200':
+          description: Estado del gasto actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expense:
+                    $ref: '#/components/schemas/Expense'
+                  message:
+                    type: string
+        '500':
+          description: Error de actualización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /expenses/delete/{id}:
+    delete:
+      tags:
+        - Gastos
+      summary: Eliminar gasto
+      description: Eliminar un gasto y sus movimientos contables
+      operationId: deleteExpense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Gasto eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /buget/payments:
+    post:
+      tags:
+        - Pagos de Presupuesto
+      summary: Crear pago de presupuesto
+      description: Crear un nuevo pago de presupuesto, opcionalmente proyectado. Puede especificarse qué items del presupuesto se están pagando mediante el array 'lines'.
+      operationId: storeBudgetPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetPayment'
+            example:
+              budgetId: 123
+              accountId: 5
+              costCenterId: 9
+              clientId: 42
+              date: '2026-01-17'
+              amount: 150000
+              currencyId: 1
+              paymentMethodId: 2
+              documentTypeId: 3
+              documentNumber: F12345
+              concept: Pago de anticipo
+              status: paid
+              isProjected: false
+              receivedAt: '2026-01-17T10:00:00.000Z'
+              lines:
+                - bugetProductId: 1
+                  bugetItemId: null
+                  amount: 75000
+                - bugetProductId: null
+                  bugetItemId: 2
+                  amount: 75000
+      responses:
+        '201':
+          description: Pago de presupuesto creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  budgetId:
+                    type: integer
+                  amount:
+                    type: number
+                  date:
+                    type: string
+                    format: date
+                  isProjected:
+                    type: boolean
+                  message:
+                    type: string
+        '500':
+          description: Error de creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /buget/payments/{id}:
+    get:
+      tags:
+        - Pagos de Presupuesto
+      summary: Obtener pago de presupuesto
+      description: Obtener un pago de presupuesto con su movimiento contable
+      operationId: showBudgetPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del pago de presupuesto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetPayment'
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+    put:
+      tags:
+        - Pagos de Presupuesto
+      summary: Actualizar pago de presupuesto
+      description: Actualizar un pago de presupuesto existente
+      operationId: updateBudgetPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accountId:
+                  type: integer
+                costCenterId:
+                  type: integer
+                clientId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                amount:
+                  type: number
+                currencyId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                documentTypeId:
+                  type: integer
+                documentNumber:
+                  type: string
+                concept:
+                  type: string
+                status:
+                  type: string
+                  enum: [paid, pending, voided]
+                isProjected:
+                  type: boolean
+                  description: Alternar estado proyectado del pago
+                receivedAt:
+                  type: string
+                  format: date-time
+                  description: Fecha-hora de recepción
+                lines:
+                  type: array
+                  description: Líneas de pago que especifican qué items del presupuesto se están pagando
+                  items:
+                    $ref: '#/components/schemas/BudgetpaymentDetail'
+      responses:
+        '200':
+          description: Pago de presupuesto actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Error de actualización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Pagos de Presupuesto
+      summary: Eliminar pago de presupuesto
+      description: Eliminar un pago de presupuesto
+      operationId: deleteBudgetPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pago de presupuesto eliminado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /buget/payments/{id}/void:
+    post:
+      tags:
+        - Pagos de Presupuesto
+      summary: Anular pago de presupuesto
+      description: Marcar un pago de presupuesto como anulado
+      operationId: voidBudgetPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pago de presupuesto anulado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '500':
+          description: Error al anular
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /buget/payments/{id}/settle:
+    post:
+      tags:
+        - Pagos de Presupuesto
+      summary: Hacer efectivo pago proyectado
+      description: Convertir un pago proyectado a efectivo asignándole un número de documento
+      operationId: settlePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                documentNumber:
+                  type: string
+                  description: Número de documento a asignar
+              required:
+                - documentNumber
+            example:
+              documentNumber: F-001-00012345
+      responses:
+        '200':
+          description: Pago convertido a efectivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  budgetPayment:
+                    type: object
+                    description: Datos del pago de presupuesto
+                  ledgerMovement:
+                    type: object
+                    description: Movimiento contable asociado (ahora marcado como efectivo)
+                  message:
+                    type: string
+        '500':
+          description: Error al hacer efectivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits:
+    get:
+      tags:
+        - Arqueo
+      summary: Listar auditorías de caja
+      description: Obtener listado de auditorías de caja con filtros opcionales
+      operationId: getCashAudits
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditorías obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CashAudit'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          description: Error al obtener auditorías
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/show/{id}:
+    get:
+      tags:
+        - Arqueo
+      summary: Obtener auditoría de caja por ID
+      description: Obtener una auditoría de caja específica con sus líneas
+      operationId: getCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditoría obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CashAudit'
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/store:
+    post:
+      tags:
+        - Arqueo
+      summary: Crear auditoría de caja
+      description: Crear una nueva auditoría de caja con líneas
+      operationId: createCashAudit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                performedAt:
+                  type: string
+                  format: date-time
+                totalCounted:
+                  type: number
+                totalExpected:
+                  type: number
+                notes:
+                  type: string
+                  nullable: true
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      currencyId:
+                        type: integer
+                        nullable: true
+                      denominationValue:
+                        type: number
+                        nullable: true
+                      denominationName:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                        nullable: true
+                      amount:
+                        type: number
+                        nullable: true
+                      subtotal:
+                        type: number
+              required:
+                - totalCounted
+                - totalExpected
+      responses:
+        '201':
+          description: Auditoría creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CashAudit'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al crear auditoría
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/update/{id}:
+    put:
+      tags:
+        - Arqueo
+      summary: Actualizar auditoría de caja
+      description: Actualizar una auditoría de caja existente y sus líneas
+      operationId: updateCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                performedAt:
+                  type: string
+                  format: date-time
+                totalCounted:
+                  type: number
+                totalExpected:
+                  type: number
+                notes:
+                  type: string
+                  nullable: true
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      currencyId:
+                        type: integer
+                        nullable: true
+                      denominationValue:
+                        type: number
+                        nullable: true
+                      denominationName:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                        nullable: true
+                      amount:
+                        type: number
+                        nullable: true
+                      subtotal:
+                        type: number
+              required:
+                - totalCounted
+                - totalExpected
+      responses:
+        '200':
+          description: Auditoría actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CashAudit'
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al actualizar auditoría
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/delete/{id}:
+    delete:
+      tags:
+        - Arqueo
+      summary: Eliminar auditoría de caja
+      description: Eliminar una auditoría de caja y sus líneas
+      operationId: deleteCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditoría eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar auditoría
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /cash-audits/restore/{id}:
+    put:
+      tags:
+        - Arqueo
+      summary: Restaurar auditoría de caja
+      description: Restaurar una auditoría de caja previamente eliminada
+      operationId: restoreCashAudit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Auditoría restaurada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: La tabla no soporta soft-delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Auditoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al restaurar auditoría
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []

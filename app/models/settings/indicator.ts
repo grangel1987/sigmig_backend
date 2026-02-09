@@ -11,7 +11,7 @@ export default class Indicator extends BaseModel {
   @column()
   public value: string | number
 
-  @column.dateTime()
+  @column.dateTime({ serialize: (value: DateTime) => value ? value.toFormat('yyyy-MM-dd') : null })
   public date: DateTime
 
   @column()
@@ -27,9 +27,9 @@ export default class Indicator extends BaseModel {
   public euro: number
 
 
-  @column.dateTime({ autoCreate: true, serializeAs: null })
-  public createdAt: DateTime
-
-  @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
-  public updatedAt: DateTime
+  /*   @column.dateTime({ autoCreate: true, serializeAs: null })
+    public createdAt: DateTime
+  
+    @column.dateTime({ autoCreate: true, autoUpdate: true, serializeAs: null })
+    public updatedAt: DateTime */
 }

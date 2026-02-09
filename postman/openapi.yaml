@@ -1,0 +1,2840 @@
+openapi: 3.0.0
+info:
+  title: SIGMI Backend API
+  description: Complete OpenAPI specification for SIGMI Backend API based on Postman collection
+  version: 1.0.0
+  contact:
+    name: SIGMI Support
+  license:
+    name: Proprietary
+
+servers:
+  - url: '{{baseUrl}}/{{apiPrefix}}'
+    description: Production server
+    variables:
+      baseUrl:
+        default: 'http://localhost:3000'
+        description: API base URL
+      apiPrefix:
+        default: 'api/v2'
+        description: API version prefix
+  - url: 'http://localhost:3000/api/v2'
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authentication using auth_token from login response
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        code:
+          type: integer
+          description: Error code
+        errors:
+          type: object
+          description: Detailed error information
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          default: 1
+        perPage:
+          type: integer
+          description: Items per page
+          default: 15
+        total:
+          type: integer
+          description: Total number of items
+        lastPage:
+          type: integer
+          description: Last page number
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: 'g.rangel1987@gmail.com'
+        password:
+          type: string
+          format: password
+          example: '12345678'
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: object
+          properties:
+            token:
+              type: string
+              description: JWT access token
+            type:
+              type: string
+              example: 'Bearer'
+            expiresIn:
+              type: integer
+              description: Token expiration time in seconds
+        refreshToken:
+          type: string
+          description: Refresh token for token renewal
+        userData:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+            id:
+              type: integer
+              description: User ID
+            name:
+              type: string
+              description: User name
+
+    Business:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        countryId:
+          type: integer
+        typeIdentifyId:
+          type: integer
+        identify:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        daysExpireBuget:
+          type: integer
+        delegateName:
+          type: string
+        delegateTypeIdentifyId:
+          type: integer
+        delegateIdentify:
+          type: string
+        delegatePhone:
+          type: string
+        delegateEmail:
+          type: string
+          format: email
+        photo:
+          type: string
+          nullable: true
+        emailConfirmInactiveEmployee:
+          type: integer
+        authorizationMinor:
+          type: integer
+        coins:
+          type: array
+          items:
+            type: integer
+
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        identifyTypeId:
+          type: integer
+        identify:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        address:
+          type: string
+        typeId:
+          type: integer
+        cityId:
+          type: integer
+        countryId:
+          type: integer
+        giro:
+          type: string
+        systemPaymentProvider:
+          type: string
+        clientDocumentInvoiceId:
+          type: integer
+        clientDocumentInvoiceValue:
+          type: string
+        responsibles:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              identifyTypeId:
+                type: integer
+              identify:
+                type: string
+              email:
+                type: string
+              phone:
+                type: string
+              clientContactTypeId:
+                type: integer
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        name:
+          type: string
+        typeId:
+          type: integer
+        count:
+          type: integer
+        amount:
+          type: number
+          format: double
+        period:
+          type: integer
+        photo:
+          type: string
+          nullable: true
+
+    Provider:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        cityId:
+          type: integer
+        address:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        personalDataId:
+          type: integer
+
+    Shopping:
+      type: object
+      properties:
+        id:
+          type: integer
+        provider:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              price:
+                type: number
+              tax:
+                type: number
+              count:
+                type: integer
+        businessId:
+          type: integer
+        currencySymbol:
+          type: string
+        info:
+          type: object
+
+    Country:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        enabled:
+          type: boolean
+
+    City:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        countryId:
+          type: integer
+        enabled:
+          type: boolean
+
+security:
+  - BearerToken: []
+
+paths:
+  /account/login:
+    post:
+      summary: User login
+      description: Authenticate user with email and password
+      tags:
+        - Account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: 'g.rangel1987@gmail.com'
+              password: '12345678'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /account/client/login:
+    post:
+      summary: Client login
+      description: Authenticate client with email and password
+      tags:
+        - Account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: 'client@example.com'
+              password: 'secret'
+      responses:
+        '200':
+          description: Client login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+
+  /account/user-admin:
+    get:
+      summary: Get current admin user
+      description: Retrieve the current authenticated admin user information
+      tags:
+        - Account
+      responses:
+        '200':
+          description: User admin information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  email:
+                    type: string
+                  name:
+                    type: string
+
+  /account/forgot-password:
+    post:
+      summary: Request password reset
+      description: Send password reset code to email
+      tags:
+        - Account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+              example:
+                email: 'piedra.igor@gmail.com'
+      responses:
+        '200':
+          description: Reset code sent to email
+
+  /account/change-password-forgot:
+    post:
+      summary: Change password with reset code
+      description: Reset password using email, code, and new password
+      tags:
+        - Account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+                newPassword:
+                  type: string
+              example:
+                email: 'piedra.igor@gmail.com'
+                code: '203698'
+                newPassword: '987654321'
+      responses:
+        '200':
+          description: Password changed successfully
+
+  /account/reset-password:
+    post:
+      summary: Reset current password
+      description: Change password for authenticated user
+      tags:
+        - Account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                password:
+                  type: string
+                  format: password
+              example:
+                currentPassword: 'secret'
+                password: 'newSecret'
+      responses:
+        '200':
+          description: Password reset successfully
+
+  /account/find-user-by-token:
+    get:
+      summary: Get user by token
+      description: Retrieve user information from current bearer token
+      tags:
+        - Account
+      responses:
+        '200':
+          description: User information
+
+  /account/find/super/{id}:
+    get:
+      summary: Find super user by ID
+      description: Retrieve super user information by ID
+      tags:
+        - Account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Super user information
+
+  /setting/country/{id}:
+    get:
+      summary: Get country setting
+      description: Retrieve country configuration by ID
+      tags:
+        - Settings
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Country setting
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Country'
+
+  /user/store:
+    post:
+      summary: Create new user
+      description: Store a new user with personal data and business assignments
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                isAdmin:
+                  type: boolean
+                isAuthorizer:
+                  type: boolean
+                business:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      businessId:
+                        type: integer
+                      rolId:
+                        type: integer
+                      permissions:
+                        type: array
+                employeeId:
+                  type: integer
+                  nullable: true
+                personalData:
+                  type: object
+      responses:
+        '201':
+          description: User created successfully
+
+  /user:
+    get:
+      summary: List all users
+      description: Get paginated list of all users
+      tags:
+        - Users
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+
+  /user/update/{id}:
+    put:
+      summary: Update user
+      description: Update user information by ID
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: User updated successfully
+
+  /user/update/signature/{id}:
+    put:
+      summary: Update user signature
+      description: Upload or update user signature file
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                signature:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Signature updated successfully
+
+  /user/update/photo/{id}:
+    put:
+      summary: Update user photo
+      description: Upload or update user profile photo
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Photo updated successfully
+
+  /user/delete/signature/{id}:
+    delete:
+      summary: Delete user signature
+      description: Remove user signature file
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Signature deleted successfully
+
+  /user/delete/photo/{id}:
+    delete:
+      summary: Delete user photo
+      description: Remove user profile photo
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Photo deleted successfully
+
+  /account/store-admin:
+    post:
+      summary: Create admin user
+      description: Create a new admin user with personal data and file uploads
+      tags:
+        - Account
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                isAdmin:
+                  type: boolean
+                businessId:
+                  type: integer
+                signature:
+                  type: string
+                  format: binary
+                personalData:
+                  type: object
+      responses:
+        '201':
+          description: Admin user created successfully
+
+  /account/update-admin/{id}:
+    put:
+      summary: Update admin user
+      description: Update admin user information and files
+      tags:
+        - Account
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                isAdmin:
+                  type: boolean
+                isAuthorizer:
+                  type: boolean
+                personalData:
+                  type: object
+      responses:
+        '200':
+          description: Admin user updated successfully
+
+  /business/store:
+    post:
+      summary: Create business
+      description: Create a new business entity
+      tags:
+        - Business
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - countryId
+              properties:
+                countryId:
+                  type: integer
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Business created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+
+  /business:
+    get:
+      summary: List businesses
+      description: Get all businesses for authenticated user
+      tags:
+        - Business
+      responses:
+        '200':
+          description: List of businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Business'
+
+  /business/find/select:
+    get:
+      summary: Get businesses for select
+      description: Get businesses formatted for dropdown/select
+      tags:
+        - Business
+      responses:
+        '200':
+          description: Businesses for selection
+
+  /business/find/id/{id}:
+    get:
+      summary: Get business by ID
+      description: Retrieve business details by ID
+      tags:
+        - Business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Business details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+
+  /business/change/{id}:
+    put:
+      summary: Change active business
+      description: Set active business for current session
+      tags:
+        - Business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Active business changed successfully
+
+  /business/update/{id}:
+    put:
+      summary: Update business
+      description: Update business information
+      tags:
+        - Business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Business'
+      responses:
+        '200':
+          description: Business updated successfully
+
+  /business/delete/photo/{id}:
+    delete:
+      summary: Delete business photo
+      description: Remove business logo or photo
+      tags:
+        - Business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Photo deleted successfully
+
+  /business/web/find/id/{id}:
+    get:
+      summary: Get business for web
+      description: Get public business information for web display
+      tags:
+        - Business
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Business information for web
+
+  /city:
+    get:
+      summary: List cities
+      description: Get all cities
+      tags:
+        - Cities
+      responses:
+        '200':
+          description: List of cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+
+  /city/store:
+    post:
+      summary: Create city
+      description: Create a new city
+      tags:
+        - Cities
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - countryId
+                - name
+              properties:
+                countryId:
+                  type: integer
+                name:
+                  type: string
+      responses:
+        '201':
+          description: City created successfully
+
+  /city/country:
+    post:
+      summary: Get cities by country
+      description: Get all cities for a specific country
+      tags:
+        - Cities
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - countryId
+              properties:
+                countryId:
+                  type: integer
+      responses:
+        '200':
+          description: Cities for country
+
+  /city/update/{id}:
+    put:
+      summary: Update city
+      description: Update city information
+      tags:
+        - Cities
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: City updated successfully
+
+  /city/select/{country_id}:
+    get:
+      summary: Get cities for select
+      description: Get cities for a country formatted for dropdown
+      tags:
+        - Cities
+      parameters:
+        - name: country_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cities for selection
+
+  /city/change-status/{id}:
+    put:
+      summary: Toggle city status
+      description: Enable or disable a city
+      tags:
+        - Cities
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: City status changed
+
+  /city/web/select/{country_id}:
+    get:
+      summary: Get cities for web
+      description: Get enabled cities for web display
+      tags:
+        - Cities
+      parameters:
+        - name: country_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cities for web
+
+  /country:
+    get:
+      summary: List countries
+      description: Get all countries
+      tags:
+        - Countries
+      responses:
+        '200':
+          description: List of countries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+
+  /country/find-by-params:
+    get:
+      summary: Find countries by parameters
+      description: Search countries with filters
+      tags:
+        - Countries
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching countries
+
+  /country/select:
+    get:
+      summary: Get countries for select
+      description: Get countries formatted for dropdown
+      tags:
+        - Countries
+      responses:
+        '200':
+          description: Countries for selection
+
+  /country/update/{id}:
+    put:
+      summary: Update country
+      description: Update country information
+      tags:
+        - Countries
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Country updated successfully
+
+  /country/web:
+    get:
+      summary: Get countries for web
+      description: Get enabled countries for web display
+      tags:
+        - Countries
+      responses:
+        '200':
+          description: Countries for web
+
+  /work:
+    get:
+      summary: List works
+      description: Get all work records
+      tags:
+        - Works
+      responses:
+        '200':
+          description: List of works
+
+  /work/store:
+    post:
+      summary: Create work
+      description: Create a new work record
+      tags:
+        - Works
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - businessId
+                - name
+              properties:
+                businessId:
+                  type: integer
+                name:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '201':
+          description: Work created successfully
+
+  /work/update/{id}:
+    put:
+      summary: Update work
+      description: Update work record
+      tags:
+        - Works
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Work updated successfully
+
+  /work/change-status/{id}:
+    put:
+      summary: Toggle work status
+      description: Enable or disable a work
+      tags:
+        - Works
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Work status changed
+
+  /work/find-all/{business_id}:
+    get:
+      summary: Get works for business
+      description: Get all works for a specific business
+      tags:
+        - Works
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Works for business
+
+  /work/select:
+    get:
+      summary: Get works for select
+      description: Get works formatted for dropdown
+      tags:
+        - Works
+      responses:
+        '200':
+          description: Works for selection
+
+  /cost-center:
+    get:
+      summary: List cost centers
+      description: Get all cost centers
+      tags:
+        - Cost Centers
+      responses:
+        '200':
+          description: List of cost centers
+
+  /cost-center/store:
+    post:
+      summary: Create cost center
+      description: Create a new cost center
+      tags:
+        - Cost Centers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - businessId
+                - name
+              properties:
+                businessId:
+                  type: integer
+                name:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '201':
+          description: Cost center created successfully
+
+  /cost-center/update/{id}:
+    put:
+      summary: Update cost center
+      description: Update cost center information
+      tags:
+        - Cost Centers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Cost center updated successfully
+
+  /cost-center/change-status/{id}:
+    put:
+      summary: Toggle cost center status
+      description: Enable or disable a cost center
+      tags:
+        - Cost Centers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cost center status changed
+
+  /cost-center/select/{business_id}:
+    get:
+      summary: Get cost centers for business
+      description: Get cost centers for selection in a business
+      tags:
+        - Cost Centers
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cost centers for selection
+
+  /cost-center/show/{id}:
+    get:
+      summary: Get cost center details
+      description: Retrieve cost center details by ID
+      tags:
+        - Cost Centers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cost center details
+
+  /cost-center/find-all/{business_id}:
+    get:
+      summary: Get all cost centers for business
+      description: Get all cost centers for a specific business
+      tags:
+        - Cost Centers
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: All cost centers for business
+
+  /position:
+    get:
+      summary: List positions
+      description: Get all positions
+      tags:
+        - Positions
+      responses:
+        '200':
+          description: List of positions
+
+  /position/store:
+    post:
+      summary: Create position
+      description: Create a new position
+      tags:
+        - Positions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - businessId
+                - name
+              properties:
+                businessId:
+                  type: integer
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Position created successfully
+
+  /position/update/{id}:
+    put:
+      summary: Update position
+      description: Update position information
+      tags:
+        - Positions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Position updated successfully
+
+  /position/change-status/{id}:
+    put:
+      summary: Toggle position status
+      description: Enable or disable a position
+      tags:
+        - Positions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Position status changed
+
+  /position/select:
+    get:
+      summary: Get positions for select
+      description: Get positions formatted for dropdown
+      tags:
+        - Positions
+      responses:
+        '200':
+          description: Positions for selection
+
+  /product:
+    get:
+      summary: List products
+      description: Get all products
+      tags:
+        - Products
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+
+  /product/store:
+    post:
+      summary: Create product
+      description: Create a new product with optional photo
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - businessId
+                - name
+                - typeId
+              properties:
+                businessId:
+                  type: integer
+                name:
+                  type: string
+                typeId:
+                  type: integer
+                count:
+                  type: integer
+                amount:
+                  type: number
+                period:
+                  type: integer
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Product created successfully
+
+  /product/update/{id}:
+    put:
+      summary: Update product
+      description: Update product information
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Product updated successfully
+
+  /product/change-status/{id}:
+    put:
+      summary: Toggle product status
+      description: Enable or disable a product
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product status changed
+
+  /product/show/{id}:
+    get:
+      summary: Get product details
+      description: Retrieve product details by ID
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /product/delete/photo/{id}:
+    delete:
+      summary: Delete product photo
+      description: Remove product photo
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Photo deleted successfully
+
+  /product/findAutoComplete:
+    post:
+      summary: Auto-complete product search
+      description: Search products by partial name
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                val:
+                  type: string
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Matching products
+
+  /provider:
+    get:
+      summary: List providers
+      description: Get all providers
+      tags:
+        - Providers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+      responses:
+        '200':
+          description: List of providers
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Provider'
+
+  /provider/store:
+    post:
+      summary: Create provider
+      description: Create a new provider with personal data
+      tags:
+        - Providers
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                cityId:
+                  type: integer
+                address:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                personalDataId:
+                  type: integer
+      responses:
+        '201':
+          description: Provider created successfully
+
+  /provider/update/{id}:
+    put:
+      summary: Update provider
+      description: Update provider information
+      tags:
+        - Providers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Provider updated successfully
+
+  /provider/change-status/{id}:
+    put:
+      summary: Toggle provider status
+      description: Enable or disable a provider
+      tags:
+        - Providers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Provider status changed
+
+  /provider/select:
+    post:
+      summary: Get providers for select
+      description: Get providers formatted for dropdown
+      tags:
+        - Providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Providers for selection
+
+  /provider/show/{id}:
+    get:
+      summary: Get provider details
+      description: Retrieve provider details by ID
+      tags:
+        - Providers
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Provider details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+
+  /provider/find/products/{provider_id}:
+    get:
+      summary: Get provider products
+      description: Get all products for a provider
+      tags:
+        - Providers
+      parameters:
+        - name: provider_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Provider products
+
+  /provider/product/store:
+    post:
+      summary: Create provider product
+      description: Add a new product to provider catalog
+      tags:
+        - Providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - providerId
+                - name
+              properties:
+                providerId:
+                  type: integer
+                name:
+                  type: string
+                code:
+                  type: string
+                price:
+                  type: number
+      responses:
+        '201':
+          description: Product added to provider
+
+  /provider/product/update/{product_id}:
+    put:
+      summary: Update provider product
+      description: Update provider product information
+      tags:
+        - Providers
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Product updated successfully
+
+  /provider/product/change-status/{product_id}:
+    put:
+      summary: Toggle provider product status
+      description: Enable or disable a provider product
+      tags:
+        - Providers
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product status changed
+
+  /provider/find/autocomplete:
+    post:
+      summary: Auto-complete provider search
+      description: Search providers by partial name
+      tags:
+        - Providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                val:
+                  type: string
+      responses:
+        '200':
+          description: Matching providers
+
+  /provider/product/find/autocomplete:
+    post:
+      summary: Auto-complete provider product search
+      description: Search provider products by partial name
+      tags:
+        - Providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                providerId:
+                  type: integer
+                val:
+                  type: string
+      responses:
+        '200':
+          description: Matching products
+
+  /provider/product/show/{product_id}:
+    get:
+      summary: Get provider product details
+      description: Retrieve provider product details
+      tags:
+        - Providers
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product details
+
+  /client/list:
+    get:
+      summary: List clients
+      description: Get paginated list of clients
+      tags:
+        - Clients
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: text
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Client'
+
+  /client/store:
+    post:
+      summary: Create client
+      description: Create a new client with contact information
+      tags:
+        - Clients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identify
+                - name
+              properties:
+                identifyTypeId:
+                  type: integer
+                identify:
+                  type: string
+                name:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                address:
+                  type: string
+                typeId:
+                  type: integer
+                cityId:
+                  type: integer
+                countryId:
+                  type: integer
+                giro:
+                  type: string
+                responsibles:
+                  type: array
+                  items:
+                    type: object
+                systemPaymentProvider:
+                  type: string
+      responses:
+        '201':
+          description: Client created successfully
+
+  /client/update/{id}:
+    put:
+      summary: Update client
+      description: Update client information
+      tags:
+        - Clients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Client updated successfully
+
+  /client/change-status/{id}:
+    put:
+      summary: Toggle client status
+      description: Enable or disable a client
+      tags:
+        - Clients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Client status changed
+
+  /client/show/{id}:
+    get:
+      summary: Get client details
+      description: Retrieve client details by ID
+      tags:
+        - Clients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Client details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+
+  /client/delete/photo/{id}:
+    delete:
+      summary: Delete client photo
+      description: Remove client photo
+      tags:
+        - Clients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Photo deleted successfully
+
+  /client/findAutoComplete:
+    post:
+      summary: Auto-complete client search
+      description: Search clients by partial name
+      tags:
+        - Clients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                val:
+                  type: string
+      responses:
+        '200':
+          description: Matching clients
+
+  /client/find/params:
+    post:
+      summary: Find client by parameters
+      description: Search clients by specific parameters
+      tags:
+        - Clients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Matching clients
+
+  /client/search:
+    post:
+      summary: Search clients
+      description: General client search
+      tags:
+        - Clients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: string
+      responses:
+        '200':
+          description: Search results
+
+  /shopping/store:
+    post:
+      summary: Create shopping order
+      description: Create a new shopping/procurement order
+      tags:
+        - Shopping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - provider
+                - businessId
+              properties:
+                provider:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                products:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      price:
+                        type: number
+                      count:
+                        type: integer
+                businessId:
+                  type: integer
+                currencySymbol:
+                  type: string
+                costCenter:
+                  type: integer
+                work:
+                  type: integer
+      responses:
+        '201':
+          description: Shopping order created successfully
+
+  /shopping/show/{id}:
+    get:
+      summary: Get shopping order
+      description: Retrieve shopping order details by ID
+      tags:
+        - Shopping
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Shopping order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shopping'
+
+  /shopping/update/{shop_id}:
+    put:
+      summary: Update shopping order
+      description: Update shopping order information
+      tags:
+        - Shopping
+      parameters:
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Shopping order updated successfully
+
+  /shopping/delete/{shop_id}:
+    put:
+      summary: Delete shopping order
+      description: Mark shopping order as deleted
+      tags:
+        - Shopping
+      parameters:
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Shopping order deleted
+
+  /shopping/find/number:
+    post:
+      summary: Find shopping by number
+      description: Search shopping order by number
+      tags:
+        - Shopping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                number:
+                  type: string
+      responses:
+        '200':
+          description: Shopping order found
+
+  /shopping/find/name:
+    post:
+      summary: Find shopping by name
+      description: Search shopping orders by provider name
+      tags:
+        - Shopping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Shopping orders found
+
+  /shopping/find/date:
+    post:
+      summary: Find shopping by date
+      description: Search shopping orders by date
+      tags:
+        - Shopping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Shopping orders found
+
+  /shopping/authorizer:
+    post:
+      summary: Get shopping authorizer
+      description: Get authorizer information for shopping order
+      tags:
+        - Shopping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+      responses:
+        '200':
+          description: Authorizer information
+
+  /shopping/share/{id}:
+    get:
+      summary: Share shopping order
+      description: Generate shareable link for shopping order
+      tags:
+        - Shopping
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Shareable link generated
+
+  /shopping/details/{token}:
+    get:
+      summary: Get shared shopping details
+      description: Get shopping order details using share token
+      tags:
+        - Shopping
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shopping order details
+
+  /shopping/report:
+    post:
+      summary: Generate shopping report
+      description: Generate report of shopping orders within date range
+      tags:
+        - Shopping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                businessId:
+                  type: integer
+                page:
+                  type: integer
+                perPage:
+                  type: integer
+      responses:
+        '200':
+          description: Shopping report
+
+  /bank:
+    get:
+      summary: List banks
+      description: Get all banks
+      tags:
+        - Banks
+      responses:
+        '200':
+          description: List of banks
+
+  /bank/store:
+    post:
+      summary: Create bank
+      description: Create a new bank
+      tags:
+        - Banks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Bank created successfully
+
+  /bank/update/{id}:
+    put:
+      summary: Update bank
+      description: Update bank information
+      tags:
+        - Banks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Bank updated successfully
+
+  /bank/change-status/{id}:
+    put:
+      summary: Toggle bank status
+      description: Enable or disable a bank
+      tags:
+        - Banks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Bank status changed
+
+  /bank/find/all:
+    get:
+      summary: Get all banks
+      description: Get all available banks
+      tags:
+        - Banks
+      responses:
+        '200':
+          description: All banks
+
+  /coin:
+    get:
+      summary: List coins/currencies
+      description: Get all currencies
+      tags:
+        - Currencies
+      responses:
+        '200':
+          description: List of currencies
+
+  /coin/store:
+    post:
+      summary: Create currency
+      description: Create a new currency
+      tags:
+        - Currencies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Currency created successfully
+
+  /coin/update/{id}:
+    put:
+      summary: Update currency
+      description: Update currency information
+      tags:
+        - Currencies
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Currency updated successfully
+
+  /coin/change-status/{id}:
+    put:
+      summary: Toggle currency status
+      description: Enable or disable a currency
+      tags:
+        - Currencies
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Currency status changed
+
+  /coin/select:
+    get:
+      summary: Get currencies for select
+      description: Get currencies formatted for dropdown
+      tags:
+        - Currencies
+      responses:
+        '200':
+          description: Currencies for selection
+
+  /buget/store:
+    post:
+      summary: Create budget
+      description: Create a new budget/quotation
+      tags:
+        - Budgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client:
+                  type: object
+                products:
+                  type: array
+                items:
+                  type: array
+                businessId:
+                  type: integer
+                currencySymbol:
+                  type: string
+                utility:
+                  type: number
+                discount:
+                  type: number
+      responses:
+        '201':
+          description: Budget created successfully
+
+  /buget/{id}:
+    get:
+      summary: Get budget
+      description: Retrieve budget details by ID
+      tags:
+        - Budgets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Budget details
+
+  /buget:
+    get:
+      summary: List budgets
+      description: Get paginated list of budgets
+      tags:
+        - Budgets
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of budgets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Pagination'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+
+  /buget/view/{token}:
+    get:
+      summary: View budget by token
+      description: View public budget using share token
+      tags:
+        - Budgets
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Budget details
+
+  /buget/find/number:
+    post:
+      summary: Find budget by number
+      description: Search budget by number
+      tags:
+        - Budgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                number:
+                  type: string
+      responses:
+        '200':
+          description: Budget found
+
+  /buget/find/name:
+    post:
+      summary: Find budget by name
+      description: Search budgets by client name
+      tags:
+        - Budgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Budgets found
+
+  /buget/find/date:
+    post:
+      summary: Find budget by date
+      description: Search budgets by date
+      tags:
+        - Budgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  format: date
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Budgets found
+
+  /buget/send-email/{id}:
+    post:
+      summary: Send budget email
+      description: Send budget to client via email
+      tags:
+        - Budgets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                business_id:
+                  type: integer
+      responses:
+        '200':
+          description: Email sent successfully
+
+  /buget/update/{id}:
+    put:
+      summary: Update budget
+      description: Update budget information
+      tags:
+        - Budgets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Budget updated successfully
+
+  /client-request/store:
+    post:
+      summary: Create client request
+      description: Create a new client request
+      tags:
+        - Client Requests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                isBooking:
+                  type: boolean
+      responses:
+        '201':
+          description: Client request created successfully
+
+  /client-request/find-by-token:
+    post:
+      summary: Find request by token
+      description: Find client request by token
+      tags:
+        - Client Requests
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Client request found
+
+  /client-request/find-by-client:
+    post:
+      summary: Find requests by client
+      description: Get all requests for a client
+      tags:
+        - Client Requests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+      responses:
+        '200':
+          description: Client requests found
+
+  /client-web/find-profile:
+    post:
+      summary: Get client profile for web
+      description: Get client profile information for web display
+      tags:
+        - Clients
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+      responses:
+        '200':
+          description: Client profile
+
+  /client-web/delete-file:
+    post:
+      summary: Delete client file
+      description: Delete a file from client profile
+      tags:
+        - Clients
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+      responses:
+        '200':
+          description: File deleted successfully
+
+tags:
+  - name: Account
+    description: User authentication and account management
+  - name: Users
+    description: User management and administration
+  - name: Business
+    description: Business entity management
+  - name: Settings
+    description: System settings and configuration
+  - name: Cities
+    description: City/location management
+  - name: Countries
+    description: Country management
+  - name: Works
+    description: Work site management
+  - name: Cost Centers
+    description: Cost center management
+  - name: Positions
+    description: Job position management
+  - name: Products
+    description: Product catalog management
+  - name: Providers
+    description: Supplier/provider management
+  - name: Clients
+    description: Client/customer management
+  - name: Shopping
+    description: Procurement and shopping orders
+  - name: Banks
+    description: Bank account management
+  - name: Currencies
+    description: Currency/coin management
+  - name: Budgets
+    description: Budget and quotation management
+  - name: Client Requests
+    description: Client request management
