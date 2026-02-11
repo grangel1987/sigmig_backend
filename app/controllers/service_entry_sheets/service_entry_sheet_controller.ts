@@ -1,4 +1,5 @@
 import BudgetPayment from '#models/budget_payment'
+import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import Provider from '#models/provider/provider'
 import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
@@ -17,6 +18,18 @@ export default class ServiceEntrySheetController {
     const { request, response, i18n } = ctx
     const { clientId, providerId, concept, page, perPage, startDate, endDate } = request.qs()
 
+    const businessId = Number(request.header('Business'))
+    if (!Number.isFinite(businessId) || businessId <= 0) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Empresa invalida'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
     const fromDate = typeof startDate === 'string' ? parseDate(startDate) : null
     const toDate = typeof endDate === 'string' ? parseDate(endDate) : null
 
@@ -34,6 +47,7 @@ export default class ServiceEntrySheetController {
     const query = ServiceEntrySheet.query()
       .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
       .preload('provider', (q) => q.select(['id', 'name']))
+      .where('business_id', businessId)
 
     if (clientId) {
       query.where('client_id', Number(clientId))
@@ -73,6 +87,18 @@ export default class ServiceEntrySheetController {
     await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'create')
 
     const { request, response, i18n } = ctx
+
+    const businessId = Number(request.header('Business'))
+    if (!Number.isFinite(businessId) || businessId <= 0) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Empresa invalida'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
 
     const payload = await request.validateUsing(serviceEntrySheetStoreValidator)
 
@@ -123,6 +149,18 @@ export default class ServiceEntrySheetController {
         }
       }
 
+      const business = await Business.find(businessId)
+      if (!business) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Empresa no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
       if (payload.issuerClientId) {
         const issuerClient = await Client.find(payload.issuerClientId)
         if (!issuerClient) {
@@ -170,6 +208,7 @@ export default class ServiceEntrySheetController {
           budgetPaymentId: payload.budgetPaymentId ?? null,
           clientId: payload.clientId ?? null,
           providerId: payload.providerId ?? null,
+          businessId,
           direction: payload.direction ?? null,
           issuerName: payload.issuerName ?? null,
           recipientName: payload.recipientName ?? null,

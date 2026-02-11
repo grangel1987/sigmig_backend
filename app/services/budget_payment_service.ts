@@ -160,6 +160,7 @@ export default class BudgetPaymentService {
           {
             budgetPaymentId: budgetPayment.id,
             clientId: params.clientId,
+            businessId: params.businessId ?? null,
             documentTitle: params.concept ?? null,
             noteToInvoice: null,
             companyName: client?.name ?? null,

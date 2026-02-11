@@ -1,4 +1,5 @@
 import BudgetPayment from '#models/budget_payment'
+import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import Provider from '#models/provider/provider'
 import ServiceEntryLine from '#models/service_entry_sheets/service_entry_line'
@@ -20,6 +21,9 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @column({ columnName: 'provider_id' })
   public providerId: number | null
+
+  @column({ columnName: 'business_id' })
+  public businessId: number | null
 
   @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
   public budgetPayment: BelongsTo<typeof BudgetPayment>
@@ -50,6 +54,9 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @belongsTo(() => Provider, { foreignKey: 'providerId' })
   public provider: BelongsTo<typeof Provider>
+
+  @belongsTo(() => Business, { foreignKey: 'businessId' })
+  public business: BelongsTo<typeof Business>
 
   @column({ columnName: 'document_title' })
   public documentTitle: string | null
