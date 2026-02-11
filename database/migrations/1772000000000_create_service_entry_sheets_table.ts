@@ -11,7 +11,7 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
         table.increments('id')
         table
           .bigInteger('client_id')
-          .notNullable()
+          .nullable()
           .references('id')
           .inTable('clients')
           .onDelete('RESTRICT')

@@ -1,3 +1,4 @@
+import BudgetPayment from '#models/budget_payment'
 import Client from '#models/clients/client'
 import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
 import PermissionService from '#services/permission_service'
@@ -35,21 +36,71 @@ export default class ServiceEntrySheetController {
     const trx = await db.transaction()
 
     try {
-      const client = await Client.find(payload.clientId)
-      if (!client) {
-        return response
-          .status(404)
-          .json(
-            MessageFrontEnd(
-              i18n.formatMessage('messages.no_exist', {}, 'Cliente no existe'),
-              i18n.formatMessage('messages.error_title')
+      if (payload.clientId) {
+        const client = await Client.find(payload.clientId)
+        if (!client) {
+          return response
+            .status(404)
+            .json(
+              MessageFrontEnd(
+                i18n.formatMessage('messages.no_exist', {}, 'Cliente no existe'),
+                i18n.formatMessage('messages.error_title')
+              )
             )
-          )
+        }
+      }
+
+      if (payload.budgetPaymentId) {
+        const budgetPayment = await BudgetPayment.find(payload.budgetPaymentId)
+        if (!budgetPayment) {
+          return response
+            .status(404)
+            .json(
+              MessageFrontEnd(
+                i18n.formatMessage('messages.no_exist', {}, 'Pago de presupuesto no existe'),
+                i18n.formatMessage('messages.error_title')
+              )
+            )
+        }
+      }
+
+      if (payload.issuerClientId) {
+        const issuerClient = await Client.find(payload.issuerClientId)
+        if (!issuerClient) {
+          return response
+            .status(404)
+            .json(
+              MessageFrontEnd(
+                i18n.formatMessage('messages.no_exist', {}, 'Emisor no existe'),
+                i18n.formatMessage('messages.error_title')
+              )
+            )
+        }
+      }
+
+      if (payload.recipientClientId) {
+        const recipientClient = await Client.find(payload.recipientClientId)
+        if (!recipientClient) {
+          return response
+            .status(404)
+            .json(
+              MessageFrontEnd(
+                i18n.formatMessage('messages.no_exist', {}, 'Receptor no existe'),
+                i18n.formatMessage('messages.error_title')
+              )
+            )
+        }
       }
 
       const sheet = await ServiceEntrySheet.create(
         {
-          clientId: payload.clientId,
+          budgetPaymentId: payload.budgetPaymentId ?? null,
+          clientId: payload.clientId ?? null,
+          direction: payload.direction ?? null,
+          issuerName: payload.issuerName ?? null,
+          recipientName: payload.recipientName ?? null,
+          issuerClientId: payload.issuerClientId ?? null,
+          recipientClientId: payload.recipientClientId ?? null,
           documentTitle: payload.documentTitle ?? null,
           noteToInvoice: payload.noteToInvoice ?? null,
           companyName: payload.companyName ?? null,
@@ -165,7 +216,13 @@ const serviceEntryLineSchema = vine.object({
 
 const serviceEntrySheetStoreValidator = vine.compile(
   vine.object({
-    clientId: vine.number().positive(),
+    budgetPaymentId: vine.number().positive().optional(),
+    clientId: vine.number().positive().optional(),
+    direction: vine.enum(['issued', 'received']).optional(),
+    issuerName: vine.string().trim().optional(),
+    recipientName: vine.string().trim().optional(),
+    issuerClientId: vine.number().positive().optional(),
+    recipientClientId: vine.number().positive().optional(),
     documentTitle: vine.string().trim().optional(),
     noteToInvoice: vine.string().trim().optional(),
     companyName: vine.string().trim().optional(),

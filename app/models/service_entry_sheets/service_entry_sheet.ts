@@ -1,3 +1,4 @@
+import BudgetPayment from '#models/budget_payment'
 import Client from '#models/clients/client'
 import ServiceEntryLine from '#models/service_entry_sheets/service_entry_line'
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
@@ -10,8 +11,35 @@ export default class ServiceEntrySheet extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
+  @column({ columnName: 'budget_payment_id' })
+  public budgetPaymentId: number | null
+
   @column({ columnName: 'client_id' })
-  public clientId: number
+  public clientId: number | null
+
+  @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
+  public budgetPayment: BelongsTo<typeof BudgetPayment>
+
+  @column()
+  public direction: 'issued' | 'received' | null
+
+  @column({ columnName: 'issuer_name' })
+  public issuerName: string | null
+
+  @column({ columnName: 'recipient_name' })
+  public recipientName: string | null
+
+  @column({ columnName: 'issuer_client_id' })
+  public issuerClientId: number | null
+
+  @column({ columnName: 'recipient_client_id' })
+  public recipientClientId: number | null
+
+  @belongsTo(() => Client, { foreignKey: 'issuerClientId' })
+  public issuerClient: BelongsTo<typeof Client>
+
+  @belongsTo(() => Client, { foreignKey: 'recipientClientId' })
+  public recipientClient: BelongsTo<typeof Client>
 
   @belongsTo(() => Client, { foreignKey: 'clientId' })
   public client: BelongsTo<typeof Client>
