@@ -1,5 +1,6 @@
 import BudgetPayment from '#models/budget_payment'
 import Client from '#models/clients/client'
+import Provider from '#models/provider/provider'
 import ServiceEntryLine from '#models/service_entry_sheets/service_entry_line'
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
@@ -16,6 +17,9 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @column({ columnName: 'client_id' })
   public clientId: number | null
+
+  @column({ columnName: 'provider_id' })
+  public providerId: number | null
 
   @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
   public budgetPayment: BelongsTo<typeof BudgetPayment>
@@ -43,6 +47,9 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @belongsTo(() => Client, { foreignKey: 'clientId' })
   public client: BelongsTo<typeof Client>
+
+  @belongsTo(() => Provider, { foreignKey: 'providerId' })
+  public provider: BelongsTo<typeof Provider>
 
   @column({ columnName: 'document_title' })
   public documentTitle: string | null

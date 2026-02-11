@@ -1002,6 +1002,7 @@ router
     // Service Entry Sheets
     router
       .group(() => {
+        router.get('/', '#controllers/service_entry_sheets/service_entry_sheet_controller.index')
         router.post(
           '/store',
           '#controllers/service_entry_sheets/service_entry_sheet_controller.store'

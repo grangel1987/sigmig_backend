@@ -1,5 +1,6 @@
 import BudgetPayment from '#models/budget_payment'
 import Client from '#models/clients/client'
+import Provider from '#models/provider/provider'
 import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
@@ -10,6 +11,64 @@ import { DateTime } from 'luxon'
 import { log } from 'node:console'
 
 export default class ServiceEntrySheetController {
+  public async index(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'view')
+
+    const { request, response, i18n } = ctx
+    const { clientId, providerId, concept, page, perPage, startDate, endDate } = request.qs()
+
+    const fromDate = typeof startDate === 'string' ? parseDate(startDate) : null
+    const toDate = typeof endDate === 'string' ? parseDate(endDate) : null
+
+    if ((fromDate && !fromDate.isValid) || (toDate && !toDate.isValid)) {
+      return response
+        .status(422)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Formato de fecha invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const query = ServiceEntrySheet.query()
+      .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
+      .preload('provider', (q) => q.select(['id', 'name']))
+
+    if (clientId) {
+      query.where('client_id', Number(clientId))
+    }
+
+    if (providerId) {
+      query.where('provider_id', Number(providerId))
+    }
+
+    if (typeof concept === 'string' && concept.trim()) {
+      const term = concept.trim()
+      query.where((builder) => {
+        builder
+          .where('document_title', 'like', `%${term}%`)
+          .orWhere('service_name', 'like', `%${term}%`)
+      })
+    }
+
+    if (fromDate) {
+      query.where('issue_date', '>=', fromDate.toISODate())
+    }
+
+    if (toDate) {
+      query.where('issue_date', '<=', toDate.toISODate())
+    }
+
+    const pageNumber = Number.isFinite(Number(page)) && Number(page) > 0 ? Number(page) : 1
+    const perPageNumber =
+      Number.isFinite(Number(perPage)) && Number(perPage) > 0 ? Number(perPage) : 25
+
+    const sheets = await query.orderBy('id', 'desc').paginate(pageNumber, perPageNumber)
+
+    return response.status(200).json(sheets)
+  }
+
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'create')
 
@@ -78,6 +137,20 @@ export default class ServiceEntrySheetController {
         }
       }
 
+      if (payload.providerId) {
+        const provider = await Provider.find(payload.providerId)
+        if (!provider) {
+          return response
+            .status(404)
+            .json(
+              MessageFrontEnd(
+                i18n.formatMessage('messages.no_exist', {}, 'Proveedor no existe'),
+                i18n.formatMessage('messages.error_title')
+              )
+            )
+        }
+      }
+
       if (payload.recipientClientId) {
         const recipientClient = await Client.find(payload.recipientClientId)
         if (!recipientClient) {
@@ -96,6 +169,7 @@ export default class ServiceEntrySheetController {
         {
           budgetPaymentId: payload.budgetPaymentId ?? null,
           clientId: payload.clientId ?? null,
+          providerId: payload.providerId ?? null,
           direction: payload.direction ?? null,
           issuerName: payload.issuerName ?? null,
           recipientName: payload.recipientName ?? null,
@@ -218,6 +292,7 @@ const serviceEntrySheetStoreValidator = vine.compile(
   vine.object({
     budgetPaymentId: vine.number().positive().optional(),
     clientId: vine.number().positive().optional(),
+    providerId: vine.number().positive().optional(),
     direction: vine.enum(['issued', 'received']).optional(),
     issuerName: vine.string().trim().optional(),
     recipientName: vine.string().trim().optional(),

@@ -16,6 +16,13 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
           .inTable('clients')
           .onDelete('RESTRICT')
 
+        table
+          .bigInteger('provider_id')
+          .nullable()
+          .references('id')
+          .inTable('providers')
+          .onDelete('RESTRICT')
+
         table.string('document_title').nullable()
         table.text('note_to_invoice').nullable()
 
@@ -41,6 +48,7 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
         table.timestamp('updated_at')
 
         table.index(['client_id'], 'service_entry_sheets_client_id_idx')
+        table.index(['provider_id'], 'service_entry_sheets_provider_id_idx')
         table.index(['number'], 'service_entry_sheets_number_idx')
       })
     }
