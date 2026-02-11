@@ -541,11 +541,21 @@ export default class UserController {
     const { request, response, auth, i18n } = ctx
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request)
-    const { email, business, signature, employeeId, personalData, isAuthorizer, isAdmin } =
+    const {
+      email,
+      business,
+      signature,
+      employeeId,
+      personalData,
+      isAuthorizer,
+      isAdmin,
+      password: providedPassword,
+    } =
       await request.validateUsing(
         vine.compile(
           vine.object({
             email: vine.string().email().optional(),
+            password: vine.string().trim().minLength(8).optional(),
             business: vine
               .array(
                 vine.object({
@@ -619,11 +629,11 @@ export default class UserController {
         personalDataId = employee.personalDataId
       }
 
-      const password = Util.getCode()
+      const userPassword = providedPassword ?? Util.getCode()
       const user = await User.create(
         {
           email: resolvedEmail,
-          password: password,
+          password: userPassword,
           personalDataId: personalDataId,
           isAdmin: isAdmin ?? false,
           isAuthorizer: isAuthorizer ?? false,
@@ -763,7 +773,7 @@ export default class UserController {
             .subject('SIGMI Nuevo Usuario')
             .htmlView('emails/user_password_recovery', {
               full_name,
-              password,
+              password: userPassword,
               time: dateTime.toISO(),
             })
         })
