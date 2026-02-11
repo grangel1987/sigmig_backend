@@ -394,8 +394,12 @@ export default class BugetController {
 
           // Load paymentTerm and sendCondition from info field if requested
           if (includeAllInfo && serialized.info) {
-            const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
-            const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+            const paymentTerm = serialized.info.paymentTerm
+              ? await Setting.find(serialized.info.paymentTerm)
+              : null
+            const sendCondition = serialized.info.sendCondition
+              ? await Setting.find(serialized.info.sendCondition)
+              : null
 
             serialized.info = {
               ...serialized.info,
@@ -458,8 +462,12 @@ export default class BugetController {
 
           // Load paymentTerm and sendCondition from info field if requested
           if (includeAllInfo && serialized.info) {
-            const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
-            const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+            const paymentTerm = serialized.info.paymentTerm
+              ? await Setting.find(serialized.info.paymentTerm)
+              : null
+            const sendCondition = serialized.info.sendCondition
+              ? await Setting.find(serialized.info.sendCondition)
+              : null
 
             serialized.info = {
               ...serialized.info,
@@ -575,8 +583,12 @@ export default class BugetController {
 
     // Load paymentTerm and sendCondition from info field and add to info object
     if (serialized.info) {
-      const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
-      const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+      const paymentTerm = serialized.info.paymentTerm
+        ? await Setting.find(serialized.info.paymentTerm)
+        : null
+      const sendCondition = serialized.info.sendCondition
+        ? await Setting.find(serialized.info.sendCondition)
+        : null
 
       serialized.info = {
         ...serialized.info,
@@ -709,7 +721,9 @@ export default class BugetController {
 
     // Load paymentTerm and sendCondition from info field
     const paymentTerm = buget.info?.paymentTerm ? await Setting.find(buget.info.paymentTerm) : null
-    const sendCondition = buget.info?.sendCondition ? await Setting.find(buget.info.sendCondition) : null
+    const sendCondition = buget.info?.sendCondition
+      ? await Setting.find(buget.info.sendCondition)
+      : null
 
     // Create a clean serialized version without IDs and timestamps
     const serialized: Record<string, any> = {
@@ -723,36 +737,40 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       work: buget.work
         ? {
-          id: buget.work.id,
-          code: buget.work.code,
-          name: buget.work.name,
-        }
+            id: buget.work.id,
+            code: buget.work.code,
+            name: buget.work.name,
+          }
         : null,
-      info: buget.info ? {
-        ...buget.info,
-        paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
-        sendConditionData: sendCondition ? { id: sendCondition.id, text: sendCondition.text } : null,
-      } : null,
+      info: buget.info
+        ? {
+            ...buget.info,
+            paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
+            sendConditionData: sendCondition
+              ? { id: sendCondition.id, text: sendCondition.text }
+              : null,
+          }
+        : null,
       business: buget.business
         ? {
-          name: buget.business.name,
-          url: buget.business.url,
-          email: buget.business.email,
-          identify: buget.business.identify,
-          footer: buget.business.footer,
-          typeIdentify: buget.business.typeIdentify?.text,
-        }
+            name: buget.business.name,
+            url: buget.business.url,
+            email: buget.business.email,
+            identify: buget.business.identify,
+            footer: buget.business.footer,
+            typeIdentify: buget.business.typeIdentify?.text,
+          }
         : null,
       client: buget.client
         ? {
-          name: buget.client.name,
-          identify: buget.client.identify,
-          email: buget.client.email,
-          address: buget.client.address,
-          phone: buget.client.phone,
-          typeIdentify: buget.client.typeIdentify?.text,
-          city: buget.client.city?.name,
-        }
+            name: buget.client.name,
+            identify: buget.client.identify,
+            email: buget.client.email,
+            address: buget.client.address,
+            phone: buget.client.phone,
+            typeIdentify: buget.client.typeIdentify?.text,
+            city: buget.client.city?.name,
+          }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -763,9 +781,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-              name: product.products.name,
-              type: product.products.type?.text,
-            }
+                name: product.products.name,
+                type: product.products.type?.text,
+              }
             : null,
         })) || [],
       items:
@@ -786,9 +804,9 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-          work: buget.details.work,
-          observation: buget.details.observation,
-        }
+            work: buget.details.work,
+            observation: buget.details.observation,
+          }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -1295,7 +1313,6 @@ export default class BugetController {
         currencyValue,
         currencySymbol,
         keepSameNro = false,
-
       } = await request.validateUsing(bugetUpdateValidator)
 
       const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
@@ -1505,11 +1522,11 @@ export default class BugetController {
             fromClient: true,
             createdById: ctx.auth.user?.id
               ? ((
-                await BusinessUser.query()
-                  .where('user_id', ctx.auth.user.id)
-                  .where('business_id', buget?.businessId ?? 0)
-                  .first()
-              )?.id ?? null)
+                  await BusinessUser.query()
+                    .where('user_id', ctx.auth.user.id)
+                    .where('business_id', buget?.businessId ?? 0)
+                    .first()
+                )?.id ?? null)
               : null,
           },
           { client: trx }
@@ -2009,17 +2026,18 @@ export default class BugetController {
     try {
       const payload = await request.validateUsing(createBudgetPaymentValidator)
       const businessId = Number(request.header('Business'))
-      const detailsTotal =
-        payload.details?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
+      const detailsTotal = payload.details?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
       const amount = payload.amount ?? detailsTotal
 
       if (!amount || amount <= 0) {
-        return response.status(400).json(
-          MessageFrontEnd(
-            i18n.formatMessage('messages.store_error'),
-            i18n.formatMessage('messages.error_title')
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.store_error'),
+              i18n.formatMessage('messages.error_title')
+            )
           )
-        )
       }
       // Generate default concept if not provided
       let concept = payload.concept
@@ -2236,11 +2254,13 @@ const createBudgetPaymentValidator = vine.compile(
     concept: vine.string().optional(),
     status: vine.enum(['paid', 'pending', 'voided']).optional(),
     isProjected: vine.boolean().optional(),
+    generateServiceEntrySheet: vine.boolean().optional(),
     receivedAt: vine.string().optional().nullable(),
     details: vine
       .array(
         vine.object({
           bugetProductId: vine.number().optional(),
+          bugetItemId: vine.number().optional(),
           amount: vine.number().optional().nullable(),
         })
       )
