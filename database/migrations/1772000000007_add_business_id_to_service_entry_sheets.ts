@@ -10,6 +10,7 @@ export default class AddBusinessIdToServiceEntrySheets extends BaseSchema {
       this.schema.alterTable(this.tableName, (table) => {
         table
           .bigInteger('business_id')
+          .unsigned()
           .nullable()
           .references('id')
           .inTable('businesses')

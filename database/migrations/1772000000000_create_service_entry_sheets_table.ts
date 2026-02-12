@@ -11,6 +11,7 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
         table.increments('id')
         table
           .bigInteger('client_id')
+          .unsigned()
           .nullable()
           .references('id')
           .inTable('clients')
@@ -18,6 +19,7 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
 
         table
           .bigInteger('provider_id')
+          .unsigned()
           .nullable()
           .references('id')
           .inTable('providers')
@@ -25,6 +27,7 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
 
         table
           .bigInteger('business_id')
+          .unsigned()
           .nullable()
           .references('id')
           .inTable('businesses')

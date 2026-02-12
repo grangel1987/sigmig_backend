@@ -8,7 +8,7 @@ export default class MakeServiceEntrySheetsClientIdNullable extends BaseSchema {
 
     if (tableExists) {
       this.schema.alterTable(this.tableName, (table) => {
-        table.bigInteger('client_id').nullable().alter()
+        table.bigInteger('client_id').unsigned().nullable().alter()
       })
     }
   }
@@ -18,7 +18,7 @@ export default class MakeServiceEntrySheetsClientIdNullable extends BaseSchema {
 
     if (tableExists) {
       this.schema.alterTable(this.tableName, (table) => {
-        table.bigInteger('client_id').notNullable().alter()
+        table.bigInteger('client_id').unsigned().notNullable().alter()
       })
     }
   }
