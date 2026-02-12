@@ -7,13 +7,15 @@ export default class AddBudgetPaymentIdToServiceEntrySheets extends BaseSchema {
     const tableExists = await this.schema.hasTable(this.tableName)
 
     if (tableExists) {
-      this.schema.alterTable(this.tableName, (table) => {
-        table
-          .integer('budget_payment_id')
-          .nullable()
-          .references('budget_payments.id')
-          .onDelete('RESTRICT')
-      })
+      const hasColumn = await this.schema.hasColumn(this.tableName, 'budget_payment_id')
+      if (!hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table
+            .integer('budget_payment_id')
+            .unsigned()
+            .nullable()
+        })
+      }
     }
   }
 
@@ -21,9 +23,12 @@ export default class AddBudgetPaymentIdToServiceEntrySheets extends BaseSchema {
     const tableExists = await this.schema.hasTable(this.tableName)
 
     if (tableExists) {
-      this.schema.alterTable(this.tableName, (table) => {
-        table.dropColumn('budget_payment_id')
-      })
+      const hasColumn = await this.schema.hasColumn(this.tableName, 'budget_payment_id')
+      if (hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table.dropColumn('budget_payment_id')
+        })
+      }
     }
   }
 }

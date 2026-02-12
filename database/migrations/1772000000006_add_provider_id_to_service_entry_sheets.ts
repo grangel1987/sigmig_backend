@@ -7,14 +7,21 @@ export default class AddProviderIdToServiceEntrySheets extends BaseSchema {
     const tableExists = await this.schema.hasTable(this.tableName)
 
     if (tableExists) {
-      this.schema.alterTable(this.tableName, (table) => {
-        table
-          .bigInteger('provider_id')
-          .unsigned()
-          .nullable()
+      const hasColumn = await this.schema.hasColumn(this.tableName, 'provider_id')
+      if (!hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table
+            .bigInteger('provider_id')
+            .unsigned()
+            .nullable()
+        })
+      }
 
-        table.index(['provider_id'], 'service_entry_sheets_provider_id_idx')
-      })
+      if (!hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table.index(['provider_id'], 'service_entry_sheets_provider_id_idx')
+        })
+      }
     }
   }
 
@@ -22,10 +29,13 @@ export default class AddProviderIdToServiceEntrySheets extends BaseSchema {
     const tableExists = await this.schema.hasTable(this.tableName)
 
     if (tableExists) {
-      this.schema.alterTable(this.tableName, (table) => {
-        table.dropIndex(['provider_id'], 'service_entry_sheets_provider_id_idx')
-        table.dropColumn('provider_id')
-      })
+      const hasColumn = await this.schema.hasColumn(this.tableName, 'provider_id')
+      if (hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table.dropIndex(['provider_id'], 'service_entry_sheets_provider_id_idx')
+          table.dropColumn('provider_id')
+        })
+      }
     }
   }
 }

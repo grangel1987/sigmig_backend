@@ -7,17 +7,21 @@ export default class AddBusinessIdToServiceEntrySheets extends BaseSchema {
     const tableExists = await this.schema.hasTable(this.tableName)
 
     if (tableExists) {
-      this.schema.alterTable(this.tableName, (table) => {
-        table
-          .bigInteger('business_id')
-          .unsigned()
-          .nullable()
-          .references('id')
-          .inTable('businesses')
-          .onDelete('RESTRICT')
+      const hasColumn = await this.schema.hasColumn(this.tableName, 'business_id')
+      if (!hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table
+            .bigInteger('business_id')
+            .unsigned()
+            .nullable()
+        })
+      }
 
-        table.index(['business_id'], 'service_entry_sheets_business_id_idx')
-      })
+      if (!hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table.index(['business_id'], 'service_entry_sheets_business_id_idx')
+        })
+      }
     }
   }
 
@@ -25,10 +29,13 @@ export default class AddBusinessIdToServiceEntrySheets extends BaseSchema {
     const tableExists = await this.schema.hasTable(this.tableName)
 
     if (tableExists) {
-      this.schema.alterTable(this.tableName, (table) => {
-        table.dropIndex(['business_id'], 'service_entry_sheets_business_id_idx')
-        table.dropColumn('business_id')
-      })
+      const hasColumn = await this.schema.hasColumn(this.tableName, 'business_id')
+      if (hasColumn) {
+        this.schema.alterTable(this.tableName, (table) => {
+          table.dropIndex(['business_id'], 'service_entry_sheets_business_id_idx')
+          table.dropColumn('business_id')
+        })
+      }
     }
   }
 }

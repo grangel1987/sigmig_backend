@@ -11,6 +11,7 @@ export default class ServiceEntryLinesSchema extends BaseSchema {
         table.increments('id')
         table
           .bigInteger('service_entry_sheet_id')
+          .unsigned()
           .notNullable()
           .references('id')
           .inTable('service_entry_sheets')
