@@ -47,7 +47,7 @@ export default class BudgetPaymentValidator {
             const remaining = totalAmount - totalPaid
 
             // Truncate to 2 decimals for comparison
-            const paymentRounded = Util.truncateToTwoDecimals(paymentAmount) || 0
+            // const paymentRounded = Util.truncateToTwoDecimals(paymentAmount) || 0
             const remainingRounded = Util.truncateToTwoDecimals(remaining) || 0
 
             // Max payment rule disabled: allow payments beyond remaining amount
@@ -109,7 +109,7 @@ export default class BudgetPaymentValidator {
             const remaining = totalAmount - totalPaidExcludingThis
 
             // Truncate to 2 decimals for comparison
-            const newAmountRounded = Util.truncateToTwoDecimals(newAmount) || 0
+            // const newAmountRounded = Util.truncateToTwoDecimals(newAmount) || 0
             const remainingRounded = Util.truncateToTwoDecimals(remaining) || 0
 
             // Max payment rule disabled: allow updates beyond remaining amount
