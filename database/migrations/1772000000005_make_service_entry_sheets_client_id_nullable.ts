@@ -7,17 +7,14 @@ export default class MakeServiceEntrySheetsClientIdNullable extends BaseSchema {
     const tableExists = await this.schema.hasTable(this.tableName)
 
     if (tableExists) {
+      await this.schema.raw('SET FOREIGN_KEY_CHECKS = 0')
       try {
-        await this.schema.raw(
-          'ALTER TABLE service_entry_sheets DROP FOREIGN KEY service_entry_sheets_client_id_foreign'
-        )
-      } catch {
-        // Ignore if the foreign key does not exist
+        this.schema.alterTable(this.tableName, (table) => {
+          table.bigInteger('client_id').unsigned().nullable().alter()
+        })
+      } finally {
+        await this.schema.raw('SET FOREIGN_KEY_CHECKS = 1')
       }
-
-      this.schema.alterTable(this.tableName, (table) => {
-        table.bigInteger('client_id').unsigned().nullable().alter()
-      })
     }
   }
 
