@@ -21,11 +21,8 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
 
         table
           .bigInteger('business_id')
-          .unsigned()
           .nullable()
           .references('id')
-          .inTable('businesses')
-          .onDelete('RESTRICT')
 
         table.string('document_title').nullable()
         table.text('note_to_invoice').nullable()
