@@ -12,9 +12,6 @@ export default class AddProviderIdToServiceEntrySheets extends BaseSchema {
           .bigInteger('provider_id')
           .unsigned()
           .nullable()
-          .references('id')
-          .inTable('providers')
-          .onDelete('RESTRICT')
 
         table.index(['provider_id'], 'service_entry_sheets_provider_id_idx')
       })

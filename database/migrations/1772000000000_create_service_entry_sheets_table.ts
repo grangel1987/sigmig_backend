@@ -13,17 +13,11 @@ export default class ServiceEntrySheetsSchema extends BaseSchema {
           .bigInteger('client_id')
           .unsigned()
           .nullable()
-          .references('id')
-          .inTable('clients')
-          .onDelete('RESTRICT')
 
         table
           .bigInteger('provider_id')
           .unsigned()
           .nullable()
-          .references('id')
-          .inTable('providers')
-          .onDelete('RESTRICT')
 
         table
           .bigInteger('business_id')
