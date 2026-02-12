@@ -57,8 +57,10 @@ export default class AddDirectionFieldsToServiceEntrySheets extends BaseSchema {
         table.dropColumn('direction')
       })
 
-      if (this.schema.client && this.schema.client.dialect?.includes('postgres')) {
+      try {
         await this.schema.raw('DROP TYPE IF EXISTS service_entry_sheets_direction_enum')
+      } catch {
+        // Ignore on dialects that do not support DROP TYPE
       }
     }
   }

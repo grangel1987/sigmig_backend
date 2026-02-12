@@ -228,7 +228,7 @@ export default class ServiceEntrySheetController {
           purchaseOrderDate,
           vendorNumber: payload.vendorNumber ?? null,
           currency: payload.currency ?? null,
-          totalNetAmount: payload.totalNetAmount ?? null,
+          totalNetAmount: payload.totalNetAmount ?? undefined,
         },
         { client: trx }
       )
@@ -240,9 +240,9 @@ export default class ServiceEntrySheetController {
         planningLine: line.planningLine ?? null,
         currency: line.currency ?? null,
         unit: line.unit ?? null,
-        unitPrice: line.unitPrice ?? null,
-        quantity: line.quantity ?? null,
-        netValue: line.netValue ?? null,
+        unitPrice: line.unitPrice ?? undefined,
+        quantity: line.quantity ?? undefined,
+        netValue: line.netValue ?? undefined,
       }))
 
       if (lineRows.length) {
