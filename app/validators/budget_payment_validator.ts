@@ -50,16 +50,7 @@ export default class BudgetPaymentValidator {
             const paymentRounded = Util.truncateToTwoDecimals(paymentAmount) || 0
             const remainingRounded = Util.truncateToTwoDecimals(remaining) || 0
 
-            // Rule: Payment cannot exceed remaining amount
-            if (paymentRounded > remainingRounded) {
-                return {
-                    valid: false,
-                    error: `Payment amount (${paymentRounded}) exceeds remaining budget (${remainingRounded})`,
-                    remainingAmount: remainingRounded,
-                    totalAmount,
-                    totalPaid,
-                }
-            }
+            // Max payment rule disabled: allow payments beyond remaining amount
 
             return {
                 valid: true,
@@ -121,16 +112,7 @@ export default class BudgetPaymentValidator {
             const newAmountRounded = Util.truncateToTwoDecimals(newAmount) || 0
             const remainingRounded = Util.truncateToTwoDecimals(remaining) || 0
 
-            // Rule: New payment amount cannot exceed (remaining + old payment amount)
-            if (newAmountRounded > remainingRounded) {
-                return {
-                    valid: false,
-                    error: `Updated payment amount (${newAmountRounded}) exceeds remaining budget (${remainingRounded})`,
-                    remainingAmount: remainingRounded,
-                    totalAmount,
-                    totalPaid: totalPaidExcludingThis,
-                }
-            }
+            // Max payment rule disabled: allow updates beyond remaining amount
 
             return {
                 valid: true,

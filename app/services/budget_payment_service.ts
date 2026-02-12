@@ -89,8 +89,8 @@ export default class BudgetPaymentService {
       }
       const documentType = params.documentTypeId
         ? await PaymentDocumentType.query({ client: trx })
-            .where('id', params.documentTypeId)
-            .first()
+          .where('id', params.documentTypeId)
+          .first()
         : null
 
       const hasDocumentNumber = Boolean(params.documentNumber?.trim())
@@ -417,7 +417,11 @@ export default class BudgetPaymentService {
   /**
    * Convert a projected payment to effective by assigning a document number
    */
-  static async settle(budgetPaymentId: number, documentNumber: string) {
+  static async settle(
+    budgetPaymentId: number,
+    documentNumber: string,
+    documentTypeId?: number
+  ) {
     const trx = await Database.transaction()
 
     try {
@@ -430,6 +434,9 @@ export default class BudgetPaymentService {
 
       // Update ledger movement to mark as effective
       ledgerMovement.documentNumber = documentNumber
+      if (documentTypeId !== undefined) {
+        ledgerMovement.documentTypeId = documentTypeId
+      }
       ledgerMovement.isProjected = false
       ledgerMovement.status = 'paid'
       ledgerMovement.receivedAt = DateTime.now()

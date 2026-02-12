@@ -737,40 +737,40 @@ export default class BugetController {
       expireDate: buget.expireDate?.toFormat('dd/MM/yyyy'),
       work: buget.work
         ? {
-            id: buget.work.id,
-            code: buget.work.code,
-            name: buget.work.name,
-          }
+          id: buget.work.id,
+          code: buget.work.code,
+          name: buget.work.name,
+        }
         : null,
       info: buget.info
         ? {
-            ...buget.info,
-            paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
-            sendConditionData: sendCondition
-              ? { id: sendCondition.id, text: sendCondition.text }
-              : null,
-          }
+          ...buget.info,
+          paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
+          sendConditionData: sendCondition
+            ? { id: sendCondition.id, text: sendCondition.text }
+            : null,
+        }
         : null,
       business: buget.business
         ? {
-            name: buget.business.name,
-            url: buget.business.url,
-            email: buget.business.email,
-            identify: buget.business.identify,
-            footer: buget.business.footer,
-            typeIdentify: buget.business.typeIdentify?.text,
-          }
+          name: buget.business.name,
+          url: buget.business.url,
+          email: buget.business.email,
+          identify: buget.business.identify,
+          footer: buget.business.footer,
+          typeIdentify: buget.business.typeIdentify?.text,
+        }
         : null,
       client: buget.client
         ? {
-            name: buget.client.name,
-            identify: buget.client.identify,
-            email: buget.client.email,
-            address: buget.client.address,
-            phone: buget.client.phone,
-            typeIdentify: buget.client.typeIdentify?.text,
-            city: buget.client.city?.name,
-          }
+          name: buget.client.name,
+          identify: buget.client.identify,
+          email: buget.client.email,
+          address: buget.client.address,
+          phone: buget.client.phone,
+          typeIdentify: buget.client.typeIdentify?.text,
+          city: buget.client.city?.name,
+        }
         : null,
       products:
         buget.products?.map((product) => ({
@@ -781,9 +781,9 @@ export default class BugetController {
           tax: product.tax,
           product: product.products
             ? {
-                name: product.products.name,
-                type: product.products.type?.text,
-              }
+              name: product.products.name,
+              type: product.products.type?.text,
+            }
             : null,
         })) || [],
       items:
@@ -804,9 +804,9 @@ export default class BugetController {
           })) || [],
       details: buget.details
         ? {
-            work: buget.details.work,
-            observation: buget.details.observation,
-          }
+          work: buget.details.work,
+          observation: buget.details.observation,
+        }
         : null,
       observations:
         buget.observations?.map((obs) => {
@@ -1522,11 +1522,11 @@ export default class BugetController {
             fromClient: true,
             createdById: ctx.auth.user?.id
               ? ((
-                  await BusinessUser.query()
-                    .where('user_id', ctx.auth.user.id)
-                    .where('business_id', buget?.businessId ?? 0)
-                    .first()
-                )?.id ?? null)
+                await BusinessUser.query()
+                  .where('user_id', ctx.auth.user.id)
+                  .where('business_id', buget?.businessId ?? 0)
+                  .first()
+              )?.id ?? null)
               : null,
           },
           { client: trx }
@@ -2207,15 +2207,20 @@ export default class BugetController {
     const { params, request, response, i18n } = ctx
 
     try {
-      const { documentNumber } = await request.validateUsing(
+      const { documentNumber, documentTypeId } = await request.validateUsing(
         vine.compile(
           vine.object({
             documentNumber: vine.string().minLength(1),
+            documentTypeId: vine.number().optional(),
           })
         )
       )
 
-      const result = await BudgetPaymentService.settle(params.id, documentNumber)
+      const result = await BudgetPaymentService.settle(
+        params.id,
+        documentNumber,
+        documentTypeId
+      )
 
       return response.status(200).json({
         ...result,
