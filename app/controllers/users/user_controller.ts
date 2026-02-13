@@ -549,38 +549,37 @@ export default class UserController {
       isAuthorizer,
       isAdmin,
       password: providedPassword,
-    } =
-      await request.validateUsing(
-        vine.compile(
-          vine.object({
-            email: vine.string().email().optional(),
-            password: vine.string().trim().minLength(8).optional(),
-            business: vine
-              .array(
-                vine.object({
-                  businessId: vine.number().positive(),
-                  rolId: vine.number().positive().optional(),
-                  permissions: vine.array(vine.number().positive()).optional(),
-                  isSuper: vine.boolean().optional(),
-                  isAuthorizer: vine.boolean().optional(),
-                })
-              )
-              .optional(),
-            employeeId: vine
-              .number()
-              .positive()
-              .exists({ table: 'employees', column: 'id' })
-              .optional()
-              .requiredIfMissing('personalData'),
-            isAdmin: vine.boolean().optional(),
-            isAuthorizer: vine.boolean().optional(),
-            personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
-            signature: vine
-              .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
-              .optional(),
-          })
-        )
+    } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+          password: vine.string().trim().minLength(8).optional(),
+          business: vine
+            .array(
+              vine.object({
+                businessId: vine.number().positive(),
+                rolId: vine.number().positive().optional(),
+                permissions: vine.array(vine.number().positive()).optional(),
+                isSuper: vine.boolean().optional(),
+                isAuthorizer: vine.boolean().optional(),
+              })
+            )
+            .optional(),
+          employeeId: vine
+            .number()
+            .positive()
+            .exists({ table: 'employees', column: 'id' })
+            .optional()
+            .requiredIfMissing('personalData'),
+          isAdmin: vine.boolean().optional(),
+          isAuthorizer: vine.boolean().optional(),
+          personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
+          signature: vine
+            .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
+            .optional(),
+        })
       )
+    )
     const createdFiles: string[] = []
 
     try {
@@ -966,7 +965,7 @@ export default class UserController {
       email,
       business,
       personalData,
-      password: providedPassword,
+      // password: providedPassword,
       isAdmin,
       isAuthorizer,
       signature,
