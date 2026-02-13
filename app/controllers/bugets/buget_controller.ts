@@ -394,8 +394,12 @@ export default class BugetController {
 
           // Load paymentTerm and sendCondition from info field if requested
           if (includeAllInfo && serialized.info) {
-            const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
-            const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+            const paymentTerm = serialized.info.paymentTerm
+              ? await Setting.find(serialized.info.paymentTerm)
+              : null
+            const sendCondition = serialized.info.sendCondition
+              ? await Setting.find(serialized.info.sendCondition)
+              : null
 
             serialized.info = {
               ...serialized.info,
@@ -458,8 +462,12 @@ export default class BugetController {
 
           // Load paymentTerm and sendCondition from info field if requested
           if (includeAllInfo && serialized.info) {
-            const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
-            const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+            const paymentTerm = serialized.info.paymentTerm
+              ? await Setting.find(serialized.info.paymentTerm)
+              : null
+            const sendCondition = serialized.info.sendCondition
+              ? await Setting.find(serialized.info.sendCondition)
+              : null
 
             serialized.info = {
               ...serialized.info,
@@ -575,8 +583,12 @@ export default class BugetController {
 
     // Load paymentTerm and sendCondition from info field and add to info object
     if (serialized.info) {
-      const paymentTerm = serialized.info.paymentTerm ? await Setting.find(serialized.info.paymentTerm) : null
-      const sendCondition = serialized.info.sendCondition ? await Setting.find(serialized.info.sendCondition) : null
+      const paymentTerm = serialized.info.paymentTerm
+        ? await Setting.find(serialized.info.paymentTerm)
+        : null
+      const sendCondition = serialized.info.sendCondition
+        ? await Setting.find(serialized.info.sendCondition)
+        : null
 
       serialized.info = {
         ...serialized.info,
@@ -709,7 +721,9 @@ export default class BugetController {
 
     // Load paymentTerm and sendCondition from info field
     const paymentTerm = buget.info?.paymentTerm ? await Setting.find(buget.info.paymentTerm) : null
-    const sendCondition = buget.info?.sendCondition ? await Setting.find(buget.info.sendCondition) : null
+    const sendCondition = buget.info?.sendCondition
+      ? await Setting.find(buget.info.sendCondition)
+      : null
 
     // Create a clean serialized version without IDs and timestamps
     const serialized: Record<string, any> = {
@@ -728,11 +742,15 @@ export default class BugetController {
           name: buget.work.name,
         }
         : null,
-      info: buget.info ? {
-        ...buget.info,
-        paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
-        sendConditionData: sendCondition ? { id: sendCondition.id, text: sendCondition.text } : null,
-      } : null,
+      info: buget.info
+        ? {
+          ...buget.info,
+          paymentTermData: paymentTerm ? { id: paymentTerm.id, text: paymentTerm.text } : null,
+          sendConditionData: sendCondition
+            ? { id: sendCondition.id, text: sendCondition.text }
+            : null,
+        }
+        : null,
       business: buget.business
         ? {
           name: buget.business.name,
@@ -1295,7 +1313,6 @@ export default class BugetController {
         currencyValue,
         currencySymbol,
         keepSameNro = false,
-
       } = await request.validateUsing(bugetUpdateValidator)
 
       const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
@@ -2009,17 +2026,18 @@ export default class BugetController {
     try {
       const payload = await request.validateUsing(createBudgetPaymentValidator)
       const businessId = Number(request.header('Business'))
-      const detailsTotal =
-        payload.details?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
+      const detailsTotal = payload.details?.reduce((sum, line) => sum + (line.amount || 0), 0) || 0
       const amount = payload.amount ?? detailsTotal
 
       if (!amount || amount <= 0) {
-        return response.status(400).json(
-          MessageFrontEnd(
-            i18n.formatMessage('messages.store_error'),
-            i18n.formatMessage('messages.error_title')
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.store_error'),
+              i18n.formatMessage('messages.error_title')
+            )
           )
-        )
       }
       // Generate default concept if not provided
       let concept = payload.concept
@@ -2189,15 +2207,20 @@ export default class BugetController {
     const { params, request, response, i18n } = ctx
 
     try {
-      const { documentNumber } = await request.validateUsing(
+      const { documentNumber, documentTypeId } = await request.validateUsing(
         vine.compile(
           vine.object({
             documentNumber: vine.string().minLength(1),
+            documentTypeId: vine.number().optional(),
           })
         )
       )
 
-      const result = await BudgetPaymentService.settle(params.id, documentNumber)
+      const result = await BudgetPaymentService.settle(
+        params.id,
+        documentNumber,
+        documentTypeId
+      )
 
       return response.status(200).json({
         ...result,
@@ -2236,11 +2259,13 @@ const createBudgetPaymentValidator = vine.compile(
     concept: vine.string().optional(),
     status: vine.enum(['paid', 'pending', 'voided']).optional(),
     isProjected: vine.boolean().optional(),
+    generateServiceEntrySheet: vine.boolean().optional(),
     receivedAt: vine.string().optional().nullable(),
     details: vine
       .array(
         vine.object({
           bugetProductId: vine.number().optional(),
+          bugetItemId: vine.number().optional(),
           amount: vine.number().optional().nullable(),
         })
       )
