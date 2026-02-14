@@ -129,12 +129,7 @@ export default class BudgetPaymentService {
         { client: trx }
       )
 
-      if (
-        params.generateServiceEntrySheet &&
-        paymentLines?.length &&
-        params.documentNumber?.trim() &&
-        params.clientId
-      ) {
+      if (params.generateServiceEntrySheet && paymentLines?.length && params.clientId) {
         const [coin, client, products, items] = await Promise.all([
           Coin.query({ client: trx }).where('id', params.currencyId).first(),
           Client.query({ client: trx }).where('id', params.clientId).first(),
@@ -156,6 +151,8 @@ export default class BudgetPaymentService {
         const itemMap = new Map(items.map((item) => [item.id, item]))
         const currency = coin?.symbol ?? coin?.name ?? null
 
+        const sheetNumber = params.documentNumber?.trim() || `HES-${budgetPayment.id}`
+
         const sheet = await ServiceEntrySheet.create(
           {
             budgetPaymentId: budgetPayment.id,
@@ -168,7 +165,7 @@ export default class BudgetPaymentService {
             companyCity: null,
             companyCityCode: null,
             serviceName: params.concept ?? null,
-            number: params.documentNumber.trim(),
+            number: sheetNumber,
             issueDate: handleDate(params.date),
             purchaseOrderNumber: null,
             purchaseOrderPosition: null,
