@@ -76,7 +76,6 @@ export default class UserController {
         passVerify = await hash.use('bcrypt').verify(pass, password)
       } else passVerify = await user.verifyPassword(password)
 
-
       if (!passVerify) {
         return response.status(500).json({
           ...MessageFrontEnd(
@@ -550,38 +549,37 @@ export default class UserController {
       isAuthorizer,
       isAdmin,
       password: providedPassword,
-    } =
-      await request.validateUsing(
-        vine.compile(
-          vine.object({
-            email: vine.string().email().optional(),
-            password: vine.string().trim().minLength(8).optional(),
-            business: vine
-              .array(
-                vine.object({
-                  businessId: vine.number().positive(),
-                  rolId: vine.number().positive().optional(),
-                  permissions: vine.array(vine.number().positive()).optional(),
-                  isSuper: vine.boolean().optional(),
-                  isAuthorizer: vine.boolean().optional(),
-                })
-              )
-              .optional(),
-            employeeId: vine
-              .number()
-              .positive()
-              .exists({ table: 'employees', column: 'id' })
-              .optional()
-              .requiredIfMissing('personalData'),
-            isAdmin: vine.boolean().optional(),
-            isAuthorizer: vine.boolean().optional(),
-            personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
-            signature: vine
-              .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
-              .optional(),
-          })
-        )
+    } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+          password: vine.string().trim().minLength(8).optional(),
+          business: vine
+            .array(
+              vine.object({
+                businessId: vine.number().positive(),
+                rolId: vine.number().positive().optional(),
+                permissions: vine.array(vine.number().positive()).optional(),
+                isSuper: vine.boolean().optional(),
+                isAuthorizer: vine.boolean().optional(),
+              })
+            )
+            .optional(),
+          employeeId: vine
+            .number()
+            .positive()
+            .exists({ table: 'employees', column: 'id' })
+            .optional()
+            .requiredIfMissing('personalData'),
+          isAdmin: vine.boolean().optional(),
+          isAuthorizer: vine.boolean().optional(),
+          personalData: personalDataSchema.optional().requiredIfMissing('employeeId'),
+          signature: vine
+            .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
+            .optional(),
+        })
       )
+    )
     const createdFiles: string[] = []
 
     try {
@@ -962,38 +960,48 @@ export default class UserController {
     await PermissionService.requirePermission(ctx, 'users', 'update')
 
     const { request, response, auth, i18n } = ctx
-    const { params, email, business, personalData, isAdmin, isAuthorizer, signature, employeeId } =
-      await request.validateUsing(
-        vine.compile(
-          vine.object({
-            params: vine.object({ userId: vine.number().positive() }),
-            email: vine.string().email().optional(),
-            employeeId: vine
-              .number()
-              .positive()
-              .exists({ table: 'employees', column: 'id' })
-              .optional()
-              .requiredIfMissing('personalData'),
-            business: vine
-              .array(
-                vine.object({
-                  businessId: vine.number().positive(),
-                  rolId: vine.number().positive().optional(),
-                  permissions: vine.array(vine.number().positive()).optional(),
-                  isSuper: vine.boolean().optional(),
-                  isAuthorizer: vine.boolean().optional(),
-                })
-              )
-              .optional(),
-            personalData: personalDataPartialSchema.optional().requiredIfMissing('employeeId'),
-            isAdmin: vine.boolean().optional(),
-            isAuthorizer: vine.boolean().optional(),
-            signature: vine
-              .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
-              .optional(),
-          })
-        )
+    const {
+      params,
+      email,
+      business,
+      personalData,
+      // password: providedPassword,
+      isAdmin,
+      isAuthorizer,
+      signature,
+      employeeId,
+    } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          params: vine.object({ userId: vine.number().positive() }),
+          email: vine.string().email().optional(),
+          password: vine.string().minLength(8).optional(),
+          employeeId: vine
+            .number()
+            .positive()
+            .exists({ table: 'employees', column: 'id' })
+            .optional()
+            .requiredIfMissing('personalData'),
+          business: vine
+            .array(
+              vine.object({
+                businessId: vine.number().positive(),
+                rolId: vine.number().positive().optional(),
+                permissions: vine.array(vine.number().positive()).optional(),
+                isSuper: vine.boolean().optional(),
+                isAuthorizer: vine.boolean().optional(),
+              })
+            )
+            .optional(),
+          personalData: personalDataPartialSchema.optional().requiredIfMissing('employeeId'),
+          isAdmin: vine.boolean().optional(),
+          isAuthorizer: vine.boolean().optional(),
+          signature: vine
+            .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
+            .optional(),
+        })
       )
+    )
     const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request)
     const createdFiles: string[] = []
@@ -1845,32 +1853,41 @@ export default class UserController {
   public async storeAdmin({ request, response, auth, i18n }: HttpContext) {
     // Similar to store, but for admin
     const dateTime = await Util.getDateTimes(request)
-    const { email, business, personalData, signature, isAauthorizer, isAdmin, employeeId } =
-      await request.validateUsing(
-        vine.compile(
-          vine.object({
-            employeeId: vine.number().positive().optional(),
-            email: vine.string().email(),
-            isAdmin: vine.boolean().optional(),
-            isAauthorizer: vine.boolean().optional(),
-            business: vine
-              .array(
-                vine.object({
-                  businessId: vine.number().positive(),
-                  rolId: vine.number().positive().optional(),
-                  permissions: vine.array(vine.number().positive()).optional(),
-                  isSuper: vine.boolean().optional(),
-                  isAuthorizer: vine.boolean().optional(),
-                })
-              )
-              .optional(),
-            personalData: personalDataSchema.optional(),
-            signature: vine
-              .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
-              .optional(),
-          })
-        )
+    const {
+      email,
+      business,
+      personalData,
+      signature,
+      password: providedPassword,
+      isAauthorizer,
+      isAdmin,
+      employeeId,
+    } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          employeeId: vine.number().positive().optional(),
+          email: vine.string().email(),
+          isAdmin: vine.boolean().optional(),
+          isAauthorizer: vine.boolean().optional(),
+          password: vine.string().minLength(8).optional(),
+          business: vine
+            .array(
+              vine.object({
+                businessId: vine.number().positive(),
+                rolId: vine.number().positive().optional(),
+                permissions: vine.array(vine.number().positive()).optional(),
+                isSuper: vine.boolean().optional(),
+                isAuthorizer: vine.boolean().optional(),
+              })
+            )
+            .optional(),
+          personalData: personalDataSchema.optional(),
+          signature: vine
+            .file({ extnames: ['jpg', 'jpeg', 'png', 'webp'], size: '5mb' })
+            .optional(),
+        })
       )
+    )
     const createdFiles: string[] = []
     const trx = await db.transaction()
 
@@ -1886,7 +1903,7 @@ export default class UserController {
         })
       }
 
-      const password = Util.getCode()
+      const password = providedPassword ?? Util.getCode()
       const user = await User.create(
         {
           email,

@@ -1,5 +1,6 @@
 import BudgetPayment from '#models/budget_payment'
 import BudgetpaymentDetail from '#models/budget_payment_detail'
+import Buget from '#models/bugets/buget'
 import BugetItem from '#models/bugets/buget_item'
 import BugetProduct from '#models/bugets/buget_product'
 import Client from '#models/clients/client'
@@ -129,74 +130,146 @@ export default class BudgetPaymentService {
         { client: trx }
       )
 
-      if (params.generateServiceEntrySheet && paymentLines?.length && params.clientId) {
-        const [coin, client, products, items] = await Promise.all([
-          Coin.query({ client: trx }).where('id', params.currencyId).first(),
-          Client.query({ client: trx }).where('id', params.clientId).first(),
-          BugetProduct.query({ client: trx }).whereIn(
-            'id',
-            paymentLines
-              .map((line) => line.bugetProductId)
-              .filter((id): id is number => typeof id === 'number')
-          ),
-          BugetItem.query({ client: trx }).whereIn(
-            'id',
-            paymentLines
-              .map((line) => line.bugetItemId)
-              .filter((id): id is number => typeof id === 'number')
-          ),
-        ])
+      const shouldGenerateSheet =
+        params.generateServiceEntrySheet && (params.clientId || params.budgetId)
 
-        const productMap = new Map(products.map((product) => [product.id, product]))
-        const itemMap = new Map(items.map((item) => [item.id, item]))
-        const currency = coin?.symbol ?? coin?.name ?? null
+      if (shouldGenerateSheet) {
+        const dPaymentLines = params.lines ?? params.details
+        const coin = await Coin.query({ client: trx }).where('id', params.currencyId).first()
+        let clientId = params.clientId ?? null
 
-        const sheetNumber = params.documentNumber?.trim() || `HES-${budgetPayment.id}`
+        if (!clientId && params.budgetId) {
+          const buget = await Buget.query({ client: trx }).where('id', params.budgetId).first()
+          clientId = buget?.clientId ?? null
+        }
 
-        const sheet = await ServiceEntrySheet.create(
-          {
-            budgetPaymentId: budgetPayment.id,
-            clientId: params.clientId,
-            businessId: params.businessId ?? null,
-            documentTitle: params.concept ?? null,
-            noteToInvoice: null,
-            companyName: client?.name ?? null,
-            companyAddress: null,
-            companyCity: null,
-            companyCityCode: null,
-            serviceName: params.concept ?? null,
-            number: sheetNumber,
-            issueDate: handleDate(params.date),
-            purchaseOrderNumber: null,
-            purchaseOrderPosition: null,
-            purchaseOrderDate: null,
-            vendorNumber: null,
-            currency,
-            totalNetAmount: params.amount,
-          },
-          { client: trx }
-        )
+        if (clientId) {
+          const client = await Client.query({ client: trx }).where('id', clientId).first()
+          const currency = coin?.symbol ?? coin?.name ?? null
+          let totalNetAmount = params.amount
+          let lineRows: Array<{
+            lineNumber: number
+            serviceCode: string | null
+            description: string | null
+            planningLine: string | null
+            currency: string | null
+            unit: string | null
+            unitPrice: number
+            quantity: number
+            netValue: number
+          }> = []
 
-        const lineRows = paymentLines.map((line, index) => {
-          const product = line.bugetProductId ? productMap.get(line.bugetProductId) : undefined
-          const item = line.bugetItemId ? itemMap.get(line.bugetItemId) : undefined
-          const description = product?.name ?? item?.title ?? item?.value ?? null
-          const amount = line.amount ?? 0
+          if (dPaymentLines?.length) {
+            const [products, items] = await Promise.all([
+              BugetProduct.query({ client: trx }).whereIn(
+                'id',
+                dPaymentLines
+                  .map((line) => line.bugetProductId)
+                  .filter((id): id is number => typeof id === 'number')
+              ),
+              BugetItem.query({ client: trx }).whereIn(
+                'id',
+                dPaymentLines
+                  .map((line) => line.bugetItemId)
+                  .filter((id): id is number => typeof id === 'number')
+              ),
+            ])
 
-          return {
-            lineNumber: index + 1,
-            serviceCode: null,
-            description,
-            planningLine: null,
-            currency,
-            unit: null,
-            unitPrice: amount,
-            quantity: 1,
-            netValue: amount,
+            const productMap = new Map(products.map((product) => [product.id, product]))
+            const itemMap = new Map(items.map((item) => [item.id, item]))
+
+            lineRows = dPaymentLines.map((line, index) => {
+              const product = line.bugetProductId ? productMap.get(line.bugetProductId) : undefined
+              const item = line.bugetItemId ? itemMap.get(line.bugetItemId) : undefined
+              const description = product?.name ?? item?.title ?? item?.value ?? null
+              const amount = line.amount ?? 0
+
+              return {
+                lineNumber: index + 1,
+                serviceCode: null,
+                description,
+                planningLine: null,
+                currency,
+                unit: null,
+                unitPrice: amount,
+                quantity: 1,
+                netValue: amount,
+              }
+            })
+          } else if (params.budgetId) {
+            const buget = await Buget.query({ client: trx })
+              .where('id', params.budgetId)
+              .preload('products')
+              .preload('items')
+              .first()
+
+            if (buget) {
+              totalNetAmount = buget.getTotalAmount()
+              const productLines = (buget.products ?? []).map((product) => {
+                const quantity = product.countPerson || 1
+                const unitPrice = product.amount || 0
+                return {
+                  serviceCode: null,
+                  description: product.name ?? null,
+                  planningLine: null,
+                  currency,
+                  unit: null,
+                  unitPrice,
+                  quantity,
+                  netValue: unitPrice * quantity,
+                }
+              })
+
+              const itemLines = (buget.items ?? []).map((item) => {
+                const unitPrice = Number.parseFloat(String(item.value ?? 0)) || 0
+                return {
+                  serviceCode: null,
+                  description: item.title ?? item.value ?? null,
+                  planningLine: null,
+                  currency,
+                  unit: null,
+                  unitPrice,
+                  quantity: 1,
+                  netValue: unitPrice,
+                }
+              })
+
+              lineRows = [...productLines, ...itemLines].map((line, index) => ({
+                lineNumber: index + 1,
+                ...line,
+              }))
+            }
           }
-        })
 
-        await sheet.related('lines').createMany(lineRows, { client: trx })
+          if (lineRows.length) {
+            const sheetNumber = params.documentNumber?.trim() || `HES-${budgetPayment.id}`
+            const sheet = await ServiceEntrySheet.create(
+              {
+                budgetPaymentId: budgetPayment.id,
+                clientId,
+                businessId: params.businessId ?? null,
+                documentTitle: params.concept ?? null,
+                noteToInvoice: null,
+                companyName: client?.name ?? null,
+                companyAddress: null,
+                companyCity: null,
+                companyCityCode: null,
+                serviceName: params.concept ?? null,
+                number: sheetNumber,
+                issueDate: handleDate(params.date),
+                purchaseOrderNumber: null,
+                purchaseOrderPosition: null,
+                purchaseOrderDate: null,
+                vendorNumber: null,
+                currency,
+                totalNetAmount,
+              },
+              { client: trx }
+            )
+
+            await sheet.related('lines').createMany(lineRows, { client: trx })
+          }
+        }
       }
 
       await trx.commit()
@@ -414,11 +487,7 @@ export default class BudgetPaymentService {
   /**
    * Convert a projected payment to effective by assigning a document number
    */
-  static async settle(
-    budgetPaymentId: number,
-    documentNumber: string,
-    documentTypeId?: number
-  ) {
+  static async settle(budgetPaymentId: number, documentNumber: string, documentTypeId?: number) {
     const trx = await Database.transaction()
 
     try {
