@@ -117,7 +117,7 @@ export default class ShoppingController {
         const dateTime = await Util.getDateTimes(request)
 
         try {
-            const lastShop = await db.from('shoppings')
+            const lastShop = await trx.from('shoppings')
                 .where('business_id', businessId)
                 .orderBy('id', 'desc')
                 .limit(1)
@@ -246,53 +246,54 @@ export default class ShoppingController {
 
         const { params, request, response, auth, i18n } = ctx
         const { shop_id } = await shoppingShopIdParamValidator.validate(params)
+        const dateTime = await Util.getDateTimes(request)
+        const {
+            provider,
+            products = [],
+            costCenter,
+            work,
+            info,
+            rounding,
+            currencySymbol,
+            keepSameNro = false,
+        } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    provider: vine.object({ id: vine.number().positive() }).optional(),
+                    products: vine.array(
+                        vine.object({
+                            id: vine.number().positive().optional(),
+                            name: vine.string().trim().optional(),
+                            code: vine.string().trim().optional(),
+                            price: vine.number().min(0).optional(),
+                            tax: vine.number().range([0, 100]).optional(),
+                            count: vine.number().positive().optional(),
+                            quantity: vine.number().positive().optional(),
+                        })
+                    ).optional(),
+                    costCenter: vine.number().positive().optional(),
+                    work: vine.number().positive().optional(),
+                    rounding: vine.number().optional(),
+                    currencySymbol: vine.string().trim().minLength(1).maxLength(50).optional(),
+                    keepSameNro: vine.boolean().optional(),
+                    info: vine.object({
+                        name: vine.string().trim().minLength(1).optional(),
+                        paymentTerm: vine.number().positive().optional(),
+                        sendCondition: vine.number().positive().optional(),
+                        sendAmount: vine.number().min(0).optional(),
+                        otherAmount: vine.number().min(0).optional(),
+                        observation: vine.string().trim().optional(),
+                        daysExpireBuget: vine.number().min(0).optional(),
+                        authorizerId: vine.number().positive().optional(),
+                        nroBudget: vine.string().trim().maxLength(50).optional(),
+                    }).optional(),
+                })
+            )
+        )
+
         const trx = await db.transaction()
 
         try {
-            const dateTime = await Util.getDateTimes(request)
-            const {
-                provider,
-                products = [],
-                costCenter,
-                work,
-                info,
-                rounding,
-                currencySymbol,
-                keepSameNro = false,
-            } = await request.validateUsing(
-                vine.compile(
-                    vine.object({
-                        provider: vine.object({ id: vine.number().positive() }).optional(),
-                        products: vine.array(
-                            vine.object({
-                                id: vine.number().positive().optional(),
-                                name: vine.string().trim().optional(),
-                                code: vine.string().trim().optional(),
-                                price: vine.number().min(0).optional(),
-                                tax: vine.number().range([0, 100]).optional(),
-                                count: vine.number().positive().optional(),
-                                quantity: vine.number().positive().optional(),
-                            })
-                        ).optional(),
-                        costCenter: vine.number().positive().optional(),
-                        work: vine.number().positive().optional(),
-                        rounding: vine.number().optional(),
-                        currencySymbol: vine.string().trim().minLength(1).maxLength(50).optional(),
-                        keepSameNro: vine.boolean().optional(),
-                        info: vine.object({
-                            name: vine.string().trim().minLength(1).optional(),
-                            paymentTerm: vine.number().positive().optional(),
-                            sendCondition: vine.number().positive().optional(),
-                            sendAmount: vine.number().min(0).optional(),
-                            otherAmount: vine.number().min(0).optional(),
-                            observation: vine.string().trim().optional(),
-                            daysExpireBuget: vine.number().min(0).optional(),
-                            authorizerId: vine.number().positive().optional(),
-                            nroBudget: vine.string().trim().maxLength(50).optional(),
-                        }).optional(),
-                    })
-                )
-            )
 
             const existing = await Shopping.query({ client: trx }).where('id', shop_id).firstOrFail()
             const token = existing.token

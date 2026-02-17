@@ -76,10 +76,11 @@ export default class ExpenseController {
 
         const { request, response, i18n } = ctx
 
+        const { businessId, date, amount, currencyId, description, accountId, costCenterId, clientId, paymentMethodId, documentTypeId, documentNumber } =
+            await request.validateUsing(expenseStoreValidator)
+
         const trx = await db.transaction()
         try {
-            const { businessId, date, amount, currencyId, description, accountId, costCenterId, clientId, paymentMethodId, documentTypeId, documentNumber } =
-                await request.validateUsing(expenseStoreValidator)
 
             const expenseDate = DateTime.fromISO(date)
 
@@ -188,9 +189,10 @@ export default class ExpenseController {
         const { params, request, response, i18n } = ctx
         const expenseId = Number(params.id)
 
+        const { status } = await request.validateUsing(expenseStatusValidator)
+
         const trx = await db.transaction()
         try {
-            const { status } = await request.validateUsing(expenseStatusValidator)
 
             const expense = await Expense.query({ client: trx })
                 .where('id', expenseId)

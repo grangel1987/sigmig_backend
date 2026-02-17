@@ -33,7 +33,6 @@ export default class BusinessController {
     await PermissionService.requirePermission(ctx, 'business', 'create')
 
     const { request, response, auth, i18n } = ctx
-    const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request)
 
     const {
@@ -57,8 +56,8 @@ export default class BusinessController {
 
     const photo = request.file('photo', { size: '2mb', extnames: ['jpg', 'png', 'jpeg', 'webp',] })
 
-    if (!photo)
-
+    if (!photo) {
+      const trx = await db.transaction()
       try {
         const payload: BusinessPayload = {
           countryId,
@@ -134,6 +133,7 @@ export default class BusinessController {
           ),
         })
       }
+    }
   }
 
 
@@ -318,7 +318,7 @@ export default class BusinessController {
     const trx = await db.transaction()
 
     try {
-      const business = await Business.findOrFail(businessId)
+      const business = await Business.findOrFail(businessId, { client: trx })
 
       // ------------------- BASIC FIELDS -------------------
       business.merge({
@@ -338,7 +338,7 @@ export default class BusinessController {
       // ------------------- DELEGATE -------------------
 
       if (delegateName || delegateEmail) {
-        const delegate = await business.related('delegate').query().first()
+        const delegate = await business.useTransaction(trx).related('delegate').query().first()
         if (!delegate) {
           await business.related('delegate').create(
             {

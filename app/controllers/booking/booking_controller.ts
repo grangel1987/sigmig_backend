@@ -47,10 +47,11 @@ export default class BookingController {
         await PermissionService.requirePermission(ctx, 'booking', 'create')
 
         const { request, response, i18n } = ctx
+        const dateTime = await Util.getDateTimes(request)
+        const { booking, clientId, guests, propertie, items, feeding } = await request.validateUsing(bookingStoreValidator)
+
         const trx = await db.transaction()
         try {
-            const dateTime = await Util.getDateTimes(request)
-            const { booking, clientId, guests, propertie, items, feeding } = await request.validateUsing(bookingStoreValidator)
 
             // Normalize booking payload
             const b: any = { ...booking }
@@ -279,7 +280,7 @@ export default class BookingController {
             const { nro_buget } = request.all()
             const dateTime = await Util.getDateTimes(request)
             // Load and update via Lucid within the same transaction
-            const booking = await Booking.findOrFail(bookingId)
+            const booking = await Booking.findOrFail(bookingId, { client: trx })
             booking.useTransaction(trx)
             booking.nroBuget = Number(nro_buget || 0)
             booking.attended = true
