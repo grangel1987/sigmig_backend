@@ -338,7 +338,7 @@ export default class BusinessController {
       // ------------------- DELEGATE -------------------
 
       if (delegateName || delegateEmail) {
-        const delegate = await business.related('delegate').query({ client: trx }).first()
+        const delegate = await business.useTransaction(trx).related('delegate').query().first()
         if (!delegate) {
           await business.related('delegate').create(
             {
