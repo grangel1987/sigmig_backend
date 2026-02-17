@@ -538,7 +538,6 @@ export default class UserController {
     await PermissionService.requirePermission(ctx, 'users', 'create')
 
     const { request, response, auth, i18n } = ctx
-    const trx = await db.transaction()
     const dateTime = await Util.getDateTimes(request)
     const {
       email,
@@ -581,6 +580,7 @@ export default class UserController {
       )
     )
     const createdFiles: string[] = []
+    const trx = await db.transaction()
 
     try {
       // Resolve final email from either top-level or personalData.email
@@ -600,7 +600,7 @@ export default class UserController {
           : business
         : []
 
-      const existingUser = await User.findBy('email', resolvedEmail)
+      const existingUser = await User.findBy('email', resolvedEmail, { client: trx })
       if (existingUser) {
         await trx.rollback()
         return response.status(422).json({
@@ -614,7 +614,7 @@ export default class UserController {
       let personalDataId: number | undefined
       let employee: Employee | null = null
       if (employeeId) {
-        employee = await Employee.findOrFail(employeeId)
+        employee = await Employee.findOrFail(employeeId, { client: trx })
         if (!employee.personalDataId) {
           await trx.rollback()
           return response.status(422).json({
@@ -675,7 +675,7 @@ export default class UserController {
 
         // Sync notification types associated to this role to the business user
         businessUser.useTransaction(trx)
-        const ntRows = await db
+        const ntRows = await trx
           .from('notification_type_rols')
           .where('rol_id', businessUserRol.rolId)
           .select('notification_type_id')
@@ -734,7 +734,7 @@ export default class UserController {
       }
       // If an employeeId is provided, link the employee to this user
       if (employeeId) {
-        const employee = await Employee.findOrFail(employeeId)
+        const employee = await Employee.findOrFail(employeeId, { client: trx })
         if (employee.userId && employee.userId !== user.id) {
           await trx.rollback()
           return response.status(422).json({
@@ -748,13 +748,16 @@ export default class UserController {
         await employee.useTransaction(trx).save()
       }
 
-      await user.load('personalData')
+      await user.load('personalData', (q) => q.useTransaction(trx))
 
-      if (user.personalData.cityId) await user.personalData.load('city')
-      if (user.personalData.nationalityId) await user.personalData.load('nationality')
-      if (user.personalData.sexId) await user.personalData.load('sex')
-      if (user.personalData.stateCivilId) await user.personalData.load('stateCivil')
-      if (user.personalData.typeIdentifyId) await user.personalData.load('typeIdentify')
+      if (user.personalData.cityId) await user.personalData.useTransaction(trx).load('city')
+      if (user.personalData.nationalityId)
+        await user.personalData.useTransaction(trx).load('nationality')
+      if (user.personalData.sexId) await user.personalData.useTransaction(trx).load('sex')
+      if (user.personalData.stateCivilId)
+        await user.personalData.useTransaction(trx).load('stateCivil')
+      if (user.personalData.typeIdentifyId)
+        await user.personalData.useTransaction(trx).load('typeIdentify')
 
       await user.useTransaction(trx).save()
       await trx.commit()
@@ -828,12 +831,12 @@ export default class UserController {
     const createdFiles: string[] = []
 
     try {
-      const user = await User.findOrFail(params.id)
+      const user = await User.findOrFail(params.id, { client: trx })
       user.useTransaction(trx)
 
       const candidateEmail = email ?? personalData?.email
       if (candidateEmail && candidateEmail !== user.email) {
-        const existingUser = await User.findBy('email', candidateEmail)
+        const existingUser = await User.findBy('email', candidateEmail, { client: trx })
         if (existingUser && existingUser.id !== user.id) {
           await trx.rollback()
           return response.status(422).json({
@@ -857,7 +860,7 @@ export default class UserController {
 
       // If employeeId is provided, fetch employee and assign its personalDataId
       if (employeeId) {
-        const employee = await Employee.findOrFail(employeeId)
+        const employee = await Employee.findOrFail(employeeId, { client: trx })
         if (!employee.personalDataId) {
           await trx.rollback()
           return response.status(422).json({
@@ -886,7 +889,7 @@ export default class UserController {
 
           if (user.personalDataId) {
             // Update existing personal data
-            const pd = await PersonalData.findOrFail(user.personalDataId)
+            const pd = await PersonalData.findOrFail(user.personalDataId, { client: trx })
             pd.useTransaction(trx)
             pd.names = rPersonalData.names || pd.names
             pd.lastNameP = rPersonalData.lastNameP || pd.lastNameP
@@ -1008,7 +1011,7 @@ export default class UserController {
     const filesToDelete: string[] = []
 
     try {
-      const user = await User.findOrFail(params.userId)
+      const user = await User.findOrFail(params.userId, { client: trx })
       user.useTransaction(trx)
 
       // Update email if provided
@@ -1046,9 +1049,9 @@ export default class UserController {
         // Handle business user updates/creation
         if (user.isAdmin) {
           // For admin users, ensure they have access to ALL businesses with admin privileges
-          const allBusinesses = await Business.all()
+          const allBusinesses = await Business.query({ client: trx })
           for (const bus of allBusinesses) {
-            let businessUser = await BusinessUser.query()
+            let businessUser = await BusinessUser.query({ client: trx })
               .where('userId', user.id)
               .where('businessId', bus.id)
               .first()
@@ -1072,7 +1075,7 @@ export default class UserController {
             }
 
             // Update/create role
-            await businessUser.related('businessUserRols').query().delete()
+            await businessUser.related('businessUserRols').query().useTransaction(trx).delete()
             const businessUserRol = {
               businessUserId: businessUser.id,
               rolId: 1, // Default admin role
@@ -1081,7 +1084,7 @@ export default class UserController {
 
             // Sync notification types from role to business user
             businessUser.useTransaction(trx)
-            const ntRows2 = await db
+            const ntRows2 = await trx
               .from('notification_type_rols')
               .where('rol_id', businessUserRol.rolId)
               .select('notification_type_id')
@@ -1097,7 +1100,7 @@ export default class UserController {
         } else {
           // For non-admin users, update/create for each provided business
           for (const bus of business) {
-            let businessUser = await BusinessUser.query()
+            let businessUser = await BusinessUser.query({ client: trx })
               .where('userId', user.id)
               .where('businessId', bus.businessId)
               .first()
@@ -1121,7 +1124,7 @@ export default class UserController {
             }
 
             // Update role
-            await businessUser.related('businessUserRols').query().delete()
+            await businessUser.related('businessUserRols').query().useTransaction(trx).delete()
             const businessUserRol = {
               businessUserId: businessUser.id,
               rolId: bus.rolId || 0,
@@ -1130,7 +1133,7 @@ export default class UserController {
 
             // Sync notification types from role to business user
             businessUser.useTransaction(trx)
-            const ntRows3 = await db
+            const ntRows3 = await trx
               .from('notification_type_rols')
               .where('rol_id', businessUserRol.rolId)
               .select('notification_type_id')
@@ -1144,7 +1147,11 @@ export default class UserController {
             }
 
             // Update permissions
-            await businessUser.related('bussinessUserPermissions').query().delete()
+            await businessUser
+              .related('bussinessUserPermissions')
+              .query()
+              .useTransaction(trx)
+              .delete()
             const payloadPermission = (bus.permissions || []).map((permId) => ({
               businessUserId: businessUser.id,
               permissionId: permId,
@@ -1163,8 +1170,8 @@ export default class UserController {
             .whereNotIn('businessId', providedBusinessIds)
           for (const bu of businessUsersToDelete) {
             bu.useTransaction(trx)
-            await bu.related('businessUserRols').query().delete()
-            await bu.related('bussinessUserPermissions').query().delete()
+            await bu.related('businessUserRols').query().useTransaction(trx).delete()
+            await bu.related('bussinessUserPermissions').query().useTransaction(trx).delete()
             await bu.useTransaction(trx).delete()
           }
         }
@@ -1892,7 +1899,7 @@ export default class UserController {
     const trx = await db.transaction()
 
     try {
-      const existingUser = await User.findBy('email', email)
+      const existingUser = await User.findBy('email', email, { client: trx })
       if (existingUser) {
         await trx.rollback()
         return response.status(422).json({
@@ -1931,7 +1938,7 @@ export default class UserController {
       // Handle business user creation
       if (isAdmin) {
         // For admin users, create businessUser entries for ALL businesses
-        const allBusinesses = await Business.query().select('id').exec()
+        const allBusinesses = await Business.query({ client: trx }).select('id').exec()
         let selected = true
         for (const business of allBusinesses) {
           const businessUser = await BusinessUser.create(
@@ -1954,7 +1961,7 @@ export default class UserController {
 
           // Sync notification types from role to business user (admin default role)
           businessUser.useTransaction(trx)
-          const adminNt = await db
+          const adminNt = await trx
             .from('notification_type_rols')
             .where('rol_id', businessUserRol.rolId)
             .select('notification_type_id')
@@ -1994,7 +2001,7 @@ export default class UserController {
 
           // Sync notification types for this role to the created business user
           businessUser.useTransaction(trx)
-          const ntRows4 = await db
+          const ntRows4 = await trx
             .from('notification_type_rols')
             .where('rol_id', businessUserRol.rolId)
             .select('notification_type_id')
@@ -2061,15 +2068,16 @@ export default class UserController {
 
       await user.load('businessUser', (q) =>
         q
+          .useTransaction(trx)
           .preload('business', (q) => q.select('id', 'name'))
           .preload('businessUserRols', (q) => q.preload('rols', (q) => q.select('id', 'name')))
       )
-      await user.load('personalData', (pQ) => pQ.preload('typeIdentify'))
+      await user.load('personalData', (pQ) => pQ.useTransaction(trx).preload('typeIdentify'))
       await user.load('employee', (q) =>
-        q.preload('business', (business) => business.preload('position'))
+        q.useTransaction(trx).preload('business', (business) => business.preload('position'))
       )
 
-      if (user.personalData?.cityId) await user.personalData.load('city')
+      if (user.personalData?.cityId) await user.personalData.useTransaction(trx).load('city')
 
       await user.useTransaction(trx).save()
 

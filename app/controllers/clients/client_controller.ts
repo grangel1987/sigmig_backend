@@ -88,6 +88,7 @@ export default class ClientController {
         .where('identify', data.identify)
         .first()
       if (exists) {
+        await trx.rollback()
         return response
           .status(422)
           .json(

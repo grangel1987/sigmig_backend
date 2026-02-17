@@ -117,7 +117,7 @@ export default class ShoppingController {
         const dateTime = await Util.getDateTimes(request)
 
         try {
-            const lastShop = await db.from('shoppings')
+            const lastShop = await trx.from('shoppings')
                 .where('business_id', businessId)
                 .orderBy('id', 'desc')
                 .limit(1)
@@ -246,20 +246,17 @@ export default class ShoppingController {
 
         const { params, request, response, auth, i18n } = ctx
         const { shop_id } = await shoppingShopIdParamValidator.validate(params)
-        const trx = await db.transaction()
-
-        try {
-            const dateTime = await Util.getDateTimes(request)
-            const {
-                provider,
-                products = [],
-                costCenter,
-                work,
-                info,
-                rounding,
-                currencySymbol,
-                keepSameNro = false,
-            } = await request.validateUsing(
+        const dateTime = await Util.getDateTimes(request)
+        const {
+            provider,
+            products = [],
+            costCenter,
+            work,
+            info,
+            rounding,
+            currencySymbol,
+            keepSameNro = false,
+        } = await request.validateUsing(
                 vine.compile(
                     vine.object({
                         provider: vine.object({ id: vine.number().positive() }).optional(),
@@ -293,6 +290,10 @@ export default class ShoppingController {
                     })
                 )
             )
+
+        const trx = await db.transaction()
+
+        try {
 
             const existing = await Shopping.query({ client: trx }).where('id', shop_id).firstOrFail()
             const token = existing.token

@@ -48,8 +48,8 @@ export default class BudgetPaymentService {
    * Create a budget payment and its corresponding ledger movement
    */
   static async create(params: CreateBudgetPaymentParams) {
-    const trx = await Database.transaction()
     console.log('Creating budget payment with params:', params)
+    let trx: any
     try {
       // Validate the payment amount against remaining budget
       if (params.budgetId) {
@@ -59,6 +59,8 @@ export default class BudgetPaymentService {
         )
         BudgetPaymentValidator.throwIfInvalid(validation, params.budgetId, params.amount)
       }
+
+      trx = await Database.transaction()
 
       // Create the budget payment record
       const budgetPayment = await BudgetPayment.create(
@@ -279,7 +281,7 @@ export default class BudgetPaymentService {
         ledgerMovement,
       }
     } catch (error) {
-      await trx.rollback()
+      if (trx) await trx.rollback()
       throw error
     }
   }
@@ -288,19 +290,22 @@ export default class BudgetPaymentService {
    * Update a budget payment and its ledger movement
    */
   static async update(budgetPaymentId: number, params: Partial<CreateBudgetPaymentParams>) {
-    const trx = await Database.transaction()
-
+    let trx: any
     try {
-      const budgetPayment = await BudgetPayment.findOrFail(budgetPaymentId, { client: trx })
+      const existingPayment = await BudgetPayment.findOrFail(budgetPaymentId)
 
       // Validate the new amount if being changed
-      if (params.amount !== undefined && params.amount !== budgetPayment.amount) {
+      if (params.amount !== undefined && params.amount !== existingPayment.amount) {
         const validation = await BudgetPaymentValidator.validateForUpdate(
           budgetPaymentId,
           params.amount
         )
-        BudgetPaymentValidator.throwIfInvalid(validation, budgetPayment.budgetId, params.amount)
+        BudgetPaymentValidator.throwIfInvalid(validation, existingPayment.budgetId, params.amount)
       }
+
+      trx = await Database.transaction()
+
+      const budgetPayment = await BudgetPayment.findOrFail(budgetPaymentId, { client: trx })
 
       // Update budget payment fields
       if (params.budgetId !== undefined) budgetPayment.budgetId = params.budgetId
@@ -393,7 +398,7 @@ export default class BudgetPaymentService {
         ledgerMovement,
       }
     } catch (error) {
-      await trx.rollback()
+      if (trx) await trx.rollback()
       throw error
     }
   }

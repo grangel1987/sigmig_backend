@@ -129,7 +129,7 @@ export default class SettingBugetItemController {
             }, { client: trx })
 
             if (businessIds?.length) {
-                await item.related('businesses').attach(businessIds)
+                await item.related('businesses').attach(businessIds, trx)
             }
 
             await trx.commit()
@@ -207,7 +207,7 @@ export default class SettingBugetItemController {
             await item.useTransaction(trx).save()
 
             if (businessIds) {
-                await item.related('businesses').sync(businessIds)
+                await item.related('businesses').sync(businessIds, true, trx)
             }
 
             await trx.commit()

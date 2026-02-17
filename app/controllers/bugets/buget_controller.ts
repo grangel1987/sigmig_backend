@@ -1296,24 +1296,25 @@ export default class BugetController {
 
     const { params, request, auth, response, i18n } = ctx
     const bugetId = Number(params.id)
+    const dateTime = await Util.getDateTimes(request)
+    const {
+      products = [],
+      items = [],
+      banks = [],
+      discount,
+      utility,
+      costCenterId,
+      workId,
+      clientDetails,
+      info,
+      currencyId,
+      currencyValue,
+      currencySymbol,
+      keepSameNro = false,
+    } = await request.validateUsing(bugetUpdateValidator)
+
     const trx = await db.transaction()
     try {
-      const dateTime = await Util.getDateTimes(request)
-      const {
-        products = [],
-        items = [],
-        banks = [],
-        discount,
-        utility,
-        costCenterId,
-        workId,
-        clientDetails,
-        info,
-        currencyId,
-        currencyValue,
-        currencySymbol,
-        keepSameNro = false,
-      } = await request.validateUsing(bugetUpdateValidator)
 
       const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
 
@@ -1522,7 +1523,7 @@ export default class BugetController {
             fromClient: true,
             createdById: ctx.auth.user?.id
               ? ((
-                await BusinessUser.query()
+                await BusinessUser.query({ client: trx })
                   .where('user_id', ctx.auth.user.id)
                   .where('business_id', buget?.businessId ?? 0)
                   .first()
@@ -1533,6 +1534,7 @@ export default class BugetController {
         )
 
       if (!buget) {
+        await trx.rollback()
         return response
           .status(404)
           .json(
@@ -1715,10 +1717,11 @@ export default class BugetController {
 
     const { params, request, auth, response, i18n } = ctx
     const bugetId = Number(params.id)
+    const dateTime = await Util.getDateTimes(request)
+    const { clientId } = await request.validateUsing(bugetChangeClientValidator)
+
     const trx = await db.transaction()
     try {
-      const dateTime = await Util.getDateTimes(request)
-      const { clientId } = await request.validateUsing(bugetChangeClientValidator)
 
       const existingBuget = await Buget.query({ client: trx })
         .where('id', bugetId)

@@ -118,91 +118,91 @@ export default class ServiceEntrySheetController {
         )
     }
 
-    const trx = await db.transaction()
-
-    try {
-      if (payload.clientId) {
-        const client = await Client.find(payload.clientId)
-        if (!client) {
-          return response
-            .status(404)
-            .json(
-              MessageFrontEnd(
-                i18n.formatMessage('messages.no_exist', {}, 'Cliente no existe'),
-                i18n.formatMessage('messages.error_title')
-              )
-            )
-        }
-      }
-
-      if (payload.budgetPaymentId) {
-        const budgetPayment = await BudgetPayment.find(payload.budgetPaymentId)
-        if (!budgetPayment) {
-          return response
-            .status(404)
-            .json(
-              MessageFrontEnd(
-                i18n.formatMessage('messages.no_exist', {}, 'Pago de presupuesto no existe'),
-                i18n.formatMessage('messages.error_title')
-              )
-            )
-        }
-      }
-
-      const business = await Business.find(businessId)
-      if (!business) {
+    if (payload.clientId) {
+      const client = await Client.find(payload.clientId)
+      if (!client) {
         return response
           .status(404)
           .json(
             MessageFrontEnd(
-              i18n.formatMessage('messages.no_exist', {}, 'Empresa no existe'),
+              i18n.formatMessage('messages.no_exist', {}, 'Cliente no existe'),
               i18n.formatMessage('messages.error_title')
             )
           )
       }
+    }
 
-      if (payload.issuerClientId) {
-        const issuerClient = await Client.find(payload.issuerClientId)
-        if (!issuerClient) {
-          return response
-            .status(404)
-            .json(
-              MessageFrontEnd(
-                i18n.formatMessage('messages.no_exist', {}, 'Emisor no existe'),
-                i18n.formatMessage('messages.error_title')
-              )
+    if (payload.budgetPaymentId) {
+      const budgetPayment = await BudgetPayment.find(payload.budgetPaymentId)
+      if (!budgetPayment) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Pago de presupuesto no existe'),
+              i18n.formatMessage('messages.error_title')
             )
-        }
+          )
       }
+    }
 
-      if (payload.providerId) {
-        const provider = await Provider.find(payload.providerId)
-        if (!provider) {
-          return response
-            .status(404)
-            .json(
-              MessageFrontEnd(
-                i18n.formatMessage('messages.no_exist', {}, 'Proveedor no existe'),
-                i18n.formatMessage('messages.error_title')
-              )
+    const business = await Business.find(businessId)
+    if (!business) {
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist', {}, 'Empresa no existe'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    if (payload.issuerClientId) {
+      const issuerClient = await Client.find(payload.issuerClientId)
+      if (!issuerClient) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Emisor no existe'),
+              i18n.formatMessage('messages.error_title')
             )
-        }
+          )
       }
+    }
 
-      if (payload.recipientClientId) {
-        const recipientClient = await Client.find(payload.recipientClientId)
-        if (!recipientClient) {
-          return response
-            .status(404)
-            .json(
-              MessageFrontEnd(
-                i18n.formatMessage('messages.no_exist', {}, 'Receptor no existe'),
-                i18n.formatMessage('messages.error_title')
-              )
+    if (payload.providerId) {
+      const provider = await Provider.find(payload.providerId)
+      if (!provider) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Proveedor no existe'),
+              i18n.formatMessage('messages.error_title')
             )
-        }
+          )
       }
+    }
 
+    if (payload.recipientClientId) {
+      const recipientClient = await Client.find(payload.recipientClientId)
+      if (!recipientClient) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Receptor no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+    }
+
+    const trx = await db.transaction()
+
+    try {
       const sheet = await ServiceEntrySheet.create(
         {
           budgetPaymentId: payload.budgetPaymentId ?? null,

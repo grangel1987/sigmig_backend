@@ -364,7 +364,7 @@ export default class EmployeeController {
             }
             // Link or create personalData
             if (userId) {
-                const user = await User.findOrFail(userId)
+                const user = await User.findOrFail(userId, { client: trx })
                 if (!user.personalDataId) {
                     await trx.rollback()
                     return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
@@ -536,9 +536,9 @@ export default class EmployeeController {
         const { request, params, auth, i18n, response } = ctx
         const employeeId = Number(params.id)
         const currentTime = (await Util.getDateTimes(request)).toISO()
-        const trx = await db.transaction()
         const { employeeUpdateValidator } = await import('#validators/employee')
         const payload = await request.validateUsing(employeeUpdateValidator)
+        const trx = await db.transaction()
         const { userId, personalData } = payload
         const createdFiles: string[] = []
         try {
@@ -549,8 +549,11 @@ export default class EmployeeController {
             const scheduleWorkRaw: Record<string, any>[] = hasScheduleWork && Array.isArray(payload.scheduleWork) ? payload.scheduleWork : []
             const certificateHealthRaw: Record<string, any>[] = hasCertificateHealth && Array.isArray(payload.certificateHealth) ? payload.certificateHealth : []
             const contactsEmergencyRaw: Record<string, any>[] = hasContactsEmergency && Array.isArray(payload.contactsEmergency) ? payload.contactsEmergency : []
-            const employee = await Employee.find(employeeId)
-            if (!employee) return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
+            const employee = await Employee.find(employeeId, { client: trx })
+            if (!employee) {
+                await trx.rollback()
+                return response.status(404).json(MessageFrontEnd(i18n.formatMessage('messages.data_not_found'), i18n.formatMessage('messages.error_title')))
+            }
 
             // Build conditional patch for employee fields to avoid nulling omitted values
             const employeePatch: any = {
@@ -594,7 +597,7 @@ export default class EmployeeController {
 
             // Handle personalData linking/creation/update
             if (userId) {
-                const user = await User.findOrFail(userId)
+                const user = await User.findOrFail(userId, { client: trx })
                 if (!user.personalDataId) {
                     await trx.rollback()
                     return response.status(422).json(MessageFrontEnd(i18n.formatMessage('messages.user_missing_personal_data'), i18n.formatMessage('messages.error_title')))
@@ -622,7 +625,7 @@ export default class EmployeeController {
                         createdFile = uploaded.url_short
                     }
                     if (employee.personalDataId) {
-                        const existingPd = await PersonalData.find(employee.personalDataId)
+                        const existingPd = await PersonalData.find(employee.personalDataId, { client: trx })
                         if (existingPd) {
                             existingPd.merge({
                                 ...pdData,
@@ -632,7 +635,7 @@ export default class EmployeeController {
                                 updatedAt: DateTime.now(),
                                 updatedBy: auth.user!.id,
                             })
-                            await existingPd.save()
+                            await existingPd.useTransaction(trx).save()
                         }
                     } else {
                         const payloadPersonalData = {
@@ -645,7 +648,7 @@ export default class EmployeeController {
                             createdBy: auth.user!.id,
                             updatedBy: auth.user!.id,
                         }
-                        const newPd = await PersonalData.create(payloadPersonalData)
+                        const newPd = await PersonalData.create(payloadPersonalData, { client: trx })
                         employeePatch.personalDataId = newPd.id
                     }
                     if (createdFile) createdFiles.push(createdFile)

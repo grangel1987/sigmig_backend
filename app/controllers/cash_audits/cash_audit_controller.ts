@@ -137,17 +137,18 @@ export default class CashAuditController {
             )
         )
 
+        let businessId = payload.businessId
+        if (!businessId) businessId = Number(request.header('Business'))
+
+        if (!businessId) {
+            return response.status(400).json({
+                message: i18n.formatMessage('messages.bad_request', {}, 'Business requerido'),
+                title: i18n.formatMessage('messages.error_title'),
+            })
+        }
+
         const trx = await db.transaction()
         try {
-            let businessId = payload.businessId
-            if (!businessId) businessId = Number(request.header('Business'))
-
-            if (!businessId) {
-                return response.status(400).json({
-                    message: i18n.formatMessage('messages.bad_request', {}, 'Business requerido'),
-                    title: i18n.formatMessage('messages.error_title'),
-                })
-            }
 
             const totalCounted = Number(payload.totalCounted)
             const totalExpected = Number(payload.totalExpected)
@@ -181,7 +182,7 @@ export default class CashAuditController {
                 await cashAudit.related('lines').createMany(linesPayload, { client: trx })
             }
 
-            await cashAudit.load('lines')
+            await cashAudit.load('lines', (q) => q.useTransaction(trx))
 
             await trx.commit()
 
