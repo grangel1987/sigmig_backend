@@ -257,39 +257,39 @@ export default class ShoppingController {
             currencySymbol,
             keepSameNro = false,
         } = await request.validateUsing(
-                vine.compile(
-                    vine.object({
-                        provider: vine.object({ id: vine.number().positive() }).optional(),
-                        products: vine.array(
-                            vine.object({
-                                id: vine.number().positive().optional(),
-                                name: vine.string().trim().optional(),
-                                code: vine.string().trim().optional(),
-                                price: vine.number().min(0).optional(),
-                                tax: vine.number().range([0, 100]).optional(),
-                                count: vine.number().positive().optional(),
-                                quantity: vine.number().positive().optional(),
-                            })
-                        ).optional(),
-                        costCenter: vine.number().positive().optional(),
-                        work: vine.number().positive().optional(),
-                        rounding: vine.number().optional(),
-                        currencySymbol: vine.string().trim().minLength(1).maxLength(50).optional(),
-                        keepSameNro: vine.boolean().optional(),
-                        info: vine.object({
-                            name: vine.string().trim().minLength(1).optional(),
-                            paymentTerm: vine.number().positive().optional(),
-                            sendCondition: vine.number().positive().optional(),
-                            sendAmount: vine.number().min(0).optional(),
-                            otherAmount: vine.number().min(0).optional(),
-                            observation: vine.string().trim().optional(),
-                            daysExpireBuget: vine.number().min(0).optional(),
-                            authorizerId: vine.number().positive().optional(),
-                            nroBudget: vine.string().trim().maxLength(50).optional(),
-                        }).optional(),
-                    })
-                )
+            vine.compile(
+                vine.object({
+                    provider: vine.object({ id: vine.number().positive() }).optional(),
+                    products: vine.array(
+                        vine.object({
+                            id: vine.number().positive().optional(),
+                            name: vine.string().trim().optional(),
+                            code: vine.string().trim().optional(),
+                            price: vine.number().min(0).optional(),
+                            tax: vine.number().range([0, 100]).optional(),
+                            count: vine.number().positive().optional(),
+                            quantity: vine.number().positive().optional(),
+                        })
+                    ).optional(),
+                    costCenter: vine.number().positive().optional(),
+                    work: vine.number().positive().optional(),
+                    rounding: vine.number().optional(),
+                    currencySymbol: vine.string().trim().minLength(1).maxLength(50).optional(),
+                    keepSameNro: vine.boolean().optional(),
+                    info: vine.object({
+                        name: vine.string().trim().minLength(1).optional(),
+                        paymentTerm: vine.number().positive().optional(),
+                        sendCondition: vine.number().positive().optional(),
+                        sendAmount: vine.number().min(0).optional(),
+                        otherAmount: vine.number().min(0).optional(),
+                        observation: vine.string().trim().optional(),
+                        daysExpireBuget: vine.number().min(0).optional(),
+                        authorizerId: vine.number().positive().optional(),
+                        nroBudget: vine.string().trim().maxLength(50).optional(),
+                    }).optional(),
+                })
             )
+        )
 
         const trx = await db.transaction()
 

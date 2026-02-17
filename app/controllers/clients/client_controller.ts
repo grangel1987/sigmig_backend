@@ -107,7 +107,7 @@ export default class ClientController {
           responsibles = Array.isArray(rawResponsibles)
             ? rawResponsibles
             : JSON.parse(rawResponsibles)
-        } catch {}
+        } catch { }
       }
 
       const fromWeb = request.input('from_web') || request.input('fromWeb')
@@ -283,12 +283,12 @@ export default class ClientController {
         if (client.urlShort) {
           try {
             await Google.deleteFile(client.urlShort)
-          } catch {}
+          } catch { }
         }
         if (client.urlThumbShort) {
           try {
             await Google.deleteFile(client.urlThumbShort)
-          } catch {}
+          } catch { }
         }
         const { url, url_short, url_thumb, url_thumb_short } = await Google.uploadFile(
           photo,
@@ -323,7 +323,7 @@ export default class ClientController {
           responsibles = Array.isArray(rawResponsibles)
             ? rawResponsibles
             : JSON.parse(rawResponsibles)
-        } catch {}
+        } catch { }
       }
 
       if (responsibles.length) {
@@ -537,12 +537,12 @@ export default class ClientController {
       if (client.urlShort) {
         try {
           await Google.deleteFile(client.urlShort)
-        } catch {}
+        } catch { }
       }
       if (client.urlThumbShort) {
         try {
           await Google.deleteFile(client.urlThumbShort)
-        } catch {}
+        } catch { }
       }
 
       client.merge({ url: '', urlShort: '', urlThumb: '', urlThumbShort: '' })
@@ -679,7 +679,7 @@ export default class ClientController {
       if (file.urlShort) {
         try {
           await Google.deleteFile(file.urlShort)
-        } catch {}
+        } catch { }
         // Attempt to delete a potential thumbnail if it follows the same naming scheme
         const idx = file.urlShort.lastIndexOf('/')
         if (idx > -1) {
@@ -688,7 +688,7 @@ export default class ClientController {
           const thumb = `${base}/thumb_${name}`
           try {
             await Google.deleteFile(thumb)
-          } catch {}
+          } catch { }
         }
       }
 
