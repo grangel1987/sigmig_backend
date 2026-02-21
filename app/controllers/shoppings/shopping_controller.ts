@@ -662,9 +662,31 @@ export default class ShoppingController {
 
             const existing = await Shopping.query({ client: trx })
                 .where('id', shopId)
-                .where('enabled', false)
-                .forUpdate()
-                .firstOrFail()
+                .first()
+
+            if (!existing) {
+                await trx.rollback()
+                return response
+                    .status(404)
+                    .json(
+                        MessageFrontEnd(
+                            i18n.formatMessage('messages.no_exist', {}, 'Orden de compra no existe'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    )
+            }
+
+            if (existing.enabled) {
+                await trx.rollback()
+                return response
+                    .status(400)
+                    .json(
+                        MessageFrontEnd(
+                            i18n.formatMessage('messages.update_error', {}, 'Orden de compra ya esta habilitada'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    )
+            }
 
             if (existing.expireDate && existing.expireDate > dateTime) {
                 await trx.rollback()
