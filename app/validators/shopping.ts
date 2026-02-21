@@ -50,6 +50,13 @@ export const shoppingFindByDateValidator = vine.compile(
     })
 )
 
+export const shoppingFindAutoCompleteValidator = vine.compile(
+    vine.object({
+        businessId: vine.number().positive(),
+        val: vine.string().trim().minLength(1),
+    })
+)
+
 export const shoppingUpdateNroBugetValidator = vine.compile(
     vine.object({
         nroBuget: vine.string().trim().minLength(1).maxLength(50),

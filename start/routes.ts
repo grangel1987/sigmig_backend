@@ -1002,6 +1002,10 @@ router
     // Service Entry Sheets
     router
       .group(() => {
+        router.post(
+          '/products',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.products'
+        )
         router.get('/', '#controllers/service_entry_sheets/service_entry_sheet_controller.index')
         router.post(
           '/store',
@@ -1022,6 +1026,7 @@ router
         router.post('/store', '#controllers/shoppings/shopping_controller.store')
         router.get('/show/:id', '#controllers/shoppings/shopping_controller.show')
         router.post('/find/number', '#controllers/shoppings/shopping_controller.findByNro')
+        router.post('/findAutoComplete', '#controllers/shoppings/shopping_controller.findAutoComplete')
         router.put('/update/:shop_id', '#controllers/shoppings/shopping_controller.update')
         router.post('/authorizer', '#controllers/shoppings/shopping_controller.authorizer')
         router.put('/delete/:shop_id', '#controllers/shoppings/shopping_controller.delete')

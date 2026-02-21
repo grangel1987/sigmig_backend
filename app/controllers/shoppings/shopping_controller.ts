@@ -10,6 +10,7 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { searchWithStatusSchema } from '#validators/general'
 import {
+    shoppingFindAutoCompleteValidator,
     shoppingFindByDateValidator,
     shoppingFindByNameProviderValidator,
     shoppingIdParamValidator,
@@ -528,6 +529,16 @@ export default class ShoppingController {
         await shop.load('work', (b) => b.select(['id', 'code', 'name']))
 
         return [shop]
+    }
+
+    /** Autocomplete shoppings by number or provider name */
+    public async findAutoComplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { request } = ctx
+        const { businessId, val } = await request.validateUsing(shoppingFindAutoCompleteValidator)
+        const result = await ShoppingRepository.findAutoComplete(businessId, val)
+        return result
     }
 
     /** Show a shopping by id with preloads */

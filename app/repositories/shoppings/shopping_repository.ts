@@ -209,4 +209,25 @@ export default class ShoppingRepository {
       byCostCenter,
     }
   }
+
+  /** Autocomplete for shoppings by number or provider name */
+  static async findAutoComplete(businessId: number, val: string, limit = 20) {
+    const sql = `
+      SELECT
+        shoppings.id,
+        shoppings.nro,
+        providers.name AS provider_name
+      FROM shoppings
+      LEFT JOIN providers ON providers.id = shoppings.provider_id
+      WHERE shoppings.business_id = ?
+        AND (
+          shoppings.nro LIKE ?
+          OR providers.name LIKE ?
+        )
+      ORDER BY shoppings.id DESC
+      LIMIT ?
+    `
+    const result = await Database.rawQuery(sql, [businessId, `%${val}%`, `%${val}%`, limit])
+    return result[0]
+  }
 }
