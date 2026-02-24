@@ -427,17 +427,37 @@ export default class ServiceEntrySheetController {
         { client: trx }
       )
 
-      const lineRows = payload.lines.map((line) => ({
-        lineNumber: line.lineNumber ?? null,
-        serviceCode: line.serviceCode ?? null,
-        description: line.description ?? null,
-        planningLine: line.planningLine ?? null,
-        currency: line.currency ?? null,
-        unit: line.unit ?? null,
-        unitPrice: line.unitPrice ?? undefined,
-        quantity: line.quantity ?? undefined,
-        netValue: line.netValue ?? undefined,
-      }))
+      const lineRows = await Promise.all(
+        payload.lines.map(async (line) => {
+          let description = line.description ?? null
+          let unitPrice = line.unitPrice ?? undefined
+          let unit = line.unit ?? null
+          let unitType = line.unitType ?? null
+
+          // Auto-fill from product if productId is provided
+          if (line.productId) {
+            const product = await Product.find(line.productId)
+            if (product) {
+              if (!description) description = product.name ?? null
+              if (unitPrice === undefined) unitPrice = product.amount ?? undefined
+            }
+          }
+
+          return {
+            productId: line.productId ?? null,
+            lineNumber: line.lineNumber ?? null,
+            serviceCode: line.serviceCode ?? null,
+            description,
+            planningLine: line.planningLine ?? null,
+            currency: line.currency ?? null,
+            unit,
+            unitType,
+            unitPrice,
+            quantity: line.quantity ?? undefined,
+            netValue: line.netValue ?? undefined,
+          }
+        })
+      )
 
       if (lineRows.length) {
         await sheet.related('lines').createMany(lineRows, { client: trx })
@@ -510,12 +530,14 @@ const parseDate = (value: string) => {
 }
 
 const serviceEntryLineSchema = vine.object({
+  productId: vine.number().positive().optional(),
   lineNumber: vine.number().positive().optional(),
   serviceCode: vine.string().trim().optional(),
   description: vine.string().trim().optional(),
   planningLine: vine.string().trim().optional(),
   currency: vine.string().trim().optional(),
   unit: vine.string().trim().optional(),
+  unitType: vine.string().trim().optional(),
   unitPrice: vine.number().min(0).optional(),
   quantity: vine.number().min(0).optional(),
   netValue: vine.number().min(0).optional(),

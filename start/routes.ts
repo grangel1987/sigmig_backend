@@ -394,6 +394,17 @@ router
 
     router
       .group(() => {
+        router.get('/', '#controllers/unit_types/unit_type_controller.index')
+        router.post('/store', '#controllers/unit_types/unit_type_controller.store')
+        router.put('/update/:id', '#controllers/unit_types/unit_type_controller.update')
+        router.put('/change-status/:id', '#controllers/unit_types/unit_type_controller.changeStatus')
+        router.get('/select', '#controllers/unit_types/unit_type_controller.select')
+      })
+      .prefix('unit-types')
+      .middleware(auth)
+
+    router
+      .group(() => {
         router.get('/', '#controllers/type_contract/setting_type_contract_controller.index')
         router.post('/store', '#controllers/type_contract/setting_type_contract_controller.store')
         router.put(
