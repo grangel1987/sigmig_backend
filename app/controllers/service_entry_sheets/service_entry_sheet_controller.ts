@@ -466,6 +466,7 @@ export default class ServiceEntrySheetController {
             }
           }
 
+          const lineQuantity = line.quantity ?? undefined
           return {
             productId: line.productId ?? null,
             lineNumber: line.lineNumber ?? null,
@@ -476,8 +477,12 @@ export default class ServiceEntrySheetController {
             unit,
             unitType,
             unitPrice,
-            quantity: line.quantity ?? undefined,
-            netValue: line.netValue ?? undefined,
+            quantity: lineQuantity,
+            netValue:
+              line.netValue ??
+              (unitPrice !== undefined && lineQuantity !== undefined
+                ? unitPrice * lineQuantity
+                : undefined),
           }
         })
       )
