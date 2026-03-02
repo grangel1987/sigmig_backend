@@ -51,13 +51,13 @@ export default class ServiceEntrySheetController {
         .where('enabled', true)
         .limit(100)
 
-      if (text)
-        productQ.where(pQb =>
-          pQb.whereRaw('name LIKE ?', [`%${text}%`])
-            .orWhereRaw('code LIKE ?', [`%${text}%`]))
+      if (text) {
+        productQ.where((pQb) => {
+          pQb.whereRaw('name LIKE ?', [`%${text}%`]).orWhereRaw('code LIKE ?', [`%${text}%`])
+        })
+      }
 
       const products = await productQ
-
 
       return response.status(200).json(products)
     }
@@ -81,9 +81,9 @@ export default class ServiceEntrySheetController {
       .orderBy('name', 'asc')
       .limit(100)
 
-
-    if (text)
+    if (text) {
       bProductQ.whereRaw('name LIKE ?', [`%${text}%`])
+    }
 
     const products = await bProductQ
 
@@ -387,12 +387,14 @@ export default class ServiceEntrySheetController {
           .orderBy('id', 'desc')
           .limit(1)
 
-        const lastNumberRaw = last.length ? Number(last[0].number) : NaN
-        const nextNumber = Number.isFinite(lastNumberRaw) && lastNumberRaw > 0
-          ? lastNumberRaw + 1
-          : last.length
-            ? Number(last[0].id) + 1
-            : 1
+        const lastNumberRaw = last.length ? Number(last[0].number) : Number.NaN
+        let nextNumber = 1
+
+        if (Number.isFinite(lastNumberRaw) && lastNumberRaw > 0) {
+          nextNumber = lastNumberRaw + 1
+        } else if (last.length) {
+          nextNumber = Number(last[0].id) + 1
+        }
 
         number = String(nextNumber)
       }
@@ -429,6 +431,7 @@ export default class ServiceEntrySheetController {
 
       const lineRows = await Promise.all(
         payload.lines.map(async (line) => {
+          let serviceCode = line.serviceCode ?? null
           let description = line.description ?? null
           let unitPrice = line.unitPrice ?? undefined
           let unit = line.unit ?? null
@@ -436,16 +439,25 @@ export default class ServiceEntrySheetController {
 
           // Auto-fill from product if productId is provided
           if (line.productId) {
-            if (direction === 'issued' && provider) {
-              // When issued, productId refers to a provider product
-              const providerProduct = await ProviderProduct.find(line.productId)
+            if (direction === 'received') {
+              let providerProduct: ProviderProduct | null = null
+              if (providerId) {
+                providerProduct = await ProviderProduct.query()
+                  .where('id', line.productId)
+                  .where('provider_id', providerId)
+                  .first()
+              }
+
               if (providerProduct) {
+                if (!serviceCode) serviceCode = providerProduct.code ?? null
                 if (!description) description = providerProduct.name ?? null
                 if (unitPrice === undefined) unitPrice = providerProduct.price ?? undefined
               }
             } else {
-              // When received, productId refers to a business product
-              const product = await Product.find(line.productId)
+              const product = await Product.query()
+                .where('id', line.productId)
+                .where('business_id', businessId)
+                .first()
               if (product) {
                 if (!description) description = product.name ?? null
                 if (unitPrice === undefined) unitPrice = product.amount ?? undefined
@@ -453,18 +465,23 @@ export default class ServiceEntrySheetController {
             }
           }
 
+          const lineQuantity = line.quantity ?? undefined
           return {
             productId: line.productId ?? null,
             lineNumber: line.lineNumber ?? null,
-            serviceCode: line.serviceCode ?? null,
+            serviceCode,
             description,
             planningLine: line.planningLine ?? null,
             currency: line.currency ?? null,
             unit,
             unitType,
             unitPrice,
-            quantity: line.quantity ?? undefined,
-            netValue: line.netValue ?? undefined,
+            quantity: lineQuantity,
+            netValue:
+              line.netValue ??
+              (unitPrice !== undefined && lineQuantity !== undefined
+                ? unitPrice * lineQuantity
+                : undefined),
           }
         })
       )
