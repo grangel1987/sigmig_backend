@@ -436,10 +436,20 @@ export default class ServiceEntrySheetController {
 
           // Auto-fill from product if productId is provided
           if (line.productId) {
-            const product = await Product.find(line.productId)
-            if (product) {
-              if (!description) description = product.name ?? null
-              if (unitPrice === undefined) unitPrice = product.amount ?? undefined
+            if (direction === 'issued' && provider) {
+              // When issued, productId refers to a provider product
+              const providerProduct = await ProviderProduct.find(line.productId)
+              if (providerProduct) {
+                if (!description) description = providerProduct.name ?? null
+                if (unitPrice === undefined) unitPrice = providerProduct.price ?? undefined
+              }
+            } else {
+              // When received, productId refers to a business product
+              const product = await Product.find(line.productId)
+              if (product) {
+                if (!description) description = product.name ?? null
+                if (unitPrice === undefined) unitPrice = product.amount ?? undefined
+              }
             }
           }
 

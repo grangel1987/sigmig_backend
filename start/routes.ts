@@ -399,6 +399,7 @@ router
         router.put('/update/:id', '#controllers/unit_types/unit_type_controller.update')
         router.put('/change-status/:id', '#controllers/unit_types/unit_type_controller.changeStatus')
         router.get('/select', '#controllers/unit_types/unit_type_controller.select')
+        router.get('/findAutoComplete', '#controllers/unit_types/unit_type_controller.autoComplete')
       })
       .prefix('unit-types')
       .middleware(auth)

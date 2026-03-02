@@ -4,6 +4,7 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { indexFiltersWithStatus } from '#validators/general'
 import { unitTypeStoreValidator, unitTypeUpdateValidator } from '#validators/unit_type'
 import { HttpContext } from '@adonisjs/core/http'
+import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 type MessageFrontEndType = {
@@ -220,6 +221,42 @@ export default class UnitTypeController {
             }))
 
             return result
+        } catch (error) {
+            console.log(error)
+            return response.status(500).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.update_error'),
+                    i18n.formatMessage('messages.error_title')
+                ),
+            })
+        }
+    }
+
+    public async autoComplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'config', 'view')
+
+        const { request, response, i18n } = ctx
+        const { text } = await request.validateUsing(
+            vine.compile(
+                vine.object({
+                    text: vine.string().trim().minLength(1),
+                })
+            )
+        )
+
+        try {
+            const unitTypes = await UnitType.query()
+                .where('enabled', true)
+                .whereILike('name', `%${text}%`)
+                .orderBy('name', 'asc')
+                .limit(50)
+
+            const result = unitTypes.map((unitType) => ({
+                text: unitType.name,
+                value: unitType.id,
+            }))
+
+            return response.status(200).json(result)
         } catch (error) {
             console.log(error)
             return response.status(500).json({

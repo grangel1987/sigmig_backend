@@ -220,6 +220,7 @@ export default class ShoppingRepository {
       FROM shoppings
       LEFT JOIN providers ON providers.id = shoppings.provider_id
       WHERE shoppings.business_id = ?
+      AND shoppings.enabled = true
         AND (
           shoppings.nro LIKE ?
           OR providers.name LIKE ?
