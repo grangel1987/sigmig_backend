@@ -923,6 +923,8 @@ export async function sendShoppingNotification(businessId: number, emailData: {
     providerName: string
     expirationDate: string
     requestedBy: string
+    status?: string
+    statusLabel?: string
     shoppingUrl?: string
     businessName: string
     shoppingNumberLabel: string
@@ -962,12 +964,14 @@ function buildShoppingCreatedEmailData(i18n: HttpContext['i18n'], shopping: Shop
     requestedByName: string
 }) {
     const expirationDateStr = shopping.expireDate ? Util.parseToMoment(shopping.expireDate, false, { separator: '/', firstYear: false }) : ''
+    const statusLabel = i18n.formatMessage('messages.shopping_status_pending_authorization', {}, 'pending authorization')
     const subject = i18n.formatMessage('messages.shopping_created_email_subject', { shoppingNumber: shopping.nro })
     const body = i18n.formatMessage('messages.shopping_created_email_body', {
         shoppingNumber: shopping.nro,
         providerName: opts.providerName,
         expirationDate: expirationDateStr,
         requestedBy: opts.requestedByName,
+        status: statusLabel,
     })
     return {
         subject,
@@ -976,6 +980,8 @@ function buildShoppingCreatedEmailData(i18n: HttpContext['i18n'], shopping: Shop
         providerName: opts.providerName,
         expirationDate: expirationDateStr,
         requestedBy: opts.requestedByName,
+        status: statusLabel,
+        statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
         businessName: shopping.business?.name || '',
         shoppingNumberLabel: i18n.formatMessage('messages.shopping_number'),
         providerLabel: i18n.formatMessage('messages.provider'),
@@ -992,12 +998,14 @@ function buildShoppingAuthorizedEmailData(i18n: HttpContext['i18n'], shop: Shopp
     authorizedByName: string
 }) {
     const authorizationDateStr = shop.authorizerAt ? Util.parseToMoment(shop.authorizerAt, false, { separator: '/', firstYear: false }) : ''
+    const statusLabel = i18n.formatMessage('messages.shopping_status_authorized', {}, 'authorized')
     const subject = i18n.formatMessage('messages.shopping_authorized_email_subject', { shoppingNumber: shop.nro })
     const body = i18n.formatMessage('messages.shopping_authorized_email_body', {
         shoppingNumber: shop.nro,
         providerName: opts.providerName,
         authorizationDate: authorizationDateStr,
         authorizedBy: opts.authorizedByName,
+        status: statusLabel,
     })
     return {
         subject,
@@ -1006,6 +1014,8 @@ function buildShoppingAuthorizedEmailData(i18n: HttpContext['i18n'], shop: Shopp
         providerName: opts.providerName,
         authorizationDate: authorizationDateStr,
         authorizedBy: opts.authorizedByName,
+        status: statusLabel,
+        statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
         businessName: shop.business?.name || '',
         shoppingNumberLabel: i18n.formatMessage('messages.shopping_number'),
         providerLabel: i18n.formatMessage('messages.provider'),

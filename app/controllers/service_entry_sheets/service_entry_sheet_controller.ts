@@ -1,13 +1,16 @@
 import BudgetPayment from '#models/budget_payment'
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
+import BusinessUser from '#models/business/business_user'
 import City from '#models/cities/City'
 import Client from '#models/clients/client'
+import NotificationType from '#models/notifications/notification_type'
 import Product from '#models/products/product'
 import Provider from '#models/provider/provider'
 import ProviderProduct from '#models/provider/provider_product'
 import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
 import Shopping from '#models/shoppings/shopping'
+import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
@@ -164,7 +167,7 @@ export default class ServiceEntrySheetController {
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'create')
 
-    const { request, response, i18n } = ctx
+    const { request, response, i18n, auth } = ctx
 
     const businessId = Number(request.header('Business'))
     if (!Number.isFinite(businessId) || businessId <= 0) {
@@ -405,6 +408,9 @@ export default class ServiceEntrySheetController {
           clientId: resolvedClientId,
           providerId,
           businessId,
+          authorizerId: payload.authorizerId ?? null,
+          isAuthorized: false,
+          authorizerAt: null,
           direction,
           issuerName: payload.issuerName ?? null,
           recipientName: payload.recipientName ?? null,
@@ -495,6 +501,34 @@ export default class ServiceEntrySheetController {
       await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
       await sheet.load('lines')
 
+      try {
+        const type = await NotificationType.findBy('code', 'service_entry_sheet_created')
+        const issueDateStr = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : DateTime.now().toFormat('dd/LL/yyyy')
+        const title = `HES creada #${sheet.number}`
+        const shortBody = `${title} • ${issueDateStr}`
+
+        await NotificationService.createAndDispatch({
+          typeId: type?.id,
+          businessId,
+          title,
+          body: shortBody,
+          payload: {
+            serviceEntrySheetId: sheet.id,
+            number: sheet.number,
+            businessId,
+            issueDate: sheet.issueDate ? sheet.issueDate.toISODate() : null,
+          },
+          meta: {
+            sheetId: sheet.id,
+            number: sheet.number,
+            direction: sheet.direction,
+          },
+          createdById: auth.user?.id ?? 1,
+        })
+      } catch (notifyErr) {
+        log('Service entry sheet notification error:', notifyErr)
+      }
+
       return response.status(201).json({
         sheet,
         ...MessageFrontEnd(
@@ -525,6 +559,10 @@ export default class ServiceEntrySheetController {
       const sheet = await ServiceEntrySheet.query()
         .where('id', Number(params.id))
         .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
+        .preload('authorizer', (q) => {
+          q.select(['id', 'personal_data_id', 'email'])
+          q.preload('personalData', (pdQ) => pdQ.select(['id', 'names', 'last_name_p', 'last_name_m']))
+        })
         .preload('lines')
         .firstOrFail()
 
@@ -539,6 +577,106 @@ export default class ServiceEntrySheetController {
             i18n.formatMessage('messages.error_title')
           )
         )
+    }
+  }
+
+  public async authorizer(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'update')
+
+    const { request, auth, response, i18n } = ctx
+    const { id } = await request.validateUsing(
+      vine.compile(vine.object({ id: vine.number().positive() }))
+    )
+
+    try {
+      const authUser = auth.getUserOrFail()
+      const sheet = await ServiceEntrySheet.findOrFail(id)
+      const sheetBusinessId = sheet.businessId
+
+      const isPAuthorizer = sheet.authorizerId === auth.user!.id
+      const isAdmin = authUser.isAdmin
+      const activeBUsr =
+        isPAuthorizer || isAdmin || !sheetBusinessId
+          ? null
+          : await BusinessUser.query()
+            .where('user_id', authUser.id)
+            .where('business_id', sheetBusinessId)
+            .first()
+
+      if (isPAuthorizer || isAdmin || activeBUsr?.isSuper) {
+        if (!sheet.authorizerId) {
+          sheet.authorizerId = auth.user!.id
+        }
+        sheet.isAuthorized = true
+        sheet.authorizerAt = DateTime.now()
+        await sheet.save()
+
+        try {
+          const type = await NotificationType.findBy('code', 'service_entry_sheet_authorized')
+          const authAtStr = sheet.authorizerAt
+            ? sheet.authorizerAt.toFormat('dd/LL/yyyy')
+            : DateTime.now().toFormat('dd/LL/yyyy')
+          const title = `HES autorizada #${sheet.number}`
+          const shortBody = `${title} • ${authAtStr}`
+
+          await NotificationService.createAndDispatch({
+            typeId: type?.id,
+            businessId: sheet.businessId ?? undefined,
+            title,
+            body: shortBody,
+            payload: {
+              serviceEntrySheetId: sheet.id,
+              number: sheet.number,
+              businessId: sheet.businessId,
+              authorizedById: sheet.authorizerId,
+              authorizedAt: sheet.authorizerAt ? sheet.authorizerAt.toISO() : null,
+            },
+            meta: {
+              sheetId: sheet.id,
+              number: sheet.number,
+            },
+            createdById: auth.user!.id,
+          })
+        } catch (notifyErr) {
+          log('Service entry sheet authorization notification error:', notifyErr)
+        }
+
+        return response.status(201).json(
+          MessageFrontEnd(
+            i18n.formatMessage(
+              'messages.service_entry_sheet_authorizer_ok',
+              {},
+              'HES autorizada correctamente.'
+            ),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+      }
+
+      return response.status(403).json({
+        isAdmin: authUser.isAdmin,
+        canAuthorize: sheet.authorizerId === authUser.id,
+        ...MessageFrontEnd(
+          i18n.formatMessage(
+            'messages.service_entry_sheet_no_authorizer_permission',
+            {},
+            'No tienes permisos para autorizar esta HES.'
+          ),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
+    } catch (error) {
+      log(error)
+      return response.status(500).json(
+        MessageFrontEnd(
+          i18n.formatMessage(
+            'messages.service_entry_sheet_authorizer_error',
+            {},
+            'Ocurrió un error al autorizar la HES.'
+          ),
+          i18n.formatMessage('messages.error_title')
+        )
+      )
     }
   }
 }
@@ -575,6 +713,7 @@ const serviceEntrySheetStoreValidator = vine.compile(
     budgetPaymentId: vine.number().positive().optional(),
     clientId: vine.number().positive().optional(),
     providerId: vine.number().positive().optional(),
+    authorizerId: vine.number().positive().optional(),
     direction: vine.enum(['issued', 'received']).optional(),
     issuerName: vine.string().trim().optional(),
     recipientName: vine.string().trim().optional(),

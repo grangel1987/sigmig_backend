@@ -1023,6 +1023,10 @@ router
           '/store',
           '#controllers/service_entry_sheets/service_entry_sheet_controller.store'
         )
+        router.post(
+          '/authorizer',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.authorizer'
+        )
         router.get(
           '/show/:id',
           '#controllers/service_entry_sheets/service_entry_sheet_controller.show'
