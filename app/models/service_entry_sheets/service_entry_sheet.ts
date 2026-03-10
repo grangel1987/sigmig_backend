@@ -26,6 +26,12 @@ export default class ServiceEntrySheet extends BaseModel {
   @column({ columnName: 'business_id' })
   public businessId: number | null
 
+  @column({ columnName: 'authorizer_id' })
+  public authorizerId: number | null
+
+  @column({ columnName: 'is_authorized' })
+  public isAuthorized: boolean
+
   @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
   public budgetPayment: BelongsTo<typeof BudgetPayment>
 
@@ -140,4 +146,10 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @column.dateTime({ columnName: 'authorizer_at' })
+  public authorizerAt: DateTime | null
+
+  @belongsTo(() => User, { foreignKey: 'authorizerId' })
+  public authorizer: BelongsTo<typeof User>
 }

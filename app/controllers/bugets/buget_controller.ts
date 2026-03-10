@@ -160,6 +160,7 @@ export default class BugetController {
 
       // Prepare email payload data
       const clientName = buget.client?.name || ''
+      const budgetStatusLabel = getBudgetStatusLabel(i18n, buget.status)
       const createdByName = buget.createdBy?.personalData
         ? `${buget.createdBy.personalData.names} ${buget.createdBy.personalData.lastNameP} ${buget.createdBy.personalData.lastNameM}`.trim()
         : ''
@@ -177,6 +178,8 @@ export default class BugetController {
           clientName,
           expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
           createdBy: createdByName,
+          status: budgetStatusLabel,
+          statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
           budgetUrl,
           businessName: business.name,
           subject: i18n.formatMessage('messages.budget_created_email_subject', {
@@ -187,6 +190,7 @@ export default class BugetController {
             clientName,
             expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
             createdBy: createdByName,
+            status: budgetStatusLabel,
           }),
           budgetNumberLabel: i18n.formatMessage('messages.budget_number'),
           clientLabel: i18n.formatMessage('messages.client'),
@@ -1607,6 +1611,51 @@ export default class BugetController {
           createdById: ctx.auth.user!.id,
         })
         console.log('[BUDGET STATUS] Notification dispatched successfully')
+
+        try {
+          const business = await Business.find(buget.businessId)
+          const host =
+            env.get('NODE_ENV') === 'development'
+              ? 'http://212.38.95.163/sigmig/'
+              : 'https://admin.serviciosgenessis.com/'
+          const budgetUrl = buget.token ? host + `client/budget/${buget.token}` : undefined
+          const currentStatus = getBudgetStatusLabel(i18n, buget.status)
+          const previousStatusLabel = getBudgetStatusLabel(i18n, previousStatus)
+
+          await sendBudgetNotification(
+            buget.businessId,
+            {
+              budgetNumber: buget.nro,
+              clientName,
+              expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+              createdBy: ctx.auth.user?.email || 'system',
+              status: currentStatus,
+              statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
+              budgetUrl,
+              businessName: business?.name || '',
+              subject: i18n.formatMessage('messages.budget_status_email_subject', {
+                budgetNumber: buget.nro,
+                status: currentStatus,
+              }),
+              body: i18n.formatMessage('messages.budget_status_email_body', {
+                budgetNumber: buget.nro,
+                clientName,
+                status: currentStatus,
+                previousStatus: previousStatusLabel,
+                updatedBy: ctx.auth.user?.email || 'system',
+              }),
+              budgetNumberLabel: i18n.formatMessage('messages.budget_number'),
+              clientLabel: i18n.formatMessage('messages.client'),
+              expirationDateLabel: i18n.formatMessage('messages.expiration_date'),
+              createdByLabel: i18n.formatMessage('messages.updated_by'),
+              viewBudgetLabel: i18n.formatMessage('messages.view_budget'),
+              backupText: i18n.formatMessage('messages.budget_updated_backup_text'),
+            },
+            'emails/budget_updated'
+          )
+        } catch (statusEmailErr) {
+          console.log('Budget status email notification error:', statusEmailErr)
+        }
       } catch (notifyErr) {
         console.log('Budget status notification error:', notifyErr)
         throw notifyErr
@@ -1704,6 +1753,51 @@ export default class BugetController {
         createdById: buget.createdById, // Use the budget creator as notification creator
       })
       console.log('[BUDGET STATUS PUBLIC] Notification dispatched successfully')
+
+      try {
+        const business = await Business.find(buget.businessId)
+        const host =
+          env.get('NODE_ENV') === 'development'
+            ? 'http://212.38.95.163/sigmig/'
+            : 'https://admin.serviciosgenessis.com/'
+        const budgetUrl = buget.token ? host + `client/budget/${buget.token}` : undefined
+        const currentStatus = getBudgetStatusLabel(i18n, buget.status)
+        const previousStatusLabel = getBudgetStatusLabel(i18n, previousStatus)
+
+        await sendBudgetNotification(
+          buget.businessId,
+          {
+            budgetNumber: buget.nro,
+            clientName,
+            expirationDate: buget.expireDate ? buget.expireDate.toFormat('yyyy/LL/dd') : '---',
+            createdBy: i18n.formatMessage('messages.client', {}, 'Client'),
+            status: currentStatus,
+            statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
+            budgetUrl,
+            businessName: business?.name || '',
+            subject: i18n.formatMessage('messages.budget_status_email_subject', {
+              budgetNumber: buget.nro,
+              status: currentStatus,
+            }),
+            body: i18n.formatMessage('messages.budget_status_email_body', {
+              budgetNumber: buget.nro,
+              clientName,
+              status: currentStatus,
+              previousStatus: previousStatusLabel,
+              updatedBy: i18n.formatMessage('messages.client', {}, 'Client'),
+            }),
+            budgetNumberLabel: i18n.formatMessage('messages.budget_number'),
+            clientLabel: i18n.formatMessage('messages.client'),
+            expirationDateLabel: i18n.formatMessage('messages.expiration_date'),
+            createdByLabel: i18n.formatMessage('messages.updated_by'),
+            viewBudgetLabel: i18n.formatMessage('messages.view_budget'),
+            backupText: i18n.formatMessage('messages.budget_updated_backup_text'),
+          },
+          'emails/budget_updated'
+        )
+      } catch (statusEmailErr) {
+        console.log('Budget status email notification error (public):', statusEmailErr)
+      }
     } catch (notifyErr) {
       console.log('Budget status notification error (public):', notifyErr)
     }
@@ -2024,7 +2118,7 @@ export default class BugetController {
    * POST /buget/payments
    */
   public async storePayment(ctx: HttpContext) {
-    const { request, response, i18n } = ctx
+    const { request, response, i18n, auth } = ctx
 
     try {
       const payload = await request.validateUsing(createBudgetPaymentValidator)
@@ -2059,6 +2153,7 @@ export default class BugetController {
         ...payload,
         amount,
         businessId,
+        createdById: auth.user?.id,
         concept,
         date: DateTime.fromISO(payload.date),
       })
@@ -2312,6 +2407,8 @@ export async function sendBudgetNotification(
     clientName: string
     expirationDate: string
     createdBy: string
+    status?: string
+    statusLabel?: string
     budgetUrl?: string
     businessName: string
     budgetNumberLabel: string
@@ -2347,5 +2444,27 @@ export async function sendBudgetNotification(
         break
       }
     }
+  }
+}
+
+function getBudgetStatusLabel(
+  i18n: HttpContext['i18n'],
+  status: 'pending' | 'revision' | 'reject' | 'accept' | null | undefined
+) {
+  switch (status) {
+    case 'accept':
+      return i18n.formatMessage('messages.budget_status_accepted', {}, 'accepted')
+    case 'reject':
+      return i18n.formatMessage('messages.budget_status_rejected', {}, 'rejected')
+    case 'revision':
+      return i18n.formatMessage('messages.budget_status_revision', {}, 'in review')
+    case 'pending':
+      return i18n.formatMessage(
+        'messages.budget_status_pending_authorization',
+        {},
+        'pending authorization'
+      )
+    default:
+      return i18n.formatMessage('messages.budget_status_updated', {}, 'updated')
   }
 }

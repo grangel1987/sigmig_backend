@@ -6,8 +6,10 @@ import BugetProduct from '#models/bugets/buget_product'
 import Client from '#models/clients/client'
 import Coin from '#models/coin/coin'
 import LedgerMovement from '#models/ledger_movement'
+import NotificationType from '#models/notifications/notification_type'
 import PaymentDocumentType from '#models/payment_document_type'
 import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
+import NotificationService from '#services/notification_service'
 import handleDate from '#utils/HandleDate'
 import BudgetPaymentValidator from '#validators/budget_payment_validator'
 import Database from '@adonisjs/lucid/services/db'
@@ -270,6 +272,45 @@ export default class BudgetPaymentService {
             )
 
             await sheet.related('lines').createMany(lineRows, { client: trx })
+
+            try {
+              const type = await NotificationType.findBy('code', 'service_entry_sheet_created', { client: trx })
+              const issueDateStr = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : DateTime.now().toFormat('dd/LL/yyyy')
+              const title = `HES creada #${sheet.number}`
+              const shortBody = `${title} • ${issueDateStr}`
+              const recipientBusinessUserIds = params.businessId
+                ? (
+                  await trx
+                    .from('business_users')
+                    .where('business_id', params.businessId)
+                    .where('is_super', 1)
+                    .select('id')
+                ).map((row: { id: number }) => row.id)
+                : []
+
+              await NotificationService.createAndDispatch({
+                typeId: type?.id,
+                businessId: params.businessId,
+                title,
+                body: shortBody,
+                payload: {
+                  serviceEntrySheetId: sheet.id,
+                  number: sheet.number,
+                  businessId: params.businessId,
+                  issueDate: sheet.issueDate ? sheet.issueDate.toISODate() : null,
+                  budgetPaymentId: budgetPayment.id,
+                },
+                meta: {
+                  sheetId: sheet.id,
+                  number: sheet.number,
+                  source: 'budget_payment',
+                },
+                createdById: params.createdById ?? 1,
+                recipientBusinessUserIds,
+              })
+            } catch (notifyErr) {
+              console.log('Service entry sheet notification error:', notifyErr)
+            }
           }
         }
       }
