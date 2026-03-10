@@ -123,12 +123,6 @@ export default class ServiceEntrySheet extends BaseModel {
   })
   public totalNetAmount: number
 
-  @column({ columnName: 'is_authorized' })
-  public isAuthorized: boolean
-
-  @column({ columnName: 'authorizer_id' })
-  public authorizerId: number | null
-
   @column.dateTime({
     columnName: 'authorizer_at',
     serialize: (value: DateTime | null) => (value ? value.toFormat('yyyy-LL-dd HH:mm:ss') : null),
@@ -146,10 +140,4 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
-
-  @column.dateTime({ columnName: 'authorizer_at' })
-  public authorizerAt: DateTime | null
-
-  @belongsTo(() => User, { foreignKey: 'authorizerId' })
-  public authorizer: BelongsTo<typeof User>
 }
