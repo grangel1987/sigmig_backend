@@ -3,6 +3,7 @@ import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import Provider from '#models/provider/provider'
 import ServiceEntryLine from '#models/service_entry_sheets/service_entry_line'
+import User from '#models/users/user'
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
@@ -115,6 +116,21 @@ export default class ServiceEntrySheet extends BaseModel {
       value === null || value === undefined ? 0 : Number(value),
   })
   public totalNetAmount: number
+
+  @column({ columnName: 'is_authorized' })
+  public isAuthorized: boolean
+
+  @column({ columnName: 'authorizer_id' })
+  public authorizerId: number | null
+
+  @column.dateTime({
+    columnName: 'authorizer_at',
+    serialize: (value: DateTime | null) => (value ? value.toFormat('yyyy-LL-dd HH:mm:ss') : null),
+  })
+  public authorizerAt: DateTime | null
+
+  @belongsTo(() => User, { foreignKey: 'authorizerId' })
+  public authorizer: BelongsTo<typeof User>
 
   @hasMany(() => ServiceEntryLine, { foreignKey: 'serviceEntrySheetId' })
   public lines: HasMany<typeof ServiceEntryLine>
