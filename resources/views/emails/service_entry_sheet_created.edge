@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #17a2b8;
+        }
+        .header h1 {
+            color: #17a2b8;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .header .business-name {
+            color: #6c757d;
+            font-size: 16px;
+            font-weight: normal;
+            margin: 0;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .sheet-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            margin-bottom: 10px;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #17a2b8;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ subject }}</h1>
+            <p class="business-name">{{ businessName }}</p>
+        </div>
+
+        <div class="content">
+            <p>{{ body }}</p>
+
+            <div class="sheet-details">
+                <div class="detail-row">
+                    <span class="detail-label">{{ serviceEntrySheetNumberLabel }}:</span>
+                    <span class="detail-value">{{ serviceEntrySheetNumber }}</span>
+                </div>
+                @if(issueDate)
+                <div class="detail-row">
+                    <span class="detail-label">{{ issueDateLabel }}:</span>
+                    <span class="detail-value">{{ issueDate }}</span>
+                </div>
+                @end
+                @if(clientName)
+                <div class="detail-row">
+                    <span class="detail-label">{{ clientLabel }}:</span>
+                    <span class="detail-value">{{ clientName }}</span>
+                </div>
+                @end
+                @if(providerName)
+                <div class="detail-row">
+                    <span class="detail-label">{{ providerLabel }}:</span>
+                    <span class="detail-value">{{ providerName }}</span>
+                </div>
+                @end
+                @if(createdBy)
+                <div class="detail-row">
+                    <span class="detail-label">{{ createdByLabel }}:</span>
+                    <span class="detail-value">{{ createdBy }}</span>
+                </div>
+                @end
+                @if(status)
+                <div class="detail-row">
+                    <span class="detail-label">{{ statusLabel }}:</span>
+                    <span class="detail-value">{{ status }}</span>
+                </div>
+                @end
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>{{ businessName }}</p>
+        </div>
+    </div>
+</body>
+</html>

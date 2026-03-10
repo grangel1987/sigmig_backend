@@ -4,6 +4,7 @@ import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
 import City from '#models/cities/City'
 import Client from '#models/clients/client'
+import Coin from '#models/coin/coin'
 import NotificationType from '#models/notifications/notification_type'
 import Product from '#models/products/product'
 import Provider from '#models/provider/provider'
@@ -12,9 +13,11 @@ import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
 import Shopping from '#models/shoppings/shopping'
 import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
+import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
+import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 import { log } from 'node:console'
@@ -379,6 +382,37 @@ export default class ServiceEntrySheetController {
       }
     }
 
+    const lineCurrencyIds = [
+      ...new Set(
+        payload.lines
+          .map((line) => line.currencyId)
+          .filter((currencyId): currencyId is number => typeof currencyId === 'number')
+      ),
+    ]
+    const currencySymbolById = new Map<number, string>()
+
+    if (lineCurrencyIds.length) {
+      const coins = await Coin.query().whereIn('id', lineCurrencyIds).select(['id', 'symbol'])
+
+      const coinIds = new Set(coins.map((coin) => coin.id))
+      const missingCurrencyId = lineCurrencyIds.find((currencyId) => !coinIds.has(currencyId))
+
+      if (missingCurrencyId) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Moneda no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      for (const coin of coins) {
+        currencySymbolById.set(coin.id, coin.symbol)
+      }
+    }
+
     const trx = await db.transaction()
 
     try {
@@ -478,7 +512,9 @@ export default class ServiceEntrySheetController {
             serviceCode,
             description,
             planningLine: line.planningLine ?? null,
-            currency: line.currency ?? null,
+            currencyId: line.currencyId ?? null,
+            exchangeRate: line.exchangeRate ?? undefined,
+            currency: line.currencyId ? currencySymbolById.get(line.currencyId) ?? null : null,
             unit,
             unitType,
             unitPrice,
@@ -499,13 +535,24 @@ export default class ServiceEntrySheetController {
       await trx.commit()
 
       await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
+      await sheet.load('provider', (q) => q.select(['id', 'name']))
       await sheet.load('lines')
 
       try {
+        const createdEmailData = buildServiceEntrySheetCreatedEmailData(i18n, sheet, {
+          clientName: sheet.client?.name ?? '',
+          providerName: sheet.provider?.name ?? '',
+          createdBy: auth.user?.email ?? '',
+          businessName: business.name ?? '',
+        })
+
+        await sendServiceEntrySheetNotification(businessId, createdEmailData)
+
         const type = await NotificationType.findBy('code', 'service_entry_sheet_created')
         const issueDateStr = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : DateTime.now().toFormat('dd/LL/yyyy')
         const title = `HES creada #${sheet.number}`
         const shortBody = `${title} • ${issueDateStr}`
+        const recipientBusinessUserIds = await getSuperBusinessUserIds(businessId)
 
         await NotificationService.createAndDispatch({
           typeId: type?.id,
@@ -524,6 +571,7 @@ export default class ServiceEntrySheetController {
             direction: sheet.direction,
           },
           createdById: auth.user?.id ?? 1,
+          recipientBusinessUserIds,
         })
       } catch (notifyErr) {
         log('Service entry sheet notification error:', notifyErr)
@@ -610,14 +658,35 @@ export default class ServiceEntrySheetController {
         sheet.isAuthorized = true
         sheet.authorizerAt = DateTime.now()
         await sheet.save()
+        await sheet.load('client', (q) => q.select(['id', 'name']))
+        await sheet.load('provider', (q) => q.select(['id', 'name']))
 
         try {
+          const businessName = sheetBusinessId
+            ? (await Business.find(sheetBusinessId))?.name ?? ''
+            : ''
+          const authorizedEmailData = buildServiceEntrySheetAuthorizedEmailData(i18n, sheet, {
+            clientName: sheet.client?.name ?? '',
+            providerName: sheet.provider?.name ?? '',
+            authorizedBy: auth.user?.email ?? '',
+            businessName,
+          })
+
+          await sendServiceEntrySheetNotification(
+            sheet.businessId ?? undefined,
+            authorizedEmailData,
+            'emails/service_entry_sheet_authorized'
+          )
+
           const type = await NotificationType.findBy('code', 'service_entry_sheet_authorized')
           const authAtStr = sheet.authorizerAt
             ? sheet.authorizerAt.toFormat('dd/LL/yyyy')
             : DateTime.now().toFormat('dd/LL/yyyy')
           const title = `HES autorizada #${sheet.number}`
           const shortBody = `${title} • ${authAtStr}`
+          const recipientBusinessUserIds = await getSuperBusinessUserIds(
+            sheet.businessId ?? undefined
+          )
 
           await NotificationService.createAndDispatch({
             typeId: type?.id,
@@ -636,6 +705,7 @@ export default class ServiceEntrySheetController {
               number: sheet.number,
             },
             createdById: auth.user!.id,
+            recipientBusinessUserIds,
           })
         } catch (notifyErr) {
           log('Service entry sheet authorization notification error:', notifyErr)
@@ -681,6 +751,172 @@ export default class ServiceEntrySheetController {
   }
 }
 
+async function sendServiceEntrySheetNotification(
+  businessId: number | undefined,
+  emailData: {
+    subject: string
+    body: string
+    serviceEntrySheetNumber: string
+    issueDate?: string
+    authorizationDate?: string
+    clientName?: string
+    providerName?: string
+    createdBy?: string
+    authorizedBy?: string
+    status?: string
+    statusLabel?: string
+    businessName: string
+    serviceEntrySheetNumberLabel: string
+    issueDateLabel: string
+    authorizationDateLabel: string
+    clientLabel: string
+    providerLabel: string
+    createdByLabel: string
+    authorizedByLabel: string
+  },
+  template: string = 'emails/service_entry_sheet_created'
+) {
+  if (!businessId) return
+
+  const superUsers = await BusinessUser.query()
+    .where('business_id', businessId)
+    .where('is_super', true)
+    .preload('user', (userQuery) => {
+      userQuery.select(['id', 'email'])
+    })
+
+  if (!superUsers.length) return
+
+  for (const businessUser of superUsers) {
+    if (!businessUser.user?.email) continue
+
+    await mail.send((message) => {
+      message
+        .to(businessUser.user!.email)
+        .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+        .subject(emailData.subject)
+        .htmlView(template, emailData)
+    })
+  }
+}
+
+async function getSuperBusinessUserIds(businessId?: number): Promise<number[]> {
+  if (!businessId) return []
+
+  const rows = await BusinessUser.query()
+    .where('business_id', businessId)
+    .where('is_super', true)
+    .select(['id'])
+
+  return rows.map((row) => row.id)
+}
+
+function buildServiceEntrySheetCreatedEmailData(
+  i18n: HttpContext['i18n'],
+  sheet: ServiceEntrySheet,
+  opts: {
+    clientName: string
+    providerName: string
+    createdBy: string
+    businessName: string
+  }
+) {
+  const issueDate = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : ''
+  const status = i18n.formatMessage('messages.service_entry_sheet_status_created', {}, 'created')
+
+  return {
+    subject: i18n.formatMessage('messages.service_entry_sheet_created_email_subject', {
+      sheetNumber: sheet.number,
+    }),
+    body: i18n.formatMessage('messages.service_entry_sheet_created_email_body', {
+      sheetNumber: sheet.number,
+      issueDate,
+      clientName: opts.clientName,
+      providerName: opts.providerName,
+      status,
+      createdBy: opts.createdBy,
+    }),
+    serviceEntrySheetNumber: sheet.number,
+    issueDate,
+    clientName: opts.clientName,
+    providerName: opts.providerName,
+    createdBy: opts.createdBy,
+    status,
+    statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
+    businessName: opts.businessName,
+    serviceEntrySheetNumberLabel: i18n.formatMessage(
+      'messages.service_entry_sheet_number',
+      {},
+      'HES Number'
+    ),
+    issueDateLabel: i18n.formatMessage('messages.issue_date', {}, 'Issue Date'),
+    authorizationDateLabel: i18n.formatMessage(
+      'messages.authorization_date',
+      {},
+      'Authorization Date'
+    ),
+    clientLabel: i18n.formatMessage('messages.client', {}, 'Client'),
+    providerLabel: i18n.formatMessage('messages.provider', {}, 'Provider'),
+    createdByLabel: i18n.formatMessage('messages.created_by', {}, 'Created by'),
+    authorizedByLabel: i18n.formatMessage('messages.authorized_by', {}, 'Authorized by'),
+  }
+}
+
+function buildServiceEntrySheetAuthorizedEmailData(
+  i18n: HttpContext['i18n'],
+  sheet: ServiceEntrySheet,
+  opts: {
+    clientName: string
+    providerName: string
+    authorizedBy: string
+    businessName: string
+  }
+) {
+  const authorizationDate = sheet.authorizerAt ? sheet.authorizerAt.toFormat('dd/LL/yyyy') : ''
+  const status = i18n.formatMessage(
+    'messages.service_entry_sheet_status_authorized',
+    {},
+    'authorized'
+  )
+
+  return {
+    subject: i18n.formatMessage('messages.service_entry_sheet_authorized_email_subject', {
+      sheetNumber: sheet.number,
+    }),
+    body: i18n.formatMessage('messages.service_entry_sheet_authorized_email_body', {
+      sheetNumber: sheet.number,
+      authorizationDate,
+      clientName: opts.clientName,
+      providerName: opts.providerName,
+      status,
+      authorizedBy: opts.authorizedBy,
+    }),
+    serviceEntrySheetNumber: sheet.number,
+    authorizationDate,
+    clientName: opts.clientName,
+    providerName: opts.providerName,
+    authorizedBy: opts.authorizedBy,
+    status,
+    statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
+    businessName: opts.businessName,
+    serviceEntrySheetNumberLabel: i18n.formatMessage(
+      'messages.service_entry_sheet_number',
+      {},
+      'HES Number'
+    ),
+    issueDateLabel: i18n.formatMessage('messages.issue_date', {}, 'Issue Date'),
+    authorizationDateLabel: i18n.formatMessage(
+      'messages.authorization_date',
+      {},
+      'Authorization Date'
+    ),
+    clientLabel: i18n.formatMessage('messages.client', {}, 'Client'),
+    providerLabel: i18n.formatMessage('messages.provider', {}, 'Provider'),
+    createdByLabel: i18n.formatMessage('messages.created_by', {}, 'Created by'),
+    authorizedByLabel: i18n.formatMessage('messages.authorized_by', {}, 'Authorized by'),
+  }
+}
+
 const parseDate = (value: string) => {
   const iso = DateTime.fromISO(value)
   if (iso.isValid) return iso
@@ -700,7 +936,8 @@ const serviceEntryLineSchema = vine.object({
   serviceCode: vine.string().trim().optional(),
   description: vine.string().trim().optional(),
   planningLine: vine.string().trim().optional(),
-  currency: vine.string().trim().optional(),
+  currencyId: vine.number().positive().optional(),
+  exchangeRate: vine.number().min(0).optional(),
   unit: vine.string().trim().optional(),
   unitType: vine.string().trim().optional(),
   unitPrice: vine.number().min(0).optional(),
