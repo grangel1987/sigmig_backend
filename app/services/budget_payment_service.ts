@@ -274,22 +274,19 @@ export default class BudgetPaymentService {
             await sheet.related('lines').createMany(lineRows, { client: trx })
 
             try {
-              const type = await NotificationType.findBy('code', 'service_entry_sheet_created', { client: trx })
+              const type = await NotificationType.query({ client: trx })
+                .where('code', 'service_entry_sheet_created')
+                .where('enabled', true)
+                .first()
+              if (!type) {
+                throw new Error('Missing or disabled notification type: service_entry_sheet_created')
+              }
               const issueDateStr = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : DateTime.now().toFormat('dd/LL/yyyy')
               const title = `HES creada #${sheet.number}`
               const shortBody = `${title} • ${issueDateStr}`
-              const recipientBusinessUserIds = params.businessId
-                ? (
-                  await trx
-                    .from('business_users')
-                    .where('business_id', params.businessId)
-                    .where('is_super', 1)
-                    .select('id')
-                ).map((row: { id: number }) => row.id)
-                : []
 
               await NotificationService.createAndDispatch({
-                typeId: type?.id,
+                typeId: type.id,
                 businessId: params.businessId,
                 title,
                 body: shortBody,
@@ -306,7 +303,6 @@ export default class BudgetPaymentService {
                   source: 'budget_payment',
                 },
                 createdById: params.createdById ?? 1,
-                recipientBusinessUserIds,
               })
             } catch (notifyErr) {
               console.log('Service entry sheet notification error:', notifyErr)

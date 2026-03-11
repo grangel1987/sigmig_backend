@@ -553,16 +553,21 @@ export default class ServiceEntrySheetController {
 
         await sendServiceEntrySheetNotification(businessId, createdEmailData)
 
-        const type = await NotificationType.findBy('code', 'service_entry_sheet_created')
+        const type = await NotificationType.query()
+          .where('code', 'service_entry_sheet_created')
+          .where('enabled', true)
+          .first()
+        if (!type) {
+          throw new Error('Missing or disabled notification type: service_entry_sheet_created')
+        }
         const issueDateStr = sheet.issueDate
           ? sheet.issueDate.toFormat('dd/LL/yyyy')
           : DateTime.now().toFormat('dd/LL/yyyy')
         const title = `HES creada #${sheet.number}`
         const shortBody = `${title} • ${issueDateStr}`
-        const recipientBusinessUserIds = await getSuperBusinessUserIds(businessId)
 
         await NotificationService.createAndDispatch({
-          typeId: type?.id,
+          typeId: type.id,
           businessId,
           title,
           body: shortBody,
@@ -578,7 +583,6 @@ export default class ServiceEntrySheetController {
             direction: sheet.direction,
           },
           createdById: auth.user?.id ?? 1,
-          recipientBusinessUserIds,
         })
       } catch (notifyErr) {
         log('Service entry sheet notification error:', notifyErr)
@@ -704,16 +708,17 @@ export default class ServiceEntrySheetController {
     await sheet.save()
 
     try {
-      const recipientBusinessUserIds = await db
-        .from('business_users')
-        .where('business_id', businessId)
-        .where((builder) => {
-          builder.where('is_authorizer', 1).orWhere('is_super', 1)
-        })
-        .whereNot('user_id', authUser.id)
-        .select('id')
+      const type = await NotificationType.query()
+        .where('code', 'service_entry_sheet_authorized')
+        .where('enabled', true)
+        .first()
+
+      if (!type) {
+        throw new Error('Missing or disabled notification type: service_entry_sheet_authorized')
+      }
 
       await NotificationService.createAndDispatch({
+        typeId: type.id,
         businessId,
         title: `HES autorizada #${sheet.number}`,
         body: `La hoja de entrada de servicios #${sheet.number} fue autorizada.`,
@@ -723,7 +728,6 @@ export default class ServiceEntrySheetController {
           authorizedByUserId: authUser.id,
         },
         createdById: authUser.id,
-        recipientBusinessUserIds: recipientBusinessUserIds.map((recipient) => Number(recipient.id)),
       })
     } catch (notifyError) {
       log(notifyError)
@@ -813,17 +817,6 @@ async function sendServiceEntrySheetNotification(
         .htmlView(template, emailData)
     })
   }
-}
-
-async function getSuperBusinessUserIds(businessId?: number): Promise<number[]> {
-  if (!businessId) return []
-
-  const rows = await BusinessUser.query()
-    .where('business_id', businessId)
-    .where('is_super', true)
-    .select(['id'])
-
-  return rows.map((row) => row.id)
 }
 
 function buildServiceEntrySheetCreatedEmailData(

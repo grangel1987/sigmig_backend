@@ -70,6 +70,8 @@ export default class NotificationService {
             recipients = await this.resolveRecipientsForType(params.typeId, params.businessId)
         }
 
+        recipients = [...new Set(recipients.map((recipient) => Number(recipient)).filter(Boolean))]
+
         console.log(`Notification ${notification.id}: recipients count = ${recipients.length}`)
 
         if (recipients.length) {
@@ -112,8 +114,9 @@ export default class NotificationService {
                 }
             } catch (emitErr) {
                 console.log('Notification socket emit error:', emitErr)
-                throw emitErr
             }
+        } else {
+            console.log(`Notification ${notification.id}: no recipients resolved`)
         }
 
         return notification
