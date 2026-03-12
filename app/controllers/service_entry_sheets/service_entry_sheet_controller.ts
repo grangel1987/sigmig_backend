@@ -16,6 +16,7 @@ import PermissionService from '#services/permission_service'
 import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { HttpContext } from '@adonisjs/core/http'
+import logger from '@adonisjs/core/services/logger'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
@@ -544,6 +545,13 @@ export default class ServiceEntrySheetController {
       await sheet.load('lines')
 
       try {
+        logger.info('service_entry_sheet.store: starting notification flow', {
+          serviceEntrySheetId: sheet.id,
+          number: sheet.number,
+          businessId,
+          createdById: auth.user?.id ?? null,
+        })
+
         const createdEmailData = buildServiceEntrySheetCreatedEmailData(i18n, sheet, {
           clientName: sheet.client?.name ?? '',
           providerName: sheet.provider?.name ?? '',
@@ -553,20 +561,35 @@ export default class ServiceEntrySheetController {
 
         await sendServiceEntrySheetNotification(businessId, createdEmailData)
 
+        logger.info('service_entry_sheet.store: email notification sent', {
+          serviceEntrySheetId: sheet.id,
+          businessId,
+          subject: createdEmailData.subject,
+        })
+
         const type = await NotificationType.query()
           .where('code', 'service_entry_sheet_created')
           .where('enabled', true)
           .first()
+
         if (!type) {
           throw new Error('Missing or disabled notification type: service_entry_sheet_created')
         }
+
+        logger.info('service_entry_sheet.store: notification type resolved', {
+          serviceEntrySheetId: sheet.id,
+          businessId,
+          notificationTypeId: type.id,
+          code: type.code,
+        })
+
         const issueDateStr = sheet.issueDate
           ? sheet.issueDate.toFormat('dd/LL/yyyy')
           : DateTime.now().toFormat('dd/LL/yyyy')
         const title = `HES creada #${sheet.number}`
         const shortBody = `${title} • ${issueDateStr}`
 
-        await NotificationService.createAndDispatch({
+        const notification = await NotificationService.createAndDispatch({
           typeId: type.id,
           businessId,
           title,
@@ -584,7 +607,21 @@ export default class ServiceEntrySheetController {
           },
           createdById: auth.user?.id ?? 1,
         })
+
+        logger.info('service_entry_sheet.store: in-app notification dispatched', {
+          serviceEntrySheetId: sheet.id,
+          businessId,
+          notificationId: notification.id,
+          notificationTypeId: type.id,
+        })
       } catch (notifyErr) {
+        logger.error('service_entry_sheet.store: notification flow failed', {
+          serviceEntrySheetId: sheet.id,
+          number: sheet.number,
+          businessId,
+          error: notifyErr instanceof Error ? notifyErr.message : notifyErr,
+          stack: notifyErr instanceof Error ? notifyErr.stack : undefined,
+        })
         log('Service entry sheet notification error:', notifyErr)
       }
 
@@ -708,6 +745,13 @@ export default class ServiceEntrySheetController {
     await sheet.save()
 
     try {
+      logger.info('service_entry_sheet.authorize: starting in-app notification flow', {
+        serviceEntrySheetId: sheet.id,
+        number: sheet.number,
+        businessId,
+        authorizedByUserId: authUser.id,
+      })
+
       const type = await NotificationType.query()
         .where('code', 'service_entry_sheet_authorized')
         .where('enabled', true)
@@ -717,7 +761,14 @@ export default class ServiceEntrySheetController {
         throw new Error('Missing or disabled notification type: service_entry_sheet_authorized')
       }
 
-      await NotificationService.createAndDispatch({
+      logger.info('service_entry_sheet.authorize: notification type resolved', {
+        serviceEntrySheetId: sheet.id,
+        businessId,
+        notificationTypeId: type.id,
+        code: type.code,
+      })
+
+      const notification = await NotificationService.createAndDispatch({
         typeId: type.id,
         businessId,
         title: `HES autorizada #${sheet.number}`,
@@ -729,7 +780,22 @@ export default class ServiceEntrySheetController {
         },
         createdById: authUser.id,
       })
+
+      logger.info('service_entry_sheet.authorize: in-app notification dispatched', {
+        serviceEntrySheetId: sheet.id,
+        businessId,
+        notificationId: notification.id,
+        notificationTypeId: type.id,
+      })
     } catch (notifyError) {
+      logger.error('service_entry_sheet.authorize: in-app notification failed', {
+        serviceEntrySheetId: sheet.id,
+        number: sheet.number,
+        businessId,
+        authorizedByUserId: authUser.id,
+        error: notifyError instanceof Error ? notifyError.message : notifyError,
+        stack: notifyError instanceof Error ? notifyError.stack : undefined,
+      })
       log(notifyError)
     }
 
@@ -744,12 +810,31 @@ export default class ServiceEntrySheetController {
         businessName: business?.name ?? '',
       })
 
+      logger.info('service_entry_sheet.authorize: starting email notification flow', {
+        serviceEntrySheetId: sheet.id,
+        businessId,
+        subject: authorizedEmailData.subject,
+      })
+
       await sendServiceEntrySheetNotification(
         businessId,
         authorizedEmailData,
         'emails/service_entry_sheet_authorized'
       )
+
+      logger.info('service_entry_sheet.authorize: email notification sent', {
+        serviceEntrySheetId: sheet.id,
+        businessId,
+        subject: authorizedEmailData.subject,
+      })
     } catch (notifyEmailError) {
+      logger.error('service_entry_sheet.authorize: email notification failed', {
+        serviceEntrySheetId: sheet.id,
+        number: sheet.number,
+        businessId,
+        error: notifyEmailError instanceof Error ? notifyEmailError.message : notifyEmailError,
+        stack: notifyEmailError instanceof Error ? notifyEmailError.stack : undefined,
+      })
       log('Service entry sheet authorization email error:', notifyEmailError)
     }
 

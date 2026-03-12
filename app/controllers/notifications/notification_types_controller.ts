@@ -10,6 +10,17 @@ import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
 export default class NotificationTypesController {
+    private buildPivotCreatedAtPayload(ids: number[]) {
+        const createdAt = DateTime.local().toSQL({ includeOffset: false }) ?? DateTime.local().toISO()
+        const payload: Record<number, { created_at: string }> = {}
+
+        for (const id of ids) {
+            payload[id] = { created_at: createdAt! }
+        }
+
+        return payload
+    }
+
     public async index(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'settings', 'view')
 
@@ -62,8 +73,12 @@ export default class NotificationTypesController {
                 createdAt: now,
                 updatedAt: now,
             })
-            if (data.businessUsers?.length) await t.related('businessUsers').sync(data.businessUsers)
-            if (data.rols?.length) await t.related('rols').sync(data.rols)
+            if (data.businessUsers?.length) {
+                await t.related('businessUsers').sync(this.buildPivotCreatedAtPayload(data.businessUsers))
+            }
+            if (data.rols?.length) {
+                await t.related('rols').sync(this.buildPivotCreatedAtPayload(data.rols))
+            }
             await t.load('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
             await t.load('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
             return response.status(201).json({
@@ -95,8 +110,12 @@ export default class NotificationTypesController {
         t.updatedById = auth.user!.id
         await t.save()
 
-        if (data.businessUsers) await t.related('businessUsers').sync(data.businessUsers)
-        if (data.rols) await t.related('rols').sync(data.rols)
+        if (data.businessUsers) {
+            await t.related('businessUsers').sync(this.buildPivotCreatedAtPayload(data.businessUsers))
+        }
+        if (data.rols) {
+            await t.related('rols').sync(this.buildPivotCreatedAtPayload(data.rols))
+        }
 
         await t.load('createdBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))
         await t.load('updatedBy', (b) => b.select(['id', 'personal_data_id', 'email']).preload('personalData', pdQ => pdQ.select(['names', 'last_name_p', 'last_name_m'])))

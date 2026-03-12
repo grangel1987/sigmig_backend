@@ -161,7 +161,12 @@ export default class ClientController {
         await client.related('responsibles').createMany(contactRows, { client: trx })
       }
 
-      if (Number(data.typeId) === 2) {
+      if (
+        Number(data.typeId) === 2 &&
+        (data.clientDocumentInvoiceId ||
+          data.clientDocumentInvoiceValue ||
+          data.systemPaymentProvider)
+      ) {
         const { clientDocumentInvoiceValue, clientDocumentInvoiceId, systemPaymentProvider } = data
         await client.related('documentInvoice').create(
           {
