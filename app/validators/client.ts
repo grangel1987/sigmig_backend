@@ -16,19 +16,9 @@ export const clientStoreValidator = vine.compile(
     address: vine.string().trim().maxLength(255),
     typeId: vine.number().positive(),
     cityId: vine.number().positive(),
-    clientDocumentInvoiceId: vine.number().positive().optional().requiredWhen('typeId', '=', 2),
-    clientDocumentInvoiceValue: vine
-      .string()
-      .trim()
-      .maxLength(250)
-      .optional()
-      .requiredWhen('typeId', '=', 2),
-    systemPaymentProvider: vine
-      .string()
-      .trim()
-      .maxLength(250)
-      .optional()
-      .requiredWhen('typeId', '=', 2),
+    clientDocumentInvoiceId: vine.number().positive().optional(),
+    clientDocumentInvoiceValue: vine.string().trim().maxLength(250).optional(),
+    systemPaymentProvider: vine.string().trim().maxLength(250).optional(),
     responsibles: vine
       .array(
         vine.object({
@@ -72,19 +62,9 @@ export const clientUpdateValidator = vine.compile(
     address: vine.string().trim().maxLength(255).optional(),
     typeId: vine.number().positive().optional(),
     cityId: vine.number().positive().optional(),
-    clientDocumentInvoiceId: vine.number().positive().optional().requiredWhen('typeId', '=', 2),
-    clientDocumentInvoiceValue: vine
-      .string()
-      .trim()
-      .maxLength(250)
-      .optional()
-      .requiredWhen('typeId', '=', 2),
-    systemPaymentProvider: vine
-      .string()
-      .trim()
-      .maxLength(250)
-      .optional()
-      .requiredWhen('typeId', '=', 2),
+    clientDocumentInvoiceId: vine.number().positive().optional(),
+    clientDocumentInvoiceValue: vine.string().trim().maxLength(250).optional(),
+    systemPaymentProvider: vine.string().trim().maxLength(250).optional(),
     responsibles: vine
       .array(
         vine.object({
