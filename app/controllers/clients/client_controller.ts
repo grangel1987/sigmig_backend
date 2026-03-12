@@ -163,7 +163,9 @@ export default class ClientController {
 
       if (
         Number(data.typeId) === 2 &&
-        (clientDocumentInvoiceId || clientDocumentInvoiceValue || systemPaymentProvider)
+        (data.clientDocumentInvoiceId ||
+          data.clientDocumentInvoiceValue ||
+          data.systemPaymentProvider)
       ) {
         const { clientDocumentInvoiceValue, clientDocumentInvoiceId, systemPaymentProvider } = data
         await client.related('documentInvoice').create(
