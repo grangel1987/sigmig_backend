@@ -544,27 +544,35 @@ export default class ServiceEntrySheetController {
       await sheet.load('provider', (q) => q.select(['id', 'name']))
       await sheet.load('lines')
 
+      const createdAt = sheet.createdAt
+        ? sheet.createdAt.toFormat('yyyy-LL-dd HH:mm:ss')
+        : DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
+
+      await auth.getUserOrFail().load('personalData')
+      const creatorUser = auth.getUserOrFail()
+      const createdByName =
+        creatorUser.personalData?.fullName?.trim() || creatorUser.email || String(creatorUser.id)
+
+      const clientName = sheet.client?.name ?? null
+      const providerName = sheet.provider?.name ?? null
+      const businessName = business.name ?? null
+
+      const emitterName =
+        sheet.issuerName ??
+        (sheet.direction === 'received' ? providerName : businessName) ??
+        clientName
+
+      const receiverName =
+        sheet.recipientName ??
+        (sheet.direction === 'received' ? businessName : providerName) ??
+        clientName
+
       try {
-        logger.info('service_entry_sheet.store: starting notification flow', {
+        logger.info('service_entry_sheet.store: starting in-app notification flow', {
           serviceEntrySheetId: sheet.id,
           number: sheet.number,
           businessId,
-          createdById: auth.user?.id ?? null,
-        })
-
-        const createdEmailData = buildServiceEntrySheetCreatedEmailData(i18n, sheet, {
-          clientName: sheet.client?.name ?? '',
-          providerName: sheet.provider?.name ?? '',
-          createdBy: auth.user?.email ?? '',
-          businessName: business.name ?? '',
-        })
-
-        await sendServiceEntrySheetNotification(businessId, createdEmailData)
-
-        logger.info('service_entry_sheet.store: email notification sent', {
-          serviceEntrySheetId: sheet.id,
-          businessId,
-          subject: createdEmailData.subject,
+          createdById: creatorUser.id,
         })
 
         const type = await NotificationType.query()
@@ -588,24 +596,81 @@ export default class ServiceEntrySheetController {
           : DateTime.now().toFormat('dd/LL/yyyy')
         const title = `HES creada #${sheet.number}`
         const shortBody = `${title} • ${issueDateStr}`
+        const recipientBusinessUserIds = await NotificationService.resolveRecipientsForType(
+          type.id,
+          businessId
+        )
+
+        logger.info('service_entry_sheet.store: notification recipients resolved', {
+          serviceEntrySheetId: sheet.id,
+          businessId,
+          notificationTypeId: type.id,
+          recipientsCount: recipientBusinessUserIds.length,
+          recipientBusinessUserIds,
+        })
 
         const notification = await NotificationService.createAndDispatch({
           typeId: type.id,
           businessId,
+          recipientBusinessUserIds,
           title,
           body: shortBody,
           payload: {
             serviceEntrySheetId: sheet.id,
+            sheetId: sheet.id,
             number: sheet.number,
-            businessId,
+            documentNumber: sheet.number,
+            direction: sheet.direction,
+            createdByUserId: creatorUser.id,
+            createdByName,
+            createdAt,
+            created_at: createdAt,
+            emitterName,
+            receiverName,
             issueDate: sheet.issueDate ? sheet.issueDate.toISODate() : null,
+            clientId: sheet.clientId,
+            clientName,
+            providerId: sheet.providerId,
+            providerName,
+            issuerClientId: sheet.issuerClientId,
+            recipientClientId: sheet.recipientClientId,
+            businessId,
+            businessName,
+            serviceName: sheet.serviceName,
+            documentTitle: sheet.documentTitle,
+            showParams: {
+              id: sheet.id,
+              businessId,
+            },
           },
           meta: {
             sheetId: sheet.id,
             number: sheet.number,
+            documentNumber: sheet.number,
             direction: sheet.direction,
+            createdByUserId: creatorUser.id,
+            createdByName,
+            createdAt,
+            created_at: createdAt,
+            emitterName,
+            receiverName,
+            issueDate: sheet.issueDate ? sheet.issueDate.toISODate() : null,
+            clientId: sheet.clientId,
+            clientName,
+            providerId: sheet.providerId,
+            providerName,
+            issuerClientId: sheet.issuerClientId,
+            recipientClientId: sheet.recipientClientId,
+            businessId,
+            businessName,
+            serviceName: sheet.serviceName,
+            documentTitle: sheet.documentTitle,
+            showParams: {
+              id: sheet.id,
+              businessId,
+            },
           },
-          createdById: auth.user?.id ?? 1,
+          createdById: creatorUser.id,
         })
 
         logger.info('service_entry_sheet.store: in-app notification dispatched', {
@@ -615,14 +680,40 @@ export default class ServiceEntrySheetController {
           notificationTypeId: type.id,
         })
       } catch (notifyErr) {
-        logger.error('service_entry_sheet.store: notification flow failed', {
+        logger.error('service_entry_sheet.store: in-app notification failed', {
           serviceEntrySheetId: sheet.id,
           number: sheet.number,
           businessId,
           error: notifyErr instanceof Error ? notifyErr.message : notifyErr,
           stack: notifyErr instanceof Error ? notifyErr.stack : undefined,
         })
-        log('Service entry sheet notification error:', notifyErr)
+        log('Service entry sheet in-app notification error:', notifyErr)
+      }
+
+      try {
+        const createdEmailData = buildServiceEntrySheetCreatedEmailData(i18n, sheet, {
+          clientName: sheet.client?.name ?? '',
+          providerName: sheet.provider?.name ?? '',
+          createdBy: creatorUser.email ?? '',
+          businessName: business.name ?? '',
+        })
+
+        await sendServiceEntrySheetNotification(businessId, createdEmailData)
+
+        logger.info('service_entry_sheet.store: email notification sent', {
+          serviceEntrySheetId: sheet.id,
+          businessId,
+          subject: createdEmailData.subject,
+        })
+      } catch (notifyEmailErr) {
+        logger.error('service_entry_sheet.store: email notification failed', {
+          serviceEntrySheetId: sheet.id,
+          number: sheet.number,
+          businessId,
+          error: notifyEmailErr instanceof Error ? notifyEmailErr.message : notifyEmailErr,
+          stack: notifyEmailErr instanceof Error ? notifyEmailErr.stack : undefined,
+        })
+        log('Service entry sheet email notification error:', notifyEmailErr)
       }
 
       return response.status(201).json({
@@ -768,6 +859,41 @@ export default class ServiceEntrySheetController {
         code: type.code,
       })
 
+      const authorizedAt = sheet.authorizerAt
+        ? sheet.authorizerAt.toFormat('yyyy-LL-dd HH:mm:ss')
+        : DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
+
+      await authUser.load('personalData')
+
+      const [client, provider, issuerClient, recipientClient, business] = await Promise.all([
+        sheet.clientId ? Client.find(sheet.clientId) : Promise.resolve(null),
+        sheet.providerId ? Provider.find(sheet.providerId) : Promise.resolve(null),
+        sheet.issuerClientId ? Client.find(sheet.issuerClientId) : Promise.resolve(null),
+        sheet.recipientClientId ? Client.find(sheet.recipientClientId) : Promise.resolve(null),
+        sheet.businessId ? Business.find(sheet.businessId) : Promise.resolve(null),
+      ])
+
+      const authorizedByName =
+        authUser.personalData?.fullName?.trim() || authUser.email || String(authUser.id)
+
+      const clientName = client?.name ?? null
+      const providerName = provider?.name ?? null
+      const issuerClientName = issuerClient?.name ?? null
+      const recipientClientName = recipientClient?.name ?? null
+      const businessName = business?.name ?? null
+
+      const emitterName =
+        sheet.issuerName ??
+        issuerClientName ??
+        (sheet.direction === 'received' ? providerName : businessName) ??
+        clientName
+
+      const receiverName =
+        sheet.recipientName ??
+        recipientClientName ??
+        (sheet.direction === 'received' ? businessName : providerName) ??
+        clientName
+
       const notification = await NotificationService.createAndDispatch({
         typeId: type.id,
         businessId,
@@ -775,8 +901,62 @@ export default class ServiceEntrySheetController {
         body: `La hoja de entrada de servicios #${sheet.number} fue autorizada.`,
         payload: {
           serviceEntrySheetId: sheet.id,
+          sheetId: sheet.id,
           number: sheet.number,
+          documentNumber: sheet.number,
+          direction: sheet.direction,
           authorizedByUserId: authUser.id,
+          authorizedByName,
+          authorizedAt,
+          authorized_at: authorizedAt,
+          emitterName,
+          receiverName,
+          issueDate: sheet.issueDate ? sheet.issueDate.toISODate() : null,
+          clientId: sheet.clientId,
+          clientName,
+          providerId: sheet.providerId,
+          providerName,
+          issuerClientId: sheet.issuerClientId,
+          issuerClientName,
+          recipientClientId: sheet.recipientClientId,
+          recipientClientName,
+          businessId,
+          businessName,
+          serviceName: sheet.serviceName,
+          documentTitle: sheet.documentTitle,
+          showParams: {
+            id: sheet.id,
+            businessId,
+          },
+        },
+        meta: {
+          sheetId: sheet.id,
+          number: sheet.number,
+          documentNumber: sheet.number,
+          direction: sheet.direction,
+          authorizedByUserId: authUser.id,
+          authorizedByName,
+          authorizedAt,
+          authorized_at: authorizedAt,
+          emitterName,
+          receiverName,
+          issueDate: sheet.issueDate ? sheet.issueDate.toISODate() : null,
+          clientId: sheet.clientId,
+          clientName,
+          providerId: sheet.providerId,
+          providerName,
+          issuerClientId: sheet.issuerClientId,
+          issuerClientName,
+          recipientClientId: sheet.recipientClientId,
+          recipientClientName,
+          businessId,
+          businessName,
+          serviceName: sheet.serviceName,
+          documentTitle: sheet.documentTitle,
+          showParams: {
+            id: sheet.id,
+            businessId,
+          },
         },
         createdById: authUser.id,
       })
