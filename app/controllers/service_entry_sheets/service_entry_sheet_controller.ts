@@ -496,6 +496,18 @@ export default class ServiceEntrySheetController {
                 if (!description) description = providerProduct.name ?? null
                 if (unitPrice === undefined) unitPrice = providerProduct.price ?? undefined
               }
+
+              if (!description || !serviceCode || unitPrice === undefined) {
+                const fallbackProduct = await Product.query()
+                  .where('id', line.productId)
+                  .where('business_id', businessId)
+                  .first()
+
+                if (fallbackProduct) {
+                  if (!description) description = fallbackProduct.name ?? null
+                  if (unitPrice === undefined) unitPrice = fallbackProduct.amount ?? undefined
+                }
+              }
             } else {
               const product = await Product.query()
                 .where('id', line.productId)
@@ -505,6 +517,10 @@ export default class ServiceEntrySheetController {
                 if (!description) description = product.name ?? null
                 if (unitPrice === undefined) unitPrice = product.amount ?? undefined
               }
+            }
+
+            if (!description) {
+              description = serviceCode ?? line.planningLine ?? null
             }
           }
 

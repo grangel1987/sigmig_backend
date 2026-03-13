@@ -150,6 +150,7 @@ export default class BudgetPaymentService {
         if (clientId) {
           const client = await Client.query({ client: trx }).where('id', clientId).first()
           const currency = coin?.symbol ?? coin?.name ?? null
+          const defaultLineDescription = params.concept?.trim() || null
           let totalNetAmount = params.amount
           let lineRows: Array<{
             lineNumber: number
@@ -185,7 +186,8 @@ export default class BudgetPaymentService {
             lineRows = dPaymentLines.map((line, index) => {
               const product = line.bugetProductId ? productMap.get(line.bugetProductId) : undefined
               const item = line.bugetItemId ? itemMap.get(line.bugetItemId) : undefined
-              const description = product?.name ?? item?.title ?? item?.value ?? null
+              const description =
+                product?.name ?? item?.title ?? item?.value ?? defaultLineDescription
               const amount = line.amount ?? 0
 
               return {
@@ -214,7 +216,7 @@ export default class BudgetPaymentService {
                 const unitPrice = product.amount || 0
                 return {
                   serviceCode: null,
-                  description: product.name ?? null,
+                  description: product.name ?? defaultLineDescription,
                   planningLine: null,
                   currency,
                   unit: null,
@@ -228,7 +230,7 @@ export default class BudgetPaymentService {
                 const unitPrice = Number.parseFloat(String(item.value ?? 0)) || 0
                 return {
                   serviceCode: null,
-                  description: item.title ?? item.value ?? null,
+                  description: item.title ?? item.value ?? defaultLineDescription,
                   planningLine: null,
                   currency,
                   unit: null,
