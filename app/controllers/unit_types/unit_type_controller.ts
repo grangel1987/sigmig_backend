@@ -4,6 +4,7 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import { indexFiltersWithStatus } from '#validators/general'
 import { unitTypeStoreValidator, unitTypeUpdateValidator } from '#validators/unit_type'
 import { HttpContext } from '@adonisjs/core/http'
+import db from '@adonisjs/lucid/services/db'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
@@ -117,17 +118,25 @@ export default class UnitTypeController {
         const dateTime = DateTime.local()
 
         try {
-            const unitType = await UnitType.findOrFail(unitTypeId)
-            const payload: Record<string, unknown> = {}
-            if (data.name !== undefined) payload.name = data.name
-            if (data.type !== undefined) payload.type = data.type
+            const unitType = await db.transaction(async (trx) => {
+                const unitTypeOnTrx = await UnitType.query({ client: trx })
+                    .where('id', unitTypeId)
+                    .firstOrFail()
 
-            unitType.merge({
-                ...payload,
-                updatedById: auth.user!.id,
-                updatedAt: dateTime,
+                const payload: Record<string, unknown> = {}
+                if (data.name !== undefined) payload.name = data.name
+                if (data.type !== undefined) payload.type = data.type
+
+                unitTypeOnTrx.useTransaction(trx)
+                unitTypeOnTrx.merge({
+                    ...payload,
+                    updatedById: auth.user!.id,
+                    updatedAt: dateTime,
+                })
+                await unitTypeOnTrx.save()
+
+                return unitTypeOnTrx
             })
-            await unitType.save()
 
             await unitType.load('createdBy', (builder) => {
                 builder
@@ -144,7 +153,7 @@ export default class UnitTypeController {
                     .select(['id', 'personal_data_id', 'email'])
             })
 
-            return response.status(201).json({
+            return response.status(200).json({
                 unitType,
                 message: i18n.formatMessage('messages.update_ok'),
                 title: i18n.formatMessage('messages.ok_title'),
