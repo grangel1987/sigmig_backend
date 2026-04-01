@@ -49,6 +49,26 @@ export default class extends BaseSeeder {
                     createdById: nowUserId,
                     updatedById: nowUserId,
                 },
+                {
+                    name: 'HES creada',
+                    code: 'service_entry_sheet_created',
+                    description: 'Notifica la creación de una hoja de entrada de servicio',
+                    enabled: true,
+                    channel: 'in_app',
+                    severity: 'info',
+                    createdById: nowUserId,
+                    updatedById: nowUserId,
+                },
+                {
+                    name: 'HES autorizada',
+                    code: 'service_entry_sheet_authorized',
+                    description: 'Notifica la autorización de una hoja de entrada de servicio',
+                    enabled: true,
+                    channel: 'in_app',
+                    severity: 'info',
+                    createdById: nowUserId,
+                    updatedById: nowUserId,
+                },
             ]
 
             for (const type of types) {

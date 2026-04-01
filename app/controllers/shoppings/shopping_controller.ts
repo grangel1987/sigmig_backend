@@ -10,6 +10,7 @@ import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import { searchWithStatusSchema } from '#validators/general'
 import {
+    shoppingFindAutoCompleteValidator,
     shoppingFindByDateValidator,
     shoppingFindByNameProviderValidator,
     shoppingIdParamValidator,
@@ -530,6 +531,16 @@ export default class ShoppingController {
         return [shop]
     }
 
+    /** Autocomplete shoppings by number or provider name */
+    public async findAutoComplete(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'shopping', 'view')
+
+        const { request } = ctx
+        const { businessId, val } = await request.validateUsing(shoppingFindAutoCompleteValidator)
+        const result = await ShoppingRepository.findAutoComplete(businessId, val)
+        return result
+    }
+
     /** Show a shopping by id with preloads */
     public async show(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'shopping', 'view')
@@ -651,9 +662,31 @@ export default class ShoppingController {
 
             const existing = await Shopping.query({ client: trx })
                 .where('id', shopId)
-                .where('enabled', false)
-                .forUpdate()
-                .firstOrFail()
+                .first()
+
+            if (!existing) {
+                await trx.rollback()
+                return response
+                    .status(404)
+                    .json(
+                        MessageFrontEnd(
+                            i18n.formatMessage('messages.no_exist', {}, 'Orden de compra no existe'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    )
+            }
+
+            if (existing.enabled) {
+                await trx.rollback()
+                return response
+                    .status(400)
+                    .json(
+                        MessageFrontEnd(
+                            i18n.formatMessage('messages.update_error', {}, 'Orden de compra ya esta habilitada'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    )
+            }
 
             if (existing.expireDate && existing.expireDate > dateTime) {
                 await trx.rollback()
@@ -890,6 +923,8 @@ export async function sendShoppingNotification(businessId: number, emailData: {
     providerName: string
     expirationDate: string
     requestedBy: string
+    status?: string
+    statusLabel?: string
     shoppingUrl?: string
     businessName: string
     shoppingNumberLabel: string
@@ -929,12 +964,14 @@ function buildShoppingCreatedEmailData(i18n: HttpContext['i18n'], shopping: Shop
     requestedByName: string
 }) {
     const expirationDateStr = shopping.expireDate ? Util.parseToMoment(shopping.expireDate, false, { separator: '/', firstYear: false }) : ''
+    const statusLabel = i18n.formatMessage('messages.shopping_status_pending_authorization', {}, 'pending authorization')
     const subject = i18n.formatMessage('messages.shopping_created_email_subject', { shoppingNumber: shopping.nro })
     const body = i18n.formatMessage('messages.shopping_created_email_body', {
         shoppingNumber: shopping.nro,
         providerName: opts.providerName,
         expirationDate: expirationDateStr,
         requestedBy: opts.requestedByName,
+        status: statusLabel,
     })
     return {
         subject,
@@ -943,6 +980,8 @@ function buildShoppingCreatedEmailData(i18n: HttpContext['i18n'], shopping: Shop
         providerName: opts.providerName,
         expirationDate: expirationDateStr,
         requestedBy: opts.requestedByName,
+        status: statusLabel,
+        statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
         businessName: shopping.business?.name || '',
         shoppingNumberLabel: i18n.formatMessage('messages.shopping_number'),
         providerLabel: i18n.formatMessage('messages.provider'),
@@ -959,12 +998,14 @@ function buildShoppingAuthorizedEmailData(i18n: HttpContext['i18n'], shop: Shopp
     authorizedByName: string
 }) {
     const authorizationDateStr = shop.authorizerAt ? Util.parseToMoment(shop.authorizerAt, false, { separator: '/', firstYear: false }) : ''
+    const statusLabel = i18n.formatMessage('messages.shopping_status_authorized', {}, 'authorized')
     const subject = i18n.formatMessage('messages.shopping_authorized_email_subject', { shoppingNumber: shop.nro })
     const body = i18n.formatMessage('messages.shopping_authorized_email_body', {
         shoppingNumber: shop.nro,
         providerName: opts.providerName,
         authorizationDate: authorizationDateStr,
         authorizedBy: opts.authorizedByName,
+        status: statusLabel,
     })
     return {
         subject,
@@ -973,6 +1014,8 @@ function buildShoppingAuthorizedEmailData(i18n: HttpContext['i18n'], shop: Shopp
         providerName: opts.providerName,
         authorizationDate: authorizationDateStr,
         authorizedBy: opts.authorizedByName,
+        status: statusLabel,
+        statusLabel: i18n.formatMessage('messages.current_status', {}, 'Current Status'),
         businessName: shop.business?.name || '',
         shoppingNumberLabel: i18n.formatMessage('messages.shopping_number'),
         providerLabel: i18n.formatMessage('messages.provider'),

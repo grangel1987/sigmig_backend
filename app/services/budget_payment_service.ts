@@ -6,8 +6,10 @@ import BugetProduct from '#models/bugets/buget_product'
 import Client from '#models/clients/client'
 import Coin from '#models/coin/coin'
 import LedgerMovement from '#models/ledger_movement'
+import NotificationType from '#models/notifications/notification_type'
 import PaymentDocumentType from '#models/payment_document_type'
 import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
+import NotificationService from '#services/notification_service'
 import handleDate from '#utils/HandleDate'
 import BudgetPaymentValidator from '#validators/budget_payment_validator'
 import Database from '@adonisjs/lucid/services/db'
@@ -148,6 +150,7 @@ export default class BudgetPaymentService {
         if (clientId) {
           const client = await Client.query({ client: trx }).where('id', clientId).first()
           const currency = coin?.symbol ?? coin?.name ?? null
+          const defaultLineDescription = params.concept?.trim() || null
           let totalNetAmount = params.amount
           let lineRows: Array<{
             lineNumber: number
@@ -183,7 +186,8 @@ export default class BudgetPaymentService {
             lineRows = dPaymentLines.map((line, index) => {
               const product = line.bugetProductId ? productMap.get(line.bugetProductId) : undefined
               const item = line.bugetItemId ? itemMap.get(line.bugetItemId) : undefined
-              const description = product?.name ?? item?.title ?? item?.value ?? null
+              const description =
+                product?.name ?? item?.title ?? item?.value ?? defaultLineDescription
               const amount = line.amount ?? 0
 
               return {
@@ -212,7 +216,7 @@ export default class BudgetPaymentService {
                 const unitPrice = product.amount || 0
                 return {
                   serviceCode: null,
-                  description: product.name ?? null,
+                  description: product.name ?? defaultLineDescription,
                   planningLine: null,
                   currency,
                   unit: null,
@@ -226,7 +230,7 @@ export default class BudgetPaymentService {
                 const unitPrice = Number.parseFloat(String(item.value ?? 0)) || 0
                 return {
                   serviceCode: null,
-                  description: item.title ?? item.value ?? null,
+                  description: item.title ?? item.value ?? defaultLineDescription,
                   planningLine: null,
                   currency,
                   unit: null,
@@ -270,6 +274,41 @@ export default class BudgetPaymentService {
             )
 
             await sheet.related('lines').createMany(lineRows, { client: trx })
+
+            try {
+              const type = await NotificationType.query({ client: trx })
+                .where('code', 'service_entry_sheet_created')
+                .where('enabled', true)
+                .first()
+              if (!type) {
+                throw new Error('Missing or disabled notification type: service_entry_sheet_created')
+              }
+              const issueDateStr = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : DateTime.now().toFormat('dd/LL/yyyy')
+              const title = `HES creada #${sheet.number}`
+              const shortBody = `${title} - ${issueDateStr}`
+
+              await NotificationService.createAndDispatch({
+                typeId: type.id,
+                businessId: params.businessId,
+                title,
+                body: shortBody,
+                payload: {
+                  serviceEntrySheetId: sheet.id,
+                  number: sheet.number,
+                  businessId: params.businessId,
+                  issueDate: sheet.issueDate ? sheet.issueDate.toISODate() : null,
+                  budgetPaymentId: budgetPayment.id,
+                },
+                meta: {
+                  sheetId: sheet.id,
+                  number: sheet.number,
+                  source: 'budget_payment',
+                },
+                createdById: params.createdById ?? 1,
+              })
+            } catch (notifyErr) {
+              console.log('Service entry sheet notification error:', notifyErr)
+            }
           }
         }
       }

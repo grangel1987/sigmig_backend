@@ -79,7 +79,7 @@ export default class UserController {
       if (!passVerify) {
         return response.status(500).json({
           ...MessageFrontEnd(
-            i18n.formatMessage('messages.error_login'),
+            i18n.formatMessage('messages.error'),
             i18n.formatMessage('messages.error_title')
           ),
         })
@@ -807,11 +807,19 @@ export default class UserController {
     await PermissionService.requirePermission(ctx, 'users', 'update')
 
     const { request, response, auth, i18n } = ctx
-    const { params, email, signature, employeeId, personalData } = await request.validateUsing(
+    const {
+      params,
+      email,
+      password: providedPassword,
+      signature,
+      employeeId,
+      personalData,
+    } = await request.validateUsing(
       vine.compile(
         vine.object({
           params: vine.object({ id: vine.number().positive() }),
           email: vine.string().email().optional(),
+          password: vine.string().minLength(8).optional(),
           business: vine.any().optional(),
           employeeId: vine
             .number()
@@ -847,6 +855,10 @@ export default class UserController {
           })
         }
         user.email = candidateEmail
+      }
+
+      if (providedPassword) {
+        user.password = providedPassword
       }
 
       if (signature) {
@@ -968,7 +980,7 @@ export default class UserController {
       email,
       business,
       personalData,
-      // password: providedPassword,
+      password: providedPassword,
       isAdmin,
       isAuthorizer,
       signature,
@@ -1027,6 +1039,10 @@ export default class UserController {
           })
         }
         user.email = email
+      }
+
+      if (providedPassword) {
+        user.password = providedPassword
       }
 
       // Update admin flags

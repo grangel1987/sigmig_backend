@@ -1,3 +1,5 @@
+import Coin from '#models/coin/coin'
+import Product from '#models/products/product'
 import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
@@ -11,6 +13,9 @@ export default class ServiceEntryLine extends BaseModel {
   @column({ columnName: 'service_entry_sheet_id' })
   public serviceEntrySheetId: number
 
+  @column({ columnName: 'product_id' })
+  public productId: number | null
+
   @column({ columnName: 'line_number' })
   public lineNumber: number | null
 
@@ -23,11 +28,25 @@ export default class ServiceEntryLine extends BaseModel {
   @column({ columnName: 'planning_line' })
   public planningLine: string | null
 
+  @column({ columnName: 'currency_id' })
+  public currencyId: number | null
+
+  @column({
+    columnName: 'exchange_rate',
+    prepare: (value?: number) => value ?? null,
+    consume: (value?: string | number) =>
+      value === null || value === undefined ? 0 : Number(value),
+  })
+  public exchangeRate: number
+
   @column()
   public currency: string | null
 
   @column()
   public unit: string | null
+
+  @column({ columnName: 'unit_type' })
+  public unitType: string | null
 
   @column({
     columnName: 'unit_price',
@@ -54,4 +73,10 @@ export default class ServiceEntryLine extends BaseModel {
 
   @belongsTo(() => ServiceEntrySheet, { foreignKey: 'serviceEntrySheetId' })
   public serviceEntrySheet: BelongsTo<typeof ServiceEntrySheet>
+
+  @belongsTo(() => Product, { foreignKey: 'productId' })
+  public product: BelongsTo<typeof Product>
+
+  @belongsTo(() => Coin, { foreignKey: 'currencyId' })
+  public coin: BelongsTo<typeof Coin>
 }

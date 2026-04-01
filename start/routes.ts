@@ -394,6 +394,21 @@ router
 
     router
       .group(() => {
+        router.get('/', '#controllers/unit_types/unit_type_controller.index')
+        router.post('/store', '#controllers/unit_types/unit_type_controller.store')
+        router.put('/update/:id', '#controllers/unit_types/unit_type_controller.update')
+        router.put(
+          '/change-status/:id',
+          '#controllers/unit_types/unit_type_controller.changeStatus'
+        )
+        router.get('/select', '#controllers/unit_types/unit_type_controller.select')
+        router.get('/findAutoComplete', '#controllers/unit_types/unit_type_controller.autoComplete')
+      })
+      .prefix('unit-types')
+      .middleware(auth)
+
+    router
+      .group(() => {
         router.get('/', '#controllers/type_contract/setting_type_contract_controller.index')
         router.post('/store', '#controllers/type_contract/setting_type_contract_controller.store')
         router.put(
@@ -1002,10 +1017,22 @@ router
     // Service Entry Sheets
     router
       .group(() => {
+        router.post(
+          '/products',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.products'
+        )
         router.get('/', '#controllers/service_entry_sheets/service_entry_sheet_controller.index')
         router.post(
           '/store',
           '#controllers/service_entry_sheets/service_entry_sheet_controller.store'
+        )
+        router.post(
+          '/authorize',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.authorize'
+        )
+        router.post(
+          '/authorizer',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.authorizer'
         )
         router.get(
           '/show/:id',
@@ -1022,6 +1049,10 @@ router
         router.post('/store', '#controllers/shoppings/shopping_controller.store')
         router.get('/show/:id', '#controllers/shoppings/shopping_controller.show')
         router.post('/find/number', '#controllers/shoppings/shopping_controller.findByNro')
+        router.post(
+          '/findAutoComplete',
+          '#controllers/shoppings/shopping_controller.findAutoComplete'
+        )
         router.put('/update/:shop_id', '#controllers/shoppings/shopping_controller.update')
         router.post('/authorizer', '#controllers/shoppings/shopping_controller.authorizer')
         router.put('/delete/:shop_id', '#controllers/shoppings/shopping_controller.delete')
