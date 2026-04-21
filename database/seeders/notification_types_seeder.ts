@@ -69,6 +69,26 @@ export default class extends BaseSeeder {
                     createdById: nowUserId,
                     updatedById: nowUserId,
                 },
+                {
+                    name: 'Venta creada',
+                    code: 'sale_created',
+                    description: 'Notifica creación de una nueva venta',
+                    enabled: true,
+                    channel: 'in_app',
+                    severity: 'info',
+                    createdById: nowUserId,
+                    updatedById: nowUserId,
+                },
+                {
+                    name: 'Estado de venta actualizado',
+                    code: 'sale_status_changed',
+                    description: 'Notifica cambios de estado en una venta',
+                    enabled: true,
+                    channel: 'in_app',
+                    severity: 'info',
+                    createdById: nowUserId,
+                    updatedById: nowUserId,
+                },
             ]
 
             for (const type of types) {

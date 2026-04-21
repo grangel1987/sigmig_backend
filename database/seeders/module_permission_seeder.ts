@@ -55,6 +55,12 @@ export default class extends BaseSeeder {
           name: 'Hojas de Entrada de Servicios',
           description: 'Hojas de entrada de servicios',
         },
+        {
+          id: 22,
+          key: 'sales',
+          name: 'Ventas',
+          description: 'Gestión de ventas',
+        },
       ]
 
       // Insert modules
@@ -832,6 +838,36 @@ export default class extends BaseSeeder {
           description: 'Eliminar hojas de entrada de servicios',
           type: 'service_entry_sheets',
           moduleId: 21,
+        },
+
+        // Sales module (22)
+        {
+          key: 'view',
+          name: 'Ver',
+          description: 'Ver ventas',
+          type: 'sales',
+          moduleId: 22,
+        },
+        {
+          key: 'create',
+          name: 'Crear',
+          description: 'Crear ventas',
+          type: 'sales',
+          moduleId: 22,
+        },
+        {
+          key: 'update',
+          name: 'Actualizar',
+          description: 'Actualizar ventas',
+          type: 'sales',
+          moduleId: 22,
+        },
+        {
+          key: 'delete',
+          name: 'Eliminar',
+          description: 'Eliminar ventas',
+          type: 'sales',
+          moduleId: 22,
         },
       ]
 

@@ -5,6 +5,7 @@ import Coin from '#models/coin/coin'
 import CostCenter from '#models/cost_centers/cost_center'
 import Expense from '#models/expense'
 import PaymentMethod from '#models/payment_method'
+import SalePayment from '#models/sale_payment'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
@@ -89,6 +90,12 @@ export default class LedgerMovement extends BaseModel {
 
   @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
   declare budgetPayment: BelongsTo<typeof BudgetPayment>
+
+  @column()
+  declare salePaymentId: number | null
+
+  @belongsTo(() => SalePayment, { foreignKey: 'salePaymentId' })
+  declare salePayment: BelongsTo<typeof SalePayment>
 
   @column()
   declare expenseId: number
