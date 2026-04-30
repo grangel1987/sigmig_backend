@@ -107,17 +107,17 @@ export default class ShoppingController {
             query = query.where('business_id', headerBusinessId)
         }
 
+        query = query.whereNotExists((builder) => {
+            builder
+                .from('shoppings as newer_shoppings')
+                .select(db.raw('1'))
+                .whereColumn('newer_shoppings.business_id', 'shoppings.business_id')
+                .whereColumn('newer_shoppings.nro', 'shoppings.nro')
+                .whereColumn('newer_shoppings.id', '>', 'shoppings.id')
+        })
+
         if (status !== undefined) {
             query = query.where('enabled', status === 'enabled')
-        } else {
-            query = query.whereNotExists((builder) => {
-                builder
-                    .from('shoppings as newer_shoppings')
-                    .select(db.raw('1'))
-                    .whereColumn('newer_shoppings.business_id', 'shoppings.business_id')
-                    .whereColumn('newer_shoppings.nro', 'shoppings.nro')
-                    .whereColumn('newer_shoppings.id', '>', 'shoppings.id')
-            })
         }
 
         if (providerId) {
