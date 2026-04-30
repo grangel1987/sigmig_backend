@@ -62,6 +62,14 @@ export default class ShoppingRepository {
 
     const q = Shopping.query()
       .where('business_id', businessId)
+      .whereNotExists((builder) => {
+        builder
+          .from('shoppings as newer_shoppings')
+          .select(Database.raw('1'))
+          .whereColumn('newer_shoppings.business_id', 'shoppings.business_id')
+          .whereColumn('newer_shoppings.nro', 'shoppings.nro')
+          .whereColumn('newer_shoppings.id', '>', 'shoppings.id')
+      })
       .whereRaw('DATE(created_at) BETWEEN ? AND ?', [start, end])
       .preload('provider', (p) => p.select(['id', 'name']))
       .preload('costCenter', (cc) => cc.select(['id', 'code', 'name']))
@@ -221,6 +229,13 @@ export default class ShoppingRepository {
       LEFT JOIN providers ON providers.id = shoppings.provider_id
       WHERE shoppings.business_id = ?
       AND shoppings.enabled = true
+        AND NOT EXISTS (
+          SELECT 1
+          FROM shoppings AS newer_shoppings
+          WHERE newer_shoppings.business_id = shoppings.business_id
+            AND newer_shoppings.nro = shoppings.nro
+            AND newer_shoppings.id > shoppings.id
+        )
         AND (
           shoppings.nro LIKE ?
           OR providers.name LIKE ?
