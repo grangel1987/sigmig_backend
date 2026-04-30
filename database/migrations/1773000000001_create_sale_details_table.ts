@@ -28,7 +28,9 @@ export default class SaleDetailsSchema extends BaseSchema {
                 table.string('description').nullable()
                 table.integer('unit_id').unsigned().nullable().references('id').inTable('units').onDelete('RESTRICT')
                 table.decimal('quantity', 15, 2).notNullable().defaultTo(1)
+                table.decimal('unit_amount', 15, 2).notNullable().defaultTo(0)
                 table.decimal('amount', 15, 2).notNullable().defaultTo(0)
+                table.integer('line_number').unsigned().nullable()
 
                 table.json('metadata').nullable()
 

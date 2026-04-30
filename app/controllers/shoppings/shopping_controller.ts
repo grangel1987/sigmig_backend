@@ -31,6 +31,47 @@ import { DateTime } from 'luxon'
 type MessageFrontEndType = { message: string; title: string }
 
 export default class ShoppingController {
+    private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
+        const query = trx
+            .from('shoppings')
+            .where('business_id', businessId)
+            .where('nro', String(nro))
+            .where('enabled', true)
+
+        if (excludeId) {
+            query.whereNot('id', excludeId)
+        }
+
+        const row = await query.first()
+        return Boolean(row)
+    }
+
+    private async getNextActiveNro(trx: any, businessId: number) {
+        // Lock business row so concurrent requests for the same business serialize nro generation.
+        await trx.from('businesses').where('id', businessId).forUpdate().first()
+
+        const lastActive = await trx
+            .from('shoppings')
+            .where('business_id', businessId)
+            .where('enabled', true)
+            .orderByRaw('CAST(nro AS UNSIGNED) DESC')
+            .orderBy('id', 'desc')
+            .first()
+
+        let nextNumber = lastActive ? Number(lastActive.nro) + 1 : 1
+        if (!Number.isFinite(nextNumber) || nextNumber < 1) {
+            nextNumber = 1
+        }
+
+        let nro = String(nextNumber)
+        while (await this.existsActiveNro(trx, businessId, nro)) {
+            nextNumber += 1
+            nro = String(nextNumber)
+        }
+
+        return nro
+    }
+
     /** List shoppings with optional pagination and filtering */
     public async index(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'shopping', 'view')
@@ -118,15 +159,10 @@ export default class ShoppingController {
         const dateTime = await Util.getDateTimes(request)
 
         try {
-            const lastShop = await trx.from('shoppings')
-                .where('business_id', businessId)
-                .orderBy('id', 'desc')
-                .limit(1)
-
-            const nro = lastShop.length > 0 ? Number(lastShop[0].nro) + 1 : 1
+            const nro = await this.getNextActiveNro(trx, businessId)
 
             const payload: any = {
-                nro: String(nro),
+                nro,
                 businessId,
                 currencySymbol,
                 providerId: provider.id,
@@ -299,6 +335,19 @@ export default class ShoppingController {
             const existing = await Shopping.query({ client: trx }).where('id', shop_id).firstOrFail()
             const token = existing.token
 
+            if (keepSameNro) {
+                const nroInUse = await this.existsActiveNro(trx, existing.businessId, existing.nro, existing.id)
+                if (nroInUse) {
+                    await trx.rollback()
+                    return response.status(409).json(
+                        MessageFrontEnd(
+                            i18n.formatMessage('messages.shopping_nro_exists', {}, 'Ya existe una orden de compra activa con este numero'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    )
+                }
+            }
+
             await trx
                 .from('shoppings')
                 .where('id', shop_id)
@@ -320,12 +369,7 @@ export default class ShoppingController {
             if (keepSameNro) {
                 nro = existing.nro!
             } else {
-                const last = await trx
-                    .from('shoppings')
-                    .where('business_id', existing.businessId!)
-                    .orderBy('id', 'desc')
-                    .limit(1)
-                nro = String(last.length > 0 ? Number(last[0].nro) + 1 : 1)
+                nro = await this.getNextActiveNro(trx, existing.businessId!)
             }
 
             const shopping = await Shopping.create(
@@ -517,7 +561,11 @@ export default class ShoppingController {
         )
 
         // find id by business + number (nro)
-        const rows = await db.from('shoppings').where('business_id', businessId).where('nro', String(number)).limit(1)
+        const rows = await db.from('shoppings')
+            .where('business_id', businessId)
+            .where('nro', String(number))
+            .where('enabled', true)
+            .limit(1)
         const shopId = rows.length > 0 ? rows[0].id : 0
         if (!shopId) return []
 
@@ -702,12 +750,18 @@ export default class ShoppingController {
 
             let nro = existing.nro!
             if (!keepSameNro) {
-                const last = await trx
-                    .from('shoppings')
-                    .where('business_id', existing.businessId!)
-                    .orderBy('id', 'desc')
-                    .limit(1)
-                nro = String(last.length > 0 ? Number(last[0].nro) + 1 : 1)
+                nro = await this.getNextActiveNro(trx, existing.businessId!)
+            } else {
+                const nroInUse = await this.existsActiveNro(trx, existing.businessId, existing.nro, existing.id)
+                if (nroInUse) {
+                    await trx.rollback()
+                    return response.status(409).json(
+                        MessageFrontEnd(
+                            i18n.formatMessage('messages.shopping_nro_exists', {}, 'Ya existe una orden de compra activa con este numero'),
+                            i18n.formatMessage('messages.error_title')
+                        )
+                    )
+                }
             }
 
             const token = existing.token || randomUUID()
