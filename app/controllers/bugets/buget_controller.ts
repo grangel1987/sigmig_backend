@@ -31,6 +31,9 @@ import mail from '@adonisjs/mail/services/main'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 import { log } from 'node:console'
+import { createHash } from 'node:crypto'
+
+const DUPLICATE_BUDGET_WINDOW_SECONDS = 45
 
 export default class BugetController {
   public async store(ctx: HttpContext) {
@@ -60,7 +63,118 @@ export default class BugetController {
     log(`[BUGET STORE ${debugId}] start user=${auth.user?.id} business=${businessId}`)
     try {
       const dateTime = await Util.getDateTimes(request)
-      const business = await Business.query({ client: trx }).where('id', businessId).firstOrFail()
+      const requestFingerprint = buildBudgetCreateFingerprint({
+        businessId,
+        costCenterId,
+        workId,
+        currencySymbol,
+        currencyId,
+        currencyValue,
+        client,
+        products,
+        items,
+        banks,
+        discount,
+        utility,
+        info,
+        clientDetails,
+      })
+
+      const duplicateThreshold = dateTime
+        .minus({ seconds: DUPLICATE_BUDGET_WINDOW_SECONDS })
+        .toSQL({ includeOffset: false })
+
+      const duplicateThresholdSql =
+        duplicateThreshold ?? dateTime.minus({ seconds: DUPLICATE_BUDGET_WINDOW_SECONDS }).toISO()!
+
+      const business = await Business.query({ client: trx })
+        .where('id', businessId)
+        .forUpdate()
+        .firstOrFail()
+
+      const duplicateQuery = Buget.query({ client: trx })
+        .where('business_id', businessId)
+        .where('created_by', auth.user!.id)
+        .where('enabled', true)
+        .where('created_at', '>=', duplicateThresholdSql)
+        .preload('products')
+        .preload('items')
+        .preload('banks')
+        .preload('details')
+        .orderBy('id', 'desc')
+        .limit(10)
+
+      if (client?.id) {
+        duplicateQuery.where('client_id', client.id)
+      } else {
+        duplicateQuery.whereNull('client_id')
+      }
+
+      const duplicateCandidates = await duplicateQuery
+      const duplicateBudget = duplicateCandidates.find((candidate) => {
+        const candidateFingerprint = buildBudgetCreateFingerprint({
+          businessId: candidate.businessId,
+          costCenterId: candidate.costCenterId,
+          workId: candidate.workId,
+          currencySymbol: candidate.currencySymbol,
+          currencyId: candidate.currencyId,
+          currencyValue: candidate.currencyValue,
+          client: { id: candidate.clientId },
+          discount: candidate.discount,
+          utility: candidate.utility,
+          info: candidate.info,
+          clientDetails: candidate.details
+            ? {
+              costCenter: candidate.details.costCenter,
+              work: candidate.details.work,
+              observation: candidate.details.observation,
+            }
+            : null,
+          products: candidate.products.map((p) => ({
+            id: p.productId,
+            period: { period: p.periodId },
+            name: p.name,
+            amount: p.amount,
+            count: p.count,
+            countPerson: p.countPerson,
+            tax: p.tax,
+          })),
+          items: candidate.items.map((it) => ({
+            id: it.itemId,
+            withTitle: it.withTitle,
+            title: it.title,
+            typeId: it.typeId,
+            value: it.value,
+          })),
+          banks: candidate.banks.map((b) => ({ accountId: b.accountId })),
+        })
+        return candidateFingerprint === requestFingerprint
+      })
+
+      if (duplicateBudget) {
+        await trx.rollback()
+        await duplicateBudget.load('client', (q) => q.select(['name', 'id']))
+        await duplicateBudget.load('createdBy', (builder) => {
+          builder
+            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+            .select(['id', 'personal_data_id', 'email'])
+        })
+        await duplicateBudget.load('updatedBy', (builder) => {
+          builder
+            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+            .select(['id', 'personal_data_id', 'email'])
+        })
+
+        return response.status(200).json({
+          buget: duplicateBudget,
+          duplicateDetected: true,
+          ...MessageFrontEnd(
+            i18n.formatMessage('messages.store_ok'),
+            i18n.formatMessage('messages.ok_title')
+          ),
+        })
+      }
+
       const daysExpire = business.daysExpireBuget || 0
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
@@ -2467,4 +2581,82 @@ function getBudgetStatusLabel(
     default:
       return i18n.formatMessage('messages.budget_status_updated', {}, 'updated')
   }
+}
+
+function buildBudgetCreateFingerprint(payload: {
+  businessId: number | string
+  costCenterId?: number | null
+  workId?: number | string | null
+  currencySymbol?: string | null
+  currencyId?: number | string | null
+  currencyValue?: number | string | null
+  client?: { id?: number | null } | null
+  products?: any[]
+  items?: any[]
+  banks?: any[]
+  discount?: number
+  utility?: number
+  info?: Record<string, any> | null
+  clientDetails?: Record<string, any> | null
+}) {
+  const normalized = {
+    businessId: Number(payload.businessId),
+    costCenterId: payload.costCenterId ?? null,
+    workId: payload.workId ?? null,
+    currencySymbol: payload.currencySymbol,
+    currencyId: Number(payload.currencyId),
+    currencyValue: Number(payload.currencyValue) || 0,
+    clientId: payload.client?.id ?? null,
+    discount: Number(payload.discount) || 0,
+    utility: Number(payload.utility) || 0,
+    info: sortObject(payload.info ?? null),
+    clientDetails: payload.clientDetails
+      ? {
+        costCenter: payload.clientDetails.costCenter ?? null,
+        work: payload.clientDetails.work ?? null,
+        observation: payload.clientDetails.observation ?? null,
+      }
+      : null,
+    products: (payload.products ?? []).map((p) => ({
+      productId: p?.id ?? null,
+      periodId: p?.period?.period ?? null,
+      name: p?.name ?? null,
+      amount: Number(p?.amountDefault ?? p?.amount ?? 0),
+      count: Number(p?.count ?? 0),
+      countPerson: Number(p?.countPerson ?? 0),
+      tax: Number(p?.tax ?? 0),
+    })),
+    items: (payload.items ?? []).map((it) => ({
+      itemId: it?.id ?? null,
+      withTitle: Boolean(it?.withTitle),
+      title: it?.title ?? null,
+      typeId: it?.typeId ?? null,
+      value: Number(it?.value ?? 0),
+    })),
+    banks: (payload.banks ?? [])
+      .map((b) => (typeof b === 'object' ? b?.accountId : b))
+      .filter((accountId) => accountId !== null && accountId !== undefined)
+      .map((accountId) => Number(accountId))
+      .sort((a, b) => a - b),
+  }
+
+  const content = JSON.stringify(normalized)
+  return createHash('sha256').update(content).digest('hex')
+}
+
+function sortObject(value: any): any {
+  if (Array.isArray(value)) {
+    return value.map(sortObject)
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc: Record<string, any>, key) => {
+        acc[key] = sortObject(value[key])
+        return acc
+      }, {})
+  }
+
+  return value
 }

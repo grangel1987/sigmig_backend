@@ -9,7 +9,7 @@ info:
     name: MIT
 
 servers:
-  - url: http://localhost:3000/api/v2
+  - url: http://localhost:3333/api/v2
     description: Servidor de Desarrollo Local
   - url: http://93.127.210.103/api/v2
     description: Servidor de Producción
@@ -296,6 +296,156 @@ components:
               type: string
             name:
               type: string
+
+    SaleDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        saleId:
+          type: integer
+        productId:
+          type: integer
+          nullable: true
+        lineNumber:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        quantity:
+          type: number
+        unitAmount:
+          type: number
+        amount:
+          type: number
+        metadata:
+          type: object
+          nullable: true
+
+    SalePayment:
+      type: object
+      properties:
+        id:
+          type: integer
+        saleId:
+          type: integer
+        coinId:
+          type: integer
+          nullable: true
+        amount:
+          type: number
+        invoiced:
+          type: boolean
+        invoiceMeta:
+          type: object
+          nullable: true
+        date:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+        voided:
+          type: boolean
+        voidedAt:
+          type: string
+          format: date-time
+          nullable: true
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        deletedBy:
+          type: integer
+          nullable: true
+        coin:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            symbol:
+              type: string
+            name:
+              type: string
+        ledgerMovement:
+          $ref: '#/components/schemas/LedgerMovement'
+
+    Sale:
+      type: object
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        createdById:
+          type: integer
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        saleDate:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [draft, pending, confirmed, canceled]
+        totalAmount:
+          type: number
+          nullable: true
+        currencyId:
+          type: integer
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+        business:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        createdBy:
+          type: object
+          properties:
+            id:
+              type: integer
+            email:
+              type: string
+        currency:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            symbol:
+              type: string
+            name:
+              type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleDetail'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalePayment'
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     CashAuditLine:
       type: object
@@ -1908,6 +2058,298 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales:
+    get:
+      tags:
+        - Ventas
+      summary: Listar ventas
+      description: Obtener ventas con filtrado y paginacion opcionales
+      operationId: listSales
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: text
+          in: query
+          description: Buscar por titulo o descripcion
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filtrar por estado
+          schema:
+            type: string
+            enum: [draft, pending, confirmed, canceled]
+        - name: businessId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de ventas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sale'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          description: Error del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/store:
+    post:
+      tags:
+        - Ventas
+      summary: Crear venta
+      description: Crear una nueva venta con sus lineas de detalle
+      operationId: storeSale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                title:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                saleDate:
+                  type: string
+                  format: date
+                  nullable: true
+                status:
+                  type: string
+                  enum: [draft, pending, confirmed, canceled]
+                currencyId:
+                  type: integer
+                  nullable: true
+                coinId:
+                  type: integer
+                  nullable: true
+                  description: Campo aceptado por el validador, reservado para compatibilidad con pagos de venta
+                invoiced:
+                  type: boolean
+                  description: Campo aceptado por el validador, reservado para compatibilidad con pagos de venta
+                totalAmount:
+                  type: number
+                  nullable: true
+                metadata:
+                  type: object
+                  nullable: true
+                details:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: integer
+                        nullable: true
+                      lineNumber:
+                        type: integer
+                        nullable: true
+                      description:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                      unitAmount:
+                        type: number
+                      amount:
+                        type: number
+                        nullable: true
+                      metadata:
+                        type: object
+                        nullable: true
+                    required:
+                      - quantity
+                      - unitAmount
+              required:
+                - details
+            example:
+              businessId: 1
+              title: Venta de materiales
+              description: Venta generada desde modulo comercial
+              saleDate: '2026-04-20'
+              status: draft
+              currencyId: 1
+              coinId: 1
+              invoiced: false
+              details:
+                - productId: 10
+                  lineNumber: 1
+                  description: Producto A
+                  quantity: 2
+                  unitAmount: 15000
+                  amount: 30000
+      responses:
+        '201':
+          description: Venta creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '400':
+          description: Solicitud invalida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error de creacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/show/{id}:
+    get:
+      tags:
+        - Ventas
+      summary: Obtener venta
+      description: Obtener una venta especifica con detalles y pagos relacionados
+      operationId: showSale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle de la venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '404':
+          description: Venta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al obtener venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/status/{id}:
+    put:
+      tags:
+        - Ventas
+      summary: Actualizar estado de venta
+      description: Actualizar solo el estado de una venta
+      operationId: updateSaleStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [draft, pending, confirmed, canceled]
+              required:
+                - status
+            example:
+              status: confirmed
+      responses:
+        '200':
+          description: Venta actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error de actualizacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/delete/{id}:
+    delete:
+      tags:
+        - Ventas
+      summary: Eliminar venta (soft delete)
+      description: Marca una venta como eliminada asignando deletedAt; no elimina fisicamente el registro
+      operationId: deleteSale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Venta marcada como eliminada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al eliminar venta
           content:
             application/json:
               schema:

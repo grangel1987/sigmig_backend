@@ -1014,6 +1014,18 @@ router
       .prefix('expenses')
       .middleware(auth)
 
+    // Sales
+    router
+      .group(() => {
+        router.get('/', '#controllers/sales/sale_controller.index')
+        router.post('/store', '#controllers/sales/sale_controller.store')
+        router.get('/show/:id', '#controllers/sales/sale_controller.show')
+        router.put('/status/:id', '#controllers/sales/sale_controller.updateStatus')
+        router.delete('/delete/:id', '#controllers/sales/sale_controller.delete')
+      })
+      .prefix('sales')
+      .middleware(auth)
+
     // Service Entry Sheets
     router
       .group(() => {

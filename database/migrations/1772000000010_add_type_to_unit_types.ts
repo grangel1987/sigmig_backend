@@ -4,14 +4,17 @@ export default class AddTypeToUnitTypes extends BaseSchema {
   protected tableName = 'unit_types'
 
   public async up() {
-    this.schema.alterTable(this.tableName, (table) => {
-      table.string('type').nullable()
-    })
+    if (!(await this.schema.hasColumn(this.tableName, 'type')))
+      this.schema.alterTable(this.tableName, (table) => {
+        table.string('type').nullable()
+      })
   }
 
   public async down() {
-    this.schema.alterTable(this.tableName, (table) => {
-      table.dropColumn('type')
-    })
+    if (await this.schema.hasColumn(this.tableName, 'type'))
+
+      this.schema.alterTable(this.tableName, (table) => {
+        table.dropColumn('type')
+      })
   }
 }
