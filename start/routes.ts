@@ -1038,6 +1038,18 @@ router
           '/store',
           '#controllers/service_entry_sheets/service_entry_sheet_controller.store'
         )
+        router.put(
+          '/update/:id',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.update'
+        )
+        router.put(
+          '/disable/:id',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.disable'
+        )
+        router.delete(
+          '/delete/:id',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.delete'
+        )
         router.post(
           '/authorize',
           '#controllers/service_entry_sheets/service_entry_sheet_controller.authorize'

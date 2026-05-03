@@ -1754,6 +1754,89 @@ paths:
       security:
         - bearerAuth: []
 
+  /service-entry-sheets/update/{id}:
+    put:
+      tags:
+        - Hojas Entrada Servicios
+      summary: Actualizar HES
+      description: Actualizar una hoja de entrada de servicios y sus lineas
+      operationId: updateServiceEntrySheet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                issueDate:
+                  type: string
+                  format: date
+                lines:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: HES actualizada correctamente
+        '404':
+          description: HES no encontrada
+        '500':
+          description: Error al actualizar
+      security:
+        - bearerAuth: []
+
+  /service-entry-sheets/disable/{id}:
+    put:
+      tags:
+        - Hojas Entrada Servicios
+      summary: Deshabilitar HES
+      description: Deshabilitar una hoja de entrada de servicios (soft delete)
+      operationId: disableServiceEntrySheet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: HES deshabilitada correctamente
+        '404':
+          description: HES no encontrada
+        '500':
+          description: Error al deshabilitar
+      security:
+        - bearerAuth: []
+
+  /service-entry-sheets/delete/{id}:
+    delete:
+      tags:
+        - Hojas Entrada Servicios
+      summary: Eliminar HES
+      description: Eliminar una hoja de entrada de servicios y sus lineas
+      operationId: deleteServiceEntrySheet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: HES eliminada correctamente
+        '404':
+          description: HES no encontrada
+        '500':
+          description: Error al eliminar
+      security:
+        - bearerAuth: []
+
   /dashboard/indicators:
     post:
       tags:

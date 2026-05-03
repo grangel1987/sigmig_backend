@@ -4,7 +4,7 @@ import Client from '#models/clients/client'
 import Provider from '#models/provider/provider'
 import ServiceEntryLine from '#models/service_entry_sheets/service_entry_line'
 import User from '#models/users/user'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -31,6 +31,9 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @column({ columnName: 'is_authorized' })
   public isAuthorized: boolean
+
+  @column()
+  public enabled: boolean
 
   @belongsTo(() => BudgetPayment, { foreignKey: 'budgetPaymentId' })
   public budgetPayment: BelongsTo<typeof BudgetPayment>
@@ -129,8 +132,23 @@ export default class ServiceEntrySheet extends BaseModel {
   })
   public authorizerAt: DateTime | null
 
+  @column({ columnName: 'updated_by' })
+  public updatedById: number | null
+
+  @column.dateTime({ columnName: 'deleted_at' })
+  public deletedAt: DateTime | null
+
+  @column({ columnName: 'deleted_by' })
+  public deletedById: number | null
+
   @belongsTo(() => User, { foreignKey: 'authorizerId' })
   public authorizer: BelongsTo<typeof User>
+
+  @belongsTo(() => User, { foreignKey: 'updatedById' })
+  public updatedBy: BelongsTo<typeof User>
+
+  @belongsTo(() => User, { foreignKey: 'deletedById' })
+  public deletedBy: BelongsTo<typeof User>
 
   @hasMany(() => ServiceEntryLine, { foreignKey: 'serviceEntrySheetId' })
   public lines: HasMany<typeof ServiceEntryLine>
@@ -140,4 +158,9 @@ export default class ServiceEntrySheet extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @beforeCreate()
+  public static setDefaults(sheet: ServiceEntrySheet) {
+    sheet.enabled = sheet.enabled ?? true
+  }
 }
