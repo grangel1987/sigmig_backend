@@ -101,7 +101,8 @@ export default class ServiceEntrySheetController {
     await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'view')
 
     const { request, response, i18n } = ctx
-    const { clientId, providerId, concept, page, perPage, startDate, endDate } = request.qs()
+    const { clientId, providerId, concept, page, perPage, startDate, endDate, status } =
+      request.qs()
 
     const businessId = Number(request.header('Business'))
     if (!Number.isFinite(businessId) || businessId <= 0) {
@@ -133,6 +134,12 @@ export default class ServiceEntrySheetController {
       .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
       .preload('provider', (q) => q.select(['id', 'name']))
       .where('business_id', businessId)
+
+    if (status === 'disabled') {
+      query.where('enabled', false)
+    } else if (status !== 'all') {
+      query.where('enabled', true)
+    }
 
     if (clientId) {
       query.where('client_id', Number(clientId))
@@ -747,6 +754,379 @@ export default class ServiceEntrySheetController {
         .json(
           MessageFrontEnd(
             i18n.formatMessage('messages.store_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async update(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'update')
+
+    const { request, response, i18n, params, auth } = ctx
+
+    const businessId = Number(request.header('Business'))
+    if (!Number.isFinite(businessId) || businessId <= 0) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Empresa invalida'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const id = Number(params.id)
+    if (!Number.isFinite(id) || id <= 0) {
+      return response
+        .status(422)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Id invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const payload = await request.validateUsing(serviceEntrySheetStoreValidator)
+
+    const issueDate = parseDate(payload.issueDate)
+    if (!issueDate.isValid) {
+      return response
+        .status(422)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Formato de fecha invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    let purchaseOrderDate: DateTime | null = null
+    if (payload.purchaseOrderDate) {
+      const parsedPurchaseOrderDate = parseDate(payload.purchaseOrderDate)
+      if (!parsedPurchaseOrderDate.isValid) {
+        return response
+          .status(422)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.invalid_format', {}, 'Formato de fecha invalido'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      purchaseOrderDate = parsedPurchaseOrderDate
+    }
+
+    const lineCurrencyIds = [
+      ...new Set(
+        payload.lines
+          .map((line) => line.currencyId)
+          .filter((currencyId): currencyId is number => typeof currencyId === 'number')
+      ),
+    ]
+
+    const currencySymbolById = new Map<number, string>()
+    if (lineCurrencyIds.length) {
+      const coins = await Coin.query().whereIn('id', lineCurrencyIds).select(['id', 'symbol'])
+      const coinIds = new Set(coins.map((coin) => coin.id))
+      const missingCurrencyId = lineCurrencyIds.find((currencyId) => !coinIds.has(currencyId))
+
+      if (missingCurrencyId) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Moneda no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      for (const coin of coins) {
+        currencySymbolById.set(coin.id, coin.symbol)
+      }
+    }
+
+    const trx = await db.transaction()
+
+    try {
+      const sheet = await ServiceEntrySheet.query({ client: trx })
+        .where('id', id)
+        .where('business_id', businessId)
+        .first()
+
+      if (!sheet) {
+        await trx.rollback()
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'HES no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      if (payload.clientId) {
+        const client = await Client.find(payload.clientId)
+        if (!client) {
+          await trx.rollback()
+          return response
+            .status(404)
+            .json(
+              MessageFrontEnd(
+                i18n.formatMessage('messages.no_exist', {}, 'Cliente no existe'),
+                i18n.formatMessage('messages.error_title')
+              )
+            )
+        }
+      }
+
+      if (payload.providerId) {
+        const provider = await Provider.find(payload.providerId)
+        if (!provider) {
+          await trx.rollback()
+          return response
+            .status(404)
+            .json(
+              MessageFrontEnd(
+                i18n.formatMessage('messages.no_exist', {}, 'Proveedor no existe'),
+                i18n.formatMessage('messages.error_title')
+              )
+            )
+        }
+      }
+
+      const lineRows = payload.lines.map((line) => {
+        const unitPrice = line.unitPrice ?? undefined
+        const quantity = line.quantity ?? undefined
+        return {
+          productId: line.productId ?? null,
+          lineNumber: line.lineNumber ?? null,
+          serviceCode: line.serviceCode ?? null,
+          description: line.description ?? null,
+          planningLine: line.planningLine ?? null,
+          currencyId: line.currencyId ?? null,
+          exchangeRate: line.exchangeRate ?? undefined,
+          currency: line.currencyId ? (currencySymbolById.get(line.currencyId) ?? null) : null,
+          unit: line.unit ?? null,
+          unitType: line.unitType ?? null,
+          unitPrice,
+          quantity,
+          netValue:
+            line.netValue ??
+            (unitPrice !== undefined && quantity !== undefined ? unitPrice * quantity : undefined),
+        }
+      })
+
+      sheet.merge({
+        budgetPaymentId: payload.budgetPaymentId ?? null,
+        clientId: payload.clientId ?? null,
+        providerId: payload.providerId ?? null,
+        authorizerId: payload.authorizerId ?? null,
+        direction: payload.direction ?? null,
+        issuerName: payload.issuerName ?? null,
+        recipientName: payload.recipientName ?? null,
+        issuerClientId: payload.issuerClientId ?? null,
+        recipientClientId: payload.recipientClientId ?? null,
+        documentTitle: payload.documentTitle ?? null,
+        noteToInvoice: payload.noteToInvoice ?? null,
+        companyName: payload.companyName ?? null,
+        companyAddress: payload.companyAddress ?? null,
+        companyCity: payload.companyCity ?? null,
+        companyCityCode: payload.companyCityCode ?? null,
+        serviceName: payload.serviceName ?? null,
+        number: payload.number ?? sheet.number,
+        issueDate,
+        purchaseOrderNumber: payload.purchaseOrderNumber?.trim() || null,
+        purchaseOrderPosition: payload.purchaseOrderPosition ?? null,
+        purchaseOrderDate,
+        vendorNumber: payload.vendorNumber?.trim() || null,
+        currency: payload.currency ?? null,
+        totalNetAmount: lineRows.reduce((total, line) => total + (line.netValue ?? 0), 0),
+        updatedById: auth.user?.id ?? null,
+        deletedAt: null,
+        deletedById: null,
+        enabled: true,
+      })
+
+      await sheet.useTransaction(trx).save()
+
+      await db
+        .from('service_entry_lines')
+        .useTransaction(trx)
+        .where('service_entry_sheet_id', sheet.id)
+        .delete()
+
+      if (lineRows.length) {
+        await sheet.related('lines').createMany(lineRows, { client: trx })
+      }
+
+      await trx.commit()
+
+      await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
+      await sheet.load('provider', (q) => q.select(['id', 'name']))
+      await sheet.load('lines')
+
+      return response.status(200).json({
+        sheet,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok', {}, 'HES actualizada correctamente'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      await trx.rollback()
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async disable(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'delete')
+
+    const { request, response, i18n, params, auth } = ctx
+
+    const businessId = Number(request.header('Business'))
+    if (!Number.isFinite(businessId) || businessId <= 0) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Empresa invalida'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const id = Number(params.id)
+    if (!Number.isFinite(id) || id <= 0) {
+      return response
+        .status(422)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Id invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const sheet = await ServiceEntrySheet.query()
+      .where('id', id)
+      .where('business_id', businessId)
+      .first()
+
+    if (!sheet) {
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist', {}, 'HES no existe'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    sheet.enabled = false
+    sheet.deletedAt = DateTime.now()
+    sheet.deletedById = auth.user?.id ?? null
+    sheet.updatedById = auth.user?.id ?? null
+    await sheet.save()
+
+    return response
+      .status(200)
+      .json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.delete_ok', {}, 'HES deshabilitada correctamente'),
+          i18n.formatMessage('messages.ok_title')
+        )
+      )
+  }
+
+  public async delete(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'delete')
+
+    const { request, response, i18n, params } = ctx
+
+    const businessId = Number(request.header('Business'))
+    if (!Number.isFinite(businessId) || businessId <= 0) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Empresa invalida'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const id = Number(params.id)
+    if (!Number.isFinite(id) || id <= 0) {
+      return response
+        .status(422)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Id invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const trx = await db.transaction()
+    try {
+      const sheet = await ServiceEntrySheet.query({ client: trx })
+        .where('id', id)
+        .where('business_id', businessId)
+        .first()
+
+      if (!sheet) {
+        await trx.rollback()
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'HES no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      await db
+        .from('service_entry_lines')
+        .useTransaction(trx)
+        .where('service_entry_sheet_id', id)
+        .delete()
+
+      await db.from('service_entry_sheets').useTransaction(trx).where('id', id).delete()
+
+      await trx.commit()
+
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.delete_ok', {}, 'HES eliminada correctamente'),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+    } catch (error) {
+      await trx.rollback()
+      log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.delete_error'),
             i18n.formatMessage('messages.error_title')
           )
         )
