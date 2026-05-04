@@ -12,7 +12,7 @@ export default class SaleRepository {
     public static baseQuery() {
         return Sale.query()
             .whereNull('sales.deleted_at')
-            .preload('business', (q) => q.select(['id', 'name']))
+            .preload('business', (q) => q.select(['id', 'name', 'url', 'email']))
             .preload('createdBy', (builder) => {
                 builder
                     .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
