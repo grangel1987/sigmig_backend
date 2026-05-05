@@ -993,7 +993,7 @@ export default class ServiceEntrySheetController {
   }
 
   public async disable(ctx: HttpContext) {
-    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'delete')
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'update')
 
     const { request, response, i18n, params, auth } = ctx
 
@@ -1165,8 +1165,10 @@ export default class ServiceEntrySheetController {
     }
   }
 
-  public async authorize(ctx: HttpContext) {
-    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'update')
+  public async authorize(ctx: HttpContext, skipPermission = false) {
+    if (!skipPermission) {
+      await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'authorize')
+    }
 
     const { request, auth, response, i18n } = ctx
 
@@ -1427,7 +1429,8 @@ export default class ServiceEntrySheetController {
   }
 
   public async authorizer(ctx: HttpContext) {
-    return this.authorize(ctx)
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'authorize')
+    return this.authorize(ctx, true)
   }
 }
 

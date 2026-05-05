@@ -839,6 +839,13 @@ export default class extends BaseSeeder {
           type: 'service_entry_sheets',
           moduleId: 21,
         },
+        {
+          key: 'authorize',
+          name: 'Autorizar',
+          description: 'Autorizar hojas de entrada de servicios',
+          type: 'service_entry_sheets',
+          moduleId: 21,
+        },
 
         // Sales module (22)
         {
