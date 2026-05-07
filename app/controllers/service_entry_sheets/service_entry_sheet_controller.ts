@@ -1,4 +1,4 @@
-import BudgetPayment from '#models/budget_payment'
+﻿import BudgetPayment from '#models/budget_payment'
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
@@ -131,8 +131,8 @@ export default class ServiceEntrySheetController {
     }
 
     const query = ServiceEntrySheet.query()
-      .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
-      .preload('provider', (q) => q.select(['id', 'name']))
+      .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
+      .preload('provider', (q) => q.select(['id', 'name', 'phone']))
       .where('business_id', businessId)
 
     if (status === 'disabled') {
@@ -563,8 +563,8 @@ export default class ServiceEntrySheetController {
 
       await trx.commit()
 
-      await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
-      await sheet.load('provider', (q) => q.select(['id', 'name']))
+      await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
+      await sheet.load('provider', (q) => q.select(['id', 'name', 'phone']))
       await sheet.load('lines')
 
       const createdAt = sheet.createdAt
@@ -967,8 +967,8 @@ export default class ServiceEntrySheetController {
 
       await trx.commit()
 
-      await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
-      await sheet.load('provider', (q) => q.select(['id', 'name']))
+      await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
+      await sheet.load('provider', (q) => q.select(['id', 'name', 'phone']))
       await sheet.load('lines')
 
       return response.status(200).json({
@@ -1141,7 +1141,7 @@ export default class ServiceEntrySheetController {
     try {
       const sheet = await ServiceEntrySheet.query()
         .where('id', Number(params.id))
-        .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
+        .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
         .preload('authorizer', (q) => {
           q.select(['id', 'personal_data_id', 'email'])
           q.preload('personalData', (pdQ) =>
@@ -1377,7 +1377,7 @@ export default class ServiceEntrySheetController {
       log(notifyError)
     }
 
-    await sheet.load('provider', (q) => q.select(['id', 'name']))
+    await sheet.load('provider', (q) => q.select(['id', 'name', 'phone']))
 
     try {
       const business = await Business.find(businessId)
@@ -1416,7 +1416,7 @@ export default class ServiceEntrySheetController {
       log('Service entry sheet authorization email error:', notifyEmailError)
     }
 
-    await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id']))
+    await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
     await sheet.load('lines')
 
     return response.status(200).json({
