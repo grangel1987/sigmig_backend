@@ -203,8 +203,9 @@ export default class ShoppingController {
                 const name = p.name ?? ''
                 const price = p.price ?? 0
                 const count = p.count ?? 0
+                const unitType = p.unitType?.trim() || null
                 const tax = p.tax ?? 0
-                return { productId, code, name, price, count, tax }
+                return { productId, code, name, price, count, unitType, tax }
             })
 
             if (productsRows.length) {
@@ -313,6 +314,7 @@ export default class ShoppingController {
                             code: vine.string().trim().optional(),
                             price: vine.number().min(0).optional(),
                             tax: vine.number().range([0, 100]).optional(),
+                            unitType: vine.string().trim().optional(),
                             count: vine.number().positive().optional(),
                             quantity: vine.number().positive().optional(),
                         })
@@ -417,8 +419,9 @@ export default class ShoppingController {
                 const name = p.name ?? ''
                 const price = Number(p.price ?? 0)
                 const count = Number(p.count ?? p.quantity ?? 0)
+                const unitType = p.unitType?.trim() || null
                 const tax = Number(p.tax ?? 0)
-                return { productId, code, name, price, count, tax }
+                return { productId, code, name, price, count, unitType, tax }
             })
 
             if (productsRows.length) {

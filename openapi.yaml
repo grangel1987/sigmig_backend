@@ -1746,6 +1746,15 @@ paths:
                 date:
                   type: string
                   format: date
+                products:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      unitType:
+                        type: string
       responses:
         '201':
           description: Orden de compra creada
