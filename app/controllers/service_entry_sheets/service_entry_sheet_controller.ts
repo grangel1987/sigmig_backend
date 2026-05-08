@@ -15,6 +15,7 @@ import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
 import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import Util from '#utils/Util'
 import { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import db from '@adonisjs/lucid/services/db'
@@ -448,6 +449,7 @@ export default class ServiceEntrySheetController {
 
       const sheet = await ServiceEntrySheet.create(
         {
+          token: Util.generateToken(24),
           budgetPaymentId: payload.budgetPaymentId ?? null,
           clientId: resolvedClientId,
           providerId,
@@ -923,6 +925,7 @@ export default class ServiceEntrySheetController {
       })
 
       sheet.merge({
+        token: sheet.token ?? Util.generateToken(24),
         budgetPaymentId: payload.budgetPaymentId ?? null,
         clientId: payload.clientId ?? null,
         providerId: payload.providerId ?? null,
@@ -1163,6 +1166,139 @@ export default class ServiceEntrySheetController {
           )
         )
     }
+  }
+
+  public async showPublic(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+    const token = String(params.token || '').trim()
+
+    if (!token) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Token invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const sheet = await ServiceEntrySheet.query()
+      .where('token', token)
+      .where('enabled', true)
+      .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
+      .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
+      .preload('provider', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
+      .preload('issuerClient', (q) =>
+        q.select(['id', 'name', 'identify', 'email', 'address', 'phone'])
+      )
+      .preload('recipientClient', (q) =>
+        q.select(['id', 'name', 'identify', 'email', 'address', 'phone'])
+      )
+      .preload('lines')
+      .first()
+
+    if (!sheet) {
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist', {}, 'HES no existe'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    return response.status(200).json(serializeServiceEntrySheetPublic(sheet))
+  }
+
+  public async sendEmailToClient(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'service_entry_sheets', 'view')
+
+    const { params, response, i18n } = ctx
+    const id = Number(params.id)
+    const { email } = await ctx.request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+        })
+      )
+    )
+
+    if (!Number.isFinite(id) || id <= 0) {
+      return response
+        .status(422)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Id invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const sheet = await ServiceEntrySheet.find(id)
+    if (!sheet) {
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist', {}, 'HES no existe'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    await sheet.load('client', (q) => q.select(['id', 'name', 'email']))
+    await sheet.load('provider', (q) => q.select(['id', 'name', 'email']))
+    await sheet.load('business', (q) => q.select(['id', 'name']))
+
+    const recipientEmail = email || sheet.client?.email || sheet.provider?.email
+    if (!recipientEmail) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist', {}, 'No existe correo de destino'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    if (!sheet.token) {
+      sheet.token = Util.generateToken(24)
+      await sheet.save()
+    }
+
+    const host =
+      env.get('NODE_ENV') === 'development'
+        ? 'http://212.38.95.163/sigmig/'
+        : 'https://admin.serviciosgenessis.com/'
+
+    const sheetUrl = host + `client/service-entry-sheet/${sheet.token}`
+
+    const emailData = buildServiceEntrySheetClientEmailData(i18n, sheet, {
+      clientName: sheet.client?.name ?? '',
+      providerName: sheet.provider?.name ?? '',
+      businessName: sheet.business?.name ?? '',
+      sheetUrl,
+    })
+
+    await mail.sendLater((message) => {
+      message
+        .to(recipientEmail)
+        .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+        .subject(emailData.subject)
+        .htmlView('emails/service_entry_sheet_client', emailData)
+    })
+
+    return response
+      .status(200)
+      .json(
+        MessageFrontEnd(
+          i18n.formatMessage('messages.email_send_ok'),
+          i18n.formatMessage('messages.ok_title')
+        )
+      )
   }
 
   public async authorize(ctx: HttpContext, skipPermission = false) {
@@ -1586,6 +1722,137 @@ function buildServiceEntrySheetAuthorizedEmailData(
     providerLabel: i18n.formatMessage('messages.provider', {}, 'Provider'),
     createdByLabel: i18n.formatMessage('messages.created_by', {}, 'Created by'),
     authorizedByLabel: i18n.formatMessage('messages.authorized_by', {}, 'Authorized by'),
+  }
+}
+
+function buildServiceEntrySheetClientEmailData(
+  i18n: HttpContext['i18n'],
+  sheet: ServiceEntrySheet,
+  opts: {
+    clientName: string
+    providerName: string
+    businessName: string
+    sheetUrl: string
+  }
+) {
+  const issueDate = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : ''
+
+  return {
+    subject: i18n.formatMessage('messages.service_entry_sheet_email_subject', {
+      sheetNumber: sheet.number,
+    }, 'Nueva HES disponible para revision'),
+    body: i18n.formatMessage(
+      'messages.service_entry_sheet_email_body',
+      {
+        clientName: opts.clientName,
+        providerName: opts.providerName,
+        sheetNumber: sheet.number,
+        issueDate,
+        businessName: opts.businessName,
+      },
+      'Tu hoja de entrada de servicios esta disponible para revision.'
+    ),
+    serviceEntrySheetNumber: sheet.number,
+    issueDate,
+    clientName: opts.clientName,
+    providerName: opts.providerName,
+    businessName: opts.businessName,
+    serviceEntrySheetUrl: opts.sheetUrl,
+    serviceEntrySheetNumberLabel: i18n.formatMessage(
+      'messages.service_entry_sheet_number',
+      {},
+      'HES Number'
+    ),
+    issueDateLabel: i18n.formatMessage('messages.issue_date', {}, 'Issue Date'),
+    clientLabel: i18n.formatMessage('messages.client', {}, 'Client'),
+    providerLabel: i18n.formatMessage('messages.provider', {}, 'Provider'),
+    viewServiceEntrySheetLabel: i18n.formatMessage(
+      'messages.view_service_entry_sheet',
+      {},
+      'View Service Entry Sheet'
+    ),
+  }
+}
+
+function serializeServiceEntrySheetPublic(sheet: ServiceEntrySheet) {
+  return {
+    number: sheet.number,
+    direction: sheet.direction,
+    issueDate: sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : null,
+    isAuthorized: !!sheet.isAuthorized,
+    authorizedAt: sheet.authorizerAt ? sheet.authorizerAt.toFormat('dd/LL/yyyy HH:mm:ss') : null,
+    documentTitle: sheet.documentTitle,
+    noteToInvoice: sheet.noteToInvoice,
+    serviceName: sheet.serviceName,
+    purchaseOrderNumber: sheet.purchaseOrderNumber,
+    purchaseOrderPosition: sheet.purchaseOrderPosition,
+    purchaseOrderDate: sheet.purchaseOrderDate ? sheet.purchaseOrderDate.toFormat('dd/LL/yyyy') : null,
+    vendorNumber: sheet.vendorNumber,
+    currency: sheet.currency,
+    totalNetAmount: Number(sheet.totalNetAmount ?? 0),
+    company: {
+      name: sheet.companyName,
+      address: sheet.companyAddress,
+      city: sheet.companyCity,
+      cityCode: sheet.companyCityCode,
+    },
+    business: sheet.business
+      ? {
+        name: sheet.business.name,
+        url: sheet.business.url,
+        email: sheet.business.email,
+        identify: sheet.business.identify,
+      }
+      : null,
+    client: sheet.client
+      ? {
+        name: sheet.client.name,
+        identify: sheet.client.identify,
+        email: sheet.client.email,
+        phone: sheet.client.phone,
+        address: sheet.client.address,
+      }
+      : null,
+    provider: sheet.provider
+      ? {
+        name: sheet.provider.name,
+        email: sheet.provider.email,
+        phone: sheet.provider.phone,
+        address: sheet.provider.address,
+      }
+      : null,
+    issuerClient: sheet.issuerClient
+      ? {
+        name: sheet.issuerClient.name,
+        identify: sheet.issuerClient.identify,
+        email: sheet.issuerClient.email,
+        phone: sheet.issuerClient.phone,
+        address: sheet.issuerClient.address,
+      }
+      : null,
+    recipientClient: sheet.recipientClient
+      ? {
+        name: sheet.recipientClient.name,
+        identify: sheet.recipientClient.identify,
+        email: sheet.recipientClient.email,
+        phone: sheet.recipientClient.phone,
+        address: sheet.recipientClient.address,
+      }
+      : null,
+    lines:
+      sheet.lines?.map((line) => ({
+        lineNumber: line.lineNumber,
+        serviceCode: line.serviceCode,
+        description: line.description,
+        planningLine: line.planningLine,
+        currency: line.currency,
+        exchangeRate: line.exchangeRate,
+        unit: line.unit,
+        unitType: line.unitType,
+        unitPrice: line.unitPrice,
+        quantity: line.quantity,
+        netValue: line.netValue,
+      })) ?? [],
   }
 }
 

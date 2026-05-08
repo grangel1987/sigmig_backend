@@ -1846,6 +1846,176 @@ paths:
       security:
         - bearerAuth: []
 
+  /service-entry-sheets/send-email/{id}:
+    post:
+      tags:
+        - Hojas Entrada Servicios
+      summary: Enviar HES por correo
+      description: Envia un correo con enlace publico para revisar la hoja de entrada de servicios
+      operationId: sendServiceEntrySheetEmailToClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Correo destino opcional. Si no se envia, se usa el correo del cliente/proveedor.
+            example:
+              email: cliente@empresa.com
+      responses:
+        '200':
+          description: Correo enviado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: No existe correo de destino
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: HES no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al enviar correo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /service-entry-sheets/view/{token}:
+    get:
+      tags:
+        - Hojas Entrada Servicios
+      summary: Ver HES publica por token
+      description: Obtiene la HES serializada para consumo desde el enlace enviado por correo
+      operationId: showServiceEntrySheetPublic
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: HES publica obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  number:
+                    type: string
+                  direction:
+                    type: string
+                    nullable: true
+                    enum: [issued, received]
+                  issueDate:
+                    type: string
+                    nullable: true
+                  isAuthorized:
+                    type: boolean
+                  authorizedAt:
+                    type: string
+                    nullable: true
+                  documentTitle:
+                    type: string
+                    nullable: true
+                  serviceName:
+                    type: string
+                    nullable: true
+                  totalNetAmount:
+                    type: number
+                  business:
+                    type: object
+                    nullable: true
+                    properties:
+                      name:
+                        type: string
+                        nullable: true
+                      url:
+                        type: string
+                        nullable: true
+                      email:
+                        type: string
+                        nullable: true
+                      identify:
+                        type: string
+                        nullable: true
+                  client:
+                    type: object
+                    nullable: true
+                    properties:
+                      name:
+                        type: string
+                        nullable: true
+                      identify:
+                        type: string
+                        nullable: true
+                      email:
+                        type: string
+                        nullable: true
+                  provider:
+                    type: object
+                    nullable: true
+                    properties:
+                      name:
+                        type: string
+                        nullable: true
+                      email:
+                        type: string
+                        nullable: true
+                  lines:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        lineNumber:
+                          type: integer
+                          nullable: true
+                        serviceCode:
+                          type: string
+                          nullable: true
+                        description:
+                          type: string
+                          nullable: true
+                        currency:
+                          type: string
+                          nullable: true
+                        unitPrice:
+                          type: number
+                          nullable: true
+                        quantity:
+                          type: number
+                          nullable: true
+                        netValue:
+                          type: number
+                          nullable: true
+        '404':
+          description: HES no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+
   /dashboard/indicators:
     post:
       tags:
