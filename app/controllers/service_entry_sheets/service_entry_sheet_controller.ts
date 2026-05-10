@@ -1188,7 +1188,7 @@ export default class ServiceEntrySheetController {
       .where('enabled', true)
       .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
       .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
-      .preload('provider', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
+      .preload('provider', (q) => q.select(['id', 'name', 'email', 'address', 'phone']))
       .preload('issuerClient', (q) =>
         q.select(['id', 'name', 'identify', 'email', 'address', 'phone'])
       )
