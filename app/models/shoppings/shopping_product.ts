@@ -4,6 +4,8 @@ import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 export default class ShoppingProduct extends BaseModel {
+    public static table = 'shopping_products'
+
     @column({ columnName: 'shopping_id' })
     public shoppingId: number
 
@@ -21,6 +23,9 @@ export default class ShoppingProduct extends BaseModel {
 
     @column({ columnName: 'count' })
     public count: number
+
+    @column({ columnName: 'unit_type' })
+    public unitType: string | null
 
     @column()
     public tax: number

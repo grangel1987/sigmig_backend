@@ -1062,6 +1062,10 @@ router
           '/show/:id',
           '#controllers/service_entry_sheets/service_entry_sheet_controller.show'
         )
+        router.post(
+          '/send-email/:id',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.sendEmailToClient'
+        )
       })
       .prefix('service-entry-sheets')
       .middleware(auth)
@@ -1115,6 +1119,16 @@ router
         router.get('/view/:token', '#controllers/bugets/buget_controller.showPublic')
       })
       .prefix('buget')
+
+    // Service Entry Sheets (public)
+    router
+      .group(() => {
+        router.get(
+          '/view/:token',
+          '#controllers/service_entry_sheets/service_entry_sheet_controller.showPublic'
+        )
+      })
+      .prefix('service-entry-sheets')
 
     // Booking (protected)
     router

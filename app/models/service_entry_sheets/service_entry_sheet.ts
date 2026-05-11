@@ -92,6 +92,9 @@ export default class ServiceEntrySheet extends BaseModel {
   @column()
   public number: string
 
+  @column()
+  public token: string | null
+
   @column.date({
     columnName: 'issue_date',
     serialize: (value: DateTime | null) =>
