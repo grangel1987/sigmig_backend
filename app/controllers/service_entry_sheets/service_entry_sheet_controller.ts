@@ -565,8 +565,11 @@ export default class ServiceEntrySheetController {
 
       await trx.commit()
 
-      await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
+      await sheet.load('client', (q) =>
+        q.select(['id', 'name', 'identify', 'identify_type_id', 'phone'])
+      )
       await sheet.load('provider', (q) => q.select(['id', 'name', 'phone']))
+      await loadServiceEntrySheetAuthorizer(sheet)
       await sheet.load('lines')
 
       const createdAt = sheet.createdAt
@@ -970,8 +973,11 @@ export default class ServiceEntrySheetController {
 
       await trx.commit()
 
-      await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
+      await sheet.load('client', (q) =>
+        q.select(['id', 'name', 'identify', 'identify_type_id', 'phone'])
+      )
       await sheet.load('provider', (q) => q.select(['id', 'name', 'phone']))
+      await loadServiceEntrySheetAuthorizer(sheet)
       await sheet.load('lines')
 
       return response.status(200).json({
@@ -1145,14 +1151,10 @@ export default class ServiceEntrySheetController {
       const sheet = await ServiceEntrySheet.query()
         .where('id', Number(params.id))
         .preload('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
-        .preload('authorizer', (q) => {
-          q.select(['id', 'personal_data_id', 'email'])
-          q.preload('personalData', (pdQ) =>
-            pdQ.select(['id', 'names', 'last_name_p', 'last_name_m'])
-          )
-        })
         .preload('lines')
         .firstOrFail()
+
+      await loadServiceEntrySheetAuthorizer(sheet)
 
       return response.status(200).json(sheet)
     } catch (error) {
@@ -1208,6 +1210,8 @@ export default class ServiceEntrySheetController {
           )
         )
     }
+
+    await loadServiceEntrySheetAuthorizer(sheet)
 
     return response.status(200).json(serializeServiceEntrySheetPublic(sheet))
   }
@@ -1552,7 +1556,10 @@ export default class ServiceEntrySheetController {
       log('Service entry sheet authorization email error:', notifyEmailError)
     }
 
-    await sheet.load('client', (q) => q.select(['id', 'name', 'identify', 'identify_type_id', 'phone']))
+    await sheet.load('client', (q) =>
+      q.select(['id', 'name', 'identify', 'identify_type_id', 'phone'])
+    )
+    await loadServiceEntrySheetAuthorizer(sheet)
     await sheet.load('lines')
 
     return response.status(200).json({
@@ -1738,9 +1745,13 @@ function buildServiceEntrySheetClientEmailData(
   const issueDate = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : ''
 
   return {
-    subject: i18n.formatMessage('messages.service_entry_sheet_email_subject', {
-      sheetNumber: sheet.number,
-    }, 'Nueva HES disponible para revision'),
+    subject: i18n.formatMessage(
+      'messages.service_entry_sheet_email_subject',
+      {
+        sheetNumber: sheet.number,
+      },
+      'Nueva HES disponible para revision'
+    ),
     body: i18n.formatMessage(
       'messages.service_entry_sheet_email_body',
       {
@@ -1786,7 +1797,9 @@ function serializeServiceEntrySheetPublic(sheet: ServiceEntrySheet) {
     serviceName: sheet.serviceName,
     purchaseOrderNumber: sheet.purchaseOrderNumber,
     purchaseOrderPosition: sheet.purchaseOrderPosition,
-    purchaseOrderDate: sheet.purchaseOrderDate ? sheet.purchaseOrderDate.toFormat('dd/LL/yyyy') : null,
+    purchaseOrderDate: sheet.purchaseOrderDate
+      ? sheet.purchaseOrderDate.toFormat('dd/LL/yyyy')
+      : null,
     vendorNumber: sheet.vendorNumber,
     currency: sheet.currency,
     totalNetAmount: Number(sheet.totalNetAmount ?? 0),
@@ -1798,46 +1811,78 @@ function serializeServiceEntrySheetPublic(sheet: ServiceEntrySheet) {
     },
     business: sheet.business
       ? {
-        name: sheet.business.name,
-        url: sheet.business.url,
-        email: sheet.business.email,
-        identify: sheet.business.identify,
-      }
+          name: sheet.business.name,
+          url: sheet.business.url,
+          email: sheet.business.email,
+          identify: sheet.business.identify,
+        }
       : null,
     client: sheet.client
       ? {
-        name: sheet.client.name,
-        identify: sheet.client.identify,
-        email: sheet.client.email,
-        phone: sheet.client.phone,
-        address: sheet.client.address,
-      }
+          name: sheet.client.name,
+          identify: sheet.client.identify,
+          email: sheet.client.email,
+          phone: sheet.client.phone,
+          address: sheet.client.address,
+        }
       : null,
     provider: sheet.provider
       ? {
-        name: sheet.provider.name,
-        email: sheet.provider.email,
-        phone: sheet.provider.phone,
-        address: sheet.provider.address,
-      }
+          name: sheet.provider.name,
+          email: sheet.provider.email,
+          phone: sheet.provider.phone,
+          address: sheet.provider.address,
+        }
       : null,
     issuerClient: sheet.issuerClient
       ? {
-        name: sheet.issuerClient.name,
-        identify: sheet.issuerClient.identify,
-        email: sheet.issuerClient.email,
-        phone: sheet.issuerClient.phone,
-        address: sheet.issuerClient.address,
-      }
+          name: sheet.issuerClient.name,
+          identify: sheet.issuerClient.identify,
+          email: sheet.issuerClient.email,
+          phone: sheet.issuerClient.phone,
+          address: sheet.issuerClient.address,
+        }
       : null,
     recipientClient: sheet.recipientClient
       ? {
-        name: sheet.recipientClient.name,
-        identify: sheet.recipientClient.identify,
-        email: sheet.recipientClient.email,
-        phone: sheet.recipientClient.phone,
-        address: sheet.recipientClient.address,
-      }
+          name: sheet.recipientClient.name,
+          identify: sheet.recipientClient.identify,
+          email: sheet.recipientClient.email,
+          phone: sheet.recipientClient.phone,
+          address: sheet.recipientClient.address,
+        }
+      : null,
+    authorizer: sheet.authorizer
+      ? {
+          id: sheet.authorizer.id,
+          email: sheet.authorizer.email,
+          signature: sheet.authorizer.signature,
+          signatureShort: sheet.authorizer.signatureShort,
+          signatureThumb: sheet.authorizer.signatureThumb,
+          signatureThumbShort: sheet.authorizer.signatureThumbShort,
+          personalData: sheet.authorizer.personalData
+            ? {
+                id: sheet.authorizer.personalData.id,
+                names: sheet.authorizer.personalData.names,
+                lastNameP: sheet.authorizer.personalData.lastNameP,
+                lastNameM: sheet.authorizer.personalData.lastNameM,
+              }
+            : null,
+          employee:
+            sheet.authorizer.employee?.map((employee) => ({
+              id: employee.id,
+              business:
+                employee.business?.map((business) => ({
+                  id: business.id,
+                  position: business.position
+                    ? {
+                        id: business.position.id,
+                        name: business.position.name,
+                      }
+                    : null,
+                })) ?? [],
+            })) ?? [],
+        }
       : null,
     lines:
       sheet.lines?.map((line) => ({
@@ -1854,6 +1899,32 @@ function serializeServiceEntrySheetPublic(sheet: ServiceEntrySheet) {
         netValue: line.netValue,
       })) ?? [],
   }
+}
+
+async function loadServiceEntrySheetAuthorizer(sheet: ServiceEntrySheet) {
+  if (!sheet.authorizerId) {
+    return
+  }
+
+  await sheet.load('authorizer', (query) => {
+    query.select([
+      'id',
+      'personal_data_id',
+      'email',
+      'signature',
+      'signature_short',
+      'signature_thumb',
+      'signature_thumb_short',
+    ])
+    query.preload('personalData', (personalDataQuery) =>
+      personalDataQuery.select(['id', 'names', 'last_name_p', 'last_name_m'])
+    )
+    query.preload('employee', (employeeQuery) => {
+      employeeQuery.preload('business', (businessQuery) => {
+        businessQuery.preload('position')
+      })
+    })
+  })
 }
 
 const parseDate = (value: string) => {
