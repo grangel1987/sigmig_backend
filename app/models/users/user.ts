@@ -14,6 +14,8 @@ import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations
 import { DateTime } from 'luxon'
 import PersonalData from './personal_data.js'
 
+const SIGNED_URL_REFRESH_ENDPOINT = '/api/v2/file/refresh-signed-url?filePath='
+
 const AuthFinder = withAuthFinder(() => Hash.use('scrypt'), {
   uids: ['email'],
   passwordColumnName: 'password',
@@ -116,6 +118,28 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public get full_name() {
     const pData = this.personalData
     return pData ? `${pData.names || ''} ${pData.lastNameM || ''} ${pData.lastNameP || ''}` : undefined
+  }
+
+  @computed()
+  public get signatureRefreshEndpoint(): string | null {
+    if (!this.signatureShort) return null
+    return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.signatureShort)}`
+  }
+
+  @computed()
+  public get signatureThumbRefreshEndpoint(): string | null {
+    if (!this.signatureThumbShort) return null
+    return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.signatureThumbShort)}`
+  }
+
+  @computed()
+  public get refreshSignatureUrl(): string | null {
+    return this.signatureRefreshEndpoint
+  }
+
+  @computed()
+  public get refreshSignatureThumbUrl(): string | null {
+    return this.signatureThumbRefreshEndpoint
   }
 
   static refreshTokens = DbAccessTokensProvider.forModel(User, {

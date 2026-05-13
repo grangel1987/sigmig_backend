@@ -60,6 +60,11 @@ export class Google {
     }
   }
 
+  public static async getSignedUrl(filePath: string) {
+    const gcsDrive = drive.use('gcs')
+    return await gcsDrive.getSignedUrl(filePath)
+  }
+
   public static async deleteFile(filePath: string) {
     const gcsDrive = drive.use('gcs')
     await gcsDrive.delete(filePath);

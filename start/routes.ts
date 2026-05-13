@@ -64,11 +64,32 @@ router.get('/openapi.json', async ({ response }) => {
 
   try {
     const yamlContent = await fs.readFile(specPath, 'utf-8')
-    const spec = yaml.parse(yamlContent)
+    const parsed = yaml.parseDocument(yamlContent)
+    if (parsed.errors.length) {
+      const firstError = parsed.errors[0]
+      throw new Error(firstError.message)
+    }
+
+    const spec = parsed.toJS()
     return response.json(spec)
   } catch (error) {
-    console.error('Error loading OpenAPI spec:', error)
-    return response.status(500).json({ error: 'Failed to load OpenAPI specification' })
+    const details = error instanceof Error
+      ? {
+        message: error.message,
+        stack: error.stack,
+        stackFrames: (error.stack || '').split('\n').map((line) => line.trim()).filter(Boolean),
+      }
+      : {
+        message: String(error),
+        stack: null,
+        stackFrames: [] as string[],
+      }
+
+    console.error('Error loading OpenAPI spec:', details)
+    return response.status(500).json({
+      error: 'Failed to load OpenAPI specification',
+      ...details,
+    })
   }
 })
 
@@ -888,6 +909,15 @@ router
       .prefix('user')
       .middleware(auth)
 
+    // Files (protected)
+    router
+      .group(() => {
+        router.get('/refresh-signed-url', '#controllers/files/file_controller.refreshSignedUrl')
+        router.post('/refresh-signed-url', '#controllers/files/file_controller.refreshSignedUrl')
+      })
+      .prefix('file')
+      .middleware(auth)
+
     // Bugets (quotes)
     router
       .group(() => {
@@ -1017,9 +1047,19 @@ router
     // Sales
     router
       .group(() => {
+        router.post('/overview', '#controllers/sales/sale_controller.overview')
         router.get('/', '#controllers/sales/sale_controller.index')
         router.post('/store', '#controllers/sales/sale_controller.store')
         router.get('/show/:id', '#controllers/sales/sale_controller.show')
+        router.post('/:id/electronic-billing/issue', '#controllers/sales/sale_controller.issueElectronicBilling')
+        router.get('/:id/electronic-billing/status', '#controllers/sales/sale_controller.electronicBillingStatus')
+        router.put('/update/:id', '#controllers/sales/sale_controller.update')
+        router.post('/payments', '#controllers/sales/sale_controller.storePayment')
+        router.get('/payments/:id', '#controllers/sales/sale_controller.showPayment')
+        router.put('/payments/:id', '#controllers/sales/sale_controller.updatePayment')
+        router.delete('/payments/:id', '#controllers/sales/sale_controller.deletePayment')
+        router.post('/payments/:id/void', '#controllers/sales/sale_controller.voidPayment')
+        router.post('/payments/:id/settle', '#controllers/sales/sale_controller.settlePayment')
         router.put('/status/:id', '#controllers/sales/sale_controller.updateStatus')
         router.delete('/delete/:id', '#controllers/sales/sale_controller.delete')
       })
