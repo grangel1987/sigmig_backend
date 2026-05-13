@@ -1,9 +1,19 @@
 import Setting from '#models/settings/setting';
 import User from '#models/users/user';
-import { BaseModel, beforeCreate, beforeFetch, beforeFind, belongsTo, column } from '@adonisjs/lucid/orm';
+import {
+    BaseModel,
+    beforeCreate,
+    beforeFetch,
+    beforeFind,
+    belongsTo,
+    column,
+    computed,
+} from '@adonisjs/lucid/orm';
 import type { ModelQueryBuilderContract } from '@adonisjs/lucid/types/model';
 import type { BelongsTo } from '@adonisjs/lucid/types/relations';
 import { DateTime } from 'luxon';
+
+const SIGNED_URL_REFRESH_ENDPOINT = '/api/v2/file/refresh-signed-url?filePath=';
 
 export default class Product extends BaseModel {
     @column({ isPrimary: true })
@@ -66,6 +76,18 @@ export default class Product extends BaseModel {
     @beforeCreate()
     public static async setEnabled(model: Product) {
         model.enabled = true;
+    }
+
+    @computed()
+    public get urlRefresh(): string | null {
+        if (!this.urlShort) return null;
+        return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.urlShort)}`;
+    }
+
+    @computed()
+    public get urlThumbRefresh(): string | null {
+        if (!this.urlThumbShort) return null;
+        return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.urlThumbShort)}`;
     }
 
     @belongsTo(() => User, { foreignKey: 'createdById' })

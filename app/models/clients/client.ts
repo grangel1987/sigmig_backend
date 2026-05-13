@@ -4,10 +4,20 @@ import ClientDocumentInvoice from '#models/clients/client_document_invoice'
 import ClientFile from '#models/clients/client_file'
 import Setting from '#models/settings/setting'
 import User from '#models/users/user'
-import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import {
+    BaseModel,
+    beforeCreate,
+    belongsTo,
+    column,
+    computed,
+    hasMany,
+    hasOne,
+} from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 import ClientRequest from '../client_requests/client_request.js'
+
+const SIGNED_URL_REFRESH_ENDPOINT = '/api/v2/file/refresh-signed-url?filePath='
 
 export default class Client extends BaseModel {
     @column({ isPrimary: true })
@@ -70,6 +80,18 @@ export default class Client extends BaseModel {
     @beforeCreate()
     public static setEnabled(model: Client) {
         model.enabled = true
+    }
+
+    @computed()
+    public get urlRefresh(): string | null {
+        if (!this.urlShort) return null
+        return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.urlShort)}`
+    }
+
+    @computed()
+    public get urlThumbRefresh(): string | null {
+        if (!this.urlThumbShort) return null
+        return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.urlThumbShort)}`
     }
 
     @belongsTo(() => User, { foreignKey: 'createdById' })

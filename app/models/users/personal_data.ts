@@ -6,6 +6,8 @@ import { BaseModel, belongsTo, column, computed } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
+const SIGNED_URL_REFRESH_ENDPOINT = '/api/v2/file/refresh-signed-url?filePath='
+
 export default class PersonalData extends BaseModel {
   @column({ isPrimary: true })
   public id: number
@@ -109,6 +111,18 @@ export default class PersonalData extends BaseModel {
   public get age(): number | null {
     if (!this.birthDate) return null
     return Math.trunc(DateTime.now().diff(this.birthDate, 'years').years)
+  }
+
+  @computed()
+  public get photoRefreshEndpoint(): string | null {
+    if (!this.photoShort) return null
+    return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.photoShort)}`
+  }
+
+  @computed()
+  public get thumbRefreshEndpoint(): string | null {
+    if (!this.thumbShort) return null
+    return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.thumbShort)}`
   }
 
   public static castDates(field: string, value: DateTime) {

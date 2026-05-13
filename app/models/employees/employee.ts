@@ -10,6 +10,8 @@ import EmployeeCertificateHealth from './employee_certificate_health.js'
 import EmployeeEmergencyContact from './employee_emergency_contact.js'
 import EmployeeScheduleWork from './employee_schedule_work.js'
 
+const SIGNED_URL_REFRESH_ENDPOINT = '/api/v2/file/refresh-signed-url?filePath='
+
 export default class Employee extends BaseModel {
     @column({ isPrimary: true })
     public id: number
@@ -107,6 +109,18 @@ export default class Employee extends BaseModel {
             return [pd.names, pd.lastNameP, pd.lastNameM].filter(Boolean).join(' ').trim()
         }
         return ''
+    }
+
+    @computed()
+    public get authorizationRefreshEndpoint(): string | null {
+        if (!this.authorizationMirrorShort) return null
+        return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.authorizationMirrorShort)}`
+    }
+
+    @computed()
+    public get thumbAuthorizationRefreshEndpoint(): string | null {
+        if (!this.thumbAuthorizationMirrorShort) return null
+        return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.thumbAuthorizationMirrorShort)}`
     }
 
     // scheduleWork -> TODO: requires SettingSchedule model not present in repo

@@ -6,9 +6,19 @@ import City from '#models/cities/City'
 import Country from '#models/countries/country'
 import TypeIdentify from '#models/settings/setting'
 import User from '#models/users/user'
-import { BaseModel, beforeCreate, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import {
+  BaseModel,
+  beforeCreate,
+  belongsTo,
+  column,
+  computed,
+  hasMany,
+  hasOne,
+} from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+
+const SIGNED_URL_REFRESH_ENDPOINT = '/api/v2/file/refresh-signed-url?filePath='
 
 export default class Business extends BaseModel {
   @column({ isPrimary: true })
@@ -122,6 +132,18 @@ export default class Business extends BaseModel {
   @beforeCreate()
   public static async setEnabled(business: Business) {
     business.enabled = true
+  }
+
+  @computed()
+  public get urlRefresh(): string | null {
+    if (!this.urlShort) return null
+    return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.urlShort)}`
+  }
+
+  @computed()
+  public get urlThumbRefresh(): string | null {
+    if (!this.urlThumbShort) return null
+    return `${SIGNED_URL_REFRESH_ENDPOINT}${encodeURIComponent(this.urlThumbShort)}`
   }
 
   public serialize() {
