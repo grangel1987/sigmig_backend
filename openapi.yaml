@@ -9,7 +9,7 @@ info:
     name: MIT
 
 servers:
-  - url: http://localhost:3333/api/v2
+  - url: http://localhost:3334/api/v2
     description: Servidor de Desarrollo Local
   - url: http://93.127.210.103/api/v2
     description: Servidor de Producción
@@ -633,6 +633,107 @@ paths:
                   lastPage: 7
         '500':
           description: Error del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /file/refresh-signed-url:
+    get:
+      tags:
+        - Files
+      summary: Generar URL firmada nueva por filepath
+      description: Regenera una URL firmada para un objeto almacenado usando su ruta corta en bucket.
+      operationId: fileRefreshSignedUrlGet
+      parameters:
+        - name: filePath
+          in: query
+          required: true
+          description: Ruta interna del archivo en el bucket (por ejemplo clients/abc123.jpg)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: URL firmada generada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  filePath:
+                    type: string
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '422':
+          description: filePath inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al generar la URL firmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - Files
+      summary: Generar URL firmada nueva por filepath
+      description: Regenera una URL firmada para un objeto almacenado usando su ruta corta en bucket.
+      operationId: fileRefreshSignedUrlPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filePath:
+                  type: string
+                  description: Ruta interna del archivo en el bucket.
+                filepath:
+                  type: string
+                  description: Alias compatible para filePath.
+            examples:
+              withFilePath:
+                value:
+                  filePath: clients/abc123.jpg
+              withFilepathAlias:
+                value:
+                  filepath: products/def456.webp
+      responses:
+        '200':
+          description: URL firmada generada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  filePath:
+                    type: string
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '422':
+          description: filePath inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al generar la URL firmada
           content:
             application/json:
               schema:

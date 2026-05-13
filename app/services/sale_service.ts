@@ -97,6 +97,39 @@ async function preloadSaleRelations(sale: Sale) {
   )
 }
 
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? { ...(value as Record<string, unknown>) }
+    : {}
+}
+
+function sumTaxesFromDetail(detailAmount: number, taxes: unknown[]) {
+  return taxes.reduce<number>((sum, taxItem) => {
+    if (typeof taxItem === 'number') {
+      return sum + taxItem
+    }
+
+    if (!taxItem || typeof taxItem !== 'object' || Array.isArray(taxItem)) {
+      return sum
+    }
+
+    const tax = taxItem as Record<string, unknown>
+    const directAmount = Number(tax.amount ?? tax.total)
+
+    if (Number.isFinite(directAmount) && directAmount >= 0) {
+      return sum + directAmount
+    }
+
+    const rate = Number(tax.rate ?? tax.percentage ?? tax.percent)
+    if (Number.isFinite(rate) && rate >= 0) {
+      const base = Number(tax.baseAmount ?? detailAmount)
+      return sum + (Number.isFinite(base) ? (base * rate) / 100 : 0)
+    }
+
+    return sum
+  }, 0)
+}
+
 export default class SaleService {
   public static async create(payload: CreateSalePayload) {
     const trx = await db.transaction()
@@ -229,5 +262,83 @@ export default class SaleService {
     const sale = await saleQuery.firstOrFail()
     sale.deletedAt = DateTime.now()
     await sale.save()
+  }
+
+  public static async issueElectronicBilling(saleId: number, businessId?: number) {
+    const saleQuery = Sale.query().where('id', saleId).whereNull('deleted_at')
+
+    if (businessId) {
+      saleQuery.where('business_id', businessId)
+    }
+
+    const sale = await saleQuery.firstOrFail()
+
+    if (sale.status !== 'confirmed') {
+      throw new Error('Only confirmed sales can issue electronic billing')
+    }
+
+    await sale.load('business', (q) => q.select(['id', 'identify']))
+    await sale.load('details', (q) => q.select(['id', 'amount', 'metadata']))
+
+    const metadata = asObject(sale.metadata)
+    const existingBilling = asObject(metadata.electronicBilling)
+
+    const summary = sale.details.reduce(
+      (acc, detail: any) => {
+        const amount = Number(detail?.amount) || 0
+        const detailMetadata = asObject(detail?.metadata)
+        const taxes = Array.isArray(detailMetadata.taxes) ? detailMetadata.taxes : []
+
+        acc.netAmount += amount
+        acc.taxAmount += sumTaxesFromDetail(amount, taxes)
+
+        return acc
+      },
+      {
+        netAmount: 0,
+        taxAmount: 0,
+      }
+    )
+
+    const receiverRut =
+      (typeof metadata.receiverRut === 'string' ? metadata.receiverRut : null) ??
+      (typeof metadata.clientRut === 'string' ? metadata.clientRut : null)
+
+    metadata.electronicBilling = {
+      dteType: Number(existingBilling.dteType ?? 33) || 33,
+      folio: Number(existingBilling.folio ?? sale.id) || sale.id,
+      issuerRut: sale.business?.identify ?? null,
+      receiverRut,
+      siiStatus: 'pending_send',
+      siiTrackId: typeof existingBilling.siiTrackId === 'string' ? existingBilling.siiTrackId : null,
+      issuedAt: DateTime.now().toISO(),
+      netAmount: summary.netAmount,
+      exemptAmount: Number(existingBilling.exemptAmount ?? 0) || 0,
+      taxAmount: summary.taxAmount,
+      totalAmount: Number(sale.totalAmount ?? summary.netAmount + summary.taxAmount),
+      xmlUrl: typeof existingBilling.xmlUrl === 'string' ? existingBilling.xmlUrl : null,
+      pdfUrl: typeof existingBilling.pdfUrl === 'string' ? existingBilling.pdfUrl : null,
+      generatedBy: 'backend',
+    }
+
+    sale.metadata = metadata
+    await sale.save()
+
+    await preloadSaleRelations(sale)
+
+    return sale
+  }
+
+  public static async getElectronicBillingStatus(saleId: number, businessId?: number) {
+    const saleQuery = Sale.query().where('id', saleId).whereNull('deleted_at')
+
+    if (businessId) {
+      saleQuery.where('business_id', businessId)
+    }
+
+    const sale = await saleQuery.firstOrFail()
+    const metadata = asObject(sale.metadata)
+
+    return metadata.electronicBilling ?? null
   }
 }

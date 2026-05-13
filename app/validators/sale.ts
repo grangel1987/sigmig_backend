@@ -17,6 +17,15 @@ const saleFinanceSchema = {
   metadata: vine.any().optional(),
 }
 
+export const saleOverviewValidator = vine.compile(
+  vine.object({
+    businessId: vine.number().positive().optional(),
+    status: vine.enum(['draft', 'pending', 'confirmed', 'canceled'] as const).optional(),
+    startDate: vine.string().trim().optional(),
+    endDate: vine.string().trim().optional(),
+  })
+)
+
 export const saleIndexValidator = vine.compile(
   vine.object({
     page: vine.number().positive().optional(),

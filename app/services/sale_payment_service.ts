@@ -28,6 +28,24 @@ interface SalePaymentParams {
   deletedBy?: number | null
 }
 
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? { ...(value as Record<string, unknown>) }
+    : {}
+}
+
+function mergeInvoiceMeta(
+  currentMeta?: Record<string, unknown> | null,
+  nextMeta?: Record<string, unknown> | null
+) {
+  const merged = {
+    ...asObject(currentMeta),
+    ...asObject(nextMeta),
+  }
+
+  return Object.keys(merged).length ? merged : null
+}
+
 function normalizeDate(value?: string | Date | DateTime | null) {
   if (value === undefined) {
     return undefined
@@ -70,7 +88,7 @@ async function validatePaymentAmount(saleId: number, amount: number, excludePaym
 async function preloadSalePayment(payment: SalePayment) {
   await payment.load('sale', (q) => q.select(['id', 'title', 'total_amount', 'business_id']))
   await payment.load('coin', (q) => q.select(['id', 'symbol', 'name']))
-  await payment.load('ledgerMovement', (q) => {
+  await (payment as any).load('ledgerMovement', (q: any) => {
     q.preload('account')
     q.preload('costCenter')
     q.preload('client')
@@ -96,7 +114,7 @@ export default class SalePaymentService {
           coinId: params.currencyId,
           amount: params.amount,
           invoiced: params.invoiced ?? false,
-          invoiceMeta: params.invoiceMeta ?? null,
+          invoiceMeta: mergeInvoiceMeta(null, params.invoiceMeta),
           date: handleDate(params.date),
           dueDate: normalizeDate(params.dueDate) ?? null,
           voided: false,
@@ -109,8 +127,8 @@ export default class SalePaymentService {
 
       const documentType = params.documentTypeId
         ? await PaymentDocumentType.query({ client: trx })
-            .where('id', params.documentTypeId)
-            .first()
+          .where('id', params.documentTypeId)
+          .first()
         : null
 
       const hasDocumentNumber = Boolean(params.documentNumber?.trim())
@@ -137,8 +155,8 @@ export default class SalePaymentService {
           currencyId: params.currencyId,
           paymentMethodId: params.paymentMethodId,
           documentTypeId: params.documentTypeId,
-          documentNumber: params.documentNumber ?? null,
-          concept: params.concept ?? sale.title ?? null,
+          documentNumber: params.documentNumber ?? undefined,
+          concept: params.concept ?? sale.title ?? undefined,
           status,
           isProjected,
           receivedAt,
@@ -178,7 +196,9 @@ export default class SalePaymentService {
       if (params.currencyId !== undefined) payment.coinId = params.currencyId
       if (params.amount !== undefined) payment.amount = params.amount
       if (params.invoiced !== undefined) payment.invoiced = params.invoiced
-      if (params.invoiceMeta !== undefined) payment.invoiceMeta = params.invoiceMeta
+      if (params.invoiceMeta !== undefined) {
+        payment.invoiceMeta = mergeInvoiceMeta(payment.invoiceMeta, params.invoiceMeta)
+      }
       if (params.date !== undefined) payment.date = handleDate(params.date)
       if (params.dueDate !== undefined) payment.dueDate = normalizeDate(params.dueDate) ?? null
       await payment.save()
@@ -202,9 +222,12 @@ export default class SalePaymentService {
           .where('id', params.documentTypeId)
           .first()
       }
-      if (params.documentNumber !== undefined)
-        ledgerMovement.documentNumber = params.documentNumber ?? null
-      if (params.concept !== undefined) ledgerMovement.concept = params.concept ?? null
+      if (params.documentNumber !== undefined && params.documentNumber !== null) {
+        ledgerMovement.documentNumber = params.documentNumber
+      }
+      if (params.concept !== undefined && params.concept !== null) {
+        ledgerMovement.concept = params.concept
+      }
       if (params.status !== undefined) ledgerMovement.status = params.status
       if (params.isProjected !== undefined) ledgerMovement.isProjected = params.isProjected
       if (params.receivedAt !== undefined) {

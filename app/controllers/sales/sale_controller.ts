@@ -4,11 +4,16 @@ import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
 import SalePaymentService from '#services/sale_payment_service'
 import SaleService from '#services/sale_service'
-import { serializeSale, serializeSaleCollection } from '#services/sales/sale_payload_service'
+import {
+  buildSalesOverview,
+  serializeSale,
+  serializeSaleCollection,
+} from '#services/sales/sale_payload_service'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import {
   saleIdParamValidator,
   saleIndexValidator,
+  saleOverviewValidator,
   salePaymentSettleValidator,
   salePaymentStoreValidator,
   salePaymentUpdateValidator,
@@ -17,8 +22,64 @@ import {
   saleUpdateValidator,
 } from '#validators/sale'
 import { HttpContext } from '@adonisjs/core/http'
+import { DateTime } from 'luxon'
 
 export default class SaleController {
+  public async overview(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'sales', 'view')
+
+    const { request, response, i18n } = ctx
+
+    try {
+      const { businessId, status, startDate, endDate } = await request.validateUsing(
+        saleOverviewValidator
+      )
+
+      const headerBusinessId = Number(request.header('Business'))
+      const resolvedBusinessId =
+        businessId ??
+        (Number.isFinite(headerBusinessId) && headerBusinessId > 0 ? headerBusinessId : undefined)
+
+      const now = DateTime.local()
+      const resolvedStartDate = startDate ?? now.startOf('month').toISODate()!
+      const resolvedEndDate = endDate ?? now.endOf('month').toISODate()!
+
+      const sales = await SaleRepository.overview({
+        businessId: resolvedBusinessId,
+        status,
+        startDate: resolvedStartDate,
+        endDate: resolvedEndDate,
+      })
+
+      const serialized = sales.map((sale) => serializeSale(sale.serialize() as any))
+      const summary = buildSalesOverview(serialized as Array<Record<string, unknown>>)
+
+      return response.status(200).json({
+        message: i18n.formatMessage(
+          'messages.fetch_successful',
+          {},
+          'Resumen de ventas obtenido exitosamente'
+        ),
+        range: {
+          startDate: resolvedStartDate,
+          endDate: resolvedEndDate,
+        },
+        status: status ?? null,
+        ...summary,
+      })
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.fetch_error', {}, 'Error al obtener resumen de ventas'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
   public async index(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'sales', 'view')
 
@@ -533,6 +594,69 @@ export default class SaleController {
         .json(
           MessageFrontEnd(
             i18n.formatMessage('messages.delete_error', {}, 'Error al eliminar venta'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async issueElectronicBilling(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'sales', 'update')
+
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const { id } = await saleIdParamValidator.validate(params)
+      const headerBusinessId = Number(request.header('Business'))
+      const resolvedBusinessId =
+        Number.isFinite(headerBusinessId) && headerBusinessId > 0 ? headerBusinessId : undefined
+
+      const sale = await SaleService.issueElectronicBilling(id, resolvedBusinessId)
+
+      return response.status(200).json({
+        sale: serializeSale(sale.serialize() as any),
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error', {}, 'Error al emitir facturacion electronica'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async electronicBillingStatus(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'sales', 'view')
+
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const { id } = await saleIdParamValidator.validate(params)
+      const headerBusinessId = Number(request.header('Business'))
+      const resolvedBusinessId =
+        Number.isFinite(headerBusinessId) && headerBusinessId > 0 ? headerBusinessId : undefined
+
+      const status = await SaleService.getElectronicBillingStatus(id, resolvedBusinessId)
+
+      return response.status(200).json({
+        saleId: id,
+        electronicBilling: status,
+      })
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.fetch_error', {}, 'Error al consultar facturacion electronica'),
             i18n.formatMessage('messages.error_title')
           )
         )

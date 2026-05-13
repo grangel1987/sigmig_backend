@@ -8,6 +8,13 @@ interface SaleIndexFilters {
   status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
 }
 
+interface SaleOverviewFilters {
+  businessId?: number
+  status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
+  startDate?: string
+  endDate?: string
+}
+
 export default class SaleRepository {
   public static baseQuery() {
     return Sale.query()
@@ -60,5 +67,36 @@ export default class SaleRepository {
     }
 
     return await query.first()
+  }
+
+  public static async overview(filters: SaleOverviewFilters) {
+    const query = Sale.query()
+      .whereNull('sales.deleted_at')
+      .select(['id', 'sale_date', 'status', 'total_amount'])
+      .preload('details', (q) => q.select(['id', 'sale_id', 'amount', 'metadata']))
+      .preload('payments', (q: any) =>
+        q
+          .whereNull('deleted_at')
+          .select(['id', 'sale_id', 'amount', 'voided', 'deleted_at'])
+          .orderBy('date', 'desc')
+      )
+
+    if (filters.businessId) {
+      query.where('sales.business_id', filters.businessId)
+    }
+
+    if (filters.status) {
+      query.where('sales.status', filters.status)
+    }
+
+    if (filters.startDate) {
+      query.whereRaw('DATE(COALESCE(sales.sale_date, sales.created_at)) >= ?', [filters.startDate])
+    }
+
+    if (filters.endDate) {
+      query.whereRaw('DATE(COALESCE(sales.sale_date, sales.created_at)) <= ?', [filters.endDate])
+    }
+
+    return await query
   }
 }
