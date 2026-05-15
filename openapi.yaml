@@ -307,6 +307,16 @@ components:
         productId:
           type: integer
           nullable: true
+        product:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            amount:
+              type: number
         lineNumber:
           type: integer
           nullable: true

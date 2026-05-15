@@ -73,7 +73,11 @@ export default class SaleRepository {
     const query = Sale.query()
       .whereNull('sales.deleted_at')
       .select(['id', 'sale_date', 'status', 'total_amount'])
-      .preload('details', (q) => q.select(['id', 'sale_id', 'amount', 'taxes', 'utility', 'metadata']))
+      .preload('details', (q) =>
+        q
+          .select(['id', 'sale_id', 'product_id', 'amount', 'taxes', 'utility', 'metadata'])
+          .preload('product', (pq) => pq.select(['id', 'name', 'amount']))
+      )
       .preload('payments', (q: any) =>
         q
           .whereNull('deleted_at')
