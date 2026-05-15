@@ -46,6 +46,14 @@ export default class Sale extends BaseModel {
     @column({ columnName: 'currency_id' })
     declare currencyId: number | null
 
+    @column({
+        columnName: 'utility',
+        prepare: (value?: number | null) => value ?? null,
+        consume: (value?: string | number) =>
+            value === null || value === undefined ? null : Number(value),
+    })
+    declare utility: number | null
+
     @column({ columnName: 'metadata' })
     declare metadata: Record<string, unknown> | null
 

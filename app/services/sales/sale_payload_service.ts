@@ -63,7 +63,12 @@ function sumTaxesFromDetail(detailAmount: number, taxes: unknown[]) {
   }, 0)
 }
 
-function buildFinancialSummary(details: any[] = [], totalAmount: unknown, payments: SalePaymentLike[] = []) {
+function buildFinancialSummary(
+  details: any[] = [],
+  totalAmount: unknown,
+  payments: SalePaymentLike[] = [],
+  saleUtility?: unknown
+) {
   const totals = details.reduce(
     (acc, detail) => {
       const detailAmount = Number(detail?.amount) || 0
@@ -84,11 +89,18 @@ function buildFinancialSummary(details: any[] = [], totalAmount: unknown, paymen
   )
 
   const paymentSummary = buildPaymentSummary(totalAmount, payments)
+  const saleUtilityValue = Number(saleUtility)
+  const normalizedUtility =
+    totals.utilityTotal > 0
+      ? totals.utilityTotal
+      : Number.isFinite(saleUtilityValue) && saleUtilityValue > 0
+        ? saleUtilityValue
+        : 0
 
   return {
     subtotal: totals.subtotal,
     taxTotal: totals.taxTotal,
-    utilityTotal: totals.utilityTotal,
+    utilityTotal: normalizedUtility,
     grossTotal: totals.subtotal + totals.taxTotal,
     paymentSummary,
   }
@@ -107,7 +119,7 @@ export function buildSalesOverview(sales: Array<Record<string, unknown>>) {
     (acc, sale) => {
       const details = Array.isArray(sale.details) ? (sale.details as any[]) : []
       const payments = Array.isArray(sale.payments) ? (sale.payments as SalePaymentLike[]) : []
-      const financial = buildFinancialSummary(details, sale.totalAmount, payments)
+      const financial = buildFinancialSummary(details, sale.totalAmount, payments, sale.utility)
 
       acc.salesCount += 1
       acc.subtotal += financial.subtotal
@@ -186,7 +198,9 @@ export function serializeSale<T extends { metadata?: Record<string, unknown> | n
           : []
       const utility = detail?.utility !== undefined && detail?.utility !== null
         ? Number(detail.utility) || 0
-        : Number(detailMetadata.utility ?? 0) || 0
+        : detailMetadata.utility !== undefined && detailMetadata.utility !== null
+          ? Number(detailMetadata.utility) || 0
+          : null
 
       return {
         ...detail,
@@ -199,7 +213,8 @@ export function serializeSale<T extends { metadata?: Record<string, unknown> | n
   const financialSummary = buildFinancialSummary(
     Array.isArray(details) ? details : [],
     (sale as any).totalAmount,
-    payments
+    payments,
+    (sale as any).utility
   )
 
   return {

@@ -72,7 +72,7 @@ export default class SaleRepository {
   public static async overview(filters: SaleOverviewFilters) {
     const query = Sale.query()
       .whereNull('sales.deleted_at')
-      .select(['id', 'sale_date', 'status', 'total_amount'])
+      .select(['id', 'sale_date', 'status', 'total_amount', 'utility'])
       .preload('details', (q) =>
         q
           .select(['id', 'sale_id', 'product_id', 'amount', 'taxes', 'utility', 'metadata'])

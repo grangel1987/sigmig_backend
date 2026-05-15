@@ -333,8 +333,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SaleTax'
-        utility:
-          type: number
         metadata:
           type: object
           nullable: true
@@ -441,6 +439,9 @@ components:
           type: string
           enum: [draft, pending, confirmed, canceled]
         totalAmount:
+          type: number
+          nullable: true
+        utility:
           type: number
           nullable: true
         currencyId:
@@ -2617,6 +2618,9 @@ paths:
                 totalAmount:
                   type: number
                   nullable: true
+                utility:
+                  type: number
+                  nullable: true
                 banks:
                   type: array
                   nullable: true
@@ -2652,9 +2656,6 @@ paths:
                         nullable: true
                         items:
                           $ref: '#/components/schemas/SaleTax'
-                      utility:
-                        type: number
-                        nullable: true
                       metadata:
                         type: object
                         nullable: true
@@ -2688,7 +2689,6 @@ paths:
                       baseAmount: 30000
                       amount: 5700
                       isExempt: false
-                  utility: 1200
       responses:
         '201':
           description: Venta creada

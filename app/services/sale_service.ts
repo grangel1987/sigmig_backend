@@ -11,6 +11,7 @@ interface CreateSalePayload {
   saleDate?: string | null
   status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
   totalAmount?: number | null
+  utility?: number | null
   currencyId?: number | null
   metadata?: Record<string, unknown> | null
   banks?: unknown[] | null
@@ -33,6 +34,7 @@ interface UpdateSalePayload {
   saleDate?: string | null
   status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
   totalAmount?: number | null
+  utility?: number | null
   currencyId?: number | null
   metadata?: Record<string, unknown> | null
   banks?: unknown[] | null
@@ -141,6 +143,17 @@ function buildSaleDetailsPayload(details: CreateSalePayload['details']) {
   })
 }
 
+function sumUtilityFromDetails(details: Array<{ utility?: number | null }>) {
+  const total = details.reduce((sum, detail) => {
+    if (detail.utility === undefined || detail.utility === null) return sum
+
+    const utility = Number(detail.utility)
+    return Number.isFinite(utility) && utility >= 0 ? sum + utility : sum
+  }, 0)
+
+  return total > 0 ? total : null
+}
+
 async function preloadSaleRelations(sale: Sale) {
   await sale.load('business', (q) => q.select(['id', 'name']))
   await sale.load('createdBy', (builder) => {
@@ -203,6 +216,14 @@ export default class SaleService {
             : Number(detail.quantity) * Number(detail.unitAmount)
         return acc + lineAmount
       }, 0)
+      const computedUtility = sumUtilityFromDetails(payload.details)
+
+      const normalizedUtility =
+        payload.utility !== undefined
+          ? payload.utility === null
+            ? null
+            : Number(payload.utility) || 0
+          : computedUtility
 
       const sale = await Sale.create(
         {
@@ -213,6 +234,7 @@ export default class SaleService {
           saleDate: parsedSaleDate && parsedSaleDate.isValid ? parsedSaleDate : null,
           status: payload.status ?? 'draft',
           totalAmount: payload.totalAmount ?? computedTotal,
+          utility: normalizedUtility,
           currencyId: payload.currencyId ?? null,
           metadata: normalizeSaleMetadata(payload),
         },
@@ -248,6 +270,7 @@ export default class SaleService {
       const parsedSaleDate = payload.saleDate ? DateTime.fromISO(payload.saleDate) : null
 
       let totalAmount = sale.totalAmount
+      let utility = sale.utility
       if (payload.details) {
         totalAmount = payload.details.reduce((acc, detail) => {
           const lineAmount =
@@ -256,9 +279,16 @@ export default class SaleService {
               : Number(detail.quantity) * Number(detail.unitAmount)
           return acc + lineAmount
         }, 0)
+
+        if (payload.utility === undefined) {
+          utility = sumUtilityFromDetails(payload.details)
+        }
       }
       if (payload.totalAmount !== undefined) {
         totalAmount = payload.totalAmount
+      }
+      if (payload.utility !== undefined) {
+        utility = payload.utility === null ? null : Number(payload.utility) || 0
       }
 
       if (payload.title !== undefined) sale.title = payload.title
@@ -269,6 +299,7 @@ export default class SaleService {
       if (payload.status !== undefined) sale.status = payload.status
       if (payload.currencyId !== undefined) sale.currencyId = payload.currencyId
       if (totalAmount !== undefined) sale.totalAmount = totalAmount
+      if (utility !== undefined) sale.utility = utility
 
       if (payload.metadata !== undefined || payload.banks !== undefined) {
         sale.metadata = mergeSaleMetadata(sale.metadata, payload)

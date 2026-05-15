@@ -58,6 +58,7 @@ export const saleStoreValidator = vine.compile(
     coinId: vine.number().positive().optional().nullable(),
     invoiced: vine.boolean().optional(),
     totalAmount: vine.number().min(0).optional().nullable(),
+    utility: vine.number().min(0).optional().nullable(),
     ...saleFinanceSchema,
     details: vine.array(saleDetailSchema).minLength(1),
   })
@@ -73,6 +74,7 @@ export const saleUpdateValidator = vine.compile(
     coinId: vine.number().positive().optional().nullable(),
     invoiced: vine.boolean().optional(),
     totalAmount: vine.number().min(0).optional().nullable(),
+    utility: vine.number().min(0).optional().nullable(),
     ...saleFinanceSchema,
     details: vine.array(saleDetailSchema).minLength(1).optional(),
   })
