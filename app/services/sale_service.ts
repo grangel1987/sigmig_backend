@@ -6,6 +6,7 @@ import { DateTime } from 'luxon'
 interface CreateSalePayload {
   businessId: number
   createdById: number
+  clientId: number
   title?: string | null
   description?: string | null
   saleDate?: string | null
@@ -29,6 +30,7 @@ interface CreateSalePayload {
 }
 
 interface UpdateSalePayload {
+  clientId?: number
   title?: string | null
   description?: string | null
   saleDate?: string | null
@@ -156,6 +158,7 @@ function sumUtilityFromDetails(details: Array<{ utility?: number | null }>) {
 
 async function preloadSaleRelations(sale: Sale) {
   await sale.load('business', (q) => q.select(['id', 'name']))
+  await sale.load('client', (q) => q.select(['id', 'name', 'identify', 'email']))
   await sale.load('createdBy', (builder) => {
     builder
       .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -229,6 +232,7 @@ export default class SaleService {
         {
           businessId: payload.businessId,
           createdById: payload.createdById,
+          clientId: payload.clientId,
           title: payload.title ?? null,
           description: payload.description ?? null,
           saleDate: parsedSaleDate && parsedSaleDate.isValid ? parsedSaleDate : null,
@@ -293,6 +297,7 @@ export default class SaleService {
 
       if (payload.title !== undefined) sale.title = payload.title
       if (payload.description !== undefined) sale.description = payload.description
+      if (payload.clientId !== undefined) sale.clientId = payload.clientId
       if (payload.saleDate !== undefined) {
         sale.saleDate = parsedSaleDate && parsedSaleDate.isValid ? parsedSaleDate : null
       }

@@ -86,7 +86,9 @@ async function validatePaymentAmount(saleId: number, amount: number, excludePaym
 }
 
 async function preloadSalePayment(payment: SalePayment) {
-  await payment.load('sale', (q) => q.select(['id', 'title', 'total_amount', 'business_id']))
+  await (payment as any).load('sale', (q: any) =>
+    q.select(['id', 'title', 'total_amount', 'business_id'])
+  )
   await payment.load('coin', (q) => q.select(['id', 'symbol', 'name']))
   await (payment as any).load('ledgerMovement', (q: any) => {
     q.preload('account')
@@ -149,7 +151,7 @@ export default class SalePaymentService {
           salePaymentId: payment.id,
           accountId: params.accountId,
           costCenterId: params.costCenterId,
-          clientId: params.clientId,
+          clientId: sale.clientId ?? undefined,
           date: handleDate(params.date),
           amount: params.amount,
           currencyId: params.currencyId,
@@ -279,11 +281,11 @@ export default class SalePaymentService {
   }
 
   static async findWithLedgerMovement(salePaymentId: number) {
-    const salePayment = await SalePayment.query()
+    const salePayment = await (SalePayment.query() as any)
       .where('id', salePaymentId)
       .whereNull('deleted_at')
-      .preload('sale', (q) => q.select(['id', 'title', 'total_amount', 'business_id']))
-      .preload('coin', (q) => q.select(['id', 'symbol', 'name']))
+      .preload('sale', (q: any) => q.select(['id', 'title', 'total_amount', 'business_id']))
+      .preload('coin', (q: any) => q.select(['id', 'symbol', 'name']))
       .firstOrFail()
 
     const ledgerMovement = await LedgerMovement.query()

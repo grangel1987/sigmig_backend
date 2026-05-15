@@ -1,4 +1,5 @@
 import Business from '#models/business/business'
+import Client from '#models/clients/client'
 import Coin from '#models/coin/coin'
 import SalePayment from '#models/sale_payment'
 import SaleDetail from '#models/sales/sale_detail'
@@ -18,6 +19,9 @@ export default class Sale extends BaseModel {
 
     @column({ columnName: 'created_by' })
     declare createdById: number
+
+    @column({ columnName: 'client_id' })
+    declare clientId: number | null
 
     @column()
     declare title: string | null
@@ -66,6 +70,9 @@ export default class Sale extends BaseModel {
 
     @belongsTo(() => User, { foreignKey: 'createdById' })
     declare createdBy: BelongsTo<typeof User>
+
+    @belongsTo(() => Client, { foreignKey: 'clientId' })
+    declare client: BelongsTo<typeof Client>
 
     @belongsTo(() => Coin, { foreignKey: 'currencyId' })
     declare currency: BelongsTo<typeof Coin>

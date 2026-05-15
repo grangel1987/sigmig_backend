@@ -152,6 +152,7 @@ export default class SaleController {
       const sale = await SaleService.create({
         businessId: resolvedBusinessId,
         createdById: auth.user!.id,
+        clientId: payload.clientId,
         title: payload.title,
         description: payload.description,
         saleDate: payload.saleDate,
@@ -265,6 +266,7 @@ export default class SaleController {
       const sale = await SaleService.update(
         id,
         {
+          clientId: payload.clientId,
           title: payload.title,
           description: payload.description,
           saleDate: payload.saleDate,
@@ -313,7 +315,6 @@ export default class SaleController {
         businessId: Number.isFinite(businessId) && businessId > 0 ? businessId : undefined,
         accountId: payload.accountId,
         costCenterId: payload.costCenterId,
-        clientId: payload.clientId,
         date: payload.date,
         dueDate: payload.dueDate,
         amount: payload.amount,

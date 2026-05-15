@@ -20,6 +20,7 @@ export default class SaleRepository {
     return Sale.query()
       .whereNull('sales.deleted_at')
       .preload('business', (q) => q.select(['id', 'name', 'url', 'email']))
+      .preload('client', (q) => q.select(['id', 'name', 'identify', 'email']))
       .preload('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -72,7 +73,8 @@ export default class SaleRepository {
   public static async overview(filters: SaleOverviewFilters) {
     const query = Sale.query()
       .whereNull('sales.deleted_at')
-      .select(['id', 'sale_date', 'status', 'total_amount', 'utility'])
+      .select(['id', 'client_id', 'sale_date', 'status', 'total_amount', 'utility'])
+      .preload('client', (q) => q.select(['id', 'name', 'identify', 'email']))
       .preload('details', (q) =>
         q
           .select(['id', 'sale_id', 'product_id', 'amount', 'taxes', 'utility', 'metadata'])

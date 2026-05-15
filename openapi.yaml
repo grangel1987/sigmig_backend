@@ -2930,8 +2930,6 @@ paths:
                   type: integer
                 costCenterId:
                   type: integer
-                clientId:
-                  type: integer
                 date:
                   type: string
                   format: date
