@@ -179,11 +179,19 @@ export function serializeSale<T extends { metadata?: Record<string, unknown> | n
   const details = Array.isArray((sale as any).details)
     ? (sale as any).details.map((detail: any) => {
       const detailMetadata = asObject(detail?.metadata)
+      const taxes = Array.isArray(detail?.taxes)
+        ? detail.taxes
+        : Array.isArray(detailMetadata.taxes)
+          ? detailMetadata.taxes
+          : []
+      const utility = detail?.utility !== undefined && detail?.utility !== null
+        ? Number(detail.utility) || 0
+        : Number(detailMetadata.utility ?? 0) || 0
 
       return {
         ...detail,
-        taxes: Array.isArray(detailMetadata.taxes) ? detailMetadata.taxes : [],
-        utility: Number(detailMetadata.utility ?? 0) || 0,
+        taxes,
+        utility,
       }
     })
     : (sale as any).details

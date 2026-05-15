@@ -47,6 +47,17 @@ export default class SaleDetail extends BaseModel {
     @column({ columnName: 'metadata' })
     declare metadata: Record<string, unknown> | null
 
+    @column({ columnName: 'taxes' })
+    declare taxes: Record<string, unknown>[] | null
+
+    @column({
+        columnName: 'utility',
+        prepare: (value?: number | null) => value ?? null,
+        consume: (value?: string | number) =>
+            value === null || value === undefined ? null : Number(value),
+    })
+    declare utility: number | null
+
     @belongsTo(() => Sale, { foreignKey: 'saleId' })
     declare sale: BelongsTo<typeof Sale>
 

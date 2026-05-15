@@ -52,57 +52,59 @@ interface UpdateSalePayload {
 function normalizeTaxes(detailAmount: number, taxes?: unknown[] | null) {
   if (!Array.isArray(taxes)) return []
 
-  return taxes
-    .map((taxItem) => {
-      if (typeof taxItem === 'number') {
-        return {
-          code: 'IVA',
-          amount: taxItem,
-          baseAmount: detailAmount,
-          isExempt: false,
-        }
-      }
+  return taxes.reduce<Record<string, unknown>[]>((acc, taxItem) => {
+    if (typeof taxItem === 'number') {
+      acc.push({
+        code: 'IVA',
+        amount: taxItem,
+        baseAmount: detailAmount,
+        isExempt: false,
+      })
+      return acc
+    }
 
-      if (!taxItem || typeof taxItem !== 'object' || Array.isArray(taxItem)) {
-        return null
-      }
+    if (!taxItem || typeof taxItem !== 'object' || Array.isArray(taxItem)) {
+      return acc
+    }
 
-      const tax = taxItem as Record<string, unknown>
-      const code = typeof tax.code === 'string' && tax.code.trim() ? tax.code.trim() : 'IVA'
-      const baseAmount = Number(tax.baseAmount ?? detailAmount)
+    const tax = taxItem as Record<string, unknown>
+    const code = typeof tax.code === 'string' && tax.code.trim() ? tax.code.trim() : 'IVA'
+    const baseAmount = Number(tax.baseAmount ?? detailAmount)
 
-      const directAmount = Number(tax.amount ?? tax.total)
-      if (Number.isFinite(directAmount) && directAmount >= 0) {
-        return {
-          ...tax,
-          code,
-          amount: directAmount,
-          baseAmount: Number.isFinite(baseAmount) ? baseAmount : detailAmount,
-          isExempt: Boolean(tax.isExempt),
-        }
-      }
-
-      const rate = Number(tax.rate ?? tax.percentage ?? tax.percent)
-      if (Number.isFinite(rate) && rate >= 0) {
-        const safeBase = Number.isFinite(baseAmount) ? baseAmount : detailAmount
-        return {
-          ...tax,
-          code,
-          rate,
-          baseAmount: safeBase,
-          amount: (safeBase * rate) / 100,
-          isExempt: Boolean(tax.isExempt),
-        }
-      }
-
-      return {
+    const directAmount = Number(tax.amount ?? tax.total)
+    if (Number.isFinite(directAmount) && directAmount >= 0) {
+      acc.push({
         ...tax,
         code,
+        amount: directAmount,
         baseAmount: Number.isFinite(baseAmount) ? baseAmount : detailAmount,
         isExempt: Boolean(tax.isExempt),
-      }
+      })
+      return acc
+    }
+
+    const rate = Number(tax.rate ?? tax.percentage ?? tax.percent)
+    if (Number.isFinite(rate) && rate >= 0) {
+      const safeBase = Number.isFinite(baseAmount) ? baseAmount : detailAmount
+      acc.push({
+        ...tax,
+        code,
+        rate,
+        baseAmount: safeBase,
+        amount: (safeBase * rate) / 100,
+        isExempt: Boolean(tax.isExempt),
+      })
+      return acc
+    }
+
+    acc.push({
+      ...tax,
+      code,
+      baseAmount: Number.isFinite(baseAmount) ? baseAmount : detailAmount,
+      isExempt: Boolean(tax.isExempt),
     })
-    .filter((tax): tax is Record<string, unknown> => Boolean(tax))
+    return acc
+  }, [])
 }
 
 function buildSaleDetailsPayload(details: CreateSalePayload['details']) {
@@ -117,13 +119,13 @@ function buildSaleDetailsPayload(details: CreateSalePayload['details']) {
         ? { ...detail.metadata }
         : {}
 
-    if (detail.taxes !== undefined) {
-      detailMetadata.taxes = normalizeTaxes(normalizedAmount, detail.taxes)
-    }
+    const normalizedTaxes = detail.taxes !== undefined
+      ? normalizeTaxes(normalizedAmount, detail.taxes)
+      : null
 
-    if (detail.utility !== undefined) {
-      detailMetadata.utility = Number(detail.utility) || 0
-    }
+    const normalizedUtility = detail.utility !== undefined && detail.utility !== null
+      ? Number(detail.utility) || 0
+      : null
 
     return {
       productId: detail.productId ?? null,
@@ -132,6 +134,8 @@ function buildSaleDetailsPayload(details: CreateSalePayload['details']) {
       quantity: Number(detail.quantity),
       unitAmount: Number(detail.unitAmount),
       amount: normalizedAmount,
+      taxes: normalizedTaxes,
+      utility: normalizedUtility,
       metadata: Object.keys(detailMetadata).length ? detailMetadata : null,
     }
   })
@@ -334,7 +338,7 @@ export default class SaleService {
     }
 
     await sale.load('business', (q) => q.select(['id', 'identify']))
-    await sale.load('details', (q) => q.select(['id', 'amount', 'metadata']))
+    await sale.load('details', (q) => q.select(['id', 'amount', 'taxes', 'metadata']))
 
     const metadata = asObject(sale.metadata)
     const existingBilling = asObject(metadata.electronicBilling)
@@ -343,7 +347,11 @@ export default class SaleService {
       (acc, detail: any) => {
         const amount = Number(detail?.amount) || 0
         const detailMetadata = asObject(detail?.metadata)
-        const taxes = Array.isArray(detailMetadata.taxes) ? detailMetadata.taxes : []
+        const taxes = Array.isArray(detail?.taxes)
+          ? detail.taxes
+          : Array.isArray(detailMetadata.taxes)
+            ? detailMetadata.taxes
+            : []
 
         acc.netAmount += amount
         acc.taxAmount += sumTaxesFromDetail(amount, taxes)
