@@ -9,7 +9,7 @@ info:
     name: MIT
 
 servers:
-  - url: http://localhost:3333/api/v2
+  - url: http://localhost:3334/api/v2
     description: Servidor de Desarrollo Local
   - url: http://93.127.210.103/api/v2
     description: Servidor de Producción
@@ -319,9 +319,44 @@ components:
           type: number
         amount:
           type: number
+        taxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleTax'
+        utility:
+          type: number
         metadata:
           type: object
           nullable: true
+
+    SaleTax:
+      type: object
+      properties:
+        code:
+          type: string
+        rate:
+          type: number
+          nullable: true
+        baseAmount:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        total:
+          type: number
+          nullable: true
+        percentage:
+          type: number
+          nullable: true
+        percent:
+          type: number
+          nullable: true
+        isExempt:
+          type: boolean
+          nullable: true
+      required:
+        - code
 
     SalePayment:
       type: object
@@ -404,6 +439,50 @@ components:
         metadata:
           type: object
           nullable: true
+        banks:
+          type: array
+          items:
+            type: object
+        electronicBilling:
+          type: object
+          nullable: true
+        paymentSummary:
+          type: object
+          properties:
+            totalAmount:
+              type: number
+            paidAmount:
+              type: number
+            remainingAmount:
+              type: number
+            paymentCount:
+              type: integer
+            isPaid:
+              type: boolean
+        financialSummary:
+          type: object
+          properties:
+            subtotal:
+              type: number
+            taxTotal:
+              type: number
+            utilityTotal:
+              type: number
+            grossTotal:
+              type: number
+            paymentSummary:
+              type: object
+              properties:
+                totalAmount:
+                  type: number
+                paidAmount:
+                  type: number
+                remainingAmount:
+                  type: number
+                paymentCount:
+                  type: integer
+                isPaid:
+                  type: boolean
         business:
           type: object
           properties:
@@ -633,6 +712,107 @@ paths:
                   lastPage: 7
         '500':
           description: Error del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /file/refresh-signed-url:
+    get:
+      tags:
+        - Files
+      summary: Generar URL firmada nueva por filepath
+      description: Regenera una URL firmada para un objeto almacenado usando su ruta corta en bucket.
+      operationId: fileRefreshSignedUrlGet
+      parameters:
+        - name: filePath
+          in: query
+          required: true
+          description: Ruta interna del archivo en el bucket (por ejemplo clients/abc123.jpg)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: URL firmada generada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  filePath:
+                    type: string
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '422':
+          description: filePath inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al generar la URL firmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - Files
+      summary: Generar URL firmada nueva por filepath
+      description: Regenera una URL firmada para un objeto almacenado usando su ruta corta en bucket.
+      operationId: fileRefreshSignedUrlPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filePath:
+                  type: string
+                  description: Ruta interna del archivo en el bucket.
+                filepath:
+                  type: string
+                  description: Alias compatible para filePath.
+            examples:
+              withFilePath:
+                value:
+                  filePath: clients/abc123.jpg
+              withFilepathAlias:
+                value:
+                  filepath: products/def456.webp
+      responses:
+        '200':
+          description: URL firmada generada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  filePath:
+                    type: string
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '422':
+          description: filePath inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al generar la URL firmada
           content:
             application/json:
               schema:
@@ -2427,6 +2607,11 @@ paths:
                 totalAmount:
                   type: number
                   nullable: true
+                banks:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
                 metadata:
                   type: object
                   nullable: true
@@ -2452,6 +2637,14 @@ paths:
                       amount:
                         type: number
                         nullable: true
+                      taxes:
+                        type: array
+                        nullable: true
+                        items:
+                          $ref: '#/components/schemas/SaleTax'
+                      utility:
+                        type: number
+                        nullable: true
                       metadata:
                         type: object
                         nullable: true
@@ -2469,6 +2662,9 @@ paths:
               currencyId: 1
               coinId: 1
               invoiced: false
+              banks:
+                - name: Banco Estado
+                  amount: 30000
               details:
                 - productId: 10
                   lineNumber: 1
@@ -2476,6 +2672,13 @@ paths:
                   quantity: 2
                   unitAmount: 15000
                   amount: 30000
+                  taxes:
+                    - code: IVA
+                      rate: 19
+                      baseAmount: 30000
+                      amount: 5700
+                      isExempt: false
+                  utility: 1200
       responses:
         '201':
           description: Venta creada
@@ -2612,6 +2815,155 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Error al eliminar venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/overview:
+    post:
+      tags:
+        - Ventas
+      summary: Resumen de ventas
+      description: Obtiene resumen agregado de ventas por rango de fechas y estado.
+      operationId: salesOverview
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                status:
+                  type: string
+                  enum: [draft, pending, confirmed, canceled]
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+            example:
+              status: confirmed
+              startDate: '2026-05-01'
+              endDate: '2026-05-31'
+      responses:
+        '200':
+          description: Resumen de ventas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  range:
+                    type: object
+                    properties:
+                      startDate:
+                        type: string
+                      endDate:
+                        type: string
+                  status:
+                    type: string
+                    nullable: true
+                  salesCount:
+                    type: integer
+                  totals:
+                    type: object
+                    properties:
+                      subtotal:
+                        type: number
+                      taxes:
+                        type: number
+                      utility:
+                        type: number
+                      gross:
+                        type: number
+                      payments:
+                        type: object
+                        properties:
+                          paid:
+                            type: number
+                          pending:
+                            type: number
+        '500':
+          description: Error al obtener resumen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/{id}/electronic-billing/issue:
+    post:
+      tags:
+        - Ventas
+      summary: Emitir facturacion electronica
+      description: Genera o actualiza metadata de facturacion electronica para una venta confirmada.
+      operationId: issueSaleElectronicBilling
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Facturacion electronica emitida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al emitir facturacion electronica
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/{id}/electronic-billing/status:
+    get:
+      tags:
+        - Ventas
+      summary: Consultar estado de facturacion electronica
+      description: Retorna el estado de facturacion electronica almacenado en metadata para una venta.
+      operationId: saleElectronicBillingStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Estado de facturacion electronica
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  saleId:
+                    type: integer
+                  electronicBilling:
+                    type: object
+                    nullable: true
+        '500':
+          description: Error al consultar facturacion electronica
           content:
             application/json:
               schema:
