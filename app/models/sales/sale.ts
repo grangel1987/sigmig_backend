@@ -54,7 +54,11 @@ export default class Sale extends BaseModel {
     })
     declare utility: number | null
 
-    @column({ columnName: 'metadata' })
+    @column({
+        columnName: 'metadata',
+        prepare: (value) => (value && typeof value === 'object' ? JSON.stringify(value) : value),
+        consume: (value) => (typeof value === 'string' ? JSON.parse(value) : value),
+    })
     declare metadata: Record<string, unknown> | null
 
     @belongsTo(() => Business, { foreignKey: 'businessId' })

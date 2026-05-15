@@ -44,10 +44,18 @@ export default class SaleDetail extends BaseModel {
     })
     declare amount: number
 
-    @column({ columnName: 'metadata' })
+    @column({
+        columnName: 'metadata',
+        prepare: (value) => (value && typeof value === 'object' ? JSON.stringify(value) : value),
+        consume: (value) => (typeof value === 'string' ? JSON.parse(value) : value),
+    })
     declare metadata: Record<string, unknown> | null
 
-    @column({ columnName: 'taxes' })
+    @column({
+        columnName: 'taxes',
+        prepare: (value) => (value && typeof value === 'object' ? JSON.stringify(value) : value),
+        consume: (value) => (typeof value === 'string' ? JSON.parse(value) : value),
+    })
     declare taxes: Record<string, unknown>[] | null
 
     @column({
