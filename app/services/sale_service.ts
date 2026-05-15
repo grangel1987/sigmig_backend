@@ -49,6 +49,62 @@ interface UpdateSalePayload {
   }>
 }
 
+function normalizeTaxes(detailAmount: number, taxes?: unknown[] | null) {
+  if (!Array.isArray(taxes)) return []
+
+  return taxes
+    .map((taxItem) => {
+      if (typeof taxItem === 'number') {
+        return {
+          code: 'IVA',
+          amount: taxItem,
+          baseAmount: detailAmount,
+          isExempt: false,
+        }
+      }
+
+      if (!taxItem || typeof taxItem !== 'object' || Array.isArray(taxItem)) {
+        return null
+      }
+
+      const tax = taxItem as Record<string, unknown>
+      const code = typeof tax.code === 'string' && tax.code.trim() ? tax.code.trim() : 'IVA'
+      const baseAmount = Number(tax.baseAmount ?? detailAmount)
+
+      const directAmount = Number(tax.amount ?? tax.total)
+      if (Number.isFinite(directAmount) && directAmount >= 0) {
+        return {
+          ...tax,
+          code,
+          amount: directAmount,
+          baseAmount: Number.isFinite(baseAmount) ? baseAmount : detailAmount,
+          isExempt: Boolean(tax.isExempt),
+        }
+      }
+
+      const rate = Number(tax.rate ?? tax.percentage ?? tax.percent)
+      if (Number.isFinite(rate) && rate >= 0) {
+        const safeBase = Number.isFinite(baseAmount) ? baseAmount : detailAmount
+        return {
+          ...tax,
+          code,
+          rate,
+          baseAmount: safeBase,
+          amount: (safeBase * rate) / 100,
+          isExempt: Boolean(tax.isExempt),
+        }
+      }
+
+      return {
+        ...tax,
+        code,
+        baseAmount: Number.isFinite(baseAmount) ? baseAmount : detailAmount,
+        isExempt: Boolean(tax.isExempt),
+      }
+    })
+    .filter((tax): tax is Record<string, unknown> => Boolean(tax))
+}
+
 function buildSaleDetailsPayload(details: CreateSalePayload['details']) {
   return details.map((detail, index) => {
     const normalizedAmount =
@@ -62,7 +118,7 @@ function buildSaleDetailsPayload(details: CreateSalePayload['details']) {
         : {}
 
     if (detail.taxes !== undefined) {
-      detailMetadata.taxes = Array.isArray(detail.taxes) ? detail.taxes : []
+      detailMetadata.taxes = normalizeTaxes(normalizedAmount, detail.taxes)
     }
 
     if (detail.utility !== undefined) {

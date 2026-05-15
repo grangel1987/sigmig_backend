@@ -1,5 +1,16 @@
 import vine from '@vinejs/vine'
 
+const saleTaxSchema = vine.object({
+  code: vine.string().trim().minLength(1),
+  rate: vine.number().min(0).optional().nullable(),
+  baseAmount: vine.number().min(0).optional().nullable(),
+  amount: vine.number().min(0).optional().nullable(),
+  total: vine.number().min(0).optional().nullable(),
+  percentage: vine.number().min(0).optional().nullable(),
+  percent: vine.number().min(0).optional().nullable(),
+  isExempt: vine.boolean().optional().nullable(),
+})
+
 const saleDetailSchema = vine.object({
   productId: vine.number().positive().optional().nullable(),
   lineNumber: vine.number().positive().optional().nullable(),
@@ -7,7 +18,7 @@ const saleDetailSchema = vine.object({
   quantity: vine.number().positive(),
   unitAmount: vine.number().min(0),
   amount: vine.number().min(0).optional(),
-  taxes: vine.array(vine.any()).optional().nullable(),
+  taxes: vine.array(saleTaxSchema).optional().nullable(),
   utility: vine.number().min(0).optional().nullable(),
   metadata: vine.any().optional(),
 })
