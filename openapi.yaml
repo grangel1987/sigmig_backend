@@ -2910,6 +2910,348 @@ paths:
       security:
         - bearerAuth: []
 
+  /sales/payments:
+    post:
+      tags:
+        - Pagos de Venta
+      summary: Crear pago de venta
+      description: Crear un pago asociado a una venta y registrar su movimiento contable.
+      operationId: storeSalePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                saleId:
+                  type: integer
+                accountId:
+                  type: integer
+                costCenterId:
+                  type: integer
+                clientId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                dueDate:
+                  type: string
+                  format: date
+                  nullable: true
+                amount:
+                  type: number
+                currencyId:
+                  type: integer
+                  description: Identificador de moneda del pago
+                paymentMethodId:
+                  type: integer
+                documentTypeId:
+                  type: integer
+                documentNumber:
+                  type: string
+                  nullable: true
+                concept:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [paid, pending, voided]
+                isProjected:
+                  type: boolean
+                receivedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                invoiced:
+                  type: boolean
+                invoiceMeta:
+                  type: object
+                  nullable: true
+              required:
+                - saleId
+                - date
+                - amount
+            example:
+              saleId: 12
+              date: '2026-05-15'
+              amount: 150000
+              currencyId: 1
+              paymentMethodId: 2
+              status: pending
+              concept: Pago parcial de venta
+      responses:
+        '201':
+          description: Pago de venta creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error de creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/payments/{id}:
+    get:
+      tags:
+        - Pagos de Venta
+      summary: Obtener pago de venta
+      description: Obtener un pago de venta con su movimiento contable asociado.
+      operationId: showSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle del pago de venta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+        '404':
+          description: Pago de venta no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+    put:
+      tags:
+        - Pagos de Venta
+      summary: Actualizar pago de venta
+      description: Actualizar los datos de un pago de venta y su movimiento contable.
+      operationId: updateSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accountId:
+                  type: integer
+                costCenterId:
+                  type: integer
+                clientId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                dueDate:
+                  type: string
+                  format: date
+                  nullable: true
+                amount:
+                  type: number
+                currencyId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                documentTypeId:
+                  type: integer
+                documentNumber:
+                  type: string
+                  nullable: true
+                concept:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [paid, pending, voided]
+                isProjected:
+                  type: boolean
+                receivedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                invoiced:
+                  type: boolean
+                invoiceMeta:
+                  type: object
+                  nullable: true
+      responses:
+        '200':
+          description: Pago de venta actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error de actualización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Pagos de Venta
+      summary: Eliminar pago de venta
+      description: Eliminar lógicamente un pago de venta y su movimiento contable.
+      operationId: deleteSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pago de venta eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/payments/{id}/void:
+    post:
+      tags:
+        - Pagos de Venta
+      summary: Anular pago de venta
+      description: Marcar un pago de venta como anulado y actualizar su movimiento contable.
+      operationId: voidSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pago de venta anulado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al anular
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/payments/{id}/settle:
+    post:
+      tags:
+        - Pagos de Venta
+      summary: Liquidar pago de venta
+      description: Marcar un pago de venta como pagado asignándole número y tipo de documento.
+      operationId: settleSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                documentNumber:
+                  type: string
+                  description: Número de documento a asignar
+                documentTypeId:
+                  type: integer
+              required:
+                - documentNumber
+            example:
+              documentNumber: F-001-00012345
+              documentTypeId: 3
+      responses:
+        '200':
+          description: Pago de venta liquidado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al liquidar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
   /sales/{id}/electronic-billing/issue:
     post:
       tags:
