@@ -58,9 +58,76 @@ function normalizeDate(value?: string | Date | DateTime | null) {
   return handleDate(value)
 }
 
+function sumTaxesFromDetail(detailAmount: number, taxes: unknown[]) {
+  return taxes.reduce<number>((sum, taxItem) => {
+    if (typeof taxItem === 'number') {
+      return sum + taxItem
+    }
+
+    if (!taxItem || typeof taxItem !== 'object' || Array.isArray(taxItem)) {
+      return sum
+    }
+
+    const tax = taxItem as Record<string, unknown>
+    const directAmount = Number(tax.amount ?? tax.total)
+
+    if (Number.isFinite(directAmount) && directAmount >= 0) {
+      return sum + directAmount
+    }
+
+    const rate = Number(tax.rate ?? tax.percentage ?? tax.percent)
+    if (Number.isFinite(rate) && rate >= 0) {
+      const base = Number(tax.baseAmount ?? detailAmount)
+      return sum + (Number.isFinite(base) ? (base * rate) / 100 : 0)
+    }
+
+    return sum
+  }, 0)
+}
+
+async function resolveSalePaymentLimit(sale: Sale) {
+  await (sale as any).load('details', (q: any) => q.select(['id', 'sale_id', 'amount', 'taxes', 'utility', 'metadata']))
+
+  const subtotal = Number(sale.totalAmount ?? 0) || 0
+  const details = Array.isArray((sale as any).details) ? ((sale as any).details as any[]) : []
+
+  const detailTotals = details.reduce(
+    (acc, detail) => {
+      const detailAmount = Number(detail?.amount) || 0
+      const detailMetadata = asObject(detail?.metadata)
+      const taxes = Array.isArray(detail?.taxes)
+        ? detail.taxes
+        : Array.isArray(detailMetadata.taxes)
+          ? detailMetadata.taxes
+          : []
+      const detailUtility = detail?.utility !== undefined && detail?.utility !== null
+        ? Number(detail.utility) || 0
+        : detailMetadata.utility !== undefined && detailMetadata.utility !== null
+          ? Number(detailMetadata.utility) || 0
+          : 0
+
+      acc.taxes += sumTaxesFromDetail(detailAmount, taxes)
+      acc.utility += detailUtility
+
+      return acc
+    },
+    { taxes: 0, utility: 0 }
+  )
+
+  const saleUtility = Number(sale.utility)
+  const normalizedUtility =
+    detailTotals.utility > 0
+      ? detailTotals.utility
+      : Number.isFinite(saleUtility) && saleUtility > 0
+        ? saleUtility
+        : 0
+
+  return subtotal + detailTotals.taxes + normalizedUtility
+}
+
 async function validatePaymentAmount(saleId: number, amount: number, excludePaymentId?: number) {
   const sale = await Sale.findOrFail(saleId)
-  const saleTotal = Number(sale.totalAmount ?? 0)
+  const saleTotal = await resolveSalePaymentLimit(sale)
 
   if (saleTotal <= 0) {
     return sale
