@@ -15,8 +15,7 @@ export default class AddClientIdToSalesTable extends BaseSchema {
         if (!hasClientId) {
             this.schema.alterTable(this.tableName, (table) => {
                 table
-                    .integer('client_id')
-                    .unsigned()
+                    .bigint('client_id')
                     .nullable()
                     .references('id')
                     .inTable('clients')
