@@ -1,5 +1,8 @@
 import Sale from '#models/sales/sale'
+import SiiDteDocument from '#models/sii/sii_dte_document'
+import SiiDteEvent from '#models/sii/sii_dte_event'
 import { mergeSaleMetadata, normalizeSaleMetadata } from '#services/sales/sale_payload_service'
+import CafService from '#services/sii/caf_service'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 
@@ -206,6 +209,123 @@ function sumTaxesFromDetail(detailAmount: number, taxes: unknown[]) {
   }, 0)
 }
 
+function normalizeSiiStatusForUi(status: string | null | undefined) {
+  switch (status) {
+    case 'accepted':
+      return 'accepted'
+    case 'accepted_with_reparo':
+      return 'accepted_with_reparo'
+    case 'rejected':
+      return 'rejected'
+    case 'error':
+      return 'error'
+    case 'sent':
+      return 'sent'
+    case 'signed':
+    case 'draft':
+      return 'pending_send'
+    default:
+      return 'not_issued'
+  }
+}
+
+function buildElectronicBillingSummaryFromSale(sale: Sale) {
+  const metadata = asObject(sale.metadata)
+
+  const summary = (Array.isArray(sale.details) ? sale.details : []).reduce(
+    (acc, detail: any) => {
+      const amount = Number(detail?.amount) || 0
+      const detailMetadata = asObject(detail?.metadata)
+      const taxes = Array.isArray(detail?.taxes)
+        ? detail.taxes
+        : Array.isArray(detailMetadata.taxes)
+          ? detailMetadata.taxes
+          : []
+
+      acc.netAmount += amount
+      acc.taxAmount += sumTaxesFromDetail(amount, taxes)
+
+      return acc
+    },
+    {
+      netAmount: 0,
+      taxAmount: 0,
+    }
+  )
+
+  const receiverRut =
+    (typeof metadata.receiverRut === 'string' ? metadata.receiverRut : null) ??
+    (typeof metadata.clientRut === 'string' ? metadata.clientRut : null) ??
+    ((sale as any).client && typeof (sale as any).client.identify === 'string'
+      ? (sale as any).client.identify
+      : null)
+
+  return {
+    dteType: Number(asObject(metadata.electronicBilling).dteType ?? 33) || 33,
+    issuerRut:
+      ((sale as any).business && typeof (sale as any).business.identify === 'string'
+        ? (sale as any).business.identify
+        : null) ?? null,
+    receiverRut,
+    netAmount: summary.netAmount,
+    exemptAmount: Number(asObject(metadata.electronicBilling).exemptAmount ?? 0) || 0,
+    taxAmount: summary.taxAmount,
+    totalAmount: Number(sale.totalAmount ?? summary.netAmount + summary.taxAmount),
+  }
+}
+
+function serializeElectronicBillingDocument(document: SiiDteDocument | null) {
+  if (!document) {
+    return null
+  }
+
+  return {
+    dteType: document.dteType,
+    folio: document.folio,
+    issuerRut: document.issuerRut,
+    receiverRut: document.receiverRut,
+    siiStatus: normalizeSiiStatusForUi(document.status),
+    siiTrackId: document.siiTrackId,
+    issuedAt: document.issuedAt?.toISO() ?? null,
+    netAmount: document.netAmount,
+    exemptAmount: document.exemptAmount,
+    taxAmount: document.taxAmount,
+    totalAmount: document.totalAmount,
+    xmlUrl: document.xmlUrl,
+    pdfUrl: document.pdfUrl,
+    lastError: document.lastError,
+    generatedBy: 'backend',
+  }
+}
+
+async function syncSaleElectronicBillingMetadata(
+  sale: Sale,
+  electronicBilling: Record<string, unknown> | null,
+  trx?: any
+) {
+  const metadata = asObject(sale.metadata)
+  metadata.electronicBilling = electronicBilling
+  sale.metadata = metadata
+
+  if (trx) {
+    sale.useTransaction(trx)
+  }
+
+  await sale.save()
+}
+
+async function findLatestElectronicBillingDocument(saleId: number, businessId?: number, trx?: any) {
+  const query = SiiDteDocument.query(trx ? { client: trx } : undefined)
+    .where('sale_id', saleId)
+    .orderBy('id', 'desc')
+
+  if (businessId) {
+    query.where('business_id', businessId)
+  }
+
+  return query.first()
+}
+
 export default class SaleService {
   public static async create(payload: CreateSalePayload) {
     const trx = await db.transaction()
@@ -374,55 +494,80 @@ export default class SaleService {
     }
 
     await sale.load('business', (q) => q.select(['id', 'identify']))
+    await sale.load('client', (q) => q.select(['id', 'identify']))
     await sale.load('details', (q) => q.select(['id', 'amount', 'taxes', 'metadata']))
 
-    const metadata = asObject(sale.metadata)
-    const existingBilling = asObject(metadata.electronicBilling)
+    const existingDocument = await findLatestElectronicBillingDocument(sale.id, businessId)
 
-    const summary = sale.details.reduce(
-      (acc, detail: any) => {
-        const amount = Number(detail?.amount) || 0
-        const detailMetadata = asObject(detail?.metadata)
-        const taxes = Array.isArray(detail?.taxes)
-          ? detail.taxes
-          : Array.isArray(detailMetadata.taxes)
-            ? detailMetadata.taxes
-            : []
-
-        acc.netAmount += amount
-        acc.taxAmount += sumTaxesFromDetail(amount, taxes)
-
-        return acc
-      },
-      {
-        netAmount: 0,
-        taxAmount: 0,
-      }
-    )
-
-    const receiverRut =
-      (typeof metadata.receiverRut === 'string' ? metadata.receiverRut : null) ??
-      (typeof metadata.clientRut === 'string' ? metadata.clientRut : null)
-
-    metadata.electronicBilling = {
-      dteType: Number(existingBilling.dteType ?? 33) || 33,
-      folio: Number(existingBilling.folio ?? sale.id) || sale.id,
-      issuerRut: sale.business?.identify ?? null,
-      receiverRut,
-      siiStatus: 'pending_send',
-      siiTrackId: typeof existingBilling.siiTrackId === 'string' ? existingBilling.siiTrackId : null,
-      issuedAt: DateTime.now().toISO(),
-      netAmount: summary.netAmount,
-      exemptAmount: Number(existingBilling.exemptAmount ?? 0) || 0,
-      taxAmount: summary.taxAmount,
-      totalAmount: Number(sale.totalAmount ?? summary.netAmount + summary.taxAmount),
-      xmlUrl: typeof existingBilling.xmlUrl === 'string' ? existingBilling.xmlUrl : null,
-      pdfUrl: typeof existingBilling.pdfUrl === 'string' ? existingBilling.pdfUrl : null,
-      generatedBy: 'backend',
+    if (existingDocument && existingDocument.status !== 'canceled') {
+      await syncSaleElectronicBillingMetadata(
+        sale,
+        serializeElectronicBillingDocument(existingDocument) as Record<string, unknown>
+      )
+      await preloadSaleRelations(sale)
+      return sale
     }
 
-    sale.metadata = metadata
-    await sale.save()
+    const summary = buildElectronicBillingSummaryFromSale(sale)
+    const allocation = await CafService.allocateNextFolio(sale.businessId, summary.dteType)
+    const trx = await db.transaction()
+
+    try {
+      sale.useTransaction(trx)
+
+      const document = await SiiDteDocument.create(
+        {
+          saleId: sale.id,
+          businessId: sale.businessId,
+          cafFileId: allocation.cafId,
+          dteType: summary.dteType,
+          folio: allocation.folio,
+          status: 'draft',
+          siiTrackId: null,
+          issuerRut: summary.issuerRut,
+          receiverRut: summary.receiverRut,
+          issuedAt: DateTime.now(),
+          netAmount: summary.netAmount,
+          exemptAmount: summary.exemptAmount,
+          taxAmount: summary.taxAmount,
+          totalAmount: summary.totalAmount,
+          xmlUnsigned: null,
+          xmlSigned: null,
+          tedXml: null,
+          tedSignature: null,
+          xmlUrl: null,
+          pdfUrl: null,
+          lastError: null,
+        },
+        { client: trx }
+      )
+
+      await SiiDteEvent.create(
+        {
+          dteDocumentId: document.id,
+          eventType: 'issued',
+          payloadJson: {
+            saleId: sale.id,
+            businessId: sale.businessId,
+            dteType: summary.dteType,
+            folio: allocation.folio,
+            cafId: allocation.cafId,
+          },
+        },
+        { client: trx }
+      )
+
+      await syncSaleElectronicBillingMetadata(
+        sale,
+        serializeElectronicBillingDocument(document) as Record<string, unknown>,
+        trx
+      )
+
+      await trx.commit()
+    } catch (error) {
+      await trx.rollback()
+      throw error
+    }
 
     await preloadSaleRelations(sale)
 
@@ -437,6 +582,14 @@ export default class SaleService {
     }
 
     const sale = await saleQuery.firstOrFail()
+    const document = await findLatestElectronicBillingDocument(sale.id, businessId)
+
+    if (document) {
+      const serialized = serializeElectronicBillingDocument(document)
+      await syncSaleElectronicBillingMetadata(sale, serialized as Record<string, unknown>)
+      return serialized
+    }
+
     const metadata = asObject(sale.metadata)
 
     return metadata.electronicBilling ?? null

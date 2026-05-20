@@ -425,6 +425,9 @@ components:
           type: integer
         createdById:
           type: integer
+        clientId:
+          type: integer
+          nullable: true
         title:
           type: string
           nullable: true
@@ -501,6 +504,20 @@ components:
               type: integer
             name:
               type: string
+        client:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            identify:
+              type: string
+              nullable: true
+            email:
+              type: string
+              nullable: true
         createdBy:
           type: object
           properties:
@@ -2592,6 +2609,8 @@ paths:
               properties:
                 businessId:
                   type: integer
+                clientId:
+                  type: integer
                 title:
                   type: string
                   nullable: true
@@ -2651,6 +2670,9 @@ paths:
                       amount:
                         type: number
                         nullable: true
+                      utility:
+                        type: number
+                        nullable: true
                       taxes:
                         type: array
                         nullable: true
@@ -2663,9 +2685,11 @@ paths:
                       - quantity
                       - unitAmount
               required:
+                - clientId
                 - details
             example:
               businessId: 1
+              clientId: 42
               title: Venta de materiales
               description: Venta generada desde modulo comercial
               saleDate: '2026-04-20'
@@ -2746,6 +2770,144 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Error al obtener venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/update/{id}:
+    put:
+      tags:
+        - Ventas
+      summary: Actualizar venta
+      description: Actualizar una venta existente y, opcionalmente, reemplazar sus lineas de detalle
+      operationId: updateSale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                title:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                saleDate:
+                  type: string
+                  format: date
+                  nullable: true
+                status:
+                  type: string
+                  enum: [draft, pending, confirmed, canceled]
+                currencyId:
+                  type: integer
+                  nullable: true
+                coinId:
+                  type: integer
+                  nullable: true
+                  description: Campo aceptado por el validador para compatibilidad
+                invoiced:
+                  type: boolean
+                  description: Campo aceptado por el validador para compatibilidad
+                totalAmount:
+                  type: number
+                  nullable: true
+                utility:
+                  type: number
+                  nullable: true
+                banks:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
+                metadata:
+                  type: object
+                  nullable: true
+                details:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: integer
+                        nullable: true
+                      lineNumber:
+                        type: integer
+                        nullable: true
+                      description:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                      unitAmount:
+                        type: number
+                      amount:
+                        type: number
+                        nullable: true
+                      utility:
+                        type: number
+                        nullable: true
+                      taxes:
+                        type: array
+                        nullable: true
+                        items:
+                          $ref: '#/components/schemas/SaleTax'
+                      metadata:
+                        type: object
+                        nullable: true
+                    required:
+                      - quantity
+                      - unitAmount
+            example:
+              clientId: 42
+              title: Venta de materiales actualizada
+              description: Ajuste de cantidades y montos
+              saleDate: '2026-04-21'
+              status: confirmed
+              currencyId: 1
+              details:
+                - productId: 10
+                  lineNumber: 1
+                  description: Producto A
+                  quantity: 3
+                  unitAmount: 15000
+                  amount: 45000
+                  taxes:
+                    - code: IVA
+                      rate: 19
+                      baseAmount: 45000
+                      amount: 8550
+                      isExempt: false
+      responses:
+        '200':
+          description: Venta actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error de actualizacion
           content:
             application/json:
               schema:
