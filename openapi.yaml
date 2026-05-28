@@ -440,7 +440,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: [draft, pending, confirmed, canceled]
+          enum: [paid, unpaid, payment_pending, voided, rejected]
         totalAmount:
           type: number
           nullable: true
@@ -2563,7 +2563,7 @@ paths:
           description: Filtrar por estado
           schema:
             type: string
-            enum: [draft, pending, confirmed, canceled]
+            enum: [paid, unpaid, payment_pending, voided, rejected]
         - name: businessId
           in: query
           schema:
@@ -2623,7 +2623,7 @@ paths:
                   nullable: true
                 status:
                   type: string
-                  enum: [draft, pending, confirmed, canceled]
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
                 currencyId:
                   type: integer
                   nullable: true
@@ -2693,7 +2693,7 @@ paths:
               title: Venta de materiales
               description: Venta generada desde modulo comercial
               saleDate: '2026-04-20'
-              status: draft
+              status: unpaid
               currencyId: 1
               coinId: 1
               invoiced: false
@@ -2811,7 +2811,7 @@ paths:
                   nullable: true
                 status:
                   type: string
-                  enum: [draft, pending, confirmed, canceled]
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
                 currencyId:
                   type: integer
                   nullable: true
@@ -2877,7 +2877,7 @@ paths:
               title: Venta de materiales actualizada
               description: Ajuste de cantidades y montos
               saleDate: '2026-04-21'
-              status: confirmed
+              status: paid
               currencyId: 1
               details:
                 - productId: 10
@@ -2937,11 +2937,11 @@ paths:
               properties:
                 status:
                   type: string
-                  enum: [draft, pending, confirmed, canceled]
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
               required:
                 - status
             example:
-              status: confirmed
+              status: paid
       responses:
         '200':
           description: Venta actualizada
@@ -3012,7 +3012,7 @@ paths:
                   type: integer
                 status:
                   type: string
-                  enum: [draft, pending, confirmed, canceled]
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
                 startDate:
                   type: string
                   format: date
@@ -3020,7 +3020,7 @@ paths:
                   type: string
                   format: date
             example:
-              status: confirmed
+              status: paid
               startDate: '2026-05-01'
               endDate: '2026-05-31'
       responses:

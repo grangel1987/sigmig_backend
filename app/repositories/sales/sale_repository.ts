@@ -1,16 +1,16 @@
-import Sale from '#models/sales/sale'
+import Sale, { type SaleStatus } from '#models/sales/sale'
 
 interface SaleIndexFilters {
   businessId?: number
   page?: number
   perPage?: number
   text?: string
-  status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
+  status?: SaleStatus
 }
 
 interface SaleOverviewFilters {
   businessId?: number
-  status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
+  status?: SaleStatus
   startDate?: string
   endDate?: string
 }

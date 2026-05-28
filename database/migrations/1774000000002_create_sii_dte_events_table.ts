@@ -11,7 +11,8 @@ export default class CreateSiiDteEventsTable extends BaseSchema {
                 table.increments('id')
 
                 table
-                    .bigInteger('dte_document_id')
+                    .integer('dte_document_id')
+                    .unsigned()
                     .notNullable()
                     .references('id')
                     .inTable('sii_dte_documents')

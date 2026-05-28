@@ -1,5 +1,7 @@
 import vine from '@vinejs/vine'
 
+const saleStatuses = ['paid', 'unpaid', 'payment_pending', 'voided', 'rejected'] as const
+
 const saleTaxSchema = vine.object({
   code: vine.string().trim().minLength(1),
   rate: vine.number().min(0).optional().nullable(),
@@ -31,7 +33,7 @@ const saleFinanceSchema = {
 export const saleOverviewValidator = vine.compile(
   vine.object({
     businessId: vine.number().positive().optional(),
-    status: vine.enum(['draft', 'pending', 'confirmed', 'canceled'] as const).optional(),
+    status: vine.enum(saleStatuses).optional(),
     startDate: vine.string().trim().optional(),
     endDate: vine.string().trim().optional(),
   })
@@ -43,7 +45,7 @@ export const saleIndexValidator = vine.compile(
     perPage: vine.number().positive().optional(),
     text: vine.string().trim().optional(),
     businessId: vine.number().positive().optional(),
-    status: vine.enum(['draft', 'pending', 'confirmed', 'canceled'] as const).optional(),
+    status: vine.enum(saleStatuses).optional(),
   })
 )
 
@@ -54,7 +56,7 @@ export const saleStoreValidator = vine.compile(
     title: vine.string().trim().optional().nullable(),
     description: vine.string().trim().optional().nullable(),
     saleDate: vine.string().trim().optional().nullable(),
-    status: vine.enum(['draft', 'pending', 'confirmed', 'canceled'] as const).optional(),
+    status: vine.enum(saleStatuses).optional(),
     currencyId: vine.number().positive().optional().nullable(),
     coinId: vine.number().positive().optional().nullable(),
     invoiced: vine.boolean().optional(),
@@ -71,7 +73,7 @@ export const saleUpdateValidator = vine.compile(
     title: vine.string().trim().optional().nullable(),
     description: vine.string().trim().optional().nullable(),
     saleDate: vine.string().trim().optional().nullable(),
-    status: vine.enum(['draft', 'pending', 'confirmed', 'canceled'] as const).optional(),
+    status: vine.enum(saleStatuses).optional(),
     currencyId: vine.number().positive().optional().nullable(),
     coinId: vine.number().positive().optional().nullable(),
     invoiced: vine.boolean().optional(),
@@ -84,7 +86,7 @@ export const saleUpdateValidator = vine.compile(
 
 export const saleUpdateStatusValidator = vine.compile(
   vine.object({
-    status: vine.enum(['draft', 'pending', 'confirmed', 'canceled'] as const),
+    status: vine.enum(saleStatuses),
   })
 )
 

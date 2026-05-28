@@ -8,6 +8,8 @@ import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
+export type SaleStatus = 'paid' | 'unpaid' | 'payment_pending' | 'voided' | 'rejected'
+
 export default class Sale extends BaseModel {
     public static table = 'sales'
 
@@ -37,7 +39,7 @@ export default class Sale extends BaseModel {
     declare saleDate: DateTime | null
 
     @column()
-    declare status: 'draft' | 'pending' | 'confirmed' | 'canceled'
+    declare status: SaleStatus
 
     @column({
         columnName: 'total_amount',

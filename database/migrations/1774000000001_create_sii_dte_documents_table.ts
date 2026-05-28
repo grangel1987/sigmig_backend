@@ -11,7 +11,8 @@ export default class CreateSiiDteDocumentsTable extends BaseSchema {
                 table.increments('id')
 
                 table
-                    .bigInteger('sale_id')
+                    .integer('sale_id')
+                    .unsigned()
                     .notNullable()
                     .references('id')
                     .inTable('sales')
