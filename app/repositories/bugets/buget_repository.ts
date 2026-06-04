@@ -24,7 +24,7 @@ export default class BugetRepository {
       .preload('work', (w) => w.select(['id', 'code', 'name']))
       .orderBy('created_at', 'desc')
 
-    if (status !== undefined) query = query.where('bugets.enabled', status === 'enabled')
+    query = query.where('bugets.enabled', status !== undefined ? status === 'enabled' : true)
 
     if (budgetStatus) query = query.where('bugets.status', budgetStatus)
 
@@ -62,7 +62,7 @@ export default class BugetRepository {
       query = query.whereRaw('DATE(created_at) = ?', [date])
     }
 
-    if (status) query = query.where('bugets.enabled', status === 'enabled')
+    query = query.where('bugets.enabled', status !== undefined ? status === 'enabled' : true)
 
     if (budgetStatus) query = query.where('bugets.status', budgetStatus)
 
@@ -85,9 +85,11 @@ export default class BugetRepository {
   ): Promise<ModelPaginatorContract<Buget> | Buget[]> {
     const start = dateInitial ? DateTime.fromJSDate(dateInitial).toSQLDate()! : '1970-01-01'
     const end = dateEnd ? DateTime.fromJSDate(dateEnd).toSQLDate()! : '9999-12-31'
+    const enabledFilter = enabled ?? true
 
     let bgtQ = Buget.query()
       .where('business_id', businessId)
+      .where('bugets.enabled', enabledFilter)
       .whereRaw('DATE(created_at) BETWEEN ? AND ?', [start, end])
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
@@ -107,10 +109,6 @@ export default class BugetRepository {
     if (budgetStatus) {
       bgtQ = bgtQ.where('bugets.status', budgetStatus)
     }
-    if (enabled !== undefined) {
-      bgtQ = bgtQ.where('bugets.enabled', enabled)
-    }
-
     if (text) {
       bgtQ = bgtQ.where((qb) => {
         qb.whereRaw('nro LIKE ?', [`${text}%`]).orWhereHas('client', (cq) =>
@@ -196,7 +194,8 @@ export default class BugetRepository {
     dateInitial?: Date,
     dateEnd?: Date,
     text?: string,
-    budgetStatus?: 'pending' | 'revision' | 'reject' | 'accept'
+    budgetStatus?: 'pending' | 'revision' | 'reject' | 'accept',
+    enabled?: boolean
   ): Promise<{
     counts: Record<string, number>
     money: { productsTotal: number; discountsTotal: number; utilityTotal: number; total: number }
@@ -211,10 +210,12 @@ export default class BugetRepository {
   }> {
     const start = dateInitial ? DateTime.fromJSDate(dateInitial).toSQLDate()! : '1970-01-01'
     const end = dateEnd ? DateTime.fromJSDate(dateEnd).toSQLDate()! : '9999-12-31'
+    const enabledFilter = enabled ?? true
     // Aggregate products total, discounts and utility using query builder
     const totalsRow = (await Database.from('bugets')
       .leftJoin('buget_products as bp', 'bp.buget_id', 'bugets.id')
       .where('bugets.business_id', businessId)
+      .where('bugets.enabled', enabledFilter)
       .whereRaw('DATE(bugets.created_at) BETWEEN ? AND ?', [start, end])
       .select(
         Database.raw('IFNULL(SUM(bp.amount * bp.count), 0) AS products_total'),
@@ -226,6 +227,7 @@ export default class BugetRepository {
     // Build base counts query
     let countsQuery = Database.from('bugets')
       .where('business_id', businessId)
+      .where('enabled', enabledFilter)
       .whereRaw('DATE(created_at) BETWEEN ? AND ?', [start, end])
 
     if (budgetStatus) {
@@ -263,6 +265,7 @@ export default class BugetRepository {
     const bugetTotalsSubQuery = Database.from('bugets as b')
       .leftJoin('buget_products as bp', 'bp.buget_id', 'b.id')
       .where('b.business_id', businessId)
+      .where('b.enabled', enabledFilter)
       .whereRaw('DATE(b.created_at) BETWEEN ? AND ?', [start, end])
       .select(
         'b.id as buget_id',

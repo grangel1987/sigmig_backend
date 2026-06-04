@@ -435,9 +435,7 @@ export default class BugetController {
       query = query.where('business_id', businessId)
     }
 
-    if (status !== undefined) {
-      query = query.where('enabled', status === 'enabled')
-    }
+    query = query.where('enabled', status !== undefined ? status === 'enabled' : true)
 
     if (budgetStatus) {
       query = query.where('status', budgetStatus)
@@ -1125,7 +1123,7 @@ export default class BugetController {
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
       .where('nro', number)
-      // .where('enabled', true)
+      .where('enabled', true)
       .orderBy('id', 'desc')
       .first()
     return [budgetRes]
@@ -1245,7 +1243,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
 
     const { request } = ctx
-    const { startDate, endDate, page, perPage, text, budgetStatus } = await request.validateUsing(
+    const { startDate, endDate, page, perPage, text, budgetStatus, status } = await request.validateUsing(
       vine.compile(
         vine.object({
           ...searchWithStatusSchema.getProperties(),
@@ -1253,6 +1251,7 @@ export default class BugetController {
       )
     )
     const businessId = Number(request.header('Business'))
+    const enabled = status !== undefined ? status === 'enabled' : undefined
 
     const data = await BugetRepository.report(
       businessId,
@@ -1261,14 +1260,16 @@ export default class BugetController {
       page,
       perPage,
       text,
-      budgetStatus
+      budgetStatus,
+      enabled
     )
     const metrics = await BugetRepository.metrics(
       businessId,
       startDate,
       endDate,
       text,
-      budgetStatus
+      budgetStatus,
+      enabled
     )
 
     let payload: Record<string, any> = {}
@@ -1331,19 +1332,6 @@ export default class BugetController {
         .forUpdate()
         .firstOrFail()
 
-      // Optionally enforce expire check
-      if (existing.expireDate && existing.expireDate > dateTime) {
-        await trx.rollback()
-        return response
-          .status(400)
-          .json(
-            MessageFrontEnd(
-              i18n.formatMessage('messages.no_exist'),
-              i18n.formatMessage('messages.error_title')
-            )
-          )
-      }
-
       let nro = existing.nro!
       if (!keepSameNro) {
         const last = await trx
@@ -1352,6 +1340,27 @@ export default class BugetController {
           .orderBy('id', 'desc')
           .limit(1)
         nro = String(last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1)
+      } else {
+        const nroInUse = await Buget.query({ client: trx })
+          .where('business_id', existing.businessId)
+          .where('nro', existing.nro)
+          .where('enabled', true)
+          .whereNot('id', existing.id)
+          .first()
+
+        if (nroInUse) {
+          await trx.rollback()
+          return response.status(409).json(
+            MessageFrontEnd(
+              i18n.formatMessage(
+                'messages.update_error',
+                {},
+                'Ya existe una cotizacion activa con este numero'
+              ),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+        }
       }
 
       const token = existing.token || Util.generateToken(16)
@@ -1359,7 +1368,8 @@ export default class BugetController {
         .where('id', existing.businessId!)
         .firstOrFail()
       const daysExpire = business.daysExpireBuget || 0
-      const expireDate = existing.expireDate.plus({ days: daysExpire })
+      const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
+      const expireDate = DateTime.fromISO(expireDateISO)
 
       await trx
         .from('bugets')
@@ -1368,6 +1378,7 @@ export default class BugetController {
           enabled: true,
           nro,
           token,
+          status: 'pending',
           expire_date: expireDate.toSQLDate(),
           updated_at: dateTime.toSQL({ includeOffset: false }),
           updated_by: auth.user!.id,

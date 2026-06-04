@@ -1,4 +1,4 @@
-import Sale, { type SaleStatus } from '#models/sales/sale'
+import Sale from '#models/sales/sale'
 import SiiDteDocument from '#models/sii/sii_dte_document'
 import SiiDteEvent from '#models/sii/sii_dte_event'
 import { mergeSaleMetadata, normalizeSaleMetadata } from '#services/sales/sale_payload_service'
@@ -13,7 +13,7 @@ interface CreateSalePayload {
   title?: string | null
   description?: string | null
   saleDate?: string | null
-  status?: SaleStatus
+  status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
   totalAmount?: number | null
   utility?: number | null
   currencyId?: number | null
@@ -37,7 +37,7 @@ interface UpdateSalePayload {
   title?: string | null
   description?: string | null
   saleDate?: string | null
-  status?: SaleStatus
+  status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
   totalAmount?: number | null
   utility?: number | null
   currencyId?: number | null
@@ -356,7 +356,7 @@ export default class SaleService {
           title: payload.title ?? null,
           description: payload.description ?? null,
           saleDate: parsedSaleDate && parsedSaleDate.isValid ? parsedSaleDate : null,
-          status: payload.status ?? 'unpaid',
+          status: payload.status ?? 'draft',
           totalAmount: payload.totalAmount ?? computedTotal,
           utility: normalizedUtility,
           currencyId: payload.currencyId ?? null,
@@ -451,7 +451,7 @@ export default class SaleService {
 
   public static async updateStatus(
     saleId: number,
-    status: SaleStatus,
+    status: 'draft' | 'pending' | 'confirmed' | 'canceled',
     businessId?: number
   ) {
     const saleQuery = Sale.query().where('id', saleId).whereNull('deleted_at')
@@ -489,8 +489,8 @@ export default class SaleService {
 
     const sale = await saleQuery.firstOrFail()
 
-    if (sale.status !== 'paid') {
-      throw new Error('Only paid sales can issue electronic billing')
+    if (sale.status !== 'confirmed') {
+      throw new Error('Only confirmed sales can issue electronic billing')
     }
 
     await sale.load('business', (q) => q.select(['id', 'identify']))

@@ -20,7 +20,7 @@ export default class DashboardController {
     public async budgetsMetrics(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
         const { request } = ctx
-        const { startDate, endDate, text, budgetStatus } = await request.validateUsing(
+        const { startDate, endDate, text, budgetStatus, status } = await request.validateUsing(
             vine.compile(
                 vine.object({
                     ...searchWithStatusSchema.getProperties(),
@@ -28,7 +28,15 @@ export default class DashboardController {
             )
         )
         const businessId = Number(request.header('Business'))
-        const metrics = await BugetRepository.metrics(businessId, startDate, endDate, text, budgetStatus)
+        const enabled = status !== undefined ? status === 'enabled' : undefined
+        const metrics = await BugetRepository.metrics(
+            businessId,
+            startDate,
+            endDate,
+            text,
+            budgetStatus,
+            enabled
+        )
         return metrics
     }
 

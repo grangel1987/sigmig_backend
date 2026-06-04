@@ -82,6 +82,7 @@
     "swagger-ui-dist": "^5.31.0",
     "ts-morph": "^27.0.2",
     "uuid": "^13.0.0",
+    "xmlbuilder2": "^4.0.3",
     "yaml": "^2.8.2"
   },
   "hotHook": {
