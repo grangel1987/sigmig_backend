@@ -1,4 +1,5 @@
 import Business from '#models/business/business'
+import Client from '#models/clients/client'
 import Coin from '#models/coin/coin'
 import SalePayment from '#models/sale_payment'
 import SaleDetail from '#models/sales/sale_detail'
@@ -6,6 +7,8 @@ import User from '#models/users/user'
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+
+export type SaleStatus = 'paid' | 'unpaid' | 'payment_pending' | 'voided' | 'rejected'
 
 export default class Sale extends BaseModel {
     public static table = 'sales'
@@ -18,6 +21,9 @@ export default class Sale extends BaseModel {
 
     @column({ columnName: 'created_by' })
     declare createdById: number
+
+    @column({ columnName: 'client_id' })
+    declare clientId: number | null
 
     @column()
     declare title: string | null
@@ -33,7 +39,7 @@ export default class Sale extends BaseModel {
     declare saleDate: DateTime | null
 
     @column()
-    declare status: 'draft' | 'pending' | 'confirmed' | 'canceled'
+    declare status: SaleStatus
 
     @column({
         columnName: 'total_amount',
@@ -46,7 +52,19 @@ export default class Sale extends BaseModel {
     @column({ columnName: 'currency_id' })
     declare currencyId: number | null
 
-    @column({ columnName: 'metadata' })
+    @column({
+        columnName: 'utility',
+        prepare: (value?: number | null) => value ?? null,
+        consume: (value?: string | number) =>
+            value === null || value === undefined ? null : Number(value),
+    })
+    declare utility: number | null
+
+    @column({
+        columnName: 'metadata',
+        prepare: (value) => (value && typeof value === 'object' ? JSON.stringify(value) : value),
+        consume: (value) => (typeof value === 'string' ? JSON.parse(value) : value),
+    })
     declare metadata: Record<string, unknown> | null
 
     @belongsTo(() => Business, { foreignKey: 'businessId' })
@@ -54,6 +72,9 @@ export default class Sale extends BaseModel {
 
     @belongsTo(() => User, { foreignKey: 'createdById' })
     declare createdBy: BelongsTo<typeof User>
+
+    @belongsTo(() => Client, { foreignKey: 'clientId' })
+    declare client: BelongsTo<typeof Client>
 
     @belongsTo(() => Coin, { foreignKey: 'currencyId' })
     declare currency: BelongsTo<typeof Coin>

@@ -28,7 +28,9 @@ export default class SalesSchema extends BaseSchema {
                 table.text('description').nullable()
                 table.date('sale_date').nullable()
 
-                table.enum('status', ['draft', 'pending', 'confirmed', 'canceled']).defaultTo('draft')
+                table
+                    .enum('status', ['paid', 'unpaid', 'payment_pending', 'voided', 'rejected'])
+                    .defaultTo('unpaid')
 
                 table.decimal('total_amount', 15, 2).nullable()
                 // table.integer('currency_id').nullable()

@@ -9,7 +9,7 @@ info:
     name: MIT
 
 servers:
-  - url: http://localhost:3333/api/v2
+  - url: http://localhost:3334/api/v2
     description: Servidor de Desarrollo Local
   - url: http://93.127.210.103/api/v2
     description: Servidor de Producción
@@ -307,6 +307,16 @@ components:
         productId:
           type: integer
           nullable: true
+        product:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            amount:
+              type: number
         lineNumber:
           type: integer
           nullable: true
@@ -319,9 +329,42 @@ components:
           type: number
         amount:
           type: number
+        taxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleTax'
         metadata:
           type: object
           nullable: true
+
+    SaleTax:
+      type: object
+      properties:
+        code:
+          type: string
+        rate:
+          type: number
+          nullable: true
+        baseAmount:
+          type: number
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        total:
+          type: number
+          nullable: true
+        percentage:
+          type: number
+          nullable: true
+        percent:
+          type: number
+          nullable: true
+        isExempt:
+          type: boolean
+          nullable: true
+      required:
+        - code
 
     SalePayment:
       type: object
@@ -382,6 +425,9 @@ components:
           type: integer
         createdById:
           type: integer
+        clientId:
+          type: integer
+          nullable: true
         title:
           type: string
           nullable: true
@@ -394,8 +440,11 @@ components:
           nullable: true
         status:
           type: string
-          enum: [draft, pending, confirmed, canceled]
+          enum: [paid, unpaid, payment_pending, voided, rejected]
         totalAmount:
+          type: number
+          nullable: true
+        utility:
           type: number
           nullable: true
         currencyId:
@@ -404,6 +453,50 @@ components:
         metadata:
           type: object
           nullable: true
+        banks:
+          type: array
+          items:
+            type: object
+        electronicBilling:
+          type: object
+          nullable: true
+        paymentSummary:
+          type: object
+          properties:
+            totalAmount:
+              type: number
+            paidAmount:
+              type: number
+            remainingAmount:
+              type: number
+            paymentCount:
+              type: integer
+            isPaid:
+              type: boolean
+        financialSummary:
+          type: object
+          properties:
+            subtotal:
+              type: number
+            taxTotal:
+              type: number
+            utilityTotal:
+              type: number
+            grossTotal:
+              type: number
+            paymentSummary:
+              type: object
+              properties:
+                totalAmount:
+                  type: number
+                paidAmount:
+                  type: number
+                remainingAmount:
+                  type: number
+                paymentCount:
+                  type: integer
+                isPaid:
+                  type: boolean
         business:
           type: object
           properties:
@@ -411,6 +504,20 @@ components:
               type: integer
             name:
               type: string
+        client:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            identify:
+              type: string
+              nullable: true
+            email:
+              type: string
+              nullable: true
         createdBy:
           type: object
           properties:
@@ -633,6 +740,107 @@ paths:
                   lastPage: 7
         '500':
           description: Error del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /file/refresh-signed-url:
+    get:
+      tags:
+        - Files
+      summary: Generar URL firmada nueva por filepath
+      description: Regenera una URL firmada para un objeto almacenado usando su ruta corta en bucket.
+      operationId: fileRefreshSignedUrlGet
+      parameters:
+        - name: filePath
+          in: query
+          required: true
+          description: Ruta interna del archivo en el bucket (por ejemplo clients/abc123.jpg)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: URL firmada generada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  filePath:
+                    type: string
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '422':
+          description: filePath inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al generar la URL firmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - Files
+      summary: Generar URL firmada nueva por filepath
+      description: Regenera una URL firmada para un objeto almacenado usando su ruta corta en bucket.
+      operationId: fileRefreshSignedUrlPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filePath:
+                  type: string
+                  description: Ruta interna del archivo en el bucket.
+                filepath:
+                  type: string
+                  description: Alias compatible para filePath.
+            examples:
+              withFilePath:
+                value:
+                  filePath: clients/abc123.jpg
+              withFilepathAlias:
+                value:
+                  filepath: products/def456.webp
+      responses:
+        '200':
+          description: URL firmada generada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                  filePath:
+                    type: string
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '422':
+          description: filePath inválido o ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al generar la URL firmada
           content:
             application/json:
               schema:
@@ -2355,7 +2563,7 @@ paths:
           description: Filtrar por estado
           schema:
             type: string
-            enum: [draft, pending, confirmed, canceled]
+            enum: [paid, unpaid, payment_pending, voided, rejected]
         - name: businessId
           in: query
           schema:
@@ -2401,6 +2609,8 @@ paths:
               properties:
                 businessId:
                   type: integer
+                clientId:
+                  type: integer
                 title:
                   type: string
                   nullable: true
@@ -2413,7 +2623,7 @@ paths:
                   nullable: true
                 status:
                   type: string
-                  enum: [draft, pending, confirmed, canceled]
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
                 currencyId:
                   type: integer
                   nullable: true
@@ -2427,6 +2637,14 @@ paths:
                 totalAmount:
                   type: number
                   nullable: true
+                utility:
+                  type: number
+                  nullable: true
+                banks:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
                 metadata:
                   type: object
                   nullable: true
@@ -2452,6 +2670,14 @@ paths:
                       amount:
                         type: number
                         nullable: true
+                      utility:
+                        type: number
+                        nullable: true
+                      taxes:
+                        type: array
+                        nullable: true
+                        items:
+                          $ref: '#/components/schemas/SaleTax'
                       metadata:
                         type: object
                         nullable: true
@@ -2459,16 +2685,21 @@ paths:
                       - quantity
                       - unitAmount
               required:
+                - clientId
                 - details
             example:
               businessId: 1
+              clientId: 42
               title: Venta de materiales
               description: Venta generada desde modulo comercial
               saleDate: '2026-04-20'
-              status: draft
+              status: unpaid
               currencyId: 1
               coinId: 1
               invoiced: false
+              banks:
+                - name: Banco Estado
+                  amount: 30000
               details:
                 - productId: 10
                   lineNumber: 1
@@ -2476,6 +2707,12 @@ paths:
                   quantity: 2
                   unitAmount: 15000
                   amount: 30000
+                  taxes:
+                    - code: IVA
+                      rate: 19
+                      baseAmount: 30000
+                      amount: 5700
+                      isExempt: false
       responses:
         '201':
           description: Venta creada
@@ -2540,6 +2777,144 @@ paths:
       security:
         - bearerAuth: []
 
+  /sales/update/{id}:
+    put:
+      tags:
+        - Ventas
+      summary: Actualizar venta
+      description: Actualizar una venta existente y, opcionalmente, reemplazar sus lineas de detalle
+      operationId: updateSale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                title:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                saleDate:
+                  type: string
+                  format: date
+                  nullable: true
+                status:
+                  type: string
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
+                currencyId:
+                  type: integer
+                  nullable: true
+                coinId:
+                  type: integer
+                  nullable: true
+                  description: Campo aceptado por el validador para compatibilidad
+                invoiced:
+                  type: boolean
+                  description: Campo aceptado por el validador para compatibilidad
+                totalAmount:
+                  type: number
+                  nullable: true
+                utility:
+                  type: number
+                  nullable: true
+                banks:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
+                metadata:
+                  type: object
+                  nullable: true
+                details:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: integer
+                        nullable: true
+                      lineNumber:
+                        type: integer
+                        nullable: true
+                      description:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                      unitAmount:
+                        type: number
+                      amount:
+                        type: number
+                        nullable: true
+                      utility:
+                        type: number
+                        nullable: true
+                      taxes:
+                        type: array
+                        nullable: true
+                        items:
+                          $ref: '#/components/schemas/SaleTax'
+                      metadata:
+                        type: object
+                        nullable: true
+                    required:
+                      - quantity
+                      - unitAmount
+            example:
+              clientId: 42
+              title: Venta de materiales actualizada
+              description: Ajuste de cantidades y montos
+              saleDate: '2026-04-21'
+              status: paid
+              currencyId: 1
+              details:
+                - productId: 10
+                  lineNumber: 1
+                  description: Producto A
+                  quantity: 3
+                  unitAmount: 15000
+                  amount: 45000
+                  taxes:
+                    - code: IVA
+                      rate: 19
+                      baseAmount: 45000
+                      amount: 8550
+                      isExempt: false
+      responses:
+        '200':
+          description: Venta actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error de actualizacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
   /sales/status/{id}:
     put:
       tags:
@@ -2562,11 +2937,11 @@ paths:
               properties:
                 status:
                   type: string
-                  enum: [draft, pending, confirmed, canceled]
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
               required:
                 - status
             example:
-              status: confirmed
+              status: paid
       responses:
         '200':
           description: Venta actualizada
@@ -2612,6 +2987,495 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: Error al eliminar venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/overview:
+    post:
+      tags:
+        - Ventas
+      summary: Resumen de ventas
+      description: Obtiene resumen agregado de ventas por rango de fechas y estado.
+      operationId: salesOverview
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                status:
+                  type: string
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+            example:
+              status: paid
+              startDate: '2026-05-01'
+              endDate: '2026-05-31'
+      responses:
+        '200':
+          description: Resumen de ventas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  range:
+                    type: object
+                    properties:
+                      startDate:
+                        type: string
+                      endDate:
+                        type: string
+                  status:
+                    type: string
+                    nullable: true
+                  salesCount:
+                    type: integer
+                  totals:
+                    type: object
+                    properties:
+                      subtotal:
+                        type: number
+                      taxes:
+                        type: number
+                      utility:
+                        type: number
+                      gross:
+                        type: number
+                      payments:
+                        type: object
+                        properties:
+                          paid:
+                            type: number
+                          pending:
+                            type: number
+        '500':
+          description: Error al obtener resumen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/payments:
+    post:
+      tags:
+        - Pagos de Venta
+      summary: Crear pago de venta
+      description: Crear un pago asociado a una venta y registrar su movimiento contable.
+      operationId: storeSalePayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                saleId:
+                  type: integer
+                accountId:
+                  type: integer
+                costCenterId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                dueDate:
+                  type: string
+                  format: date
+                  nullable: true
+                amount:
+                  type: number
+                currencyId:
+                  type: integer
+                  description: Identificador de moneda del pago
+                paymentMethodId:
+                  type: integer
+                documentTypeId:
+                  type: integer
+                documentNumber:
+                  type: string
+                  nullable: true
+                concept:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [paid, pending, voided]
+                isProjected:
+                  type: boolean
+                receivedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                invoiced:
+                  type: boolean
+                invoiceMeta:
+                  type: object
+                  nullable: true
+              required:
+                - saleId
+                - date
+                - amount
+            example:
+              saleId: 12
+              date: '2026-05-15'
+              amount: 150000
+              currencyId: 1
+              paymentMethodId: 2
+              status: pending
+              concept: Pago parcial de venta
+      responses:
+        '201':
+          description: Pago de venta creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error de creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/payments/{id}:
+    get:
+      tags:
+        - Pagos de Venta
+      summary: Obtener pago de venta
+      description: Obtener un pago de venta con su movimiento contable asociado.
+      operationId: showSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle del pago de venta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+        '404':
+          description: Pago de venta no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+    put:
+      tags:
+        - Pagos de Venta
+      summary: Actualizar pago de venta
+      description: Actualizar los datos de un pago de venta y su movimiento contable.
+      operationId: updateSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accountId:
+                  type: integer
+                costCenterId:
+                  type: integer
+                clientId:
+                  type: integer
+                date:
+                  type: string
+                  format: date
+                dueDate:
+                  type: string
+                  format: date
+                  nullable: true
+                amount:
+                  type: number
+                currencyId:
+                  type: integer
+                paymentMethodId:
+                  type: integer
+                documentTypeId:
+                  type: integer
+                documentNumber:
+                  type: string
+                  nullable: true
+                concept:
+                  type: string
+                  nullable: true
+                status:
+                  type: string
+                  enum: [paid, pending, voided]
+                isProjected:
+                  type: boolean
+                receivedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                invoiced:
+                  type: boolean
+                invoiceMeta:
+                  type: object
+                  nullable: true
+      responses:
+        '200':
+          description: Pago de venta actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error de actualización
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Pagos de Venta
+      summary: Eliminar pago de venta
+      description: Eliminar lógicamente un pago de venta y su movimiento contable.
+      operationId: deleteSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pago de venta eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al eliminar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/payments/{id}/void:
+    post:
+      tags:
+        - Pagos de Venta
+      summary: Anular pago de venta
+      description: Marcar un pago de venta como anulado y actualizar su movimiento contable.
+      operationId: voidSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Pago de venta anulado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al anular
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/payments/{id}/settle:
+    post:
+      tags:
+        - Pagos de Venta
+      summary: Liquidar pago de venta
+      description: Marcar un pago de venta como pagado asignándole número y tipo de documento.
+      operationId: settleSalePayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                documentNumber:
+                  type: string
+                  description: Número de documento a asignar
+                documentTypeId:
+                  type: integer
+              required:
+                - documentNumber
+            example:
+              documentNumber: F-001-00012345
+              documentTypeId: 3
+      responses:
+        '200':
+          description: Pago de venta liquidado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salePayment:
+                    $ref: '#/components/schemas/SalePayment'
+                  ledgerMovement:
+                    $ref: '#/components/schemas/LedgerMovement'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al liquidar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/{id}/electronic-billing/issue:
+    post:
+      tags:
+        - Ventas
+      summary: Emitir facturacion electronica
+      description: Genera o actualiza metadata de facturacion electronica para una venta confirmada.
+      operationId: issueSaleElectronicBilling
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Facturacion electronica emitida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al emitir facturacion electronica
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/{id}/electronic-billing/status:
+    get:
+      tags:
+        - Ventas
+      summary: Consultar estado de facturacion electronica
+      description: Retorna el estado de facturacion electronica almacenado en metadata para una venta.
+      operationId: saleElectronicBillingStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Estado de facturacion electronica
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  saleId:
+                    type: integer
+                  electronicBilling:
+                    type: object
+                    nullable: true
+        '500':
+          description: Error al consultar facturacion electronica
           content:
             application/json:
               schema:
