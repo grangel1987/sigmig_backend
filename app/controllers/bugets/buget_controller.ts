@@ -36,6 +36,46 @@ import { createHash } from 'node:crypto'
 const DUPLICATE_BUDGET_WINDOW_SECONDS = 45
 
 export default class BugetController {
+  private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
+    const query = trx
+      .from('bugets')
+      .where('business_id', businessId)
+      .where('nro', String(nro))
+      .where('enabled', true)
+
+    if (excludeId) {
+      query.whereNot('id', excludeId)
+    }
+
+    const row = await query.first()
+    return Boolean(row)
+  }
+
+  private async getNextActiveNro(trx: any, businessId: number) {
+    await trx.from('businesses').where('id', businessId).forUpdate().first()
+
+    const lastActive = await trx
+      .from('bugets')
+      .where('business_id', businessId)
+      .where('enabled', true)
+      .orderByRaw('CAST(nro AS UNSIGNED) DESC')
+      .orderBy('id', 'desc')
+      .first()
+
+    let nextNumber = lastActive ? Number(lastActive.nro) + 1 : 1
+    if (!Number.isFinite(nextNumber) || nextNumber < 1) {
+      nextNumber = 1
+    }
+
+    let nro = String(nextNumber)
+    while (await this.existsActiveNro(trx, businessId, nro)) {
+      nextNumber += 1
+      nro = String(nextNumber)
+    }
+
+    return nro
+  }
+
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'create')
 
@@ -1325,12 +1365,31 @@ export default class BugetController {
     try {
       const dateTime = await Util.getDateTimes(request)
 
-      // Only allow reactivation of disabled budgets (expired/disabled)
-      const existing = await Buget.query({ client: trx })
-        .where('id', bugetId)
-        .where('enabled', false)
-        .forUpdate()
-        .firstOrFail()
+      const existing = await Buget.query({ client: trx }).where('id', bugetId).forUpdate().first()
+
+      if (!existing) {
+        await trx.rollback()
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      if (existing.enabled) {
+        await trx.rollback()
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.update_error', {}, 'Presupuesto ya esta habilitado'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
 
       let nro = existing.nro!
       if (!keepSameNro) {
@@ -1386,7 +1445,18 @@ export default class BugetController {
 
       await trx.commit()
 
-      const reactivated = await Buget.findOrFail(bugetId)
+      const reactivated = await Buget.query().where('id', bugetId).first()
+      if (!reactivated) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
       await reactivated.load('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
