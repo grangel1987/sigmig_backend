@@ -1,8 +1,11 @@
-import Sale from '#models/sales/sale'
+import Sale, { type SaleStatus } from '#models/sales/sale'
+import SiiCafFile from '#models/sii/sii_caf_file'
 import SiiDteDocument from '#models/sii/sii_dte_document'
 import SiiDteEvent from '#models/sii/sii_dte_event'
 import { mergeSaleMetadata, normalizeSaleMetadata } from '#services/sales/sale_payload_service'
 import CafService from '#services/sii/caf_service'
+import SiiXmlBuilderService from '#services/sii/sii_xml_builder_service'
+import XmlSignatureService from '#services/sii/xml_signature_service'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 
@@ -13,7 +16,7 @@ interface CreateSalePayload {
   title?: string | null
   description?: string | null
   saleDate?: string | null
-  status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
+  status?: SaleStatus
   totalAmount?: number | null
   utility?: number | null
   currencyId?: number | null
@@ -37,7 +40,7 @@ interface UpdateSalePayload {
   title?: string | null
   description?: string | null
   saleDate?: string | null
-  status?: 'draft' | 'pending' | 'confirmed' | 'canceled'
+  status?: SaleStatus
   totalAmount?: number | null
   utility?: number | null
   currencyId?: number | null
@@ -293,6 +296,9 @@ function serializeElectronicBillingDocument(document: SiiDteDocument | null) {
     totalAmount: document.totalAmount,
     xmlUrl: document.xmlUrl,
     pdfUrl: document.pdfUrl,
+    hasUnsignedXml: Boolean(document.xmlUnsigned),
+    hasSignedXml: Boolean(document.xmlSigned),
+    hasTedXml: Boolean(document.tedXml),
     lastError: document.lastError,
     generatedBy: 'backend',
   }
@@ -356,7 +362,7 @@ export default class SaleService {
           title: payload.title ?? null,
           description: payload.description ?? null,
           saleDate: parsedSaleDate && parsedSaleDate.isValid ? parsedSaleDate : null,
-          status: payload.status ?? 'draft',
+          status: payload.status ?? 'unpaid',
           totalAmount: payload.totalAmount ?? computedTotal,
           utility: normalizedUtility,
           currencyId: payload.currencyId ?? null,
@@ -451,7 +457,7 @@ export default class SaleService {
 
   public static async updateStatus(
     saleId: number,
-    status: 'draft' | 'pending' | 'confirmed' | 'canceled',
+    status: SaleStatus,
     businessId?: number
   ) {
     const saleQuery = Sale.query().where('id', saleId).whereNull('deleted_at')
@@ -489,13 +495,15 @@ export default class SaleService {
 
     const sale = await saleQuery.firstOrFail()
 
-    if (sale.status !== 'confirmed') {
-      throw new Error('Only confirmed sales can issue electronic billing')
+    if (sale.status !== 'paid') {
+      throw new Error('Only paid sales can issue electronic billing')
     }
 
-    await sale.load('business', (q) => q.select(['id', 'identify']))
-    await sale.load('client', (q) => q.select(['id', 'identify']))
-    await sale.load('details', (q) => q.select(['id', 'amount', 'taxes', 'metadata']))
+    await sale.load('business', (q) => q.select(['id', 'identify', 'name', 'address']))
+    await sale.load('client', (q) => q.select(['id', 'identify', 'name', 'giro', 'address']))
+    await sale.load('details', (q) =>
+      q.select(['id', 'sale_id', 'line_number', 'description', 'quantity', 'unit_amount', 'amount', 'taxes', 'metadata'])
+    )
 
     const existingDocument = await findLatestElectronicBillingDocument(sale.id, businessId)
 
@@ -510,6 +518,24 @@ export default class SaleService {
 
     const summary = buildElectronicBillingSummaryFromSale(sale)
     const allocation = await CafService.allocateNextFolio(sale.businessId, summary.dteType)
+    const issuedAt = DateTime.now()
+    const cafFile = await SiiCafFile.findOrFail(allocation.cafId)
+    const draftArtifacts = SiiXmlBuilderService.buildDraftArtifacts({
+      sale: sale as Sale,
+      cafFile,
+      dteType: summary.dteType,
+      folio: allocation.folio,
+      issuedAt,
+      issuerRut: summary.issuerRut,
+      receiverRut: summary.receiverRut,
+      netAmount: summary.netAmount,
+      exemptAmount: summary.exemptAmount,
+      taxAmount: summary.taxAmount,
+      totalAmount: summary.totalAmount,
+    })
+    const signedXml = XmlSignatureService.isConfigured()
+      ? XmlSignatureService.signDteXml(draftArtifacts.xmlUnsigned)
+      : null
     const trx = await db.transaction()
 
     try {
@@ -522,19 +548,19 @@ export default class SaleService {
           cafFileId: allocation.cafId,
           dteType: summary.dteType,
           folio: allocation.folio,
-          status: 'draft',
+          status: signedXml ? 'signed' : 'draft',
           siiTrackId: null,
           issuerRut: summary.issuerRut,
           receiverRut: summary.receiverRut,
-          issuedAt: DateTime.now(),
+          issuedAt,
           netAmount: summary.netAmount,
           exemptAmount: summary.exemptAmount,
           taxAmount: summary.taxAmount,
           totalAmount: summary.totalAmount,
-          xmlUnsigned: null,
-          xmlSigned: null,
-          tedXml: null,
-          tedSignature: null,
+          xmlUnsigned: draftArtifacts.xmlUnsigned,
+          xmlSigned: signedXml,
+          tedXml: draftArtifacts.tedXml,
+          tedSignature: draftArtifacts.tedSignature,
           xmlUrl: null,
           pdfUrl: null,
           lastError: null,
@@ -552,10 +578,32 @@ export default class SaleService {
             dteType: summary.dteType,
             folio: allocation.folio,
             cafId: allocation.cafId,
+            hasUnsignedXml: Boolean(draftArtifacts.xmlUnsigned),
+            hasSignedXml: Boolean(signedXml),
+            hasTedXml: Boolean(draftArtifacts.tedXml),
+            hasTedSignature: Boolean(draftArtifacts.tedSignature),
+            signingConfigured: XmlSignatureService.isConfigured(),
           },
         },
         { client: trx }
       )
+
+      if (signedXml) {
+        await SiiDteEvent.create(
+          {
+            dteDocumentId: document.id,
+            eventType: 'signed',
+            payloadJson: {
+              saleId: sale.id,
+              businessId: sale.businessId,
+              dteType: summary.dteType,
+              folio: allocation.folio,
+              hasSignedXml: true,
+            },
+          },
+          { client: trx }
+        )
+      }
 
       await syncSaleElectronicBillingMetadata(
         sale,
