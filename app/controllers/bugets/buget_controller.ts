@@ -51,30 +51,30 @@ export default class BugetController {
     return Boolean(row)
   }
 
-  private async getNextActiveNro(trx: any, businessId: number) {
-    await trx.from('businesses').where('id', businessId).forUpdate().first()
-
-    const lastActive = await trx
-      .from('bugets')
-      .where('business_id', businessId)
-      .where('enabled', true)
-      .orderByRaw('CAST(nro AS UNSIGNED) DESC')
-      .orderBy('id', 'desc')
-      .first()
-
-    let nextNumber = lastActive ? Number(lastActive.nro) + 1 : 1
-    if (!Number.isFinite(nextNumber) || nextNumber < 1) {
-      nextNumber = 1
-    }
-
-    let nro = String(nextNumber)
-    while (await this.existsActiveNro(trx, businessId, nro)) {
-      nextNumber += 1
-      nro = String(nextNumber)
-    }
-
-    return nro
-  }
+  /*   private async getNextActiveNro(trx: any, businessId: number) {
+      await trx.from('businesses').where('id', businessId).forUpdate().first()
+  
+      const lastActive = await trx
+        .from('bugets')
+        .where('business_id', businessId)
+        .where('enabled', true)
+        .orderByRaw('CAST(nro AS UNSIGNED) DESC')
+        .orderBy('id', 'desc')
+        .first()
+  
+      let nextNumber = lastActive ? Number(lastActive.nro) + 1 : 1
+      if (!Number.isFinite(nextNumber) || nextNumber < 1) {
+        nextNumber = 1
+      }
+  
+      let nro = String(nextNumber)
+      while (await this.existsActiveNro(trx, businessId, nro)) {
+        nextNumber += 1
+        nro = String(nextNumber)
+      }
+  
+      return nro
+    } */
 
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'create')
