@@ -36,20 +36,20 @@ import { createHash } from 'node:crypto'
 const DUPLICATE_BUDGET_WINDOW_SECONDS = 45
 
 export default class BugetController {
-  private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
-    const query = trx
-      .from('bugets')
-      .where('business_id', businessId)
-      .where('nro', String(nro))
-      .where('enabled', true)
-
-    if (excludeId) {
-      query.whereNot('id', excludeId)
-    }
-
-    const row = await query.first()
-    return Boolean(row)
-  }
+  /*   private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
+      const query = trx
+        .from('bugets')
+        .where('business_id', businessId)
+        .where('nro', String(nro))
+        .where('enabled', true)
+  
+      if (excludeId) {
+        query.whereNot('id', excludeId)
+      }
+  
+      const row = await query.first()
+      return Boolean(row)
+    } */
 
   /*   private async getNextActiveNro(trx: any, businessId: number) {
       await trx.from('businesses').where('id', businessId).forUpdate().first()
