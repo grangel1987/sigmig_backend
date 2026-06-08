@@ -36,45 +36,44 @@ import { createHash } from 'node:crypto'
 const DUPLICATE_BUDGET_WINDOW_SECONDS = 45
 
 export default class BugetController {
-  /*   private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
-      const query = trx
-        .from('bugets')
-        .where('business_id', businessId)
-        .where('nro', String(nro))
-        .where('enabled', true)
-  
-      if (excludeId) {
-        query.whereNot('id', excludeId)
-      }
-  
-      const row = await query.first()
-      return Boolean(row)
-    } */
+  private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
+    const query = trx
+      .from('bugets')
+      .where('business_id', businessId)
+      .where('nro', String(nro))
+      .where('enabled', true)
 
-  /*   private async getNextActiveNro(trx: any, businessId: number) {
-      await trx.from('businesses').where('id', businessId).forUpdate().first()
-  
-      const lastActive = await trx
-        .from('bugets')
-        .where('business_id', businessId)
-        .where('enabled', true)
-        .orderByRaw('CAST(nro AS UNSIGNED) DESC')
-        .orderBy('id', 'desc')
-        .first()
-  
-      let nextNumber = lastActive ? Number(lastActive.nro) + 1 : 1
-      if (!Number.isFinite(nextNumber) || nextNumber < 1) {
-        nextNumber = 1
-      }
-  
-      let nro = String(nextNumber)
-      while (await this.existsActiveNro(trx, businessId, nro)) {
-        nextNumber += 1
-        nro = String(nextNumber)
-      }
-  
-      return nro
-    } */
+    if (excludeId !== undefined) {
+      query.whereNot('id', excludeId)
+    }
+
+    const row = await query.first()
+    return Boolean(row)
+  }
+
+  private async getNextNro(trx: any, businessId: number) {
+    await trx.from('businesses').where('id', businessId).forUpdate().first()
+
+    const lastBudget = await trx
+      .from('bugets')
+      .where('business_id', businessId)
+      .orderByRaw('CAST(nro AS UNSIGNED) DESC')
+      .orderBy('id', 'desc')
+      .first()
+
+    let nextNumber = lastBudget ? Number.parseInt(String(lastBudget.nro), 10) + 1 : 1
+    if (!Number.isFinite(nextNumber) || nextNumber < 1) {
+      nextNumber = 1
+    }
+
+    let nro = String(nextNumber)
+    while (await this.existsActiveNro(trx, businessId, nro)) {
+      nextNumber += 1
+      nro = String(nextNumber)
+    }
+
+    return nro
+  }
 
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'create')
@@ -219,14 +218,7 @@ export default class BugetController {
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
 
-      // next nro
-      const last = await trx
-        .from('bugets')
-        .where('business_id', businessId)
-        .orderBy('id', 'desc')
-        .limit(1)
-
-      const nro = last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1
+      const nro = await this.getNextNro(trx, Number(businessId))
 
       const payload = {
         nro: String(nro),
@@ -500,9 +492,10 @@ export default class BugetController {
     }
 
     if (text)
-      query = query
-        .whereRaw('nro LIKE ?', [`${text}%`])
-        .orWhereHas('client', (qb) => qb.whereRaw('name LIKE ?', [`%${text}%`]))
+      query = query.where(q =>
+        q.whereRaw('nro LIKE ?', [`${text}%`])
+          .orWhereHas('client', (qb) => qb.whereRaw('name LIKE ?', [`%${text}%`]))
+      )
 
     const budgets = page ? await query.paginate(page, perPage) : await query
 
@@ -1393,19 +1386,14 @@ export default class BugetController {
 
       let nro = existing.nro!
       if (!keepSameNro) {
-        const last = await trx
-          .from('bugets')
-          .where('business_id', existing.businessId!)
-          .orderBy('id', 'desc')
-          .limit(1)
-        nro = String(last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1)
+        nro = await this.getNextNro(trx, existing.businessId!)
       } else {
-        const nroInUse = await Buget.query({ client: trx })
-          .where('business_id', existing.businessId)
-          .where('nro', existing.nro)
-          .where('enabled', true)
-          .whereNot('id', existing.id)
-          .first()
+        const nroInUse = await this.existsActiveNro(
+          trx,
+          existing.businessId!,
+          existing.nro!,
+          existing.id
+        )
 
         if (nroInUse) {
           await trx.rollback()
@@ -1515,9 +1503,40 @@ export default class BugetController {
     const trx = await db.transaction()
     try {
 
-      const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
+      const existingBuget = await Buget.query({ client: trx })
+        .where('id', bugetId)
+        .forUpdate()
+        .firstOrFail()
 
       const token = existingBuget.token!
+
+      let nro: string
+      if (keepSameNro) {
+        const nroInUse = await this.existsActiveNro(
+          trx,
+          existingBuget.businessId!,
+          existingBuget.nro!,
+          existingBuget.id
+        )
+
+        if (nroInUse) {
+          await trx.rollback()
+          return response.status(409).json(
+            MessageFrontEnd(
+              i18n.formatMessage(
+                'messages.update_error',
+                {},
+                'Ya existe una cotizacion activa con este numero'
+              ),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+        }
+
+        nro = existingBuget.nro!
+      } else {
+        nro = await this.getNextNro(trx, existingBuget.businessId!)
+      }
 
       await trx
         .from('bugets')
@@ -1537,19 +1556,6 @@ export default class BugetController {
       const daysExpire = business.daysExpireBuget || 0
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
-
-      // Get next nro or keep the same one
-      let nro: string
-      if (keepSameNro) {
-        nro = existingBuget.nro!
-      } else {
-        const last = await trx
-          .from('bugets')
-          .where('business_id', existingBuget.businessId!)
-          .orderBy('id', 'desc')
-          .limit(1)
-        nro = String(last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1)
-      }
 
       // Create new budget payload!
 
@@ -2037,13 +2043,7 @@ export default class BugetController {
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
 
-      // Always use next nro (do NOT keep the same)
-      const last = await trx
-        .from('bugets')
-        .where('business_id', existingBuget.businessId!)
-        .orderBy('id', 'desc')
-        .limit(1)
-      const nro = String(last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1)
+      const nro = await this.getNextNro(trx, existingBuget.businessId!)
 
       // Create new budget payload WITHOUT token so model hook will create it
       const buget = await Buget.create(
