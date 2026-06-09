@@ -4,7 +4,8 @@ import Coin from '#models/coin/coin'
 import SalePayment from '#models/sale_payment'
 import SaleDetail from '#models/sales/sale_detail'
 import User from '#models/users/user'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import Util from '#utils/Util'
+import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -24,6 +25,9 @@ export default class Sale extends BaseModel {
 
     @column({ columnName: 'client_id' })
     declare clientId: number | null
+
+    @column()
+    declare token: string | null
 
     @column()
     declare title: string | null
@@ -93,4 +97,9 @@ export default class Sale extends BaseModel {
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     declare updatedAt: DateTime
+
+    @beforeCreate()
+    public static setToken(sale: Sale) {
+        if (!sale.token) sale.token = Util.generateToken(24)
+    }
 }

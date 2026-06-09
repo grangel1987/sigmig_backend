@@ -1051,6 +1051,8 @@ router
         router.get('/', '#controllers/sales/sale_controller.index')
         router.post('/store', '#controllers/sales/sale_controller.store')
         router.get('/show/:id', '#controllers/sales/sale_controller.show')
+        router.put('/change-client/:id', '#controllers/sales/sale_controller.changeClient')
+        router.post('/send-email/:id', '#controllers/sales/sale_controller.sendEmailToClient')
         router.post('/:id/electronic-billing/issue', '#controllers/sales/sale_controller.issueElectronicBilling')
         router.get('/:id/electronic-billing/status', '#controllers/sales/sale_controller.electronicBillingStatus')
         router.put('/update/:id', '#controllers/sales/sale_controller.update')
@@ -1169,6 +1171,13 @@ router
         )
       })
       .prefix('service-entry-sheets')
+
+    // Sales (public)
+    router
+      .group(() => {
+        router.get('/view/:token', '#controllers/sales/sale_controller.showPublic')
+      })
+      .prefix('sale')
 
     // Booking (protected)
     router

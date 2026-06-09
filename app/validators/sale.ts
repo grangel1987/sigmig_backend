@@ -84,6 +84,18 @@ export const saleUpdateValidator = vine.compile(
   })
 )
 
+export const saleChangeClientValidator = vine.compile(
+  vine.object({
+    clientId: vine.number().positive(),
+  })
+)
+
+export const saleSendEmailValidator = vine.compile(
+  vine.object({
+    email: vine.string().trim().email().optional(),
+  })
+)
+
 export const saleUpdateStatusValidator = vine.compile(
   vine.object({
     status: vine.enum(saleStatuses),

@@ -1,4 +1,5 @@
 import NotificationType from '#models/notifications/notification_type'
+import Sale from '#models/sales/sale'
 import SaleRepository from '#repositories/sales/sale_repository'
 import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
@@ -9,19 +10,24 @@ import {
   serializeSale,
   serializeSaleCollection,
 } from '#services/sales/sale_payload_service'
+import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
+import Util from '#utils/Util'
 import {
+  saleChangeClientValidator,
   saleIdParamValidator,
   saleIndexValidator,
   saleOverviewValidator,
   salePaymentSettleValidator,
   salePaymentStoreValidator,
   salePaymentUpdateValidator,
+  saleSendEmailValidator,
   saleStoreValidator,
   saleUpdateStatusValidator,
   saleUpdateValidator,
 } from '#validators/sale'
 import { HttpContext } from '@adonisjs/core/http'
+import mail from '@adonisjs/mail/services/main'
 import { DateTime } from 'luxon'
 
 export default class SaleController {
@@ -250,6 +256,61 @@ export default class SaleController {
     }
   }
 
+  public async showPublic(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+    const token = String(params.token || '').trim()
+
+    if (!token) {
+      return response
+        .status(400)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.invalid_format', {}, 'Token invalido'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    try {
+      const sale = await Sale.query()
+        .where('token', token)
+        .whereNull('deleted_at')
+        .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
+        .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
+        .preload('currency', (q) => q.select(['id', 'symbol', 'name']))
+        .preload('details', (q) =>
+          q.preload('product', (pq) => pq.select(['id', 'name', 'amount']))
+        )
+        .preload('payments', (q: any) =>
+          q.whereNull('deleted_at').orderBy('date', 'desc').preload('coin').preload('ledgerMovement')
+        )
+        .first()
+
+      if (!sale) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Venta no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      return response.status(200).json(serializeSalePublic(sale.serialize() as any))
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.fetch_error', {}, 'Error al obtener venta'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
   public async update(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'sales', 'update')
 
@@ -295,6 +356,154 @@ export default class SaleController {
         .json(
           MessageFrontEnd(
             i18n.formatMessage('messages.update_error', {}, 'Error al actualizar venta'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async changeClient(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'sales', 'update')
+
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const { id } = await saleIdParamValidator.validate(params)
+      const { clientId } = await request.validateUsing(saleChangeClientValidator)
+
+      const headerBusinessId = Number(request.header('Business'))
+      const resolvedBusinessId =
+        Number.isFinite(headerBusinessId) && headerBusinessId > 0 ? headerBusinessId : undefined
+
+      const sale = await SaleService.update(id, { clientId }, resolvedBusinessId)
+
+      return response.status(200).json({
+        sale: serializeSale(sale.serialize() as any),
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error', {}, 'Error al cambiar cliente de venta'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async sendEmailToClient(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'sales', 'view')
+
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const { id } = await saleIdParamValidator.validate(params)
+      const { email } = await request.validateUsing(saleSendEmailValidator)
+
+      const headerBusinessId = Number(request.header('Business'))
+      const resolvedBusinessId =
+        Number.isFinite(headerBusinessId) && headerBusinessId > 0 ? headerBusinessId : undefined
+
+      const sale = await SaleRepository.findById(id, resolvedBusinessId)
+
+      if (!sale) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'Venta no existe'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      if (!sale.token) {
+        sale.token = Util.generateToken(24)
+        await sale.save()
+      }
+
+      const recipientEmail = email || sale.client?.email
+      if (!recipientEmail) {
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist', {}, 'No existe correo de destino'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      const clientName = sale.client?.name || ''
+      const saleNumber = String(sale.id)
+      const saleDate = sale.saleDate ? sale.saleDate.toFormat('dd/MM/yyyy') : '---'
+      const businessName = sale.business?.name || ''
+      const currencySymbol = sale.currency?.symbol || ''
+      const totalAmount =
+        sale.totalAmount !== null && sale.totalAmount !== undefined
+          ? `${currencySymbol}${sale.totalAmount}`
+          : '---'
+      const host =
+        env.get('NODE_ENV') === 'development'
+          ? 'http://212.38.95.163/sigmig/'
+          : 'https://admin.serviciosgenessis.com/'
+      const saleUrl = host + `client/sale/${sale.token}`
+
+      const subject = i18n.formatMessage('messages.sale_email_subject', {
+        saleNumber,
+      })
+      const body = i18n.formatMessage('messages.sale_email_body', {
+        clientName,
+        saleNumber,
+        saleDate,
+        businessName,
+        totalAmount,
+      })
+
+      await mail.sendLater((message) => {
+        message
+          .to(recipientEmail)
+          .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+          .subject(subject)
+          .htmlView('emails/sale_client', {
+            subject,
+            body,
+            saleNumber,
+            saleDate,
+            totalAmount,
+            businessName,
+            title: sale.title || '---',
+            saleUrl,
+            saleNumberLabel: i18n.formatMessage('messages.sale_number', {}, 'Sale Number'),
+            saleDateLabel: i18n.formatMessage('messages.sale_date', {}, 'Sale Date'),
+            totalAmountLabel: i18n.formatMessage('messages.total_amount', {}, 'Total Amount'),
+            businessLabel: i18n.formatMessage('messages.business'),
+            titleLabel: i18n.formatMessage('messages.title', {}, 'Title'),
+            viewSaleLabel: i18n.formatMessage('messages.view_sale', {}, 'View Sale'),
+          })
+      })
+
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.email_send_ok'),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.email_send_error'),
             i18n.formatMessage('messages.error_title')
           )
         )
@@ -664,5 +873,27 @@ export default class SaleController {
           )
         )
     }
+  }
+}
+
+function serializeSalePublic(sale: Record<string, any>) {
+  const serialized = serializeSale(sale)
+
+  return {
+    id: serialized.id,
+    title: serialized.title,
+    description: serialized.description,
+    saleDate: serialized.saleDate,
+    status: serialized.status,
+    totalAmount: serialized.totalAmount,
+    utility: serialized.utility,
+    currency: serialized.currency,
+    business: serialized.business,
+    client: serialized.client,
+    details: serialized.details,
+    banks: serialized.banks,
+    electronicBilling: serialized.electronicBilling,
+    paymentSummary: serialized.paymentSummary,
+    financialSummary: serialized.financialSummary,
   }
 }
