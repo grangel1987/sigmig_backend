@@ -659,6 +659,27 @@ components:
             phone:
               type: string
               nullable: true
+        createdBy:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            email:
+              type: string
+            personalData:
+              type: object
+              nullable: true
+              properties:
+                names:
+                  type: string
+                  nullable: true
+                lastNameP:
+                  type: string
+                  nullable: true
+                lastNameM:
+                  type: string
+                  nullable: true
         currency:
           type: object
           nullable: true
@@ -673,6 +694,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SaleDetail'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalePayment'
 
     CashAuditLine:
       type: object

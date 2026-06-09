@@ -277,6 +277,11 @@ export default class SaleController {
         .whereNull('deleted_at')
         .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
         .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
+        .preload('createdBy', (builder) => {
+          builder
+            .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+            .select(['id', 'personal_data_id', 'email'])
+        })
         .preload('currency', (q) => q.select(['id', 'symbol', 'name']))
         .preload('details', (q) =>
           q.preload('product', (pq) => pq.select(['id', 'name', 'amount']))
@@ -883,14 +888,16 @@ function serializeSalePublic(sale: Record<string, any>) {
     id: serialized.id,
     title: serialized.title,
     description: serialized.description,
-    saleDate: serialized.saleDate,
+    saleDate: serialized.saleDate ?? sale.saleDate ?? null,
     status: serialized.status,
     totalAmount: serialized.totalAmount,
     utility: serialized.utility,
     currency: serialized.currency,
     business: serialized.business,
     client: serialized.client,
+    createdBy: serialized.createdBy,
     details: serialized.details,
+    payments: serialized.payments,
     banks: serialized.banks,
     electronicBilling: serialized.electronicBilling,
     paymentSummary: serialized.paymentSummary,
