@@ -370,9 +370,14 @@ export default class BusinessController {
       // ------------------- PHOTO -------------------
       if (photo) {
         // delete old
-        if (business.urlShort) {
-          await Google.deleteFile(business.urlShort)
-          await Google.deleteFile(business.urlThumbShort!)
+        if (business.urlShort || business.urlThumbShort) {
+          const stalePaths = [business.urlShort, business.urlThumbShort].filter(
+            (filePath): filePath is string => Boolean(filePath)
+          )
+
+          for (const filePath of stalePaths) {
+            await Google.deleteFile(filePath)
+          }
         }
 
         const res = await Google.uploadFile(photo, 'business', 'image')

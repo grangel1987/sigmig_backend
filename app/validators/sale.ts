@@ -53,6 +53,9 @@ export const saleStoreValidator = vine.compile(
   vine.object({
     businessId: vine.number().positive().optional(),
     clientId: vine.number().positive(),
+    budgetId: vine.number().positive().optional().nullable(),
+    shoppingId: vine.number().positive().optional().nullable(),
+    purchaseOrderId: vine.number().positive().optional().nullable(),
     title: vine.string().trim().optional().nullable(),
     description: vine.string().trim().optional().nullable(),
     saleDate: vine.string().trim().optional().nullable(),
@@ -87,6 +90,14 @@ export const saleUpdateValidator = vine.compile(
 export const saleChangeClientValidator = vine.compile(
   vine.object({
     clientId: vine.number().positive(),
+  })
+)
+
+export const saleAssociateValidator = vine.compile(
+  vine.object({
+    budgetId: vine.number().positive().optional().nullable(),
+    shoppingId: vine.number().positive().optional().nullable(),
+    purchaseOrderId: vine.number().positive().optional().nullable(),
   })
 )
 

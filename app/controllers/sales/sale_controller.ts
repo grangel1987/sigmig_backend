@@ -14,6 +14,7 @@ import env from '#start/env'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import {
+  saleAssociateValidator,
   saleChangeClientValidator,
   saleIdParamValidator,
   saleIndexValidator,
@@ -159,6 +160,8 @@ export default class SaleController {
         businessId: resolvedBusinessId,
         createdById: auth.user!.id,
         clientId: payload.clientId,
+        budgetId: payload.budgetId,
+        shoppingId: payload.shoppingId ?? payload.purchaseOrderId,
         title: payload.title,
         description: payload.description,
         saleDate: payload.saleDate,
@@ -277,6 +280,13 @@ export default class SaleController {
         .whereNull('deleted_at')
         .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
         .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
+        .preload('budget' as any, (q: any) =>
+          q.select(['id', 'nro', 'client_id', 'status', 'enabled'])
+        )
+        .preload('shopping', (q) => {
+          q.select(['id', 'nro', 'provider_id', 'enabled', 'is_authorized'])
+          q.preload('provider', (providerQ) => providerQ.select(['id', 'name', 'email']))
+        })
         .preload('createdBy', (builder) => {
           builder
             .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -396,6 +406,48 @@ export default class SaleController {
         .json(
           MessageFrontEnd(
             i18n.formatMessage('messages.update_error', {}, 'Error al cambiar cliente de venta'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async associate(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'sales', 'update')
+
+    const { params, request, response, i18n } = ctx
+
+    try {
+      const { id } = await saleIdParamValidator.validate(params)
+      const payload = await request.validateUsing(saleAssociateValidator)
+
+      const headerBusinessId = Number(request.header('Business'))
+      const resolvedBusinessId =
+        Number.isFinite(headerBusinessId) && headerBusinessId > 0 ? headerBusinessId : undefined
+
+      const sale = await SaleService.update(
+        id,
+        {
+          budgetId: payload.budgetId,
+          shoppingId: payload.shoppingId ?? payload.purchaseOrderId,
+        },
+        resolvedBusinessId
+      )
+
+      return response.status(200).json({
+        sale: serializeSale(sale.serialize() as any),
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error) {
+      console.error(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.update_error', {}, 'Error al asociar documentos de venta'),
             i18n.formatMessage('messages.error_title')
           )
         )
@@ -888,13 +940,15 @@ function serializeSalePublic(sale: Record<string, any>) {
     id: serialized.id,
     title: serialized.title,
     description: serialized.description,
-    saleDate: serialized.saleDate ?? sale.saleDate ?? null,
+    saleDate: resolvePublicSaleDate(serialized, sale),
     status: serialized.status,
     totalAmount: serialized.totalAmount,
     utility: serialized.utility,
     currency: serialized.currency,
     business: serialized.business,
     client: serialized.client,
+    budget: serialized.budget,
+    shopping: serialized.shopping,
     createdBy: serialized.createdBy,
     details: serialized.details,
     payments: serialized.payments,
@@ -903,4 +957,26 @@ function serializeSalePublic(sale: Record<string, any>) {
     paymentSummary: serialized.paymentSummary,
     financialSummary: serialized.financialSummary,
   }
+}
+
+function resolvePublicSaleDate(serialized: Record<string, any>, rawSale: Record<string, any>) {
+  if (serialized.saleDate) {
+    return serialized.saleDate
+  }
+
+  if (rawSale.saleDate) {
+    return rawSale.saleDate
+  }
+
+  const createdAt = rawSale.createdAt ?? serialized.createdAt
+  if (typeof createdAt === 'string') {
+    const parsedCreatedAt = DateTime.fromISO(createdAt)
+    return parsedCreatedAt.isValid ? parsedCreatedAt.toFormat('yyyy-LL-dd') : null
+  }
+
+  if (createdAt instanceof DateTime) {
+    return createdAt.toFormat('yyyy-LL-dd')
+  }
+
+  return null
 }

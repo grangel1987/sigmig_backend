@@ -428,6 +428,12 @@ components:
         clientId:
           type: integer
           nullable: true
+        budgetId:
+          type: integer
+          nullable: true
+        shoppingId:
+          type: integer
+          nullable: true
         title:
           type: string
           nullable: true
@@ -518,6 +524,45 @@ components:
             email:
               type: string
               nullable: true
+        budget:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            nro:
+              type: string
+            clientId:
+              type: integer
+              nullable: true
+            status:
+              type: string
+              nullable: true
+            enabled:
+              type: boolean
+        shopping:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            nro:
+              type: string
+            enabled:
+              type: boolean
+            isAuthorized:
+              type: boolean
+            provider:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+                  nullable: true
         createdBy:
           type: object
           properties:
@@ -659,6 +704,45 @@ components:
             phone:
               type: string
               nullable: true
+        budget:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            nro:
+              type: string
+            clientId:
+              type: integer
+              nullable: true
+            status:
+              type: string
+              nullable: true
+            enabled:
+              type: boolean
+        shopping:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            nro:
+              type: string
+            enabled:
+              type: boolean
+            isAuthorized:
+              type: boolean
+            provider:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+                  nullable: true
         createdBy:
           type: object
           nullable: true
@@ -2756,6 +2840,16 @@ paths:
                   type: integer
                 clientId:
                   type: integer
+                budgetId:
+                  type: integer
+                  nullable: true
+                shoppingId:
+                  type: integer
+                  nullable: true
+                purchaseOrderId:
+                  type: integer
+                  nullable: true
+                  description: Alias de shoppingId para clientes que usan orden de compra.
                 title:
                   type: string
                   nullable: true
@@ -2835,6 +2929,8 @@ paths:
             example:
               businessId: 1
               clientId: 42
+              budgetId: 25
+              shoppingId: 14
               title: Venta de materiales
               description: Venta generada desde modulo comercial
               saleDate: '2026-04-20'
@@ -2964,6 +3060,62 @@ paths:
                     type: string
         '500':
           description: Error al cambiar cliente de venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/associate/{id}:
+    put:
+      tags:
+        - Ventas
+      summary: Asociar documentos a venta
+      description: Asocia una venta existente a un presupuesto y/o una orden de compra.
+      operationId: associateSaleDocuments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                budgetId:
+                  type: integer
+                  nullable: true
+                shoppingId:
+                  type: integer
+                  nullable: true
+                purchaseOrderId:
+                  type: integer
+                  nullable: true
+                  description: Alias de shoppingId para clientes que usan orden de compra.
+            example:
+              budgetId: 25
+              shoppingId: 14
+      responses:
+        '200':
+          description: Documentos asociados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al asociar documentos de venta
           content:
             application/json:
               schema:

@@ -1,8 +1,10 @@
+import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import Client from '#models/clients/client'
 import Coin from '#models/coin/coin'
 import SalePayment from '#models/sale_payment'
 import SaleDetail from '#models/sales/sale_detail'
+import Shopping from '#models/shoppings/shopping'
 import User from '#models/users/user'
 import Util from '#utils/Util'
 import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
@@ -25,6 +27,12 @@ export default class Sale extends BaseModel {
 
     @column({ columnName: 'client_id' })
     declare clientId: number | null
+
+    @column({ columnName: 'budget_id' })
+    declare budgetId: number | null
+
+    @column({ columnName: 'shopping_id' })
+    declare shoppingId: number | null
 
     @column()
     declare token: string | null
@@ -79,6 +87,12 @@ export default class Sale extends BaseModel {
 
     @belongsTo(() => Client, { foreignKey: 'clientId' })
     declare client: BelongsTo<typeof Client>
+
+    @belongsTo(() => Buget, { foreignKey: 'budgetId' })
+    declare budget: BelongsTo<typeof Buget>
+
+    @belongsTo(() => Shopping, { foreignKey: 'shoppingId' })
+    declare shopping: BelongsTo<typeof Shopping>
 
     @belongsTo(() => Coin, { foreignKey: 'currencyId' })
     declare currency: BelongsTo<typeof Coin>

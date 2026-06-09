@@ -21,6 +21,13 @@ export default class SaleRepository {
       .whereNull('sales.deleted_at')
       .preload('business', (q) => q.select(['id', 'name', 'url', 'email']))
       .preload('client', (q) => q.select(['id', 'name', 'identify', 'email']))
+      .preload('budget' as any, (q: any) =>
+        q.select(['id', 'nro', 'client_id', 'status', 'enabled'])
+      )
+      .preload('shopping', (q) => {
+        q.select(['id', 'nro', 'provider_id', 'enabled', 'is_authorized'])
+        q.preload('provider', (providerQ) => providerQ.select(['id', 'name', 'email']))
+      })
       .preload('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
