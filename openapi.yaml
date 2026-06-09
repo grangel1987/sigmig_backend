@@ -554,6 +554,126 @@ components:
           type: string
           format: date-time
 
+    SalePublic:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        saleDate:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [paid, unpaid, payment_pending, voided, rejected]
+        totalAmount:
+          type: number
+          nullable: true
+        utility:
+          type: number
+          nullable: true
+        banks:
+          type: array
+          items:
+            type: object
+        electronicBilling:
+          type: object
+          nullable: true
+        paymentSummary:
+          type: object
+          properties:
+            totalAmount:
+              type: number
+            paidAmount:
+              type: number
+            remainingAmount:
+              type: number
+            paymentCount:
+              type: integer
+            isPaid:
+              type: boolean
+        financialSummary:
+          type: object
+          properties:
+            subtotal:
+              type: number
+            taxTotal:
+              type: number
+            utilityTotal:
+              type: number
+            grossTotal:
+              type: number
+            paymentSummary:
+              type: object
+              properties:
+                totalAmount:
+                  type: number
+                paidAmount:
+                  type: number
+                remainingAmount:
+                  type: number
+                paymentCount:
+                  type: integer
+                isPaid:
+                  type: boolean
+        business:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            url:
+              type: string
+              nullable: true
+            email:
+              type: string
+              nullable: true
+            identify:
+              type: string
+              nullable: true
+        client:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            identify:
+              type: string
+              nullable: true
+            email:
+              type: string
+              nullable: true
+            address:
+              type: string
+              nullable: true
+            phone:
+              type: string
+              nullable: true
+        currency:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            symbol:
+              type: string
+            name:
+              type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleDetail'
+
     CashAuditLine:
       type: object
       properties:
@@ -2777,6 +2897,109 @@ paths:
       security:
         - bearerAuth: []
 
+  /sales/change-client/{id}:
+    put:
+      tags:
+        - Ventas
+      summary: Cambiar cliente de venta
+      description: Actualiza solamente el cliente asociado a una venta existente.
+      operationId: changeSaleClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+              required:
+                - clientId
+            example:
+              clientId: 42
+      responses:
+        '200':
+          description: Cliente de la venta actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sale:
+                    $ref: '#/components/schemas/Sale'
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '500':
+          description: Error al cambiar cliente de venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /sales/send-email/{id}:
+    post:
+      tags:
+        - Ventas
+      summary: Enviar venta por correo
+      description: Envia un correo al cliente con un enlace publico para revisar la venta.
+      operationId: sendSaleEmailToClient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Correo destino opcional. Si no se envia, se usa el correo del cliente.
+            example:
+              email: cliente@empresa.com
+      responses:
+        '200':
+          description: Correo enviado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: No existe correo de destino
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Venta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al enviar correo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
   /sales/update/{id}:
     put:
       tags:
@@ -3482,6 +3705,45 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - bearerAuth: []
+
+  /sale/view/{token}:
+    get:
+      tags:
+        - Ventas
+      summary: Ver venta publica por token
+      description: Obtiene la venta serializada para consumo desde el enlace enviado por correo.
+      operationId: showSalePublic
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Venta publica obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalePublic'
+        '400':
+          description: Token invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Venta no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al obtener venta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /buget/payments:
     post:
