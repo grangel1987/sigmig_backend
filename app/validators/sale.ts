@@ -96,8 +96,11 @@ export const saleChangeClientValidator = vine.compile(
 export const saleAssociateValidator = vine.compile(
   vine.object({
     budgetId: vine.number().positive().optional().nullable(),
+    budget_id: vine.number().positive().optional().nullable(),
     shoppingId: vine.number().positive().optional().nullable(),
+    shopping_id: vine.number().positive().optional().nullable(),
     purchaseOrderId: vine.number().positive().optional().nullable(),
+    purchase_order_id: vine.number().positive().optional().nullable(),
   })
 )
 

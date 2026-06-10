@@ -22,8 +22,7 @@ export default class SalesAddBudgetAndShoppingFields extends BaseSchema {
 
             if (!hasShoppingId) {
                 table
-                    .bigInteger('shopping_id')
-                    .unsigned()
+                    .integer('shopping_id')
                     .nullable()
                     .references('id')
                     .inTable('shoppings')

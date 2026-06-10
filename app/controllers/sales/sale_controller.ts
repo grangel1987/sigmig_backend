@@ -420,6 +420,37 @@ export default class SaleController {
     try {
       const { id } = await saleIdParamValidator.validate(params)
       const payload = await request.validateUsing(saleAssociateValidator)
+      const rawPayload = request.all()
+
+      const hasBudgetField = 'budgetId' in rawPayload || 'budget_id' in rawPayload
+      const hasShoppingField =
+        'shoppingId' in rawPayload ||
+        'shopping_id' in rawPayload ||
+        'purchaseOrderId' in rawPayload ||
+        'purchase_order_id' in rawPayload
+
+      if (!hasBudgetField && !hasShoppingField) {
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage(
+                'messages.invalid_format',
+                {},
+                'Debe enviar al menos una asociacion para la venta'
+              ),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      const normalizedBudgetId = payload.budgetId ?? payload.budget_id ?? null
+      const normalizedShoppingId =
+        payload.shoppingId ??
+        payload.shopping_id ??
+        payload.purchaseOrderId ??
+        payload.purchase_order_id ??
+        null
 
       const headerBusinessId = Number(request.header('Business'))
       const resolvedBusinessId =
@@ -428,8 +459,8 @@ export default class SaleController {
       const sale = await SaleService.update(
         id,
         {
-          budgetId: payload.budgetId,
-          shoppingId: payload.shoppingId ?? payload.purchaseOrderId,
+          budgetId: hasBudgetField ? normalizedBudgetId : undefined,
+          shoppingId: hasShoppingField ? normalizedShoppingId : undefined,
         },
         resolvedBusinessId
       )
