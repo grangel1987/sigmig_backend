@@ -162,6 +162,7 @@ export default class SaleController {
         clientId: payload.clientId,
         budgetId: payload.budgetId,
         shoppingId: payload.shoppingId ?? payload.purchaseOrderId,
+        billNumber: payload.billNumber,
         title: payload.title,
         description: payload.description,
         saleDate: payload.saleDate,
@@ -343,6 +344,7 @@ export default class SaleController {
         id,
         {
           clientId: payload.clientId,
+          billNumber: payload.billNumber,
           title: payload.title,
           description: payload.description,
           saleDate: payload.saleDate,
@@ -969,6 +971,7 @@ function serializeSalePublic(sale: Record<string, any>) {
 
   return {
     id: serialized.id,
+    billNumber: serialized.billNumber ?? serialized.bill_number ?? null,
     title: serialized.title,
     description: serialized.description,
     saleDate: resolvePublicSaleDate(serialized, sale),

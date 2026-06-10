@@ -17,6 +17,7 @@ interface CreateSalePayload {
   clientId: number
   budgetId?: number | null
   shoppingId?: number | null
+  billNumber?: string | null
   title?: string | null
   description?: string | null
   saleDate?: string | null
@@ -43,6 +44,7 @@ interface UpdateSalePayload {
   clientId?: number
   budgetId?: number | null
   shoppingId?: number | null
+  billNumber?: string | null
   title?: string | null
   description?: string | null
   saleDate?: string | null
@@ -410,6 +412,7 @@ export default class SaleService {
           clientId: payload.clientId,
           budgetId: payload.budgetId ?? null,
           shoppingId: payload.shoppingId ?? null,
+          billNumber: payload.billNumber ?? null,
           title: payload.title ?? null,
           description: payload.description ?? null,
           saleDate: parsedSaleDate && parsedSaleDate.isValid ? parsedSaleDate : null,
@@ -449,7 +452,7 @@ export default class SaleService {
 
       const sale = await saleQuery.firstOrFail()
       const parsedSaleDate = payload.saleDate ? DateTime.fromISO(payload.saleDate) : null
-  await validateSaleAssociations(trx, sale.businessId, payload.budgetId, payload.shoppingId)
+      await validateSaleAssociations(trx, sale.businessId, payload.budgetId, payload.shoppingId)
 
       let totalAmount = sale.totalAmount
       let utility = sale.utility
@@ -474,6 +477,7 @@ export default class SaleService {
       }
 
       if (payload.title !== undefined) sale.title = payload.title
+      if (payload.billNumber !== undefined) sale.billNumber = payload.billNumber
       if (payload.description !== undefined) sale.description = payload.description
       if (payload.clientId !== undefined) sale.clientId = payload.clientId
       if (payload.budgetId !== undefined) sale.budgetId = payload.budgetId

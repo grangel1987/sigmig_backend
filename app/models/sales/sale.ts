@@ -43,6 +43,9 @@ export default class Sale extends BaseModel {
     @column()
     declare description: string | null
 
+    @column({ columnName: 'bill_number' })
+    declare billNumber: string | null
+
     @column.date({
         columnName: 'sale_date',
         serialize: (value: DateTime | null) =>
