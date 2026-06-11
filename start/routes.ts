@@ -940,13 +940,12 @@ router
         )
         router.post('/report', '#controllers/bugets/buget_controller.report')
         router.post('/search-items', '#controllers/bugets/buget_controller.searchItems')
+        router.put('/reactivate/:id', '#controllers/bugets/buget_controller.reactivate')
         router
           .group(() => {
-            // ...existing budget routes...
             router.put('/reactivate/:id', '#controllers/bugets/buget_controller.reactivate')
           })
           .prefix('bugets')
-          .middleware(auth)
         router.post('/send-email/:id', '#controllers/bugets/buget_controller.sendEmailToClient')
         router.group(() => {
           router.post('/payments', '#controllers/bugets/buget_controller.storePayment')
@@ -1051,6 +1050,9 @@ router
         router.get('/', '#controllers/sales/sale_controller.index')
         router.post('/store', '#controllers/sales/sale_controller.store')
         router.get('/show/:id', '#controllers/sales/sale_controller.show')
+        router.put('/change-client/:id', '#controllers/sales/sale_controller.changeClient')
+        router.put('/associate/:id', '#controllers/sales/sale_controller.associate')
+        router.post('/send-email/:id', '#controllers/sales/sale_controller.sendEmailToClient')
         router.post('/:id/electronic-billing/issue', '#controllers/sales/sale_controller.issueElectronicBilling')
         router.get('/:id/electronic-billing/status', '#controllers/sales/sale_controller.electronicBillingStatus')
         router.put('/update/:id', '#controllers/sales/sale_controller.update')
@@ -1169,6 +1171,13 @@ router
         )
       })
       .prefix('service-entry-sheets')
+
+    // Sales (public)
+    router
+      .group(() => {
+        router.get('/view/:token', '#controllers/sales/sale_controller.showPublic')
+      })
+      .prefix('sale')
 
     // Booking (protected)
     router

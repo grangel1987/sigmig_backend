@@ -1,11 +1,17 @@
+import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
+import Client from '#models/clients/client'
 import Coin from '#models/coin/coin'
 import SalePayment from '#models/sale_payment'
 import SaleDetail from '#models/sales/sale_detail'
+import Shopping from '#models/shoppings/shopping'
 import User from '#models/users/user'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import Util from '#utils/Util'
+import { BaseModel, beforeCreate, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+
+export type SaleStatus = 'paid' | 'unpaid' | 'payment_pending' | 'voided' | 'rejected'
 
 export default class Sale extends BaseModel {
     public static table = 'sales'
@@ -19,11 +25,26 @@ export default class Sale extends BaseModel {
     @column({ columnName: 'created_by' })
     declare createdById: number
 
+    @column({ columnName: 'client_id' })
+    declare clientId: number | null
+
+    @column({ columnName: 'budget_id' })
+    declare budgetId: number | null
+
+    @column({ columnName: 'shopping_id' })
+    declare shoppingId: number | null
+
+    @column()
+    declare token: string | null
+
     @column()
     declare title: string | null
 
     @column()
     declare description: string | null
+
+    @column({ columnName: 'bill_number' })
+    declare billNumber: string | null
 
     @column.date({
         columnName: 'sale_date',
@@ -33,7 +54,7 @@ export default class Sale extends BaseModel {
     declare saleDate: DateTime | null
 
     @column()
-    declare status: 'draft' | 'pending' | 'confirmed' | 'canceled'
+    declare status: SaleStatus
 
     @column({
         columnName: 'total_amount',
@@ -46,7 +67,19 @@ export default class Sale extends BaseModel {
     @column({ columnName: 'currency_id' })
     declare currencyId: number | null
 
-    @column({ columnName: 'metadata' })
+    @column({
+        columnName: 'utility',
+        prepare: (value?: number | null) => value ?? null,
+        consume: (value?: string | number) =>
+            value === null || value === undefined ? null : Number(value),
+    })
+    declare utility: number | null
+
+    @column({
+        columnName: 'metadata',
+        prepare: (value) => (value && typeof value === 'object' ? JSON.stringify(value) : value),
+        consume: (value) => (typeof value === 'string' ? JSON.parse(value) : value),
+    })
     declare metadata: Record<string, unknown> | null
 
     @belongsTo(() => Business, { foreignKey: 'businessId' })
@@ -54,6 +87,15 @@ export default class Sale extends BaseModel {
 
     @belongsTo(() => User, { foreignKey: 'createdById' })
     declare createdBy: BelongsTo<typeof User>
+
+    @belongsTo(() => Client, { foreignKey: 'clientId' })
+    declare client: BelongsTo<typeof Client>
+
+    @belongsTo(() => Buget, { foreignKey: 'budgetId' })
+    declare budget: BelongsTo<typeof Buget>
+
+    @belongsTo(() => Shopping, { foreignKey: 'shoppingId' })
+    declare shopping: BelongsTo<typeof Shopping>
 
     @belongsTo(() => Coin, { foreignKey: 'currencyId' })
     declare currency: BelongsTo<typeof Coin>
@@ -72,4 +114,9 @@ export default class Sale extends BaseModel {
 
     @column.dateTime({ autoCreate: true, autoUpdate: true })
     declare updatedAt: DateTime
+
+    @beforeCreate()
+    public static setToken(sale: Sale) {
+        if (!sale.token) sale.token = Util.generateToken(24)
+    }
 }

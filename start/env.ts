@@ -49,4 +49,10 @@ export default await Env.create(new URL('../', import.meta.url), {
   MAIL_USERNAME: Env.schema.string.optional(),
   MAIL_PASSWORD: Env.schema.string.optional(),
   MAIL_FROM: Env.schema.string.optional(),
+  DTE_SIGNING_PRIVATE_KEY: Env.schema.string.optional(),
+  DTE_SIGNING_CERTIFICATE: Env.schema.string.optional(),
+  DTE_ENVIO_RUT_ENVIA: Env.schema.string.optional(),
+  DTE_ENVIO_RUT_RECEPTOR: Env.schema.string.optional(),
+  DTE_ENVIO_RESOLUTION_DATE: Env.schema.string.optional(),
+  DTE_ENVIO_RESOLUTION_NUMBER: Env.schema.number.optional(),
 })

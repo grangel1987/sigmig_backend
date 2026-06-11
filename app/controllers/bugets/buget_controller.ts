@@ -36,6 +36,45 @@ import { createHash } from 'node:crypto'
 const DUPLICATE_BUDGET_WINDOW_SECONDS = 45
 
 export default class BugetController {
+  private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
+    const query = trx
+      .from('bugets')
+      .where('business_id', businessId)
+      .where('nro', String(nro))
+      .where('enabled', true)
+
+    if (excludeId !== undefined) {
+      query.whereNot('id', excludeId)
+    }
+
+    const row = await query.first()
+    return Boolean(row)
+  }
+
+  private async getNextNro(trx: any, businessId: number) {
+    await trx.from('businesses').where('id', businessId).forUpdate().first()
+
+    const lastBudget = await trx
+      .from('bugets')
+      .where('business_id', businessId)
+      .orderByRaw('CAST(nro AS UNSIGNED) DESC')
+      .orderBy('id', 'desc')
+      .first()
+
+    let nextNumber = lastBudget ? Number.parseInt(String(lastBudget.nro), 10) + 1 : 1
+    if (!Number.isFinite(nextNumber) || nextNumber < 1) {
+      nextNumber = 1
+    }
+
+    let nro = String(nextNumber)
+    while (await this.existsActiveNro(trx, businessId, nro)) {
+      nextNumber += 1
+      nro = String(nextNumber)
+    }
+
+    return nro
+  }
+
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'create')
 
@@ -179,14 +218,7 @@ export default class BugetController {
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
 
-      // next nro
-      const last = await trx
-        .from('bugets')
-        .where('business_id', businessId)
-        .orderBy('id', 'desc')
-        .limit(1)
-
-      const nro = last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1
+      const nro = await this.getNextNro(trx, Number(businessId))
 
       const payload = {
         nro: String(nro),
@@ -435,9 +467,7 @@ export default class BugetController {
       query = query.where('business_id', businessId)
     }
 
-    if (status !== undefined) {
-      query = query.where('enabled', status === 'enabled')
-    }
+    query = query.where('enabled', status !== undefined ? status === 'enabled' : true)
 
     if (budgetStatus) {
       query = query.where('status', budgetStatus)
@@ -462,9 +492,10 @@ export default class BugetController {
     }
 
     if (text)
-      query = query
-        .whereRaw('nro LIKE ?', [`${text}%`])
-        .orWhereHas('client', (qb) => qb.whereRaw('name LIKE ?', [`%${text}%`]))
+      query = query.where(q =>
+        q.whereRaw('nro LIKE ?', [`${text}%`])
+          .orWhereHas('client', (qb) => qb.whereRaw('name LIKE ?', [`%${text}%`]))
+      )
 
     const budgets = page ? await query.paginate(page, perPage) : await query
 
@@ -1125,7 +1156,7 @@ export default class BugetController {
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
       .where('nro', number)
-      // .where('enabled', true)
+      .where('enabled', true)
       .orderBy('id', 'desc')
       .first()
     return [budgetRes]
@@ -1245,7 +1276,7 @@ export default class BugetController {
     await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
 
     const { request } = ctx
-    const { startDate, endDate, page, perPage, text, budgetStatus } = await request.validateUsing(
+    const { startDate, endDate, page, perPage, text, budgetStatus, status } = await request.validateUsing(
       vine.compile(
         vine.object({
           ...searchWithStatusSchema.getProperties(),
@@ -1253,6 +1284,7 @@ export default class BugetController {
       )
     )
     const businessId = Number(request.header('Business'))
+    const enabled = status !== undefined ? status === 'enabled' : undefined
 
     const data = await BugetRepository.report(
       businessId,
@@ -1261,14 +1293,16 @@ export default class BugetController {
       page,
       perPage,
       text,
-      budgetStatus
+      budgetStatus,
+      enabled
     )
     const metrics = await BugetRepository.metrics(
       businessId,
       startDate,
       endDate,
       text,
-      budgetStatus
+      budgetStatus,
+      enabled
     )
 
     let payload: Record<string, any> = {}
@@ -1324,18 +1358,12 @@ export default class BugetController {
     try {
       const dateTime = await Util.getDateTimes(request)
 
-      // Only allow reactivation of disabled budgets (expired/disabled)
-      const existing = await Buget.query({ client: trx })
-        .where('id', bugetId)
-        .where('enabled', false)
-        .forUpdate()
-        .firstOrFail()
+      const existing = await Buget.query({ client: trx }).where('id', bugetId).forUpdate().first()
 
-      // Optionally enforce expire check
-      if (existing.expireDate && existing.expireDate > dateTime) {
+      if (!existing) {
         await trx.rollback()
         return response
-          .status(400)
+          .status(404)
           .json(
             MessageFrontEnd(
               i18n.formatMessage('messages.no_exist'),
@@ -1344,14 +1372,42 @@ export default class BugetController {
           )
       }
 
+      if (existing.enabled) {
+        await trx.rollback()
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.update_error', {}, 'Presupuesto ya esta habilitado'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
       let nro = existing.nro!
       if (!keepSameNro) {
-        const last = await trx
-          .from('bugets')
-          .where('business_id', existing.businessId!)
-          .orderBy('id', 'desc')
-          .limit(1)
-        nro = String(last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1)
+        nro = await this.getNextNro(trx, existing.businessId!)
+      } else {
+        const nroInUse = await this.existsActiveNro(
+          trx,
+          existing.businessId!,
+          existing.nro!,
+          existing.id
+        )
+
+        if (nroInUse) {
+          await trx.rollback()
+          return response.status(409).json(
+            MessageFrontEnd(
+              i18n.formatMessage(
+                'messages.update_error',
+                {},
+                'Ya existe una cotizacion activa con este numero'
+              ),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+        }
       }
 
       const token = existing.token || Util.generateToken(16)
@@ -1359,7 +1415,8 @@ export default class BugetController {
         .where('id', existing.businessId!)
         .firstOrFail()
       const daysExpire = business.daysExpireBuget || 0
-      const expireDate = existing.expireDate.plus({ days: daysExpire })
+      const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
+      const expireDate = DateTime.fromISO(expireDateISO)
 
       await trx
         .from('bugets')
@@ -1368,6 +1425,7 @@ export default class BugetController {
           enabled: true,
           nro,
           token,
+          status: 'pending',
           expire_date: expireDate.toSQLDate(),
           updated_at: dateTime.toSQL({ includeOffset: false }),
           updated_by: auth.user!.id,
@@ -1375,7 +1433,18 @@ export default class BugetController {
 
       await trx.commit()
 
-      const reactivated = await Buget.findOrFail(bugetId)
+      const reactivated = await Buget.query().where('id', bugetId).first()
+      if (!reactivated) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
       await reactivated.load('createdBy', (builder) => {
         builder
           .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -1434,9 +1503,40 @@ export default class BugetController {
     const trx = await db.transaction()
     try {
 
-      const existingBuget = await Buget.query({ client: trx }).where('id', bugetId).firstOrFail()
+      const existingBuget = await Buget.query({ client: trx })
+        .where('id', bugetId)
+        .forUpdate()
+        .firstOrFail()
 
       const token = existingBuget.token!
+
+      let nro: string
+      if (keepSameNro) {
+        const nroInUse = await this.existsActiveNro(
+          trx,
+          existingBuget.businessId!,
+          existingBuget.nro!,
+          existingBuget.id
+        )
+
+        if (nroInUse) {
+          await trx.rollback()
+          return response.status(409).json(
+            MessageFrontEnd(
+              i18n.formatMessage(
+                'messages.update_error',
+                {},
+                'Ya existe una cotizacion activa con este numero'
+              ),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+        }
+
+        nro = existingBuget.nro!
+      } else {
+        nro = await this.getNextNro(trx, existingBuget.businessId!)
+      }
 
       await trx
         .from('bugets')
@@ -1456,19 +1556,6 @@ export default class BugetController {
       const daysExpire = business.daysExpireBuget || 0
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
-
-      // Get next nro or keep the same one
-      let nro: string
-      if (keepSameNro) {
-        nro = existingBuget.nro!
-      } else {
-        const last = await trx
-          .from('bugets')
-          .where('business_id', existingBuget.businessId!)
-          .orderBy('id', 'desc')
-          .limit(1)
-        nro = String(last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1)
-      }
 
       // Create new budget payload!
 
@@ -1956,13 +2043,7 @@ export default class BugetController {
       const expireDateISO = Util.getDateAddDays(dateTime, daysExpire)
       const expireDate = DateTime.fromISO(expireDateISO)
 
-      // Always use next nro (do NOT keep the same)
-      const last = await trx
-        .from('bugets')
-        .where('business_id', existingBuget.businessId!)
-        .orderBy('id', 'desc')
-        .limit(1)
-      const nro = String(last.length > 0 ? Number.parseInt(String(last[0].nro)) + 1 : 1)
+      const nro = await this.getNextNro(trx, existingBuget.businessId!)
 
       // Create new budget payload WITHOUT token so model hook will create it
       const buget = await Buget.create(
