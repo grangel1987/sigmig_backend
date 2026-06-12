@@ -5,6 +5,26 @@ import { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
 import { DateTime } from 'luxon'
 
 export default class BugetRepository {
+  private static applyLatestNroFilter(query: any, alias = 'bugets') {
+    query.whereNotExists((latestBudgetQuery: any) => {
+      latestBudgetQuery
+        .from('bugets as newer_bugets')
+        .whereRaw(`newer_bugets.business_id = ${alias}.business_id`)
+        .whereRaw(`newer_bugets.nro = ${alias}.nro`)
+        .where((newerMatchQuery: any) => {
+          newerMatchQuery
+            .whereRaw(`newer_bugets.created_at > ${alias}.created_at`)
+            .orWhere((sameCreatedAtQuery: any) => {
+              sameCreatedAtQuery
+                .whereRaw(`newer_bugets.created_at = ${alias}.created_at`)
+                .whereRaw(`newer_bugets.id > ${alias}.id`)
+            })
+        })
+    })
+
+    return query
+  }
+
   // Find budgets by client name for a business
   public static async findByNameClient(
     businessId: number,
@@ -23,6 +43,8 @@ export default class BugetRepository {
       .preload('costCenter')
       .preload('work', (w) => w.select(['id', 'code', 'name']))
       .orderBy('created_at', 'desc')
+
+    query = this.applyLatestNroFilter(query)
 
     query = query.where('bugets.enabled', status !== undefined ? status === 'enabled' : true)
 
@@ -53,6 +75,8 @@ export default class BugetRepository {
       .preload('costCenter')
       .preload('work', (w) => w.select(['id', 'code', 'name']))
       .orderBy('created_at', 'desc')
+
+    query = this.applyLatestNroFilter(query)
 
     if (date === today) {
       // If date is today, query for range between today and tomorrow
@@ -105,6 +129,8 @@ export default class BugetRepository {
           .select(['id', 'personal_data_id', 'email'])
       })
       .orderBy('created_at', 'desc')
+
+    bgtQ = this.applyLatestNroFilter(bgtQ)
 
     if (budgetStatus) {
       bgtQ = bgtQ.where('bugets.status', budgetStatus)
@@ -222,6 +248,21 @@ export default class BugetRepository {
         Database.raw('IFNULL(SUM(bugets.discount), 0) AS discounts_total'),
         Database.raw('IFNULL(SUM(bugets.utility), 0) AS utility_total')
       )
+      .whereNotExists((latestBudgetQuery) => {
+        latestBudgetQuery
+          .from('bugets as newer_bugets')
+          .whereRaw('newer_bugets.business_id = bugets.business_id')
+          .whereRaw('newer_bugets.nro = bugets.nro')
+          .where((newerMatchQuery) => {
+            newerMatchQuery
+              .whereRaw('newer_bugets.created_at > bugets.created_at')
+              .orWhere((sameCreatedAtQuery) => {
+                sameCreatedAtQuery
+                  .whereRaw('newer_bugets.created_at = bugets.created_at')
+                  .whereRaw('newer_bugets.id > bugets.id')
+              })
+          })
+      })
       .first()) ?? { products_total: 0, discounts_total: 0, utility_total: 0 }
 
     // Build base counts query
@@ -229,6 +270,8 @@ export default class BugetRepository {
       .where('business_id', businessId)
       .where('enabled', enabledFilter)
       .whereRaw('DATE(created_at) BETWEEN ? AND ?', [start, end])
+
+    countsQuery = this.applyLatestNroFilter(countsQuery)
 
     if (budgetStatus) {
       countsQuery = countsQuery.where('status', budgetStatus)
@@ -274,6 +317,21 @@ export default class BugetRepository {
         Database.raw('IFNULL(b.discount, 0) as discounts_total'),
         Database.raw('IFNULL(b.utility, 0) as utility_total')
       )
+      .whereNotExists((latestBudgetQuery) => {
+        latestBudgetQuery
+          .from('bugets as newer_bugets')
+          .whereRaw('newer_bugets.business_id = b.business_id')
+          .whereRaw('newer_bugets.nro = b.nro')
+          .where((newerMatchQuery) => {
+            newerMatchQuery
+              .whereRaw('newer_bugets.created_at > b.created_at')
+              .orWhere((sameCreatedAtQuery) => {
+                sameCreatedAtQuery
+                  .whereRaw('newer_bugets.created_at = b.created_at')
+                  .whereRaw('newer_bugets.id > b.id')
+              })
+          })
+      })
       .groupBy('b.id')
 
     // Apply optional filters to the buget-level subquery

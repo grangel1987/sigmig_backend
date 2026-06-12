@@ -36,6 +36,26 @@ import { createHash } from 'node:crypto'
 const DUPLICATE_BUDGET_WINDOW_SECONDS = 45
 
 export default class BugetController {
+  private applyLatestNroFilter(query: any, alias = 'bugets') {
+    query.whereNotExists((latestBudgetQuery: any) => {
+      latestBudgetQuery
+        .from('bugets as newer_bugets')
+        .whereRaw(`newer_bugets.business_id = ${alias}.business_id`)
+        .whereRaw(`newer_bugets.nro = ${alias}.nro`)
+        .where((newerMatchQuery: any) => {
+          newerMatchQuery
+            .whereRaw(`newer_bugets.created_at > ${alias}.created_at`)
+            .orWhere((sameCreatedAtQuery: any) => {
+              sameCreatedAtQuery
+                .whereRaw(`newer_bugets.created_at = ${alias}.created_at`)
+                .whereRaw(`newer_bugets.id > ${alias}.id`)
+            })
+        })
+    })
+
+    return query
+  }
+
   private async existsActiveNro(trx: any, businessId: number, nro: string, excludeId?: number) {
     const query = trx
       .from('bugets')
@@ -466,6 +486,8 @@ export default class BugetController {
     if (businessId) {
       query = query.where('business_id', businessId)
     }
+
+    query = this.applyLatestNroFilter(query)
 
     query = query.where('enabled', status !== undefined ? status === 'enabled' : true)
 
@@ -1151,14 +1173,17 @@ export default class BugetController {
 
     const { request } = ctx
     const { businessId, number } = await request.validateUsing(bugetFindByNroValidator)
-    const budgetRes = await Buget.query()
+    let query = Buget.query()
       .where('business_id', businessId)
       .preload('client', (q) => q.preload('city').preload('typeIdentify'))
       .preload('costCenter')
       .where('nro', number)
       .where('enabled', true)
       .orderBy('id', 'desc')
-      .first()
+
+    query = this.applyLatestNroFilter(query)
+
+    const budgetRes = await query.first()
     return [budgetRes]
   }
 
