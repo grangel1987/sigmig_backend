@@ -215,7 +215,6 @@ export default class SaleController {
         createdById: auth.user!.id,
         clientId: payload.clientId,
         budgetId: payload.budgetId,
-        shoppingId: payload.shoppingId ?? payload.purchaseOrderId,
         serviceEntrySheetId: payload.serviceEntrySheetId ?? payload.service_entry_sheet_id,
         document,
         billNumber: payload.billNumber,

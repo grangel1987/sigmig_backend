@@ -55,7 +55,6 @@ export const saleStoreValidator = vine.compile(
     clientId: vine.number().positive(),
     budgetId: vine.number().positive().optional().nullable(),
     shoppingId: vine.number().positive().optional().nullable(),
-    purchaseOrderId: vine.number().positive().optional().nullable(),
     serviceEntrySheetId: vine.number().positive().optional().nullable(),
     service_entry_sheet_id: vine.number().positive().optional().nullable(),
     billNumber: vine.string().trim().optional().nullable(),

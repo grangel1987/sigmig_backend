@@ -28,10 +28,10 @@ export default class SaleRepository {
         q.select(['id', 'nro', 'provider_id', 'enabled', 'is_authorized'])
         q.preload('provider', (providerQ) => providerQ.select(['id', 'name', 'email']))
       })
-      .preload('serviceEntrySheet', (q) => {
+      .preload('serviceEntrySheet' as any, (q: any) => {
         q.select(['id', 'number', 'business_id', 'client_id', 'provider_id', 'enabled', 'is_authorized'])
-        q.preload('client', (clientQ) => clientQ.select(['id', 'name', 'email']))
-        q.preload('provider', (providerQ) => providerQ.select(['id', 'name', 'email']))
+        q.preload('client', (clientQ: any) => clientQ.select(['id', 'name', 'email']))
+        q.preload('provider', (providerQ: any) => providerQ.select(['id', 'name', 'email']))
       })
       .preload('createdBy', (builder) => {
         builder
