@@ -95,6 +95,16 @@ export default class BugetController {
     return nro
   }
 
+  private async canReuseNro(trx: any, buget: Buget) {
+    const clientChangedReplacement = await trx
+      .from('bugets')
+      .where('prev_id', buget.id)
+      .whereNot('client_id', buget.clientId)
+      .first()
+
+    return !clientChangedReplacement
+  }
+
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'create')
 
@@ -1409,8 +1419,10 @@ export default class BugetController {
           )
       }
 
+      const canReuseCurrentNro = await this.canReuseNro(trx, existing)
+
       let nro = existing.nro!
-      if (!keepSameNro) {
+      if (!keepSameNro || !canReuseCurrentNro) {
         nro = await this.getNextNro(trx, existing.businessId!)
       } else {
         const nroInUse = await this.existsActiveNro(
@@ -1535,8 +1547,10 @@ export default class BugetController {
 
       const token = existingBuget.token!
 
+      const canReuseCurrentNro = await this.canReuseNro(trx, existingBuget)
+
       let nro: string
-      if (keepSameNro) {
+      if (keepSameNro && canReuseCurrentNro) {
         const nroInUse = await this.existsActiveNro(
           trx,
           existingBuget.businessId!,

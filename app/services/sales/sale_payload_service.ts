@@ -6,6 +6,40 @@ function asObject(value: unknown): SaleMetadata {
     : {}
 }
 
+
+function normalizeSaleDocument(value: unknown) {
+  const document = asObject(value)
+  const filePath =
+    typeof document.filePath === 'string' && document.filePath.trim() ? document.filePath.trim() : null
+  const thumbPath =
+    typeof document.thumbPath === 'string' && document.thumbPath.trim() ? document.thumbPath.trim() : null
+
+  if (!filePath && !thumbPath) {
+    return null
+  }
+
+  return {
+    name:
+      typeof document.name === 'string' && document.name.trim()
+        ? document.name.trim()
+        : null,
+    contentType:
+      typeof document.contentType === 'string' && document.contentType.trim()
+        ? document.contentType.trim()
+        : 'application/octet-stream',
+    filePath,
+    thumbPath,
+    fileUrl:
+      typeof document.fileUrl === 'string' && document.fileUrl.trim()
+        ? document.fileUrl.trim()
+        : null,
+    thumbUrl:
+      typeof document.thumbUrl === 'string' && document.thumbUrl.trim()
+        ? document.thumbUrl.trim()
+        : null,
+  }
+}
+
 export interface SaleFinancePayload {
   metadata?: Record<string, unknown> | null
   banks?: unknown[] | null
@@ -185,6 +219,7 @@ export function mergeSaleMetadata(
 
 export function serializeSale<T extends { metadata?: Record<string, unknown> | null }>(sale: T) {
   const metadata = asObject(sale.metadata)
+  const document = normalizeSaleDocument((sale as any).document)
   const payments = Array.isArray((sale as any).payments)
     ? ((sale as any).payments as SalePaymentLike[])
     : []
@@ -222,6 +257,7 @@ export function serializeSale<T extends { metadata?: Record<string, unknown> | n
     details,
     banks: Array.isArray(metadata.banks) ? metadata.banks : [],
     electronicBilling: metadata.electronicBilling ?? null,
+    document,
     paymentSummary,
     financialSummary,
   }

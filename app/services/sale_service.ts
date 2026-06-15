@@ -1,5 +1,6 @@
 import Buget from '#models/bugets/buget'
-import Sale, { type SaleStatus } from '#models/sales/sale'
+import Sale, { type SaleDocument, type SaleStatus } from '#models/sales/sale'
+import ServiceEntrySheet from '#models/service_entry_sheets/service_entry_sheet'
 import Shopping from '#models/shoppings/shopping'
 import SiiCafFile from '#models/sii/sii_caf_file'
 import SiiDteDocument from '#models/sii/sii_dte_document'
@@ -17,6 +18,8 @@ interface CreateSalePayload {
   clientId: number
   budgetId?: number | null
   shoppingId?: number | null
+  serviceEntrySheetId?: number | null
+  document?: SaleDocument | null
   billNumber?: string | null
   title?: string | null
   description?: string | null
@@ -44,6 +47,8 @@ interface UpdateSalePayload {
   clientId?: number
   budgetId?: number | null
   shoppingId?: number | null
+  serviceEntrySheetId?: number | null
+  document?: SaleDocument | null
   billNumber?: string | null
   title?: string | null
   description?: string | null
@@ -184,6 +189,13 @@ async function preloadSaleRelations(sale: Sale) {
       q.preload('provider', (providerQ) => providerQ.select(['id', 'name', 'email']))
     })
   }
+  if (sale.serviceEntrySheetId) {
+    await sale.load('serviceEntrySheet' as any, (q: any) => {
+      q.select(['id', 'number', 'business_id', 'client_id', 'provider_id', 'enabled', 'is_authorized'])
+      q.preload('client', (clientQ: any) => clientQ.select(['id', 'name', 'email']))
+      q.preload('provider', (providerQ: any) => providerQ.select(['id', 'name', 'email']))
+    })
+  }
   await sale.load('createdBy', (builder) => {
     builder
       .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
@@ -208,7 +220,8 @@ async function validateSaleAssociations(
   trx: any,
   businessId: number,
   budgetId?: number | null,
-  shoppingId?: number | null
+  shoppingId?: number | null,
+  serviceEntrySheetId?: number | null
 ) {
   if (budgetId !== undefined && budgetId !== null) {
     const budget = await Buget.query({ client: trx })
@@ -231,6 +244,18 @@ async function validateSaleAssociations(
 
     if (!shopping) {
       throw new Error('Purchase order not found for this business')
+    }
+  }
+
+  if (serviceEntrySheetId !== undefined && serviceEntrySheetId !== null) {
+    const serviceEntrySheet = await ServiceEntrySheet.query({ client: trx })
+      .where('id', serviceEntrySheetId)
+      .where('business_id', businessId)
+      .whereNull('deleted_at')
+      .first()
+
+    if (!serviceEntrySheet) {
+      throw new Error('Service entry sheet not found for this business')
     }
   }
 }
@@ -388,7 +413,13 @@ export default class SaleService {
 
     try {
       const parsedSaleDate = payload.saleDate ? DateTime.fromISO(payload.saleDate) : null
-      await validateSaleAssociations(trx, payload.businessId, payload.budgetId, payload.shoppingId)
+      await validateSaleAssociations(
+        trx,
+        payload.businessId,
+        payload.budgetId,
+        payload.shoppingId,
+        payload.serviceEntrySheetId
+      )
       const computedTotal = payload.details.reduce((acc, detail) => {
         const lineAmount =
           detail.amount !== undefined
@@ -412,6 +443,8 @@ export default class SaleService {
           clientId: payload.clientId,
           budgetId: payload.budgetId ?? null,
           shoppingId: payload.shoppingId ?? null,
+          serviceEntrySheetId: payload.serviceEntrySheetId ?? null,
+          document: payload.document ?? null,
           billNumber: payload.billNumber ?? null,
           title: payload.title ?? null,
           description: payload.description ?? null,
@@ -452,7 +485,13 @@ export default class SaleService {
 
       const sale = await saleQuery.firstOrFail()
       const parsedSaleDate = payload.saleDate ? DateTime.fromISO(payload.saleDate) : null
-      await validateSaleAssociations(trx, sale.businessId, payload.budgetId, payload.shoppingId)
+      await validateSaleAssociations(
+        trx,
+        sale.businessId,
+        payload.budgetId,
+        payload.shoppingId,
+        payload.serviceEntrySheetId
+      )
 
       let totalAmount = sale.totalAmount
       let utility = sale.utility
@@ -482,6 +521,10 @@ export default class SaleService {
       if (payload.clientId !== undefined) sale.clientId = payload.clientId
       if (payload.budgetId !== undefined) sale.budgetId = payload.budgetId
       if (payload.shoppingId !== undefined) sale.shoppingId = payload.shoppingId
+      if (payload.serviceEntrySheetId !== undefined) {
+        sale.serviceEntrySheetId = payload.serviceEntrySheetId
+      }
+      if (payload.document !== undefined) sale.document = payload.document
       if (payload.saleDate !== undefined) {
         sale.saleDate = parsedSaleDate && parsedSaleDate.isValid ? parsedSaleDate : null
       }
