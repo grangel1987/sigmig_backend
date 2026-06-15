@@ -825,6 +825,82 @@ export default class BugetController {
     return serialized
   }
 
+  // Fetch disabled previous versions of a budget ordered from newest to oldest
+  public async history(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params, response, i18n } = ctx
+    const bugetId = Number(params.id)
+
+    const budget = await Buget.find(bugetId)
+    if (!budget) {
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const disabledBudgets = await Buget.query()
+      .where('business_id', budget.businessId)
+      .where('nro', budget.nro)
+      .where('enabled', false)
+      .preload('client', (q) => q.preload('city').preload('typeIdentify'))
+      .preload('costCenter')
+      .preload('work', (w) => w.select(['id', 'code', 'name']))
+      .preload('createdBy', (builder) => {
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
+      })
+      .preload('updatedBy', (builder) => {
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
+      })
+      .preload('products')
+      .preload('items')
+      .preload('payments', (pQ: any) => {
+        pQ.preload('ledgerMovement', (lmQ: any) => {
+          lmQ
+            .preload('account')
+            .preload('currency')
+            .preload('costCenter')
+            .preload('client')
+            .preload('paymentMethod')
+            .preload('documentType')
+        })
+      })
+      .orderBy('created_at', 'desc')
+
+    const data = await Promise.all(
+      disabledBudgets.map(async (b) => {
+        const total = b.getTotalAmount()
+        const remaining = await b.getRemainingBalance()
+        const percentage = await b.getPaymentPercentage()
+        const isFullyPaid = await b.isFullyPaid()
+
+        const paymentSummary = {
+          total: Util.truncateToTwoDecimals(total),
+          remaining: Util.truncateToTwoDecimals(remaining),
+          percentage: Util.truncateToTwoDecimals(percentage),
+          isFullyPaid,
+          budgetCurrency: b.currencySymbol,
+        }
+
+        return {
+          ...b.serialize(),
+          paymentSummary,
+        }
+      })
+    )
+
+    return { data }
+  }
+
   // Public method to view budget by token (no authentication required)
   public async showPublic(ctx: HttpContext) {
     const { params, request } = ctx

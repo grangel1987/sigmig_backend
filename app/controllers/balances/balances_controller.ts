@@ -46,6 +46,13 @@ export default class BalancesController {
                         })
                     })
                 })
+                .preload('salePayment', (q: any) => {
+                    q.preload('sale', (sq: any) => {
+                        sq.preload('client', (cq: any) => {
+                            cq.select(['id', 'name'])
+                        })
+                    })
+                })
                 .preload('expense', (q) => {
                     q.preload('business', (bq) => bq.select(['id', 'name']))
                         .preload('currency', (cq) => cq.select(['id', 'symbol', 'name']))
@@ -118,95 +125,181 @@ export default class BalancesController {
     }
 
     /**
+     * Show details of a single ledger movement
+     */
+    public async show(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'balances', 'view')
+
+        const { params, response, i18n } = ctx
+        const movementId = Number(params.id)
+
+        try {
+            const movement = await LedgerMovement.query()
+                .where('id', movementId)
+                .preload('account')
+                .preload('currency')
+                .preload('costCenter')
+                .preload('client')
+                .preload('paymentMethod')
+                .preload('documentType')
+                .preload('budgetPayment', (q: any) => {
+                    q.preload('budget', (bq: any) => {
+                        bq.preload('client', (cq: any) => {
+                            cq.select(['id', 'name'])
+                        })
+                    })
+                })
+                .preload('salePayment', (q: any) => {
+                    q.preload('sale', (sq: any) => {
+                        sq.preload('client', (cq: any) => {
+                            cq.select(['id', 'name'])
+                        })
+                    })
+                })
+                .preload('expense', (q) => {
+                    q.preload('business', (bq) => bq.select(['id', 'name']))
+                        .preload('currency', (cq) => cq.select(['id', 'symbol', 'name']))
+                })
+                .first()
+
+            if (!movement) {
+                return response.status(404).json({
+                    ...MessageFrontEnd(
+                        i18n.formatMessage('messages.no_exist', {}, 'Movimiento no existe'),
+                        i18n.formatMessage('messages.error_title')
+                    ),
+                })
+            }
+
+            const formatted = this.formatMovement(movement)
+
+            return response.status(200).json({
+                message: i18n.formatMessage('messages.fetch_successful', {}, 'Movimiento obtenido exitosamente'),
+                data: formatted,
+            })
+        } catch (error) {
+            console.log(error)
+            return response.status(500).json({
+                ...MessageFrontEnd(
+                    i18n.formatMessage('messages.fetch_error', {}, 'Error al obtener movimiento'),
+                    i18n.formatMessage('messages.error_title')
+                ),
+            })
+        }
+    }
+
+    /**
      * Format ledger movements into a unified structure
      */
     private formatMovements(movements: LedgerMovement[]) {
-        return movements.map((movement) => {
-            const isIncome = movement.budgetPayment
-            // const isExpense = movement.expense
+        return movements.map((movement) => this.formatMovement(movement))
+    }
 
-            // Build justifications array
-            const justifications: Array<{
-                type: 'budget_payment' | 'expense'
-                id: number
-                reference?: string
-                description?: string
-                budgetNumber?: string
-                clientName?: string
-            }> = []
+    /**
+     * Format a single ledger movement into a unified structure
+     */
+    private formatMovement(movement: LedgerMovement) {
+        const isIncome = movement.budgetPayment || movement.salePayment
 
-            // Add budget payment justification
-            if (movement.budgetPayment) {
-                const budget = (movement.budgetPayment as any).budget
-                justifications.push({
-                    type: 'budget_payment',
-                    id: movement.budgetPayment.id,
-                    budgetNumber: budget?.nro,
-                    clientName: budget?.client?.name,
-                    reference: budget?.nro
-                        ? `Pago cotización #${budget.nro}`
-                        : undefined,
-                })
-            }
+        // Build justifications array
+        const justifications: Array<{
+            type: 'budget_payment' | 'expense' | 'sale_payment'
+            id: number
+            reference?: string
+            description?: string
+            budgetNumber?: string
+            clientName?: string
+            saleNumber?: string
+        }> = []
 
-            // Add expense justification
-            if (movement.expense) {
-                justifications.push({
-                    type: 'expense',
-                    id: movement.expense.id,
-                    description: movement.expense.description || undefined,
-                    reference: `Gasto #${movement.expense.id}`,
-                })
-            }
-            return {
-                id: movement.id,
-                date: movement.date,
-                concept: movement.concept,
-                amount: movement.amount,
-                absoluteAmount: Math.abs(movement.amount),
-                type: isIncome ? 'income' : 'expense',
-                status: movement.status,
-                currencyId: movement.currencyId,
-                documentTypeId: movement.documentTypeId,
-                documentNumber: movement.documentNumber,
+        // Add budget payment justification
+        if (movement.budgetPayment) {
+            const budget = (movement.budgetPayment as any).budget
+            justifications.push({
+                type: 'budget_payment',
+                id: movement.budgetPayment.id,
+                budgetNumber: budget?.nro,
+                clientName: budget?.client?.name,
+                reference: budget?.nro
+                    ? `Pago cotización #${budget.nro}`
+                    : undefined,
+            })
+        }
 
-                // Related entities
-                account: movement.account ? {
-                    id: movement.account.id,
-                    name: movement.account.name,
-                } : null,
+        // Add sale payment justification
+        if (movement.salePayment) {
+            const sale = (movement.salePayment as any).sale
+            justifications.push({
+                type: 'sale_payment',
+                id: movement.salePayment.id,
+                saleNumber: sale?.billNumber || undefined,
+                clientName: sale?.client?.name || undefined,
+                reference: sale?.billNumber
+                    ? `Pago venta #${sale.billNumber}`
+                    : sale?.title
+                      ? `Pago venta: ${sale.title}`
+                      : `Pago venta #${sale?.id}`,
+            })
+        }
 
-                costCenter: movement.costCenter ? {
-                    id: movement.costCenter.id,
-                    name: movement.costCenter.name,
-                    code: movement.costCenter.code,
-                } : null,
+        // Add expense justification
+        if (movement.expense) {
+            justifications.push({
+                type: 'expense',
+                id: movement.expense.id,
+                description: movement.expense.description || undefined,
+                reference: `Gasto #${movement.expense.id}`,
+            })
+        }
 
-                client: movement.client ? {
-                    id: movement.client.id,
-                    name: movement.client.name,
-                } : null,
+        return {
+            id: movement.id,
+            date: movement.date,
+            concept: movement.concept,
+            amount: movement.amount,
+            absoluteAmount: Math.abs(movement.amount),
+            type: isIncome ? 'income' : 'expense',
+            status: movement.status,
+            currencyId: movement.currencyId,
+            documentTypeId: movement.documentTypeId,
+            documentNumber: movement.documentNumber,
 
-                paymentMethod: movement.paymentMethod ? {
-                    id: movement.paymentMethod.id,
-                    name: movement.paymentMethod.name,
-                } : null,
-                currency: movement.currency ? {
-                    id: movement.currency.id,
-                    name: movement.currency.name,
-                    symbol: movement.currency.symbol,
-                } : null,
-                documentType: movement.documentType ? {
-                    id: movement.documentType.id,
-                    name: movement.documentType.name,
-                } : null,
-                // Justifications
-                justifications,
+            // Related entities
+            account: movement.account ? {
+                id: movement.account.id,
+                name: movement.account.name,
+            } : null,
 
-                // Metadata
-                createdAt: movement.createdAt,
-                updatedAt: movement.updatedAt,
-            }
-        })
+            costCenter: movement.costCenter ? {
+                id: movement.costCenter.id,
+                name: movement.costCenter.name,
+                code: movement.costCenter.code,
+            } : null,
+
+            client: movement.client ? {
+                id: movement.client.id,
+                name: movement.client.name,
+            } : null,
+
+            paymentMethod: movement.paymentMethod ? {
+                id: movement.paymentMethod.id,
+                name: movement.paymentMethod.name,
+            } : null,
+            currency: movement.currency ? {
+                id: movement.currency.id,
+                name: movement.currency.name,
+                symbol: movement.currency.symbol,
+            } : null,
+            documentType: movement.documentType ? {
+                id: movement.documentType.id,
+                name: movement.documentType.name,
+            } : null,
+            // Justifications
+            justifications,
+
+            // Metadata
+            createdAt: movement.createdAt,
+            updatedAt: movement.updatedAt,
+        }
     }
 }

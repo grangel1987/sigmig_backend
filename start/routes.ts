@@ -926,6 +926,7 @@ router
         router.get('/:id/observations', '#controllers/bugets/buget_controller.listObservations')
         router.post('/:id/observations', '#controllers/bugets/buget_controller.addObservation')
         router.get('/:id', '#controllers/bugets/buget_controller.show')
+        router.get('/:id/history', '#controllers/bugets/buget_controller.history')
         router.post('/find/number', '#controllers/bugets/buget_controller.findByNro')
         router.post('/find/name', '#controllers/bugets/buget_controller.findByNameClient')
         router.post('/find/date', '#controllers/bugets/buget_controller.findByDate')
@@ -1241,6 +1242,7 @@ router
     router
       .group(() => {
         router.get('/movements', '#controllers/balances/balances_controller.getMovements')
+        router.get('/movements/:id', '#controllers/balances/balances_controller.show')
       })
       .prefix('balances')
       .middleware(auth)

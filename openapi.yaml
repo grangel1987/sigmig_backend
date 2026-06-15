@@ -136,7 +136,7 @@ components:
             properties:
               type:
                 type: string
-                enum: [budget_payment, expense]
+                enum: [budget_payment, expense, sale_payment]
               id:
                 type: integer
               reference:
@@ -146,6 +146,8 @@ components:
               budgetNumber:
                 type: string
               clientName:
+                type: string
+              saleNumber:
                 type: string
         createdAt:
           type: string
@@ -1032,6 +1034,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /balances/movements/{id}:
+    get:
+      tags:
+        - Balances
+      summary: Obtener detalle de un movimiento contable
+      description: Obtener detalles completos de un movimiento contable específico, incluyendo justificaciones (cotización, venta, gasto)
+      operationId: getBalancesMovementDetails
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movimiento contable obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/LedgerMovement'
+        '404':
+          description: Movimiento no encontrado
+        '500':
+          description: Error del servidor
       security:
         - bearerAuth: []
 
@@ -1974,6 +2008,36 @@ paths:
           description: Detalles del presupuesto
         '404':
           description: No encontrado
+      security:
+        - bearerAuth: []
+
+  /buget/{id}/history:
+    get:
+      tags:
+        - Presupuestos
+      summary: Obtener historial de versiones anteriores
+      description: Obtener los presupuestos anteriores deshabilitados que comparten el mismo número y están ordenados de más nuevo a más antiguo
+      operationId: budgetHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Historial de presupuestos deshabilitados obtenido con éxito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '404':
+          description: Presupuesto principal no encontrado
       security:
         - bearerAuth: []
 
