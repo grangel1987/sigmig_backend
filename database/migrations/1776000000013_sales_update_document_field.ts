@@ -9,9 +9,9 @@ export default class SalesAddBillNumberField extends BaseSchema {
 
         this.schema.alterTable(this.tableName, (table) => {
             if (!hasDocumentField) {
-                table.string('document').nullable()
+                table.json('document').nullable()
             } else {
-                table.string('document').nullable().alter()
+                table.json('document').nullable().alter()
             }
         })
     }
