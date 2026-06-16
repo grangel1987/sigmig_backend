@@ -95,16 +95,6 @@ export default class BugetController {
     return nro
   }
 
-  private async canReuseNro(trx: any, buget: Buget) {
-    const clientChangedReplacement = await trx
-      .from('bugets')
-      .where('prev_id', buget.id)
-      .whereNot('client_id', buget.clientId)
-      .first()
-
-    return !clientChangedReplacement
-  }
-
   public async store(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'create')
 
@@ -1451,19 +1441,12 @@ export default class BugetController {
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 
-  // Reactivate an expired/disabled budget, optionally keeping the same nro
+  // Reactivate an expired/disabled budget, generating a new nro
   public async reactivate(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'update')
 
     const { params, request, auth, response, i18n } = ctx
     const bugetId = Number(params.id)
-    const { keepSameNro = false } = await request.validateUsing(
-      vine.compile(
-        vine.object({
-          keepSameNro: vine.boolean().optional(),
-        })
-      )
-    )
 
     const trx = await db.transaction()
     try {
@@ -1495,34 +1478,7 @@ export default class BugetController {
           )
       }
 
-      const canReuseCurrentNro = await this.canReuseNro(trx, existing)
-
-      let nro = existing.nro!
-      if (!keepSameNro || !canReuseCurrentNro) {
-        nro = await this.getNextNro(trx, existing.businessId!)
-      } else {
-        const nroInUse = await this.existsActiveNro(
-          trx,
-          existing.businessId!,
-          existing.nro!,
-          existing.id
-        )
-
-        if (nroInUse) {
-          await trx.rollback()
-          return response.status(409).json(
-            MessageFrontEnd(
-              i18n.formatMessage(
-                'messages.update_error',
-                {},
-                'Ya existe una cotizacion activa con este numero'
-              ),
-              i18n.formatMessage('messages.error_title')
-            )
-          )
-        }
-      }
-
+      const nro = await this.getNextNro(trx, existing.businessId!)
       const token = existing.token || Util.generateToken(16)
       const business = await Business.query({ client: trx })
         .where('id', existing.businessId!)
@@ -1610,7 +1566,6 @@ export default class BugetController {
       currencyId,
       currencyValue,
       currencySymbol,
-      keepSameNro = false,
     } = await request.validateUsing(bugetUpdateValidator)
 
     const trx = await db.transaction()
@@ -1623,34 +1578,26 @@ export default class BugetController {
 
       const token = existingBuget.token!
 
-      const canReuseCurrentNro = await this.canReuseNro(trx, existingBuget)
+      const nro = existingBuget.nro!
+      const nroInUse = await this.existsActiveNro(
+        trx,
+        existingBuget.businessId!,
+        nro,
+        existingBuget.id
+      )
 
-      let nro: string
-      if (keepSameNro && canReuseCurrentNro) {
-        const nroInUse = await this.existsActiveNro(
-          trx,
-          existingBuget.businessId!,
-          existingBuget.nro!,
-          existingBuget.id
-        )
-
-        if (nroInUse) {
-          await trx.rollback()
-          return response.status(409).json(
-            MessageFrontEnd(
-              i18n.formatMessage(
-                'messages.update_error',
-                {},
-                'Ya existe una cotizacion activa con este numero'
-              ),
-              i18n.formatMessage('messages.error_title')
-            )
+      if (nroInUse) {
+        await trx.rollback()
+        return response.status(409).json(
+          MessageFrontEnd(
+            i18n.formatMessage(
+              'messages.update_error',
+              {},
+              'Ya existe una cotizacion activa con este numero'
+            ),
+            i18n.formatMessage('messages.error_title')
           )
-        }
-
-        nro = existingBuget.nro!
-      } else {
-        nro = await this.getNextNro(trx, existingBuget.businessId!)
+        )
       }
 
       await trx

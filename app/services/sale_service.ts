@@ -150,8 +150,10 @@ function buildSaleDetailsPayload(details: CreateSalePayload['details']) {
       ? Number(detail.utility) || 0
       : null
 
+    const prodId = detail.productId && Number(detail.productId) > 0 ? Number(detail.productId) : null;
+
     return {
-      productId: detail.productId ?? null,
+      productId: prodId,
       lineNumber: detail.lineNumber ?? index + 1,
       description: detail.description ?? null,
       quantity: Number(detail.quantity),
@@ -256,6 +258,28 @@ async function validateSaleAssociations(
 
     if (!serviceEntrySheet) {
       throw new Error('Service entry sheet not found for this business')
+    }
+  }
+}
+
+async function validateSaleProducts(trx: any, details?: Array<{ productId?: number | null }> | null) {
+  if (!details || !Array.isArray(details)) return
+
+  const productIds = details
+    .map((d) => d.productId)
+    .filter((id): id is number => typeof id === 'number' && id > 0)
+
+  if (productIds.length > 0) {
+    const Product = (await import('#models/products/product')).default
+    const existingProducts = await Product.query({ client: trx })
+      .whereIn('id', productIds)
+      .select('id')
+    const existingProductIds = new Set(existingProducts.map((p) => p.id))
+
+    for (const id of productIds) {
+      if (!existingProductIds.has(id)) {
+        throw new Error(`Product with ID ${id} does not exist`)
+      }
     }
   }
 }
@@ -412,6 +436,13 @@ export default class SaleService {
     const trx = await db.transaction()
 
     try {
+      if (payload.details) {
+        payload.details = payload.details.map((d) => ({
+          ...d,
+          productId: d.productId && Number(d.productId) > 0 ? Number(d.productId) : null,
+        }))
+      }
+
       const parsedSaleDate = payload.saleDate ? DateTime.fromISO(payload.saleDate) : null
       await validateSaleAssociations(
         trx,
@@ -420,6 +451,7 @@ export default class SaleService {
         payload.shoppingId,
         payload.serviceEntrySheetId
       )
+      await validateSaleProducts(trx, payload.details)
       const computedTotal = payload.details.reduce((acc, detail) => {
         const lineAmount =
           detail.amount !== undefined
@@ -484,6 +516,13 @@ export default class SaleService {
       }
 
       const sale = await saleQuery.firstOrFail()
+      if (payload.details) {
+        payload.details = payload.details.map((d) => ({
+          ...d,
+          productId: d.productId && Number(d.productId) > 0 ? Number(d.productId) : null,
+        }))
+      }
+
       const parsedSaleDate = payload.saleDate ? DateTime.fromISO(payload.saleDate) : null
       await validateSaleAssociations(
         trx,
@@ -492,6 +531,9 @@ export default class SaleService {
         payload.shoppingId,
         payload.serviceEntrySheetId
       )
+      if (payload.details) {
+        await validateSaleProducts(trx, payload.details)
+      }
 
       let totalAmount = sale.totalAmount
       let utility = sale.utility

@@ -66,8 +66,12 @@ export class Google {
   }
 
   public static async deleteFile(filePath: string) {
-    const gcsDrive = drive.use('gcs')
-    await gcsDrive.delete(filePath);
+    try {
+      const gcsDrive = drive.use('gcs')
+      await gcsDrive.delete(filePath);
+    } catch (error) {
+      console.error(`Failed to delete file from GCS at ${filePath}:`, error.message || error);
+    }
     return;
   }
 }
