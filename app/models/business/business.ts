@@ -6,8 +6,11 @@ import City from '#models/cities/City'
 import Country from '#models/countries/country'
 import TypeIdentify from '#models/settings/setting'
 import User from '#models/users/user'
+import { Google } from '#utils/Google'
 import {
   BaseModel,
+  afterFetch,
+  afterFind,
   beforeCreate,
   belongsTo,
   column,
@@ -132,6 +135,30 @@ export default class Business extends BaseModel {
   @beforeCreate()
   public static async setEnabled(business: Business) {
     business.enabled = true
+  }
+
+  @afterFetch()
+  static async getUrls(models: Business[]) {
+    await Promise.all(
+      models.map(async (business) => {
+        if (business.urlShort) {
+          business.url = await Google.getSignedUrl(business.urlShort)
+        }
+        if (business.urlThumbShort) {
+          business.urlThumb = await Google.getSignedUrl(business.urlThumbShort)
+        }
+      })
+    )
+  }
+
+  @afterFind()
+  static async getUrl(business: Business) {
+    if (business.urlShort) {
+      business.url = await Google.getSignedUrl(business.urlShort)
+    }
+    if (business.urlThumbShort) {
+      business.urlThumb = await Google.getSignedUrl(business.urlThumbShort)
+    }
   }
 
   @computed()
