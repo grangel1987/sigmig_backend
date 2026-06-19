@@ -19,7 +19,7 @@ export default class SaleRepository {
   public static baseQuery() {
     return Sale.query()
       .whereNull('sales.deleted_at')
-      .preload('business', (q) => q.select(['id', 'name', 'url', 'email']))
+      .preload('business', (q) => q.select(['id', 'name', 'url', 'url_short', 'email']))
       .preload('client', (q) => q.select(['id', 'name', 'identify', 'email']))
       .preload('budget' as any, (q: any) =>
         q.select(['id', 'nro', 'client_id', 'status', 'enabled'])

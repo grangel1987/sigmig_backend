@@ -334,7 +334,9 @@ export default class SaleController {
       const sale = await Sale.query()
         .where('token', token)
         .whereNull('deleted_at')
-        .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
+        .preload('business', (q) =>
+          q.select(['id', 'name', 'url', 'url_short', 'email', 'identify'])
+        )
         .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
         .preload('budget' as any, (q: any) =>
           q.select(['id', 'nro', 'client_id', 'status', 'enabled'])
