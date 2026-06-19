@@ -40,7 +40,7 @@ function asObject(value: unknown): Record<string, unknown> {
 
 async function buildSaleDocumentPayload(
   request: HttpContext['request']
-): Promise<SaleDocument | null> {
+): Promise<SaleDocument | undefined> {
   const fileOptions = {
     extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp', 'doc', 'docx'],
     size: '10mb',
@@ -53,7 +53,7 @@ async function buildSaleDocumentPayload(
     request.file('purchase_order_file', fileOptions)
 
   if (!documentFile?.tmpPath) {
-    return null
+    return undefined
   }
 
   const isImage = (documentFile.type || '').startsWith('image')
