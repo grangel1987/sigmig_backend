@@ -1,5 +1,5 @@
 import NotificationType from '#models/notifications/notification_type'
-import Sale from '#models/sales/sale'
+import Sale, { type SaleDocument } from '#models/sales/sale'
 import SaleRepository from '#repositories/sales/sale_repository'
 import NotificationService from '#services/notification_service'
 import PermissionService from '#services/permission_service'
@@ -11,6 +11,7 @@ import {
   serializeSaleCollection,
 } from '#services/sales/sale_payload_service'
 import env from '#start/env'
+import { Google } from '#utils/Google'
 import MessageFrontEnd from '#utils/MessageFrontEnd'
 import Util from '#utils/Util'
 import {
@@ -30,6 +31,58 @@ import {
 import { HttpContext } from '@adonisjs/core/http'
 import mail from '@adonisjs/mail/services/main'
 import { DateTime } from 'luxon'
+
+function asObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? { ...(value as Record<string, unknown>) }
+    : {}
+}
+
+async function buildSaleDocumentPayload(
+  request: HttpContext['request']
+): Promise<SaleDocument | undefined> {
+  const fileOptions = {
+    extnames: ['pdf', 'jpg', 'png', 'jpeg', 'webp', 'doc', 'docx'],
+    size: '10mb',
+  }
+
+  const documentFile =
+    request.file('documentFile', fileOptions) ??
+    request.file('document_file', fileOptions) ??
+    request.file('purchaseOrderFile', fileOptions) ??
+    request.file('purchase_order_file', fileOptions)
+
+  if (!documentFile?.tmpPath) {
+    return undefined
+  }
+
+  const isImage = (documentFile.type || '').startsWith('image')
+  const upload = await Google.uploadFile(documentFile, 'sales/documents', isImage ? 'image' : 'file')
+
+  return {
+    name: documentFile.clientName ?? 'document',
+    contentType: documentFile.type ?? 'application/octet-stream',
+    filePath: upload.url_short,
+    thumbPath: upload.url_thumb_short || undefined,
+    fileUrl: upload.url,
+    thumbUrl: upload.url_thumb || undefined,
+  }
+}
+
+async function deleteExistingSaleDocument(sale: Sale | null) {
+  const document = asObject(sale?.document)
+  const filePaths = [document.filePath, document.thumbPath].filter(
+    (filePath): filePath is string => typeof filePath === 'string' && filePath.trim().length > 0
+  )
+
+  await Promise.all(
+    filePaths.map((filePath) =>
+      Google.deleteFile(filePath).catch((error) => {
+        console.log('Sale document delete error:', error)
+      })
+    )
+  )
+}
 
 export default class SaleController {
   public async overview(ctx: HttpContext) {
@@ -139,6 +192,7 @@ export default class SaleController {
 
     try {
       const payload = await request.validateUsing(saleStoreValidator)
+      const document = await buildSaleDocumentPayload(request)
 
       const headerBusinessId = Number(request.header('Business'))
       const resolvedBusinessId =
@@ -161,7 +215,8 @@ export default class SaleController {
         createdById: auth.user!.id,
         clientId: payload.clientId,
         budgetId: payload.budgetId,
-        shoppingId: payload.shoppingId ?? payload.purchaseOrderId,
+        serviceEntrySheetId: payload.serviceEntrySheetId ?? payload.service_entry_sheet_id,
+        document,
         billNumber: payload.billNumber,
         title: payload.title,
         description: payload.description,
@@ -279,7 +334,9 @@ export default class SaleController {
       const sale = await Sale.query()
         .where('token', token)
         .whereNull('deleted_at')
-        .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
+        .preload('business', (q) =>
+          q.select(['id', 'name', 'url', 'url_short', 'email', 'identify'])
+        )
         .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
         .preload('budget' as any, (q: any) =>
           q.select(['id', 'nro', 'client_id', 'status', 'enabled'])
@@ -335,15 +392,28 @@ export default class SaleController {
     try {
       const { id } = await saleIdParamValidator.validate(params)
       const payload = await request.validateUsing(saleUpdateValidator)
+      const document = await buildSaleDocumentPayload(request)
 
       const headerBusinessId = Number(request.header('Business'))
       const resolvedBusinessId =
         Number.isFinite(headerBusinessId) && headerBusinessId > 0 ? headerBusinessId : undefined
 
+      if (document) {
+        const currentSaleQuery = Sale.query().where('id', id).whereNull('deleted_at')
+        if (resolvedBusinessId !== undefined) {
+          currentSaleQuery.where('business_id', resolvedBusinessId)
+        }
+        const currentSale = await currentSaleQuery.first()
+
+        await deleteExistingSaleDocument(currentSale)
+      }
+
       const sale = await SaleService.update(
         id,
         {
           clientId: payload.clientId,
+          serviceEntrySheetId: payload.serviceEntrySheetId ?? payload.service_entry_sheet_id,
+          document,
           billNumber: payload.billNumber,
           title: payload.title,
           description: payload.description,
@@ -425,13 +495,10 @@ export default class SaleController {
       const rawPayload = request.all()
 
       const hasBudgetField = 'budgetId' in rawPayload || 'budget_id' in rawPayload
-      const hasShoppingField =
-        'shoppingId' in rawPayload ||
-        'shopping_id' in rawPayload ||
-        'purchaseOrderId' in rawPayload ||
-        'purchase_order_id' in rawPayload
+      const hasServiceEntrySheetField =
+        'serviceEntrySheetId' in rawPayload || 'service_entry_sheet_id' in rawPayload
 
-      if (!hasBudgetField && !hasShoppingField) {
+      if (!hasBudgetField && !hasServiceEntrySheetField) {
         return response
           .status(400)
           .json(
@@ -439,7 +506,7 @@ export default class SaleController {
               i18n.formatMessage(
                 'messages.invalid_format',
                 {},
-                'Debe enviar al menos una asociacion para la venta'
+                'Debe enviar al menos un presupuesto o una HES para asociar a la venta'
               ),
               i18n.formatMessage('messages.error_title')
             )
@@ -447,12 +514,8 @@ export default class SaleController {
       }
 
       const normalizedBudgetId = payload.budgetId ?? payload.budget_id ?? null
-      const normalizedShoppingId =
-        payload.shoppingId ??
-        payload.shopping_id ??
-        payload.purchaseOrderId ??
-        payload.purchase_order_id ??
-        null
+      const normalizedServiceEntrySheetId =
+        payload.serviceEntrySheetId ?? payload.service_entry_sheet_id ?? null
 
       const headerBusinessId = Number(request.header('Business'))
       const resolvedBusinessId =
@@ -462,7 +525,7 @@ export default class SaleController {
         id,
         {
           budgetId: hasBudgetField ? normalizedBudgetId : undefined,
-          shoppingId: hasShoppingField ? normalizedShoppingId : undefined,
+          serviceEntrySheetId: hasServiceEntrySheetField ? normalizedServiceEntrySheetId : undefined,
         },
         resolvedBusinessId
       )

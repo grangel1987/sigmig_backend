@@ -19,7 +19,7 @@ export default class SaleRepository {
   public static baseQuery() {
     return Sale.query()
       .whereNull('sales.deleted_at')
-      .preload('business', (q) => q.select(['id', 'name', 'url', 'email']))
+      .preload('business', (q) => q.select(['id', 'name', 'url', 'url_short', 'email']))
       .preload('client', (q) => q.select(['id', 'name', 'identify', 'email']))
       .preload('budget' as any, (q: any) =>
         q.select(['id', 'nro', 'client_id', 'status', 'enabled'])
@@ -27,6 +27,11 @@ export default class SaleRepository {
       .preload('shopping', (q) => {
         q.select(['id', 'nro', 'provider_id', 'enabled', 'is_authorized'])
         q.preload('provider', (providerQ) => providerQ.select(['id', 'name', 'email']))
+      })
+      .preload('serviceEntrySheet' as any, (q: any) => {
+        q.select(['id', 'number', 'business_id', 'client_id', 'provider_id', 'enabled', 'is_authorized'])
+        q.preload('client', (clientQ: any) => clientQ.select(['id', 'name', 'email']))
+        q.preload('provider', (providerQ: any) => providerQ.select(['id', 'name', 'email']))
       })
       .preload('createdBy', (builder) => {
         builder

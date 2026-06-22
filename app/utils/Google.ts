@@ -39,14 +39,16 @@ export class Google {
 
 
 
-      url = await drive.use('gcs').getSignedUrl(`${folder}/${fileName}.${extension}`);
+      let raw_url = await drive.use('gcs').getSignedUrl(`${folder}/${fileName}.${extension}`);
+      url = Google.fixUrlSignature(raw_url);
       url_short = `${folder}/${fileName}.${extension}`;
 
       if (thumbnail) {
         await gcsDrive
           .put(`${folder}/thumb_${fileName}.${extension}`, thumbnail, { visibility: 'public' })
-        url_thumb = await gcsDrive
+        let raw_url_thumb = await gcsDrive
           .getSignedUrl(`${folder}/thumb_${fileName}.${extension}`);
+        url_thumb = Google.fixUrlSignature(raw_url_thumb);
         url_thumb_short = `${folder}/thumb_${fileName}.${extension}`;
       }
     }
@@ -60,14 +62,23 @@ export class Google {
     }
   }
 
+  private static fixUrlSignature(url: string): string {
+    return url.replace(/Signature=([^&]+)/, (_match, p1) => 'Signature=' + p1.replace(/\+/g, '%2B'));
+  }
+
   public static async getSignedUrl(filePath: string) {
     const gcsDrive = drive.use('gcs')
-    return await gcsDrive.getSignedUrl(filePath)
+    const url = await gcsDrive.getSignedUrl(filePath)
+    return Google.fixUrlSignature(url);
   }
 
   public static async deleteFile(filePath: string) {
-    const gcsDrive = drive.use('gcs')
-    await gcsDrive.delete(filePath);
+    try {
+      const gcsDrive = drive.use('gcs')
+      await gcsDrive.delete(filePath);
+    } catch (error) {
+      console.error(`Failed to delete file from GCS at ${filePath}:`, error.message || error);
+    }
     return;
   }
 }

@@ -1,6 +1,9 @@
 import Setting from '#models/settings/setting';
 import User from '#models/users/user';
+import { Google } from '#utils/Google';
 import {
+    afterFetch,
+    afterFind,
     BaseModel,
     beforeCreate,
     beforeFetch,
@@ -107,6 +110,28 @@ export default class Product extends BaseModel {
     public static hookName(query: ModelQueryBuilderContract<typeof Product>) {
         query.where('deleted', false);
 
+    }
+
+    @afterFetch()
+    public static async getUrls(models: Product[]) {
+        await Promise.all(models.map(async (product) => {
+            if (product.urlShort) {
+                product.url = await Google.getSignedUrl(product.urlShort);
+            }
+            if (product.urlThumbShort) {
+                product.urlThumb = await Google.getSignedUrl(product.urlThumbShort);
+            }
+        }));
+    }
+
+    @afterFind()
+    public static async getUrl(product: Product) {
+        if (product.urlShort) {
+            product.url = await Google.getSignedUrl(product.urlShort);
+        }
+        if (product.urlThumbShort) {
+            product.urlThumb = await Google.getSignedUrl(product.urlThumbShort);
+        }
     }
 
 

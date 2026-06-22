@@ -687,6 +687,7 @@ export default class BugetController {
         'id',
         'name',
         'url',
+        'url_short',
         'email',
         'identify',
         'days_expire_buget',
@@ -815,6 +816,82 @@ export default class BugetController {
     return serialized
   }
 
+  // Fetch disabled previous versions of a budget ordered from newest to oldest
+  public async history(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params, response, i18n } = ctx
+    const bugetId = Number(params.id)
+
+    const budget = await Buget.find(bugetId)
+    if (!budget) {
+      return response
+        .status(404)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.no_exist'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+
+    const disabledBudgets = await Buget.query()
+      .where('business_id', budget.businessId)
+      .where('nro', budget.nro)
+      .where('enabled', false)
+      .preload('client', (q) => q.preload('city').preload('typeIdentify'))
+      .preload('costCenter')
+      .preload('work', (w) => w.select(['id', 'code', 'name']))
+      .preload('createdBy', (builder) => {
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
+      })
+      .preload('updatedBy', (builder) => {
+        builder
+          .preload('personalData', (pdQ) => pdQ.select('names', 'last_name_p', 'last_name_m'))
+          .select(['id', 'personal_data_id', 'email'])
+      })
+      .preload('products')
+      .preload('items')
+      .preload('payments', (pQ: any) => {
+        pQ.preload('ledgerMovement', (lmQ: any) => {
+          lmQ
+            .preload('account')
+            .preload('currency')
+            .preload('costCenter')
+            .preload('client')
+            .preload('paymentMethod')
+            .preload('documentType')
+        })
+      })
+      .orderBy('created_at', 'desc')
+
+    const data = await Promise.all(
+      disabledBudgets.map(async (b) => {
+        const total = b.getTotalAmount()
+        const remaining = await b.getRemainingBalance()
+        const percentage = await b.getPaymentPercentage()
+        const isFullyPaid = await b.isFullyPaid()
+
+        const paymentSummary = {
+          total: Util.truncateToTwoDecimals(total),
+          remaining: Util.truncateToTwoDecimals(remaining),
+          percentage: Util.truncateToTwoDecimals(percentage),
+          isFullyPaid,
+          budgetCurrency: b.currencySymbol,
+        }
+
+        return {
+          ...b.serialize(),
+          paymentSummary,
+        }
+      })
+    )
+
+    return { data }
+  }
+
   // Public method to view budget by token (no authentication required)
   public async showPublic(ctx: HttpContext) {
     const { params, request } = ctx
@@ -842,7 +919,7 @@ export default class BugetController {
 
     // Load all the same relationships as the authenticated show method
     await buget.load('business', (q) => {
-      q.select(['name', 'url', 'email', 'identify', 'footer', 'type_identify_id'])
+      q.select(['id', 'name', 'url', 'url_short', 'email', 'identify', 'footer', 'type_identify_id'])
       q.preload('typeIdentify', (qq) => qq.select(['text']))
     })
 
@@ -1365,19 +1442,12 @@ export default class BugetController {
     return (items || []).sort((x: any, y: any) => String(x.value).localeCompare(String(y.value)))
   }
 
-  // Reactivate an expired/disabled budget, optionally keeping the same nro
+  // Reactivate an expired/disabled budget, generating a new nro
   public async reactivate(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'update')
 
     const { params, request, auth, response, i18n } = ctx
     const bugetId = Number(params.id)
-    const { keepSameNro = false } = await request.validateUsing(
-      vine.compile(
-        vine.object({
-          keepSameNro: vine.boolean().optional(),
-        })
-      )
-    )
 
     const trx = await db.transaction()
     try {
@@ -1409,32 +1479,7 @@ export default class BugetController {
           )
       }
 
-      let nro = existing.nro!
-      if (!keepSameNro) {
-        nro = await this.getNextNro(trx, existing.businessId!)
-      } else {
-        const nroInUse = await this.existsActiveNro(
-          trx,
-          existing.businessId!,
-          existing.nro!,
-          existing.id
-        )
-
-        if (nroInUse) {
-          await trx.rollback()
-          return response.status(409).json(
-            MessageFrontEnd(
-              i18n.formatMessage(
-                'messages.update_error',
-                {},
-                'Ya existe una cotizacion activa con este numero'
-              ),
-              i18n.formatMessage('messages.error_title')
-            )
-          )
-        }
-      }
-
+      const nro = await this.getNextNro(trx, existing.businessId!)
       const token = existing.token || Util.generateToken(16)
       const business = await Business.query({ client: trx })
         .where('id', existing.businessId!)
@@ -1522,7 +1567,6 @@ export default class BugetController {
       currencyId,
       currencyValue,
       currencySymbol,
-      keepSameNro = false,
     } = await request.validateUsing(bugetUpdateValidator)
 
     const trx = await db.transaction()
@@ -1535,32 +1579,26 @@ export default class BugetController {
 
       const token = existingBuget.token!
 
-      let nro: string
-      if (keepSameNro) {
-        const nroInUse = await this.existsActiveNro(
-          trx,
-          existingBuget.businessId!,
-          existingBuget.nro!,
-          existingBuget.id
-        )
+      const nro = existingBuget.nro!
+      const nroInUse = await this.existsActiveNro(
+        trx,
+        existingBuget.businessId!,
+        nro,
+        existingBuget.id
+      )
 
-        if (nroInUse) {
-          await trx.rollback()
-          return response.status(409).json(
-            MessageFrontEnd(
-              i18n.formatMessage(
-                'messages.update_error',
-                {},
-                'Ya existe una cotizacion activa con este numero'
-              ),
-              i18n.formatMessage('messages.error_title')
-            )
+      if (nroInUse) {
+        await trx.rollback()
+        return response.status(409).json(
+          MessageFrontEnd(
+            i18n.formatMessage(
+              'messages.update_error',
+              {},
+              'Ya existe una cotizacion activa con este numero'
+            ),
+            i18n.formatMessage('messages.error_title')
           )
-        }
-
-        nro = existingBuget.nro!
-      } else {
-        nro = await this.getNextNro(trx, existingBuget.businessId!)
+        )
       }
 
       await trx
@@ -2249,7 +2287,7 @@ export default class BugetController {
         q.select(['id', 'name', 'email'])
       })
       await buget.load('business', (q) => {
-        q.select(['id', 'name', 'url'])
+        q.select(['id', 'name', 'url', 'url_short'])
       })
 
       if (!email && !buget.client?.email) {

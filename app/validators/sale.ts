@@ -55,7 +55,8 @@ export const saleStoreValidator = vine.compile(
     clientId: vine.number().positive(),
     budgetId: vine.number().positive().optional().nullable(),
     shoppingId: vine.number().positive().optional().nullable(),
-    purchaseOrderId: vine.number().positive().optional().nullable(),
+    serviceEntrySheetId: vine.number().positive().optional().nullable(),
+    service_entry_sheet_id: vine.number().positive().optional().nullable(),
     billNumber: vine.string().trim().optional().nullable(),
     title: vine.string().trim().optional().nullable(),
     description: vine.string().trim().optional().nullable(),
@@ -74,6 +75,8 @@ export const saleStoreValidator = vine.compile(
 export const saleUpdateValidator = vine.compile(
   vine.object({
     clientId: vine.number().positive().optional(),
+    serviceEntrySheetId: vine.number().positive().optional().nullable(),
+    service_entry_sheet_id: vine.number().positive().optional().nullable(),
     billNumber: vine.string().trim().optional().nullable(),
     title: vine.string().trim().optional().nullable(),
     description: vine.string().trim().optional().nullable(),
@@ -99,10 +102,8 @@ export const saleAssociateValidator = vine.compile(
   vine.object({
     budgetId: vine.number().positive().optional().nullable(),
     budget_id: vine.number().positive().optional().nullable(),
-    shoppingId: vine.number().positive().optional().nullable(),
-    shopping_id: vine.number().positive().optional().nullable(),
-    purchaseOrderId: vine.number().positive().optional().nullable(),
-    purchase_order_id: vine.number().positive().optional().nullable(),
+    serviceEntrySheetId: vine.number().positive().optional().nullable(),
+    service_entry_sheet_id: vine.number().positive().optional().nullable(),
   })
 )
 

@@ -136,7 +136,7 @@ components:
             properties:
               type:
                 type: string
-                enum: [budget_payment, expense]
+                enum: [budget_payment, expense, sale_payment]
               id:
                 type: integer
               reference:
@@ -146,6 +146,8 @@ components:
               budgetNumber:
                 type: string
               clientName:
+                type: string
+              saleNumber:
                 type: string
         createdAt:
           type: string
@@ -434,6 +436,9 @@ components:
         shoppingId:
           type: integer
           nullable: true
+        serviceEntrySheetId:
+          type: integer
+          nullable: true
         title:
           type: string
           nullable: true
@@ -466,6 +471,28 @@ components:
         electronicBilling:
           type: object
           nullable: true
+        document:
+          type: object
+          nullable: true
+          properties:
+            filePath:
+              type: string
+              nullable: true
+            thumbPath:
+              type: string
+              nullable: true
+            contentType:
+              type: string
+              nullable: true
+            name:
+              type: string
+              nullable: true
+            fileUrl:
+              type: string
+              nullable: true
+            thumbUrl:
+              type: string
+              nullable: true
         paymentSummary:
           type: object
           properties:
@@ -552,6 +579,40 @@ components:
               type: boolean
             isAuthorized:
               type: boolean
+            provider:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+                  nullable: true
+        serviceEntrySheet:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+            number:
+              type: string
+            enabled:
+              type: boolean
+            isAuthorized:
+              type: boolean
+            client:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+                  nullable: true
             provider:
               type: object
               nullable: true
@@ -973,6 +1034,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /balances/movements/{id}:
+    get:
+      tags:
+        - Balances
+      summary: Obtener detalle de un movimiento contable
+      description: Obtener detalles completos de un movimiento contable específico, incluyendo justificaciones (cotización, venta, gasto)
+      operationId: getBalancesMovementDetails
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Movimiento contable obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/LedgerMovement'
+        '404':
+          description: Movimiento no encontrado
+        '500':
+          description: Error del servidor
       security:
         - bearerAuth: []
 
@@ -1918,6 +2011,36 @@ paths:
       security:
         - bearerAuth: []
 
+  /buget/{id}/history:
+    get:
+      tags:
+        - Presupuestos
+      summary: Obtener historial de versiones anteriores
+      description: Obtener los presupuestos anteriores deshabilitados que comparten el mismo número y están ordenados de más nuevo a más antiguo
+      operationId: budgetHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Historial de presupuestos deshabilitados obtenido con éxito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '404':
+          description: Presupuesto principal no encontrado
+      security:
+        - bearerAuth: []
+
   /buget/status/{id}:
     put:
       tags:
@@ -2850,6 +2973,9 @@ paths:
                   type: integer
                   nullable: true
                   description: Alias de shoppingId para clientes que usan orden de compra.
+                serviceEntrySheetId:
+                  type: integer
+                  nullable: true
                 title:
                   type: string
                   nullable: true
@@ -2931,6 +3057,7 @@ paths:
               clientId: 42
               budgetId: 25
               shoppingId: 14
+              serviceEntrySheetId: 12
               title: Venta de materiales
               description: Venta generada desde modulo comercial
               saleDate: '2026-04-20'
@@ -2954,6 +3081,67 @@ paths:
                       baseAmount: 30000
                       amount: 5700
                       isExempt: false
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                clientId:
+                  type: integer
+                budgetId:
+                  type: integer
+                  nullable: true
+                shoppingId:
+                  type: integer
+                  nullable: true
+                purchaseOrderId:
+                  type: integer
+                  nullable: true
+                serviceEntrySheetId:
+                  type: integer
+                  nullable: true
+                title:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                saleDate:
+                  type: string
+                  format: date
+                  nullable: true
+                status:
+                  type: string
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
+                currencyId:
+                  type: integer
+                  nullable: true
+                coinId:
+                  type: integer
+                  nullable: true
+                totalAmount:
+                  type: number
+                  nullable: true
+                utility:
+                  type: number
+                  nullable: true
+                metadata:
+                  type: object
+                  nullable: true
+                banks:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
+                details:
+                  type: array
+                  items:
+                    type: object
+                documentFile:
+                  type: string
+                  format: binary
+                  description: Documento externo visible para el comprador, como una factura o una orden de compra.
       responses:
         '201':
           description: Venta creada
@@ -3071,8 +3259,8 @@ paths:
     put:
       tags:
         - Ventas
-      summary: Asociar documentos a venta
-      description: Asocia una venta existente a un presupuesto y/o una orden de compra.
+      summary: Asociar presupuesto o HES a venta
+      description: Asocia una venta existente a un presupuesto y/o una HES.
       operationId: associateSaleDocuments
       parameters:
         - name: id
@@ -3090,19 +3278,15 @@ paths:
                 budgetId:
                   type: integer
                   nullable: true
-                shoppingId:
+                serviceEntrySheetId:
                   type: integer
                   nullable: true
-                purchaseOrderId:
-                  type: integer
-                  nullable: true
-                  description: Alias de shoppingId para clientes que usan orden de compra.
             example:
               budgetId: 25
-              shoppingId: 14
+              serviceEntrySheetId: 12
       responses:
         '200':
-          description: Documentos asociados correctamente
+          description: Asociaciones aplicadas correctamente
           content:
             application/json:
               schema:
@@ -3199,6 +3383,9 @@ paths:
               properties:
                 clientId:
                   type: integer
+                serviceEntrySheetId:
+                  type: integer
+                  nullable: true
                 title:
                   type: string
                   nullable: true
@@ -3258,6 +3445,69 @@ paths:
                       amount:
                         type: number
                         nullable: true
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: integer
+                serviceEntrySheetId:
+                  type: integer
+                  nullable: true
+                title:
+                  type: string
+                  nullable: true
+                description:
+                  type: string
+                  nullable: true
+                saleDate:
+                  type: string
+                  format: date
+                  nullable: true
+                status:
+                  type: string
+                  enum: [paid, unpaid, payment_pending, voided, rejected]
+                currencyId:
+                  type: integer
+                  nullable: true
+                coinId:
+                  type: integer
+                  nullable: true
+                totalAmount:
+                  type: number
+                  nullable: true
+                utility:
+                  type: number
+                  nullable: true
+                metadata:
+                  type: object
+                  nullable: true
+                banks:
+                  type: array
+                  nullable: true
+                  items:
+                    type: object
+                details:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productId:
+                        type: integer
+                        nullable: true
+                      lineNumber:
+                        type: integer
+                        nullable: true
+                      description:
+                        type: string
+                        nullable: true
+                      quantity:
+                        type: number
+                      unitAmount:
+                        type: number
+                      amount:
+                        type: number
+                        nullable: true
                       utility:
                         type: number
                         nullable: true
@@ -3272,6 +3522,10 @@ paths:
                     required:
                       - quantity
                       - unitAmount
+                documentFile:
+                  type: string
+                  format: binary
+                  description: Documento externo visible para el comprador, como una factura o una orden de compra.
             example:
               clientId: 42
               title: Venta de materiales actualizada
