@@ -27,6 +27,10 @@ function normalizeSaleDocument(value: unknown) {
       typeof document.contentType === 'string' && document.contentType.trim()
         ? document.contentType.trim()
         : 'application/octet-stream',
+    type:
+      typeof document.type === 'string' && document.type.trim()
+        ? document.type.trim()
+        : null,
     filePath,
     thumbPath,
     fileUrl:

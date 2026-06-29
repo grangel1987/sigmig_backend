@@ -423,7 +423,7 @@ export default class BugetRepository {
     `
 
     const bindings = [businessId, `%${val}%`, `%${val}%`, limit]
-    const { rows } = await Database.rawQuery(sql, bindings)
-    return rows
+    const result = await Database.rawQuery(sql, bindings)
+    return result[0]
   }
 }
