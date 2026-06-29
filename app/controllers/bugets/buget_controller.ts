@@ -1269,7 +1269,7 @@ export default class BugetController {
   public async findAutoComplete(ctx: HttpContext) {
     await PermissionService.requirePermission(ctx, 'bugets', 'view')
 
-    const { request, response, i18n } = ctx
+    const { request, response } = ctx
     try {
       const { businessId, val } = await request.validateUsing(bugetFindAutoCompleteValidator)
       const result = await BugetRepository.findAutoComplete(businessId, val)
