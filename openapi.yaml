@@ -493,6 +493,10 @@ components:
             thumbUrl:
               type: string
               nullable: true
+            type:
+              type: string
+              enum: [invoice, hes, purchase_order]
+              nullable: true
         paymentSummary:
           type: object
           properties:
@@ -3142,6 +3146,10 @@ paths:
                   type: string
                   format: binary
                   description: Documento externo visible para el comprador, como una factura o una orden de compra.
+                documentType:
+                  type: string
+                  enum: [invoice, hes, purchase_order]
+                  description: Tipo de documento adjunto.
       responses:
         '201':
           description: Venta creada
@@ -3526,6 +3534,10 @@ paths:
                   type: string
                   format: binary
                   description: Documento externo visible para el comprador, como una factura o una orden de compra.
+                documentType:
+                  type: string
+                  enum: [invoice, hes, purchase_order]
+                  description: Tipo de documento adjunto.
             example:
               clientId: 42
               title: Venta de materiales actualizada

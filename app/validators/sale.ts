@@ -1,6 +1,7 @@
 import vine from '@vinejs/vine'
 
 const saleStatuses = ['paid', 'unpaid', 'payment_pending', 'voided', 'rejected'] as const
+const documentTypes = ['invoice', 'hes', 'purchase_order'] as const
 
 const saleTaxSchema = vine.object({
   code: vine.string().trim().minLength(1),
@@ -67,6 +68,8 @@ export const saleStoreValidator = vine.compile(
     invoiced: vine.boolean().optional(),
     totalAmount: vine.number().min(0).optional().nullable(),
     utility: vine.number().min(0).optional().nullable(),
+    documentType: vine.enum(documentTypes).optional(),
+    document_type: vine.enum(documentTypes).optional(),
     ...saleFinanceSchema,
     details: vine.array(saleDetailSchema).minLength(1),
   })
@@ -87,6 +90,8 @@ export const saleUpdateValidator = vine.compile(
     invoiced: vine.boolean().optional(),
     totalAmount: vine.number().min(0).optional().nullable(),
     utility: vine.number().min(0).optional().nullable(),
+    documentType: vine.enum(documentTypes).optional(),
+    document_type: vine.enum(documentTypes).optional(),
     ...saleFinanceSchema,
     details: vine.array(saleDetailSchema).minLength(1).optional(),
   })
