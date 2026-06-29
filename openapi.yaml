@@ -1961,6 +1961,47 @@ paths:
       security:
         - bearerAuth: []
 
+  /buget/autocomplete:
+    post:
+      tags:
+        - Presupuestos
+      summary: Autocompletar presupuesto
+      description: Búsqueda rápida de presupuestos por número o nombre de cliente
+      operationId: autocompleteBuget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                val:
+                  type: string
+                  description: Texto a buscar (número o cliente)
+              required:
+                - businessId
+                - val
+      responses:
+        '200':
+          description: Resultados de autocompletado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    nro:
+                      type: string
+                    client_name:
+                      type: string
+      security:
+        - bearerAuth: []
+
   /buget/store:
     post:
       tags:

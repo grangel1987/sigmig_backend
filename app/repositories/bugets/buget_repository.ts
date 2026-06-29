@@ -399,4 +399,31 @@ export default class BugetRepository {
       clients,
     }
   }
+
+  public static async findAutoComplete(businessId: number, val: string, limit = 20) {
+    const sql = `
+      SELECT
+        bugets.id,
+        bugets.nro,
+        clients.name AS client_name
+      FROM bugets
+      LEFT JOIN clients ON clients.id = bugets.client_id
+      WHERE bugets.business_id = ?
+      AND bugets.enabled = true
+        AND NOT EXISTS (
+          SELECT 1
+          FROM bugets AS newer_bugets
+          WHERE newer_bugets.business_id = bugets.business_id
+            AND newer_bugets.nro = bugets.nro
+            AND newer_bugets.id > bugets.id
+        )
+      AND (bugets.nro LIKE ? OR clients.name LIKE ?)
+      ORDER BY CAST(bugets.nro AS UNSIGNED) DESC, bugets.id DESC
+      LIMIT ?
+    `
+
+    const bindings = [businessId, `%${val}%`, `%${val}%`, limit]
+    const { rows } = await Database.rawQuery(sql, bindings)
+    return rows
+  }
 }

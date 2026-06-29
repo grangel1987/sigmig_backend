@@ -922,6 +922,7 @@ router
     router
       .group(() => {
         router.get('/', '#controllers/bugets/buget_controller.index')
+        router.post('/autocomplete', '#controllers/bugets/buget_controller.findAutoComplete')
         router.post('/store', '#controllers/bugets/buget_controller.store')
         router.get('/:id/observations', '#controllers/bugets/buget_controller.listObservations')
         router.post('/:id/observations', '#controllers/bugets/buget_controller.addObservation')

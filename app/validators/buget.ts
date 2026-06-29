@@ -143,3 +143,10 @@ export const bugetStatusValidator = vine.compile(
     observation: vine.string().trim().minLength(1).maxLength(1024).optional(),
   })
 )
+
+export const bugetFindAutoCompleteValidator = vine.compile(
+  vine.object({
+    businessId: vine.number().positive(),
+    val: vine.string().trim().minLength(1),
+  })
+)

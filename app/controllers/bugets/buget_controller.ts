@@ -22,6 +22,7 @@ import {
   bugetStatusValidator,
   bugetStoreValidator,
   bugetUpdateValidator,
+  bugetFindAutoCompleteValidator,
 } from '#validators/buget'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
@@ -1262,6 +1263,21 @@ export default class BugetController {
 
     const budgetRes = await query.first()
     return [budgetRes]
+  }
+
+  /** Autocomplete bugets by number or client name */
+  public async findAutoComplete(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { request, response, i18n } = ctx
+    try {
+      const { businessId, val } = await request.validateUsing(bugetFindAutoCompleteValidator)
+      const result = await BugetRepository.findAutoComplete(businessId, val)
+      return response.status(200).json(result)
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json(MessageFrontEnd('Error fetching autocomplete results', 'Error'))
+    }
   }
 
   public async findByNameClient(ctx: HttpContext) {
