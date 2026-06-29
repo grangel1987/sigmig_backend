@@ -59,6 +59,12 @@ async function buildSaleDocumentPayload(
   const isImage = (documentFile.type || '').startsWith('image')
   const upload = await Google.uploadFile(documentFile, 'sales/documents', isImage ? 'image' : 'file')
 
+  const documentTypeInput = request.input('documentType') ?? request.input('document_type')
+  const validTypes = ['invoice', 'hes', 'purchase_order'] as const
+  const type = validTypes.includes(documentTypeInput as any)
+    ? (documentTypeInput as typeof validTypes[number])
+    : undefined
+
   return {
     name: documentFile.clientName ?? 'document',
     contentType: documentFile.type ?? 'application/octet-stream',
@@ -66,6 +72,7 @@ async function buildSaleDocumentPayload(
     thumbPath: upload.url_thumb_short || undefined,
     fileUrl: upload.url,
     thumbUrl: upload.url_thumb || undefined,
+    type,
   }
 }
 

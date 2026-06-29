@@ -21,6 +21,7 @@ export interface SaleDocument {
     name?: string
     thumbUrl?: string
     fileUrl?: string
+    type?: 'invoice' | 'hes' | 'purchase_order'
 }
 
 export default class Sale extends BaseModel {
