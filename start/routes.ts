@@ -1222,6 +1222,8 @@ router
             )
           })
           .prefix('shoppings')
+        router.post('/receivables', '#controllers/dashboard/dashboard_controller.receivables')
+        router.post('/receivables/overview', '#controllers/dashboard/dashboard_controller.receivablesOverview')
       })
       .prefix('dashboard')
       .middleware(auth)

@@ -2687,6 +2687,56 @@ paths:
       security:
         - bearerAuth: []
 
+  /dashboard/receivables:
+    post:
+      tags:
+        - Dashboard
+      summary: Cuentas por cobrar (EDP)
+      description: Obtener cuentas por cobrar agrupadas por cliente, incluyendo presupuestos pendientes y ventas no pagadas
+      operationId: getDashboardReceivables
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Lista de cuentas por cobrar agrupada por cliente
+      security:
+        - bearerAuth: []
+
+  /dashboard/receivables/overview:
+    post:
+      tags:
+        - Dashboard
+      summary: Resumen de Cuentas por cobrar (EDP)
+      description: Obtener un resumen ligero de cuentas por cobrar (solo info del cliente y deuda total), con paginación
+      operationId: getDashboardReceivablesOverview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+                page:
+                  type: integer
+                  default: 1
+                perPage:
+                  type: integer
+                  default: 5
+      responses:
+        '200':
+          description: Resumen ligero de cuentas por cobrar paginado
+      security:
+        - bearerAuth: []
+
   /expenses:
     get:
       tags:
