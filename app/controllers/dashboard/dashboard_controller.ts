@@ -4,6 +4,8 @@ import ShoppingRepository from '#repositories/shoppings/shopping_repository'
 import PermissionService from '#services/permission_service'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
+import Buget from '#models/bugets/buget'
+import Sale from '#models/sales/sale'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
@@ -139,6 +141,93 @@ export default class DashboardController {
         return { data: (data as any[]).map((d) => d.serialize()) }
     }
 
+    public async receivables(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'bugets', 'view')
+        const { request } = ctx
+        const businessId = Number(request.header('Business'))
 
+        // Fetch pending budgets
+        const budgets = await Buget.query()
+            .where('business_id', businessId)
+            .where('enabled', true)
+            .where('status', 'pending')
+            .preload('client', (q) => q.select('id', 'name', 'identify'))
+            .preload('products')
+            .preload('items')
+            .whereNotExists((latestBudgetQuery) => {
+                latestBudgetQuery
+                    .from('bugets as newer_bugets')
+                    .whereRaw('newer_bugets.business_id = bugets.business_id')
+                    .whereRaw('newer_bugets.nro = bugets.nro')
+                    .where((newerMatchQuery) => {
+                        newerMatchQuery
+                            .whereRaw('newer_bugets.created_at > bugets.created_at')
+                            .orWhere((sameCreatedAtQuery) => {
+                                sameCreatedAtQuery
+                                    .whereRaw('newer_bugets.created_at = bugets.created_at')
+                                    .whereRaw('newer_bugets.id > bugets.id')
+                            })
+                    })
+            })
+
+        // Fetch unpaid/payment_pending sales
+        const sales = await Sale.query()
+            .whereNull('deleted_at')
+            .where('business_id', businessId)
+            .whereIn('status', ['unpaid', 'payment_pending'])
+            .preload('client', (q) => q.select('id', 'name', 'identify'))
+
+        // Group by client
+        const clientsMap = new Map<number, any>()
+
+        const getClientGroup = (client: any) => {
+            if (!client) return null
+            if (!clientsMap.has(client.id)) {
+                clientsMap.set(client.id, {
+                    client: {
+                        id: client.id,
+                        name: client.name,
+                        identify: client.identify
+                    },
+                    totalDebt: 0,
+                    budgets: [],
+                    sales: []
+                })
+            }
+            return clientsMap.get(client.id)
+        }
+
+        for (const budget of budgets) {
+            if (!budget.client) continue
+            const group = getClientGroup(budget.client)
+            if (!group) continue
+            const amount = budget.getTotalAmount()
+            group.totalDebt += amount
+            group.budgets.push({
+                id: budget.id,
+                nro: budget.nro,
+                title: budget.info?.name || '',
+                issueDate: budget.createdAt ? budget.createdAt.toFormat('yyyy-MM-dd') : null,
+                totalAmount: amount
+            })
+        }
+
+        for (const sale of sales) {
+            if (!sale.client) continue
+            const group = getClientGroup(sale.client)
+            if (!group) continue
+            const amount = sale.totalAmount || 0
+            group.totalDebt += amount
+            group.sales.push({
+                id: sale.id,
+                billNumber: sale.billNumber,
+                title: sale.title || '',
+                issueDate: sale.saleDate ? (typeof sale.saleDate === 'string' ? sale.saleDate : sale.saleDate.toFormat('yyyy-MM-dd')) : null,
+                totalAmount: amount
+            })
+        }
+
+        return { data: Array.from(clientsMap.values()) }
+    }
 }
 
