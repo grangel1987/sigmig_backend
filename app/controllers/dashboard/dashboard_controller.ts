@@ -141,11 +141,7 @@ export default class DashboardController {
         return { data: (data as any[]).map((d) => d.serialize()) }
     }
 
-    public async receivables(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
-        const { request } = ctx
-        const businessId = Number(request.header('Business'))
-
+    private async _getReceivablesData(businessId: number) {
         // Fetch pending budgets
         const budgets = await Buget.query()
             .where('business_id', businessId)
@@ -227,7 +223,53 @@ export default class DashboardController {
             })
         }
 
-        return { data: Array.from(clientsMap.values()) }
+        return Array.from(clientsMap.values())
+    }
+
+    public async receivables(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'bugets', 'view')
+        const { request } = ctx
+        const businessId = Number(request.header('Business'))
+        const data = await this._getReceivablesData(businessId)
+        return { data }
+    }
+
+    public async receivablesOverview(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'bugets', 'view')
+        const { request } = ctx
+        const businessId = Number(request.header('Business'))
+        
+        const page = Number(request.input('page', 1))
+        const perPage = Number(request.input('perPage', 5))
+        
+        const fullData = await this._getReceivablesData(businessId)
+        
+        // Return only client info and total debt
+        const overviewData = fullData.map((d: any) => ({
+            client: d.client,
+            totalDebt: d.totalDebt
+        }))
+        
+        // Sort descending by debt
+        overviewData.sort((a, b) => b.totalDebt - a.totalDebt)
+        
+        const total = overviewData.length
+        const lastPage = Math.ceil(total / perPage) || 1
+        const startIndex = (page - 1) * perPage
+        const endIndex = startIndex + perPage
+        
+        const paginatedData = overviewData.slice(startIndex, endIndex)
+        
+        return { 
+            meta: {
+                total,
+                perPage,
+                currentPage: page,
+                lastPage,
+                firstPage: 1
+            },
+            data: paginatedData 
+        }
     }
 }
 
