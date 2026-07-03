@@ -1,4 +1,4 @@
-import { BaseCommand } from '@adonisjs/core/ace'
+/* import { BaseCommand } from '@adonisjs/core/ace'
 import Buget from '#models/bugets/buget'
 import Client from '#models/clients/client'
 import BusinessUser from '#models/business/business_user'
@@ -52,4 +52,4 @@ export default class TestReceivables extends BaseCommand {
     const data = await res.json()
     console.log(JSON.stringify(data, null, 2))
   }
-}
+} */
