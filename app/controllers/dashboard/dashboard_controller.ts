@@ -14,7 +14,7 @@ export default class DashboardController {
         await PermissionService.requirePermission(ctx, 'shopping', 'viewReports')
         const { request } = ctx
         const { startDate, endDate } = await request.validateUsing(vine.compile(searchWithStatusSchema))
-        const businessId = Number(request.header('Business'))
+        const businessId = Number(request.header('Business') || request.input('businessId'))
         const metrics = await ShoppingRepository.metrics(businessId, startDate, endDate)
         return metrics
     }
@@ -29,7 +29,7 @@ export default class DashboardController {
                 })
             )
         )
-        const businessId = Number(request.header('Business'))
+        const businessId = Number(request.header('Business') || request.input('businessId'))
         const enabled = status !== undefined ? status === 'enabled' : undefined
         const metrics = await BugetRepository.metrics(
             businessId,
@@ -119,7 +119,7 @@ export default class DashboardController {
         await PermissionService.requirePermission(ctx, 'shopping', 'view')
         const { request } = ctx
         const { page, perPage, startDate, endDate } = await request.validateUsing(vine.compile(searchWithStatusSchema))
-        const businessId = Number(request.header('Business'))
+        const businessId = Number(request.header('Business') || request.input('businessId'))
         const data = await ShoppingRepository.pending(businessId, startDate, endDate, page, perPage)
         if ((data as any).getMeta) {
             const paginator = data as any
@@ -132,7 +132,7 @@ export default class DashboardController {
         await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
         const { page, perPage, startDate, endDate, text } = await request.validateUsing(vine.compile(searchWithStatusSchema))
-        const businessId = Number(request.header('Business'))
+        const businessId = Number(request.header('Business') || request.input('businessId'))
         const data = await BugetRepository.report(businessId, startDate, endDate, page, perPage, text, 'pending')
         if ((data as any).getMeta) {
             const paginator = data as any
@@ -142,6 +142,10 @@ export default class DashboardController {
     }
 
     private async _getReceivablesData(businessId: number) {
+        if (!businessId || Number.isNaN(businessId)) {
+            return []
+        }
+
         // Fetch pending budgets
         const budgets = await Buget.query()
             .where('business_id', businessId)
@@ -229,7 +233,7 @@ export default class DashboardController {
     public async receivables(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
-        const businessId = Number(request.header('Business'))
+        const businessId = Number(request.header('Business') || request.input('businessId'))
         const data = await this._getReceivablesData(businessId)
         return { data }
     }
@@ -237,7 +241,7 @@ export default class DashboardController {
     public async receivablesOverview(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
-        const businessId = Number(request.header('Business'))
+        const businessId = Number(request.header('Business') || request.input('businessId'))
         
         const page = Number(request.input('page', 1))
         const perPage = Number(request.input('perPage', 5))
