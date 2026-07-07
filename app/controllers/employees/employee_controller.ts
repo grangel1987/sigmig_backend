@@ -490,7 +490,7 @@ export default class EmployeeController {
                 b.preload('position', (bb) => bb.select(['id', 'name']))
                 b.preload('businessSalary', (bb) => bb.select(['id', 'text']))
                 b.preload('business', (bb) => {
-                    bb.select(['id', 'type_identify_id', 'identify', 'name', 'url', 'url_thumb'])
+                    bb.select(['id', 'type_identify_id', 'identify', 'name', 'url', 'url_short', 'url_thumb', 'url_thumb_short'])
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                 })
             })
@@ -791,7 +791,7 @@ export default class EmployeeController {
                 b.preload('position', (bb) => bb.select(['id', 'name']))
                 b.preload('businessSalary', (bb) => bb.select(['id', 'text']))
                 b.preload('business', (bb) => {
-                    bb.select(['id', 'type_identify_id', 'identify', 'name', 'url', 'url_thumb'])
+                    bb.select(['id', 'type_identify_id', 'identify', 'name', 'url', 'url_short', 'url_thumb', 'url_thumb_short'])
                     bb.preload('typeIdentify', (ti) => ti.select(['id', 'text']))
                 })
             })
@@ -1259,7 +1259,7 @@ export default class EmployeeController {
         const permit = await EmployeePermit.query()
             .where('token', token)
             .preload('employee', (b) => b.preload('personalData'))
-            .preload('business', (b) => b.select(['id', 'identify', 'name', 'url', 'url_thumb', 'email', 'phone']))
+            .preload('business', (b) => b.select(['id', 'identify', 'name', 'url', 'url_short', 'url_thumb', 'url_thumb_short', 'email', 'phone']))
             .preload('authorizer', (b) => b.select(['id', 'identify', 'type_identify_id']))
             .first()
         if (!permit) return null

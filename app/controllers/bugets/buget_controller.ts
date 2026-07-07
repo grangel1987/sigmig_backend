@@ -920,7 +920,7 @@ export default class BugetController {
 
     // Load all the same relationships as the authenticated show method
     await buget.load('business', (q) => {
-      q.select(['id', 'name', 'url', 'url_short', 'email', 'identify', 'footer', 'type_identify_id'])
+      q.select(['id', 'name', 'url', 'url_short', 'url_thumb_short', 'email', 'identify', 'footer', 'type_identify_id'])
       q.preload('typeIdentify', (qq) => qq.select(['text']))
     })
 
@@ -2303,7 +2303,7 @@ export default class BugetController {
         q.select(['id', 'name', 'email'])
       })
       await buget.load('business', (q) => {
-        q.select(['id', 'name', 'url', 'url_short'])
+        q.select(['id', 'name', 'url', 'url_short', 'url_thumb_short'])
       })
 
       if (!email && !buget.client?.email) {

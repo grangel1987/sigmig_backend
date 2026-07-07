@@ -1,4 +1,4 @@
-﻿import BudgetPayment from '#models/budget_payment'
+import BudgetPayment from '#models/budget_payment'
 import Buget from '#models/bugets/buget'
 import Business from '#models/business/business'
 import BusinessUser from '#models/business/business_user'
@@ -1188,7 +1188,7 @@ export default class ServiceEntrySheetController {
     const sheet = await ServiceEntrySheet.query()
       .where('token', token)
       .where('enabled', true)
-      .preload('business', (q) => q.select(['id', 'name', 'url', 'email', 'identify']))
+      .preload('business', (q) => q.select(['id', 'name', 'url', 'url_short', 'url_thumb_short', 'email', 'identify']))
       .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
       .preload('provider', (q) => q.select(['id', 'name', 'email', 'address', 'phone']))
       .preload('issuerClient', (q) =>
