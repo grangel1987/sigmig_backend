@@ -179,7 +179,7 @@ export default class BookingController {
             .preload('properties', (builder) => builder.preload('propertie'))
             .preload('client', (builder) => {
                 builder
-                    .select(['id', 'identify_type_id', 'identify', 'name', 'url', 'phone', 'email', 'address', 'city_id'])
+                    .select(['id', 'identify_type_id', 'identify', 'name', 'url', 'url_short', 'url_thumb_short', 'phone', 'email', 'address', 'city_id'])
                     .preload('typeIdentify', (sub) => sub.select(['id', 'text']))
                     .preload('city', (sub) => sub.select(['id', 'name']))
             })
@@ -198,7 +198,7 @@ export default class BookingController {
             .preload('properties', (builder) => builder.preload('propertie'))
             .preload('client', (builder) => {
                 builder
-                    .select(['id', 'identify_type_id', 'identify', 'name', 'url', 'phone', 'email', 'address', 'city_id'])
+                    .select(['id', 'identify_type_id', 'identify', 'name', 'url', 'url_short', 'url_thumb_short', 'phone', 'email', 'address', 'city_id'])
                     .preload('typeIdentify', (sub) => sub.select(['id', 'text']))
                     .preload('city', (sub) => sub.select(['id', 'name']))
             })
@@ -237,7 +237,7 @@ export default class BookingController {
             .preload('properties', (builder) => builder.preload('propertie'))
             .preload('client', (builder) => {
                 builder
-                    .select(['id', 'identify_type_id', 'identify', 'name', 'url', 'phone', 'email', 'address', 'city_id'])
+                    .select(['id', 'identify_type_id', 'identify', 'name', 'url', 'url_short', 'url_thumb_short', 'phone', 'email', 'address', 'city_id'])
                     .preload('typeIdentify', (sub) => sub.select(['id', 'text']))
                     .preload('city', (sub) => sub.select(['id', 'name']))
             })

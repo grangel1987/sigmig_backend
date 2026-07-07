@@ -612,7 +612,7 @@ export default class ShoppingController {
 
         // Deep preloads with selects and nested relations
         await shop.load('business', (builder) => {
-            builder.select(['id', 'name', 'url', 'email', 'identify', 'address', 'phone', 'days_expire_buget', 'type_identify_id', 'footer'])
+            builder.select(['id', 'name', 'url', 'url_short', 'url_thumb_short', 'email', 'identify', 'address', 'phone', 'days_expire_buget', 'type_identify_id', 'footer'])
             builder.preload('typeIdentify', (b) => b.select(['text', 'id']))
         })
         await shop.load('provider', (builder) => {
@@ -906,7 +906,7 @@ export default class ShoppingController {
         const shop = await Shopping.findBy('token', token)
         if (!shop) return null
         await shop.load('business', (builder) => {
-            builder.select(['id', 'name', 'url', 'email', 'identify', 'address', 'phone', 'days_expire_buget', 'type_identify_id', 'footer'])
+            builder.select(['id', 'name', 'url', 'url_short', 'url_thumb_short', 'email', 'identify', 'address', 'phone', 'days_expire_buget', 'type_identify_id', 'footer'])
             builder.preload('typeIdentify', (b) => b.select(['text', 'id']))
         })
 

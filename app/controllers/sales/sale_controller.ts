@@ -342,7 +342,7 @@ export default class SaleController {
         .where('token', token)
         .whereNull('deleted_at')
         .preload('business', (q) =>
-          q.select(['id', 'name', 'url', 'url_short', 'email', 'identify'])
+          q.select(['id', 'name', 'url', 'url_short', 'url_thumb_short', 'email', 'identify'])
         )
         .preload('client', (q) => q.select(['id', 'name', 'identify', 'email', 'address', 'phone']))
         .preload('budget' as any, (q: any) =>
