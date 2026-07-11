@@ -143,6 +143,7 @@ export default class DashboardController {
 
     private async _getReceivablesData(businessId: number) {
         if (!businessId || Number.isNaN(businessId)) {
+            console.log("[DEBUG _getReceivablesData] invalid businessId, returning empty array");
             return []
         }
 
@@ -170,12 +171,14 @@ export default class DashboardController {
                     })
             })
 
+
         // Fetch unpaid/payment_pending sales
         const sales = await Sale.query()
             .whereNull('deleted_at')
             .where('business_id', businessId)
             .whereIn('status', ['unpaid', 'payment_pending'])
             .preload('client', (q) => q.select('id', 'name', 'identify'))
+
 
         // Group by client
         const clientsMap = new Map<number, any>()
@@ -233,7 +236,7 @@ export default class DashboardController {
     public async receivables(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
-        const businessId = Number(request.header('Business') || request.input('businessId'))
+        const businessId = Number(request.input('businessId') || request.header('Business'))
         const data = await this._getReceivablesData(businessId)
         return { data }
     }
@@ -241,30 +244,30 @@ export default class DashboardController {
     public async receivablesOverview(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
-        const businessId = Number(request.header('Business') || request.input('businessId'))
-        
+        const businessId = Number(request.input('businessId') || request.header('Business'))
+
         const page = Number(request.input('page', 1))
         const perPage = Number(request.input('perPage', 5))
-        
+
         const fullData = await this._getReceivablesData(businessId)
-        
+
         // Return only client info and total debt
         const overviewData = fullData.map((d: any) => ({
             client: d.client,
             totalDebt: d.totalDebt
         }))
-        
+
         // Sort descending by debt
         overviewData.sort((a, b) => b.totalDebt - a.totalDebt)
-        
+
         const total = overviewData.length
         const lastPage = Math.ceil(total / perPage) || 1
         const startIndex = (page - 1) * perPage
         const endIndex = startIndex + perPage
-        
+
         const paginatedData = overviewData.slice(startIndex, endIndex)
-        
-        return { 
+
+        return {
             meta: {
                 total,
                 perPage,
@@ -272,7 +275,7 @@ export default class DashboardController {
                 lastPage,
                 firstPage: 1
             },
-            data: paginatedData 
+            data: paginatedData
         }
     }
 }

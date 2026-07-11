@@ -4965,32 +4965,6 @@ paths:
       security:
         - bearerAuth: []
 
-  /shopping:
-    get:
-      tags:
-        - Orden de Compra (Shopping)
-      summary: Listar órdenes de compra
-      description: Obtiene la lista paginada de órdenes de compra
-      operationId: indexShopping
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Lista de órdenes de compra
-
-  /shopping/store:
-    post:
-      tags:
-        - Orden de Compra (Shopping)
-      summary: Crear orden de compra
-      description: Crea una nueva orden de compra
-      operationId: storeShopping
-      security:
-        - bearerAuth: []
-      responses:
-        '201':
-          description: Orden de compra creada
-
   /shopping/show/{id}:
     get:
       tags:
