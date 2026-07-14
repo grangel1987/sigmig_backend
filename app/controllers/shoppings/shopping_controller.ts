@@ -916,15 +916,15 @@ export default class ShoppingController {
         await shop.load('costCenter')
         await shop.load('work')
         await shop.load('createdBy', (b) => {
-            b.select(['id', 'email'])
+            b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
         })
         await shop.load('updatedBy', (b) => {
-            b.select(['id', 'email'])
+            b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
         })
         await shop.load('deletedBy', (b) => {
-            b.select(['id', 'email'])
+            b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
         })
 
