@@ -964,11 +964,26 @@ export default class ShoppingController {
         const { params, response, i18n } = ctx
         const { id: shopId } = await shoppingIdParamValidator.validate(params)
         try {
-            const shop = await Shopping.query().where('id', shopId).preload('provider').firstOrFail()
+            const shop = await Shopping.query().where('id', shopId).preload('provider').preload('business').firstOrFail()
+            const host = env.get('NODE_ENV') === 'development'
+                ? 'http://212.38.95.163/sigmig/'
+                : 'https://admin.serviciosgenessis.com/'
+            const shoppingUrl = shop.token ? host + `provider/shopping/${shop.token}` : ''
+            
             const payloadEmail = {
                 email: shop.provider.email ?? '',
                 full_name: shop.provider.name,
                 token: shop.token ?? '',
+                shoppingNumber: shop.nro,
+                businessName: shop.business?.name ?? '',
+                expirationDate: shop.expireDate ? Util.parseToMoment(shop.expireDate, false, { separator: '/', firstYear: false }) : '',
+                shoppingUrl,
+                subject: i18n.formatMessage('messages.shopping_share_email_subject', {}, 'Nueva cotización disponible'),
+                body: i18n.formatMessage('messages.shopping_share_email_body', { providerName: shop.provider.name }, `Hola ${shop.provider.name}, has recibido una nueva cotización para su revisión.`),
+                shoppingNumberLabel: i18n.formatMessage('messages.shopping_number', {}, 'Nº Cotización'),
+                businessLabel: i18n.formatMessage('messages.business', {}, 'Empresa'),
+                expirationDateLabel: i18n.formatMessage('messages.expiration_date', {}, 'Fecha Expira'),
+                viewShoppingLabel: i18n.formatMessage('messages.view_shopping', {}, 'Ver cotización')
             }
             await emitter.emit('new::shoppingShare', payloadEmail)
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_ok'), i18n.formatMessage('messages.ok_title')))
