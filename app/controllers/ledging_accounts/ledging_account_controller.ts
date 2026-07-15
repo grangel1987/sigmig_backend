@@ -15,7 +15,7 @@ export default class LedgingAccountController {
                         page: vine.number().optional(),
                         perPage: vine.number().optional(),
                         text: vine.string().optional(),
-                        type: vine.enum(['income', 'expense']).optional(),
+                        type: vine.enum(['income', 'expense', 'mixed']).optional(),
                     })
                 )
             )
@@ -27,7 +27,7 @@ export default class LedgingAccountController {
             }
 
             if (type) {
-                query.where('type', type)
+                query.whereIn('type', [type, 'mixed'])
             }
 
             query.orderBy('name', 'asc')
@@ -54,7 +54,7 @@ export default class LedgingAccountController {
                 vine.compile(
                     vine.object({
                         name: vine.string().trim(),
-                        type: vine.enum(['income', 'expense']),
+                        type: vine.enum(['income', 'expense', 'mixed']),
                         businessId: vine.number().positive().exists({ table: 'businesses', column: 'id' }),
                     })
                 )
@@ -111,7 +111,7 @@ export default class LedgingAccountController {
                 vine.compile(
                     vine.object({
                         name: vine.string().trim().optional(),
-                        type: vine.enum(['income', 'expense']).optional(),
+                        type: vine.enum(['income', 'expense', 'mixed']).optional(),
                     })
                 )
             )
@@ -173,7 +173,7 @@ export default class LedgingAccountController {
             const { type } = await request.validateUsing(
                 vine.compile(
                     vine.object({
-                        type: vine.enum(['income', 'expense']).optional(),
+                        type: vine.enum(['income', 'expense', 'mixed']).optional(),
                     })
                 )
             )
@@ -181,7 +181,7 @@ export default class LedgingAccountController {
             const query = LedgingAccount.query().orderBy('name', 'asc')
 
             if (type) {
-                query.where('type', type)
+                query.whereIn('type', [type, 'mixed'])
             }
 
             const accounts = await query
