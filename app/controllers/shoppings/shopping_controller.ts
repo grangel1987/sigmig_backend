@@ -20,6 +20,7 @@ import {
     shoppingUpdateNroBugetValidator,
 } from '#validators/shopping'
 import { HttpContext } from '@adonisjs/core/http'
+import vine from '@vinejs/vine'
 import emitter from '@adonisjs/core/services/emitter'
 import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
@@ -961,8 +962,9 @@ export default class ShoppingController {
     public async share(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'shopping', 'view')
 
-        const { params, response, i18n } = ctx
+        const { request, params, response, i18n } = ctx
         const { id: shopId } = await shoppingIdParamValidator.validate(params)
+        const { email: customEmail } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email().optional() })))
         try {
             const shop = await Shopping.query().where('id', shopId).preload('provider').preload('business').firstOrFail()
             const host = env.get('NODE_ENV') === 'development'
@@ -971,7 +973,7 @@ export default class ShoppingController {
             const shoppingUrl = shop.token ? host + `provider/shopping/${shop.token}` : ''
             
             const payloadEmail = {
-                email: shop.provider.email ?? '',
+                email: customEmail || shop.provider.email || '',
                 full_name: shop.provider.name,
                 token: shop.token ?? '',
                 shoppingNumber: shop.nro,

@@ -261,7 +261,7 @@ components:
           type: string
         type:
           type: string
-          enum: [income, expense]
+          enum: [income, expense, mixed]
 
     Expense:
       type: object
@@ -1617,7 +1617,7 @@ paths:
                   type: string
                 type:
                   type: string
-                  enum: [income, expense]
+                  enum: [income, expense, mixed]
               required:
                 - businessId
                 - name
@@ -1695,7 +1695,7 @@ paths:
                   type: string
                 type:
                   type: string
-                  enum: [income, expense]
+                  enum: [income, expense, mixed]
             example:
               name: Ingresos por servicios profesionales
               type: income
@@ -5040,3 +5040,62 @@ paths:
       responses:
         '200':
           description: Orden de compra reactivada
+
+  /shopping/share/{id}:
+    get:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Compartir Orden de Compra por Correo
+      description: Envía la orden de compra por correo electrónico al proveedor asociado.
+      operationId: shareShopping
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: email
+          in: query
+          required: false
+          description: Opcional. Correo electrónico alternativo al que se enviará la orden.
+          schema:
+            type: string
+            format: email
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Correo enviado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '404':
+          description: Orden de compra no encontrada
+        '500':
+          description: Error al enviar el correo
+
+  /shopping/details/{token}:
+    get:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Ver Detalles de Orden de Compra Pública
+      description: Obtiene los detalles de una orden de compra usando un token público.
+      operationId: getShoppingDetailsPublic
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      security: []
+      responses:
+        '200':
+          description: Detalles de la orden de compra
+        '404':
+          description: Orden de compra no encontrada
