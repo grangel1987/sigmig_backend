@@ -4,7 +4,7 @@ import Mail from '@adonisjs/mail/services/main'
 
 // Register all application listeners here
 
-let send = false
+let send = true
 
 emitter.on('new::bookingStore', async (data) => {
     if (send)
