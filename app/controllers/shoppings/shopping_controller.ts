@@ -25,7 +25,6 @@ import emitter from '@adonisjs/core/services/emitter'
 import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
-import vine from '@vinejs/vine'
 import { randomUUID } from 'crypto'
 import { DateTime } from 'luxon'
 
