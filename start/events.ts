@@ -15,7 +15,7 @@ emitter.on('new::bookingStore', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Registro de reserva')
-        .htmlView('emails.booking_store', data)
+        .htmlView('emails/booking_store', data)
     })
 })
 
@@ -28,7 +28,7 @@ emitter.on('new::userAppStore', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Registro de usuario')
-        .htmlView('emails.user_app_store', data)
+        .htmlView('emails/user_app_store', data)
     })
 })
 
@@ -41,7 +41,7 @@ emitter.on('new::userCodeConfirmStore', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject(`SIG Platform: ${data.type == 'i' ? 'Inactivacion' : 'Reactivacion'} de empleado`)
-        .htmlView('emails.user_code_confirm_store', data)
+        .htmlView('emails/user_code_confirm_store', data)
     })
 })
 
@@ -54,7 +54,7 @@ emitter.on('new::bookingStoreAdmin', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Reserva de propiedad')
-        .htmlView('emails.booking_store_admin', data)
+        .htmlView('emails/booking_store_admin', data)
     })
 })
 
@@ -67,7 +67,7 @@ emitter.on('new::bookingUpdate', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Edicion de reserva de propiedad')
-        .htmlView('emails.booking_update', data)
+        .htmlView('emails/booking_update', data)
     })
 })
 
@@ -80,7 +80,7 @@ emitter.on('new::employeePermitStore', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('Nueva permiso de trabajador')
-        .htmlView('emails.employee_permit_store', data)
+        .htmlView('emails/employee_permit_store', data)
     })
 })
 
@@ -93,7 +93,7 @@ emitter.on('new::employeePermitStoreAuthorizer', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('Nueva permiso de trabajador')
-        .htmlView('emails.employee_permit_store_authorizer', data)
+        .htmlView('emails/employee_permit_store_authorizer', data)
     })
 })
 
@@ -106,7 +106,7 @@ emitter.on('new::userEmailStore', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Codigo de confirmacion')
-        .htmlView('emails.user_email_store', data)
+        .htmlView('emails/user_email_store', data)
     })
 })
 
@@ -119,7 +119,7 @@ emitter.on('new::clientRequestStore', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Solicitud de reserva')
-        .htmlView('emails.client_request_store', data)
+        .htmlView('emails/client_request_store', data)
     })
 })
 
@@ -132,7 +132,7 @@ emitter.on('new::userForgotPasswordStore', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Solicitud de codigo para cambiar clave')
-        .htmlView('emails.user_code', data)
+        .htmlView('emails/user_code', data)
     })
 })
 
@@ -145,7 +145,7 @@ emitter.on('new::userAssignedToEmployee', async (data) => {
           `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
         )
         .subject('SIG Platform: Asignacion de usuario a empleado')
-        .htmlView('emails.user_code', data)
+        .htmlView('emails/user_code', data)
     })
 })
 
@@ -157,6 +157,6 @@ emitter.on('new::userPasswordRecovered', async (data) => {
         `"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`
       )
       .subject('SIG Platform: Recuperación de contraseña')
-      .htmlView('emails.user_password_recovery', data)
+      .htmlView('emails/user_password_recovery', data)
   })
 })
