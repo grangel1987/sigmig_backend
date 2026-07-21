@@ -966,13 +966,19 @@ export default class ShoppingController {
         const { email: customEmail } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email().optional() })))
         try {
             const shop = await Shopping.query().where('id', shopId).preload('provider').preload('business').firstOrFail()
+            
+            const resolvedEmail = customEmail || shop.provider.email
+            if (!resolvedEmail) {
+                return response.status(400).json(MessageFrontEnd(i18n.formatMessage('messages.email_required', {}, 'El proveedor no tiene un correo electrónico registrado y no se proporcionó ninguno.'), i18n.formatMessage('messages.error_title')))
+            }
+
             const host = env.get('NODE_ENV') === 'development'
                 ? 'http://212.38.95.163/sigmig/'
                 : 'https://admin.serviciosgenessis.com/'
             const shoppingUrl = shop.token ? host + `provider/shopping/${shop.token}` : ''
             
             const payloadEmail = {
-                email: customEmail || shop.provider.email || '',
+                email: resolvedEmail,
                 full_name: shop.provider.name,
                 token: shop.token ?? '',
                 shoppingNumber: shop.nro,
