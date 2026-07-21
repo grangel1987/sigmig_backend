@@ -2,6 +2,8 @@ import emitter from '@adonisjs/core/services/emitter'
 import logger from '@adonisjs/core/services/logger'
 import mail from '@adonisjs/mail/services/main'
 
+import env from '#start/env'
+
 type ShoppingSharePayload = {
   email: string
   full_name: string
@@ -24,6 +26,7 @@ export default function registerShoppingShareListener() {
       if (mail) {
         await mail.sendLater((message: any) => {
           message.to(payload.email)
+          message.from(`"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`)
           message.subject(payload.subject)
           message.htmlView('emails/shopping_share', {
             subject: payload.subject,
