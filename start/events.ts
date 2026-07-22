@@ -2,7 +2,10 @@ import env from '#start/env'
 import emitter from '@adonisjs/core/services/emitter'
 import Mail from '@adonisjs/mail/services/main'
 
+import registerShoppingShareListener from '#listeners/shopping_share_listener'
+
 // Register all application listeners here
+registerShoppingShareListener()
 
 let send = true
 
