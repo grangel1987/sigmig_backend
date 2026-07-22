@@ -910,6 +910,11 @@ export default class ShoppingController {
             builder.preload('typeIdentify', (b) => b.select(['text', 'id']))
         })
 
+        await shop.load('provider', (builder) => {
+            builder.select(['id', 'name', 'email', 'address', 'city_id', 'phone'])
+            builder.preload('city', (b) => b.select(['id', 'name']))
+        })
+
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
         await shop.load('products')
