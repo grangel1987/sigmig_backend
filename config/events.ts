@@ -6,6 +6,16 @@ declare module '@adonisjs/core/types' {
             email: string
             full_name: string
             token: string
+            shoppingNumber: string
+            businessName: string
+            expirationDate: string
+            shoppingUrl: string
+            subject: string
+            body: string
+            shoppingNumberLabel: string
+            businessLabel: string
+            expirationDateLabel: string
+            viewShoppingLabel: string
         }
         // Legacy mail-driven events
         'new::bookingStore': { email: string;[key: string]: any }

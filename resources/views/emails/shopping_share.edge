@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nueva cotización disponible - SIGMI</title>
+  <title>{{ subject }} - SIGMI</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -29,18 +29,28 @@
       line-height: 1.6;
       margin: 10px 0;
     }
-    .btn {
-      display: inline-block;
-      background-color: #2563eb;
-      color: #ffffff;
-      padding: 10px 16px;
-      text-decoration: none;
-      border-radius: 6px;
-      margin-top: 10px;
+    .shopping-details {
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
     }
-    .muted {
-      color: #6b7280;
-      font-size: 12px;
+    .shopping-details p {
+      margin: 5px 0;
+    }
+    .view-button {
+      display: inline-block;
+      background-color: #007bff;
+      color: #ffffff !important;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin: 20px 0;
+      font-weight: bold;
+      text-align: center;
+      border: 1px solid #007bff;
+      font-size: 16px;
+      line-height: 1.2;
     }
     .footer {
       margin-top: 30px;
@@ -52,9 +62,6 @@
     .footer a {
       color: #007bff;
       text-decoration: none;
-    }
-    .content-block {
-      padding: 10px 0;
     }
     .powered-by {
       text-align: center;
@@ -69,34 +76,36 @@
 </head>
 <body>
   <div class="container">
-    <h2>Hola {{ full_name }},</h2>
-    <p>Has recibido una nueva cotización para su revisión.</p>
-    <p>
-      Token de acceso: <strong>{{ token }}</strong>
-    </p>
-    @if(url)
-    <p>
-      <a href="{{ url }}" class="btn" target="_blank" rel="noopener noreferrer">Ver cotización</a>
+    <h2>{{ subject }}</h2>
+    <p>{{ body }}</p>
+
+    <div class="shopping-details">
+      <p><strong>{{ shoppingNumberLabel }}:</strong> {{ shoppingNumber }}</p>
+      <p><strong>{{ expirationDateLabel }}:</strong> {{ expirationDate }}</p>
+      <p><strong>{{ businessLabel }}:</strong> {{ businessName }}</p>
+    </div>
+
+    @if(shoppingUrl)
+    <a href="{{ shoppingUrl }}" class="view-button">{{ viewShoppingLabel }}</a>
+
+    <p style="margin-top: 10px; font-size: 14px; color: #666;">
+      {{ shoppingUrl }}
     </p>
     @endif
-    <p class="muted">Si no esperabas este correo, puedes ignorarlo.</p>
-            <!-- START FOOTER -->
-            <div class="footer">
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td class="content-block">
-                    <!-- <span class="apple-link">Company Inc, 3 Abbey Road, San Francisco CA 94102</span>
-                    <br> Don't like these emails? <a href="#">Unsubscribe</a>. -->
-                  </td>
-                </tr>
-                <tr>
-                  <td class="content-block powered-by">
-                     <a href="https://www.serviciosgenessis.com/" target="_blank">SIG PLATFORM</a>.
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <!-- END FOOTER -->
+
+    <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">Si no esperabas este correo, puedes ignorarlo.</p>
+
+    <!-- START FOOTER -->
+    <div class="footer">
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td class="content-block powered-by">
+            <a href="https://www.serviciosgenessis.com/" target="_blank">SIG PLATFORM</a>.
+          </td>
+        </tr>
+      </table>
+    </div>
+    <!-- END FOOTER -->
   </div>
 </body>
 </html>

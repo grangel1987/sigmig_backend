@@ -20,11 +20,11 @@ import {
     shoppingUpdateNroBugetValidator,
 } from '#validators/shopping'
 import { HttpContext } from '@adonisjs/core/http'
+import vine from '@vinejs/vine'
 import emitter from '@adonisjs/core/services/emitter'
 import { ModelPaginator } from '@adonisjs/lucid/orm'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
-import vine from '@vinejs/vine'
 import { randomUUID } from 'crypto'
 import { DateTime } from 'luxon'
 
@@ -910,21 +910,26 @@ export default class ShoppingController {
             builder.preload('typeIdentify', (b) => b.select(['text', 'id']))
         })
 
+        await shop.load('provider', (builder) => {
+            builder.select(['id', 'name', 'email', 'address', 'city_id', 'phone'])
+            builder.preload('city', (b) => b.select(['id', 'name']))
+        })
+
         await shop.load('paymentTerm', (b) => b.select(['id', 'text']))
         await shop.load('sendCondition', (b) => b.select(['id', 'text']))
         await shop.load('products')
         await shop.load('costCenter')
         await shop.load('work')
         await shop.load('createdBy', (b) => {
-            b.select(['id', 'email'])
+            b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
         })
         await shop.load('updatedBy', (b) => {
-            b.select(['id', 'email'])
+            b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
         })
         await shop.load('deletedBy', (b) => {
-            b.select(['id', 'email'])
+            b.select(['id', 'personal_data_id', 'email'])
             b.preload('personalData')
         })
 
@@ -961,14 +966,36 @@ export default class ShoppingController {
     public async share(ctx: HttpContext) {
         await PermissionService.requirePermission(ctx, 'shopping', 'view')
 
-        const { params, response, i18n } = ctx
+        const { request, params, response, i18n } = ctx
         const { id: shopId } = await shoppingIdParamValidator.validate(params)
+        const { email: customEmail } = await request.validateUsing(vine.compile(vine.object({ email: vine.string().email().optional() })))
         try {
-            const shop = await Shopping.query().where('id', shopId).preload('provider').firstOrFail()
+            const shop = await Shopping.query().where('id', shopId).preload('provider').preload('business').firstOrFail()
+            
+            const resolvedEmail = customEmail || shop.provider.email
+            if (!resolvedEmail) {
+                return response.status(400).json(MessageFrontEnd(i18n.formatMessage('messages.email_required', {}, 'El proveedor no tiene un correo electrónico registrado y no se proporcionó ninguno.'), i18n.formatMessage('messages.error_title')))
+            }
+
+            const host = env.get('NODE_ENV') === 'development'
+                ? 'http://212.38.95.163/sigmig/'
+                : 'https://admin.serviciosgenessis.com/'
+            const shoppingUrl = shop.token ? host + `provider/shopping/${shop.token}` : ''
+            
             const payloadEmail = {
-                email: shop.provider.email ?? '',
+                email: resolvedEmail,
                 full_name: shop.provider.name,
                 token: shop.token ?? '',
+                shoppingNumber: shop.nro,
+                businessName: shop.business?.name ?? '',
+                expirationDate: shop.expireDate ? Util.parseToMoment(shop.expireDate, false, { separator: '/', firstYear: false }) : '',
+                shoppingUrl,
+                subject: i18n.formatMessage('messages.shopping_share_email_subject', {}, 'Nueva orden de compra disponible'),
+                body: i18n.formatMessage('messages.shopping_share_email_body', { providerName: shop.provider.name }, `Hola ${shop.provider.name}, has recibido una nueva orden de compra para su revisión.`),
+                shoppingNumberLabel: i18n.formatMessage('messages.shopping_number', {}, 'Nº Orden de Compra'),
+                businessLabel: i18n.formatMessage('messages.business', {}, 'Empresa'),
+                expirationDateLabel: i18n.formatMessage('messages.expiration_date', {}, 'Fecha Expira'),
+                viewShoppingLabel: i18n.formatMessage('messages.view_shopping', {}, 'Ver orden de compra')
             }
             await emitter.emit('new::shoppingShare', payloadEmail)
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_ok'), i18n.formatMessage('messages.ok_title')))

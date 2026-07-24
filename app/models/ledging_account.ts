@@ -14,7 +14,7 @@ export default class LedgingAccount extends BaseModel {
     public name: string
 
     @column()
-    public type: 'income' | 'expense'
+    public type: 'income' | 'expense' | 'mixed'
 
     @column.dateTime({ autoCreate: true })
     public createdAt: DateTime

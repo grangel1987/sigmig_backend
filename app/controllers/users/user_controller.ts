@@ -79,7 +79,7 @@ export default class UserController {
       if (!passVerify) {
         return response.status(500).json({
           ...MessageFrontEnd(
-            i18n.formatMessage('messages.error'),
+            i18n.formatMessage('messages.error_login'),
             i18n.formatMessage('messages.error_title')
           ),
         })
@@ -119,6 +119,7 @@ export default class UserController {
       if (env.get('NODE_ENV') == 'development') return response.internalServerError({ error })
       else
         return response.status(500).json({
+          error,
           ...MessageFrontEnd(
             i18n.formatMessage('messages.error_login'),
             i18n.formatMessage('messages.error_title')

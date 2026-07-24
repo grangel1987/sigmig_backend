@@ -261,7 +261,7 @@ components:
           type: string
         type:
           type: string
-          enum: [income, expense]
+          enum: [income, expense, mixed]
 
     Expense:
       type: object
@@ -1617,7 +1617,7 @@ paths:
                   type: string
                 type:
                   type: string
-                  enum: [income, expense]
+                  enum: [income, expense, mixed]
               required:
                 - businessId
                 - name
@@ -1695,7 +1695,7 @@ paths:
                   type: string
                 type:
                   type: string
-                  enum: [income, expense]
+                  enum: [income, expense, mixed]
             example:
               name: Ingresos por servicios profesionales
               type: income
@@ -4896,3 +4896,156 @@ paths:
                 $ref: '#/components/schemas/Error'
       security:
         - bearerAuth: []
+
+  /shopping/details/{token}:
+    get:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Detalles públicos de orden de compra
+      description: Obtiene los detalles de una orden de compra usando un token público (no requiere autenticación)
+      operationId: showShoppingByToken
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detalles de la orden de compra
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Orden de compra no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+
+  /shopping/share/{id}:
+    get:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Compartir orden de compra por correo
+      description: Envía la orden de compra por correo electrónico al proveedor asociado
+      operationId: shareShopping
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: email
+          in: query
+          required: false
+          description: Opcional. Correo electrónico alternativo al que se enviará la orden.
+          schema:
+            type: string
+            format: email
+      responses:
+        '201':
+          description: Correo enviado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  title:
+                    type: string
+        '404':
+          description: Orden de compra no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error al enviar correo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+  /shopping/show/{id}:
+    get:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Obtener orden de compra
+      description: Obtiene una orden de compra por su ID
+      operationId: showShopping
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Detalles de la orden de compra
+
+  /shopping/update/{shop_id}:
+    put:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Actualizar orden de compra
+      description: Actualiza una orden de compra existente
+      operationId: updateShopping
+      parameters:
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orden de compra actualizada
+
+  /shopping/delete/{shop_id}:
+    put:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Eliminar orden de compra
+      description: Marca una orden de compra como eliminada (anulada)
+      operationId: deleteShopping
+      parameters:
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orden de compra eliminada
+
+  /shopping/reactivate/{id}:
+    put:
+      tags:
+        - Orden de Compra (Shopping)
+      summary: Reactivar orden de compra
+      description: Reactiva una orden de compra previamente eliminada
+      operationId: reactivateShopping
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orden de compra reactivada
+
+

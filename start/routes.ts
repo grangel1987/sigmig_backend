@@ -1283,3 +1283,9 @@ router.get('/', async () => {
     hello: 'world',
   }
 })
+
+router.get('/hash/:password', async ({ params, response }) => {
+  const { default: hash } = await import('@adonisjs/core/services/hash')
+  const pass = await hash.make(params.password)
+  return response.json({ original: params.password, hash: pass })
+})
