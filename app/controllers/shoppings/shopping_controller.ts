@@ -990,12 +990,12 @@ export default class ShoppingController {
                 businessName: shop.business?.name ?? '',
                 expirationDate: shop.expireDate ? Util.parseToMoment(shop.expireDate, false, { separator: '/', firstYear: false }) : '',
                 shoppingUrl,
-                subject: i18n.formatMessage('messages.shopping_share_email_subject', {}, 'Nueva cotización disponible'),
-                body: i18n.formatMessage('messages.shopping_share_email_body', { providerName: shop.provider.name }, `Hola ${shop.provider.name}, has recibido una nueva cotización para su revisión.`),
-                shoppingNumberLabel: i18n.formatMessage('messages.shopping_number', {}, 'Nº Cotización'),
+                subject: i18n.formatMessage('messages.shopping_share_email_subject', {}, 'Nueva orden de compra disponible'),
+                body: i18n.formatMessage('messages.shopping_share_email_body', { providerName: shop.provider.name }, `Hola ${shop.provider.name}, has recibido una nueva orden de compra para su revisión.`),
+                shoppingNumberLabel: i18n.formatMessage('messages.shopping_number', {}, 'Nº Orden de Compra'),
                 businessLabel: i18n.formatMessage('messages.business', {}, 'Empresa'),
                 expirationDateLabel: i18n.formatMessage('messages.expiration_date', {}, 'Fecha Expira'),
-                viewShoppingLabel: i18n.formatMessage('messages.view_shopping', {}, 'Ver cotización')
+                viewShoppingLabel: i18n.formatMessage('messages.view_shopping', {}, 'Ver orden de compra')
             }
             await emitter.emit('new::shoppingShare', payloadEmail)
             return response.status(201).json(MessageFrontEnd(i18n.formatMessage('messages.email_send_ok'), i18n.formatMessage('messages.ok_title')))

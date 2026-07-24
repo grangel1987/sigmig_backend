@@ -93,5 +93,7 @@
     "service_entry_sheet_authorizer_error": "Ocurrió un error al autorizar la HES.",
     "service_entry_sheet_no_authorizer_permission": "No tienes permisos para autorizar esta HES.",
     "client": "Cliente",
-    "created_by": "Creado por"
+    "created_by": "Creado por",
+    "shopping_share_email_subject": "Nueva Orden de Compra disponible",
+    "shopping_share_email_body": "Hola {providerName}, has recibido una nueva Orden de Compra para su revisión."
 }
