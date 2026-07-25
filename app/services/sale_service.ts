@@ -8,6 +8,7 @@ import SiiDteEvent from '#models/sii/sii_dte_event'
 import { mergeSaleMetadata, normalizeSaleMetadata } from '#services/sales/sale_payload_service'
 import CafService from '#services/sii/caf_service'
 import SiiXmlBuilderService from '#services/sii/sii_xml_builder_service'
+import SiiOrchestratorService from '#services/sii/sii_orchestrator_service'
 import XmlSignatureService from '#services/sii/xml_signature_service'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
@@ -746,6 +747,48 @@ export default class SaleService {
           },
           { client: trx }
         )
+
+        try {
+          const transmission = await SiiOrchestratorService.sendDteDocument(
+            signedXml,
+            summary.dteType,
+            null,
+            summary.receiverRut,
+            summary.issuerRut
+          )
+
+          document.status = 'sent'
+          document.siiTrackId = transmission.trackId || null
+          await document.useTransaction(trx).save()
+
+          await SiiDteEvent.create(
+            {
+              dteDocumentId: document.id,
+              eventType: 'sent',
+              payloadJson: {
+                trackId: transmission.trackId,
+                status: transmission.status,
+                rawResponse: transmission.rawResponse,
+              },
+            },
+            { client: trx }
+          )
+        } catch (transmissionError: any) {
+          document.status = 'error'
+          document.lastError = transmissionError.message || String(transmissionError)
+          await document.useTransaction(trx).save()
+
+          await SiiDteEvent.create(
+            {
+              dteDocumentId: document.id,
+              eventType: 'error',
+              payloadJson: {
+                error: document.lastError,
+              },
+            },
+            { client: trx }
+          )
+        }
       }
 
       await syncSaleElectronicBillingMetadata(
