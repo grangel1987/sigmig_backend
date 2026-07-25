@@ -84,4 +84,13 @@ export default class XmlSignatureService {
             referenceUri: `#${documentId}`,
         })
     }
+
+    public static signSeedXml(seedXml: string) {
+        return this.signXml({
+            xml: seedXml,
+            referenceXPath: "//*[local-name()='getToken']",
+            signatureParentXPath: "//*[local-name()='getToken']",
+            referenceUri: '',
+        })
+    }
 }

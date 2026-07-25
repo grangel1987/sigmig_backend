@@ -55,4 +55,6 @@ export default await Env.create(new URL('../', import.meta.url), {
   DTE_ENVIO_RUT_RECEPTOR: Env.schema.string.optional(),
   DTE_ENVIO_RESOLUTION_DATE: Env.schema.string.optional(),
   DTE_ENVIO_RESOLUTION_NUMBER: Env.schema.number.optional(),
+  DTE_ENVIRONMENT: Env.schema.enum.optional(['cert', 'prod'] as const),
+  DTE_SENDER_RUT: Env.schema.string.optional(),
 })
