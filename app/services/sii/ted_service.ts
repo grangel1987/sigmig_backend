@@ -56,9 +56,7 @@ function requireValue(value: unknown, fieldName: string) {
     return normalized
 }
 
-function compactXml(value: string) {
-    return value.replace(/<\?xml[^>]*>/gi, '').replace(/>\s+</g, '><').trim()
-}
+
 
 function extractBlock(source: string, tagName: string) {
     const regex = new RegExp(`<${tagName}(?:\\s+[^>]*)?>[\\s\\S]*?<\\/${tagName}>`, 'i')
