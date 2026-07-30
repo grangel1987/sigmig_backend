@@ -235,5 +235,21 @@ export default new class Util {
       .substring(0, length); // Trim to exact length
   }
 
+  /**
+   * Extracts the business ID from the request query parameters, body, or headers.
+   * @param request - The incoming HTTP request
+   * @returns The business ID as a number, or NaN if not found
+   */
+  getBusinessId(request: Request): number {
+    return Number(
+      request.qs().businessId || 
+      request.input('businessId') || 
+      request.qs().business_id || 
+      request.input('business_id') || 
+      request.header('business') || 
+      request.header('Business')
+    );
+  }
+
 }
 
