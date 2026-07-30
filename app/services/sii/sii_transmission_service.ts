@@ -1,4 +1,6 @@
 import env from '#start/env'
+import fs from 'node:fs'
+import https from 'https'
 
 interface DteUploadResponse {
   trackId: string | null
@@ -47,25 +49,38 @@ export default class SiiTransmissionService {
     payload += `${envioDteXml}${crlf}`
     payload += `--${boundary}--${crlf}`
 
-    const response = await fetch(url, {
+    const payloadBuffer = Buffer.from(payload, 'latin1')
+    fs.writeFileSync('DTE/payload_sent.txt', payloadBuffer)
+
+    const options = {
       method: 'POST',
       headers: {
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': payloadBuffer.length,
         'Accept': 'image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/vnd.ms-powerpoint, application/ms-excel, application/msword, */*',
         'Accept-Language': 'es-cl',
         'Cookie': `TOKEN=${token}`,
         'User-Agent': 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT 5.0; YComp 5.0.2.4)',
-      },
-      body: payload,
+        'Connection': 'close',
+      }
+    }
+
+    const responseText = await new Promise<string>((resolve, reject) => {
+      const req = https.request(url, options, (res) => {
+        let data = ''
+        res.on('data', (chunk) => data += chunk)
+        res.on('end', () => resolve(data))
+      })
+      req.on('error', (e) => reject(e))
+      req.write(payloadBuffer)
+      req.end()
     })
 
-    const responseText = await response.text()
-    
     // The SII responds with an HTML page or XML containing <TRACKID> or <STATUS>
     const trackIdMatch = responseText.match(/<TRACKID>(\d+)<\/TRACKID>/)
     const statusMatch = responseText.match(/<STATUS>([^<]+)<\/STATUS>/)
 
-    const status = statusMatch ? statusMatch[1] : (response.ok ? 'OK' : 'ERROR')
+    const status = statusMatch ? statusMatch[1] : (responseText.includes('RECEPCIONDTE') ? 'OK' : 'ERROR')
     const trackId = trackIdMatch ? trackIdMatch[1] : null
 
     if (status !== '0' && status !== 'OK' && !trackId) {
