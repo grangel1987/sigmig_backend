@@ -141,14 +141,14 @@ export default class DashboardController {
         return { data: (data as any[]).map((d) => d.serialize()) }
     }
 
-    private async _getReceivablesData(businessId: number) {
+    private async _getReceivablesData(businessId: number, clientId?: number) {
         if (!businessId || Number.isNaN(businessId)) {
             console.log("[DEBUG _getReceivablesData] invalid businessId, returning empty array");
             return []
         }
 
         // Fetch pending budgets
-        const budgets = await Buget.query()
+        const budgetsQuery = Buget.query()
             .where('business_id', businessId)
             .where('enabled', true)
             .where('status', 'pending')
@@ -171,13 +171,25 @@ export default class DashboardController {
                     })
             })
 
+        if (clientId) {
+            budgetsQuery.where('client_id', clientId)
+        }
+
+        const budgets = await budgetsQuery
+
 
         // Fetch unpaid/payment_pending sales
-        const sales = await Sale.query()
+        const salesQuery = Sale.query()
             .whereNull('deleted_at')
             .where('business_id', businessId)
             .whereIn('status', ['unpaid', 'payment_pending'])
             .preload('client', (q) => q.select('id', 'name', 'identify'))
+
+        if (clientId) {
+            salesQuery.where('client_id', clientId)
+        }
+
+        const sales = await salesQuery
 
 
         // Group by client
@@ -277,6 +289,22 @@ export default class DashboardController {
             },
             data: paginatedData
         }
+    }
+
+    public async clientReceivables(ctx: HttpContext) {
+        await PermissionService.requirePermission(ctx, 'bugets', 'view')
+        const { request, response } = ctx
+        const businessId = Number(request.input('businessId') || request.header('Business'))
+        const clientId = Number(request.param('id') || request.input('clientId'))
+        
+        if (!clientId || Number.isNaN(clientId)) {
+             return response.badRequest({ message: 'Client ID is required' })
+        }
+
+        const data = await this._getReceivablesData(businessId, clientId)
+        
+        const clientData = data.length > 0 ? data[0] : null
+        return { data: clientData }
     }
 }
 

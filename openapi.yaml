@@ -2737,6 +2737,35 @@ paths:
       security:
         - bearerAuth: []
 
+  /dashboard/receivables/client/{id}:
+    post:
+      tags:
+        - Dashboard
+      summary: Cuentas por cobrar de un cliente
+      description: Obtener las cuentas por cobrar de un cliente específico
+      operationId: getDashboardClientReceivables
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                businessId:
+                  type: integer
+      responses:
+        '200':
+          description: Cuentas por cobrar del cliente
+      security:
+        - bearerAuth: []
+
   /expenses:
     get:
       tags:
