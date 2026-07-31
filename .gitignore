@@ -2,7 +2,7 @@
 node_modules
 build
 tmp
-
+DTE/docs_and_schemas
 
 # Secrets
 .env
@@ -25,3 +25,7 @@ yarn-error.log
 
 # Platform specific
 .DS_Store
+
+
+test_*
+scratch_*

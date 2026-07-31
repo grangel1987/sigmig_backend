@@ -3,8 +3,8 @@ import env from '#start/env'
 import { DateTime } from 'luxon'
 
 interface BuildEnvelopePayload {
-    signedDteXml: string
-    dteType: number
+    signedDteXmls: string[]
+    dteTypes: { type: number, count: number }[]
     issuerRut: string
     setId?: string
     senderRut?: string | null
@@ -69,8 +69,14 @@ export default class SiiEnvelopeBuilderService {
             throw new Error('Missing required envelope field: resolutionNumber')
         }
 
-        const timestamp = (payload.envelopeTimestamp ?? DateTime.now()).toFormat("yyyy-LL-dd'T'HH:mm:ss")
-        const dteXml = stripXmlDeclaration(payload.signedDteXml)
+        const timestamp = (payload.envelopeTimestamp ?? DateTime.now().setZone('America/Santiago')).toFormat("yyyy-LL-dd'T'HH:mm:ss")
+        const dteXmls = payload.signedDteXmls.map(stripXmlDeclaration).join('\n')
+        const subTotDteXml = payload.dteTypes.map(t => [
+            '      <SubTotDTE>',
+            `        <TpoDTE>${t.type}</TpoDTE>`,
+            `        <NroDTE>${t.count}</NroDTE>`,
+            '      </SubTotDTE>'
+        ].join('\n')).join('\n')
 
         const envelopeUnsigned = [
             '<?xml version="1.0" encoding="ISO-8859-1"?>',
@@ -83,12 +89,9 @@ export default class SiiEnvelopeBuilderService {
             `      <FchResol>${escapeXml(resolutionDate)}</FchResol>`,
             `      <NroResol>${Math.trunc(resolutionNumber)}</NroResol>`,
             `      <TmstFirmaEnv>${timestamp}</TmstFirmaEnv>`,
-            '      <SubTotDTE>',
-            `        <TpoDTE>${payload.dteType}</TpoDTE>`,
-            '        <NroDTE>1</NroDTE>',
-            '      </SubTotDTE>',
+            subTotDteXml,
             '    </Caratula>',
-            `    ${dteXml}`,
+            `    ${dteXmls}`,
             '  </SetDTE>',
             '</EnvioDTE>',
         ].join('\n')
@@ -98,6 +101,7 @@ export default class SiiEnvelopeBuilderService {
             referenceXPath: "//*[local-name()='SetDTE']",
             signatureParentXPath: "//*[local-name()='EnvioDTE']",
             referenceUri: `#${setId}`,
+            getSiiKeyInfo: true,
         })
 
         return {

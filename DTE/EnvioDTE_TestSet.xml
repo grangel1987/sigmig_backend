@@ -1,0 +1,930 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<EnvioDTE xmlns="http://www.sii.cl/SiiDte" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sii.cl/SiiDte EnvioDTE_v10.xsd" version="1.0">
+  <SetDTE ID="SetDoc">
+    <Caratula version="1.0">
+      <RutEmisor>76983840-6</RutEmisor>
+      <RutEnvia>13359181-8</RutEnvia>
+      <RutReceptor>60803000-K</RutReceptor>
+      <FchResol>2026-07-28</FchResol>
+      <NroResol>0</NroResol>
+      <TmstFirmaEnv>2026-07-29T22:09:08</TmstFirmaEnv>
+      <SubTotDTE>
+        <TpoDTE>33</TpoDTE>
+        <NroDTE>4</NroDTE>
+      </SubTotDTE>
+      <SubTotDTE>
+        <TpoDTE>56</TpoDTE>
+        <NroDTE>1</NroDTE>
+      </SubTotDTE>
+      <SubTotDTE>
+        <TpoDTE>61</TpoDTE>
+        <NroDTE>3</NroDTE>
+      </SubTotDTE>
+    </Caratula>
+    <DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T33-F51">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>33</TipoDTE>
+        <Folio>51</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>331265</MntNeto>
+        <TasaIVA>19</TasaIVA>
+        <IVA>62940</IVA>
+        <MntTotal>394205</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>Cajon AFECTO</NmbItem>
+        <QtyItem>133</QtyItem>
+        <PrcItem>1466</PrcItem>
+        <MontoItem>194978</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>Relleno AFECTO</NmbItem>
+        <QtyItem>57</QtyItem>
+        <PrcItem>2391</PrcItem>
+        <MontoItem>136287</MontoItem>
+      </Detalle>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>33</TD><F>51</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>394205</MNT><IT1>Cajon AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>33</TD>
+<RNG><D>51</D><H>61</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>ypbj+B/8CbHNjf0zI9v86+rPX6yYtXLcbLpOhkstM5rfhl+NBvVc7/EPNvhKB4Mqa76ddfEMvnE3LdKB0mDkRQ==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">EXNW4Z6ZC/460VFyzS9zbjSiezq+i2fryELAB4B+ckfxRQ2vIsd11wmMi9dmOO84ObL+dqYMeTQwWpP+vTIWhw==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">bIjGLmWPXqttig5DcI55nFzK7LVexDAq8z3Ez4rNbF3xT8sCx1Ldny0GkA8YpdQTqv1iIusE/bpXTnX9EBZ7qg==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T33-F51"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>LuJm9gQ08YtW3w/rpPQmt69NDfA=</DigestValue></Reference></SignedInfo><SignatureValue>samjs9CSJ4nFacwdKin53zH/a8ZdEHKV07ZiKzd6A6Cb/DM2WaFBrbmJ/2RUDq9L1MiSxfDKRxFT5vVJna2cbmqoiBf/y/TXH3aguawz5KhMpUicCdF22bRyvmy2MirSK/RmeB7OjxhJziIyLrkY5LTlGTGzvRPRHVkj7KojKrYRCUrOh2hpffFcbUVcn2TTuvdo17HHhrRL8WhI2DgO3h+lpL7HN545omBYBBTT2j+cd5KfA4k2Iw5S7DDADvITzlStVaFkpFl0cTNkW8B6cuEZVRC1LSM5a/BNYcWK4UsZ+vuwIFmfJa8H7aYr8n6hFM9jDgQpjzz4UVoyef9KyA==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T33-F52">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>33</TipoDTE>
+        <Folio>52</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>1365155</MntNeto>
+        <TasaIVA>19</TasaIVA>
+        <IVA>259379</IVA>
+        <MntTotal>1624534</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>Panuelo AFECTO</NmbItem>
+        <QtyItem>346</QtyItem>
+        <PrcItem>2761</PrcItem>
+        <DescuentoPct>5</DescuentoPct>
+        <DescuentoMonto>47765</DescuentoMonto>
+        <MontoItem>907541</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>ITEM 2 AFECTO</NmbItem>
+        <QtyItem>276</QtyItem>
+        <PrcItem>1822</PrcItem>
+        <DescuentoPct>9</DescuentoPct>
+        <DescuentoMonto>45258</DescuentoMonto>
+        <MontoItem>457614</MontoItem>
+      </Detalle>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>33</TD><F>52</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>1624534</MNT><IT1>Panuelo AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>33</TD>
+<RNG><D>51</D><H>61</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>ypbj+B/8CbHNjf0zI9v86+rPX6yYtXLcbLpOhkstM5rfhl+NBvVc7/EPNvhKB4Mqa76ddfEMvnE3LdKB0mDkRQ==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">EXNW4Z6ZC/460VFyzS9zbjSiezq+i2fryELAB4B+ckfxRQ2vIsd11wmMi9dmOO84ObL+dqYMeTQwWpP+vTIWhw==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">xB9iyVYzesaklW3p04hnFStto5qgvm+ucRqJ4Nd3E6a60lzx4BqGhMYHoPlfji+HVMLhjF7cnaloYXOLSGETSw==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T33-F52"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>NzX/t+WvUh38v8h37dCL1f/7XzY=</DigestValue></Reference></SignedInfo><SignatureValue>oDq/rEpMppf1TKzwMuqVXr1A9bj/p3TJ13lFfXIr4OcOe5gDwywRT1hdQBONq0mv1yyPJ+FfgXsAHxdA6DKjKwT28PWJi+yHOe2/dSat2QO1jmnQpQVIFnozmQ5jjGBXDU86GanXRBfc4Ugtbcg26DtCYNAeF2YxzXDdkmNF+MZs9n2LlTNms1VlpP6qWUqHbZAuVHjPNMMVSIQGfiKjkD+zrmfS9o01VIXDHTAyNBYrKz2ZgeSqcWhvC1ig9nhB6QwI7WNRlOeKkpCOaK7P8c8hx/nXJ17U5t0bsmhCudjFa3+J7XcKOgrJ/KzE7YV27YjpsLVv2tujzl7vandhng==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T33-F53">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>33</TipoDTE>
+        <Folio>53</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>608559</MntNeto>
+        <MntExe>34829</MntExe>
+        <TasaIVA>19</TasaIVA>
+        <IVA>115626</IVA>
+        <MntTotal>759014</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>Pintura B&amp;W AFECTO</NmbItem>
+        <QtyItem>28</QtyItem>
+        <PrcItem>3072</PrcItem>
+        <MontoItem>86016</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>ITEM 2 AFECTO</NmbItem>
+        <QtyItem>167</QtyItem>
+        <PrcItem>3129</PrcItem>
+        <MontoItem>522543</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>3</NroLinDet>
+        <IndExe>1</IndExe>
+        <NmbItem>ITEM 3 SERVICIO EXENTO</NmbItem>
+        <QtyItem>1</QtyItem>
+        <PrcItem>34829</PrcItem>
+        <MontoItem>34829</MontoItem>
+      </Detalle>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>33</TD><F>53</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>759014</MNT><IT1>Pintura B&amp;W AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>33</TD>
+<RNG><D>51</D><H>61</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>ypbj+B/8CbHNjf0zI9v86+rPX6yYtXLcbLpOhkstM5rfhl+NBvVc7/EPNvhKB4Mqa76ddfEMvnE3LdKB0mDkRQ==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">EXNW4Z6ZC/460VFyzS9zbjSiezq+i2fryELAB4B+ckfxRQ2vIsd11wmMi9dmOO84ObL+dqYMeTQwWpP+vTIWhw==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">Qiqy1GcqgFs5whOVMytdtsgtQRR4GXP62ZL0JYTHRbzTojIqgwuRIGY/7PKLIIUh/auPK1+vJs5KllctKzhYMA==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T33-F53"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>EKa+f6A4pMWiOv07IKXWci+W3Kk=</DigestValue></Reference></SignedInfo><SignatureValue>ZOuUHgvE+YiWjLBgbjLpo3IkVWKW937DdlubNfYSdJtCHBF/K085gY0hNwHFqJ4H+M1Leq7t7HXLsZ1dF+/33hSUhSuegh+q+9avGJz6L71/drdq45MmDUao9sgHpZOuHVr2jvcE0L1N9gqJ4rX08itIiBBzv+FgfPSC0PNHsAcPNNDhrMvjIRkSwa97uX3HUEV5kRGdAWyrn1ueys++6XhgMjEfh+4s1Cqkg95Xxi0Jt5B014PW2VykoB+xRCEAWqBPrutZgUEjPu/s6ll7MDlg5bAH3PLlnmze1dDWIIBr3YOuGNfJWBNKEOPS9/VSNJMkb4/oyryAQ5jWnD79xg==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T33-F54">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>33</TipoDTE>
+        <Folio>54</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>503176</MntNeto>
+        <MntExe>13562</MntExe>
+        <TasaIVA>19</TasaIVA>
+        <IVA>95603</IVA>
+        <MntTotal>612341</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>ITEM 1 AFECTO</NmbItem>
+        <QtyItem>151</QtyItem>
+        <PrcItem>2570</PrcItem>
+        <MontoItem>388070</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>ITEM 2 AFECTO</NmbItem>
+        <QtyItem>65</QtyItem>
+        <PrcItem>2631</PrcItem>
+        <MontoItem>171015</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>3</NroLinDet>
+        <IndExe>1</IndExe>
+        <NmbItem>ITEM 3 SERVICIO EXENTO</NmbItem>
+        <QtyItem>2</QtyItem>
+        <PrcItem>6781</PrcItem>
+        <MontoItem>13562</MontoItem>
+      </Detalle>
+      <DscRcgGlobal>
+        <NroLinDR>1</NroLinDR>
+        <TpoMov>D</TpoMov>
+        <GlosaDR>Descuento Global</GlosaDR>
+        <TpoValor>%</TpoValor>
+        <ValorDR>10</ValorDR>
+        <IndExeDR>2</IndExeDR>
+      </DscRcgGlobal>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>33</TD><F>54</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>612341</MNT><IT1>ITEM 1 AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>33</TD>
+<RNG><D>51</D><H>61</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>ypbj+B/8CbHNjf0zI9v86+rPX6yYtXLcbLpOhkstM5rfhl+NBvVc7/EPNvhKB4Mqa76ddfEMvnE3LdKB0mDkRQ==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">EXNW4Z6ZC/460VFyzS9zbjSiezq+i2fryELAB4B+ckfxRQ2vIsd11wmMi9dmOO84ObL+dqYMeTQwWpP+vTIWhw==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">yhXWNqxM0F9e1gcDst0WNOOjgXHXcner5IeW2BYMDsS0We0u3sjWdrouLhwQGrizf6utnDL8kTwhcbPQIcstJw==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T33-F54"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>uury0hyXnqFFWaCRuO8xttGqU6Q=</DigestValue></Reference></SignedInfo><SignatureValue>UjCSsl0gQ9jc9sI4WXlQLCbolCnWelc+QtC5++siMiS6E3TlCQSPaz0TLxVORpgbFqBkaLsOmpJVmQ2Yz2m/NUBp243RoUGwh0Apa5ejhQS1uMvch9thYTSFaxjZFL8/+vKevkIEo1BZ9tlYMyvjvrqhYR0Bs/DQdndipp8o5SCagKf8BMuecvO2RPojbTjqMNDl/XHDENDG0L9td/3ipoxorHMeRS3fPTRkDgnaoPOJaYsNQbYUqthKYGGXTz0qEfBZuawhzuiM314/QHL9I0Vku8gDFJiwB2lDNK0mkA05lNhEQrSfbspTRLkfQlOSXtaggz+gXfrmMALQrXVvLg==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T61-F50">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>61</TipoDTE>
+        <Folio>50</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>331265</MntNeto>
+        <TasaIVA>19</TasaIVA>
+        <IVA>62940</IVA>
+        <MntTotal>394205</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>Cajon AFECTO</NmbItem>
+        <QtyItem>133</QtyItem>
+        <PrcItem>1466</PrcItem>
+        <MontoItem>194978</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>Relleno AFECTO</NmbItem>
+        <QtyItem>57</QtyItem>
+        <PrcItem>2391</PrcItem>
+        <MontoItem>136287</MontoItem>
+      </Detalle>
+      <Referencia>
+        <NroLinRef>1</NroLinRef>
+        <TpoDocRef>33</TpoDocRef>
+        <FolioRef>51</FolioRef>
+        <FchRef>2026-07-29</FchRef>
+        <CodRef>2</CodRef>
+        <RazonRef>CORRIGE GIRO DEL RECEPTOR</RazonRef>
+      </Referencia>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>61</TD><F>50</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>394205</MNT><IT1>Cajon AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>61</TD>
+<RNG><D>50</D><H>59</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>3lVGBN4jCmmsOZuwkKpDqEz+/O25cyj764ydFExxQOaBF1WIt1p8AaTX5KrxqJY6mYeN0YYz1WBDJRlCnlLWTw==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">p6aQ5K7VhvF/7LuBNWrVyw9JvYvCVNkJdw37/6Yb8hbjsH9xClqV+EXBEbs7d7GwKWONJEU58xPQqza8ubjuPA==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">LjWqJsBueOAw+9/PkcmcPxkOEzVePoRV5B1s4gPnwSn/xEt+xJEi6ns24TOlJmeA8jmzLwb1YQyreWeYPOzcKg==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T61-F50"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>Qv8pbA6U+3oKpiea359VrTnd+8c=</DigestValue></Reference></SignedInfo><SignatureValue>CJbeiC2WNgWWlPVvgVAKkHWyZtTy4oS8wUhScJIOgUKW/s+SBYXaDwaODQOD9X6seNEOyEISw4v181JCKXQL3d46EjCUioR21VuZikUD6cnZ5Rgli3u+A3QgOo7AKHwiEarYbFgVAPJsm481bm8qY4YLIdem8m+3ScmdHyCpJ3uyEqnfg6dAWvpSqMaT0i8ofIhSZTVfs9nCPafyC3w1h10aK+S83Z5pwvMSsBbQZUt9nH7INPm39b07e0y5wUySvBX2/TayXGonLK4H0leVL58GkBbGrCNJUR0aikTbRJB+YlRzHh2elX9AktrxZj13yMVbGOeqDAOzZ6Yq9acbSg==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T61-F51">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>61</TipoDTE>
+        <Folio>51</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>643105</MntNeto>
+        <TasaIVA>19</TasaIVA>
+        <IVA>122190</IVA>
+        <MntTotal>765295</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>Panuelo AFECTO</NmbItem>
+        <QtyItem>127</QtyItem>
+        <PrcItem>2761</PrcItem>
+        <DescuentoPct>5</DescuentoPct>
+        <DescuentoMonto>17532</DescuentoMonto>
+        <MontoItem>333068</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>ITEM 2 AFECTO</NmbItem>
+        <QtyItem>187</QtyItem>
+        <PrcItem>1822</PrcItem>
+        <DescuentoPct>9</DescuentoPct>
+        <DescuentoMonto>30664</DescuentoMonto>
+        <MontoItem>310037</MontoItem>
+      </Detalle>
+      <Referencia>
+        <NroLinRef>1</NroLinRef>
+        <TpoDocRef>33</TpoDocRef>
+        <FolioRef>52</FolioRef>
+        <FchRef>2026-07-29</FchRef>
+        <CodRef>3</CodRef>
+        <RazonRef>DEVOLUCION DE MERCADERIAS</RazonRef>
+      </Referencia>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>61</TD><F>51</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>765295</MNT><IT1>Panuelo AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>61</TD>
+<RNG><D>50</D><H>59</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>3lVGBN4jCmmsOZuwkKpDqEz+/O25cyj764ydFExxQOaBF1WIt1p8AaTX5KrxqJY6mYeN0YYz1WBDJRlCnlLWTw==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">p6aQ5K7VhvF/7LuBNWrVyw9JvYvCVNkJdw37/6Yb8hbjsH9xClqV+EXBEbs7d7GwKWONJEU58xPQqza8ubjuPA==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">juT+OFFKMXRWwpYCgHhHR71A3Jyclj6BukYONSPFQJlNpkG+u/1Gm2yikpAiwMstYQ4/unnH0Qye7+5hksw2Dw==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T61-F51"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>MaL2XNhQ1RRxr7tqUBTepUmYBJs=</DigestValue></Reference></SignedInfo><SignatureValue>VbrTbW91ZzMNdrnzzK2o/KjyHrFArhHQqx/vzXl+4tB2zmJCkusfBJ8Uqg6wjf/+A446D5YB2BXgUpSQML+LtOI6anzsZqJFnMJxjcgipS9AiJ3uRwTDlA7GzSvTnelXjKGo1ZYtvfXbX0hnyRuvsbdvSfMlGmTju250Vaq5mgsG+PgIEVyxNHHyiLN5V5Xh37NiTa9oQBAe+Mzuj8pHHQiAdC4L2M7LFKOQ5sWeM1p6h9FvMf47tOCe4IKmtUePgf1DQAIE9yHbW1U6+KkBhBvCzWRcrqT32ZiGUCM8yu5caKnkg+scFJlMGDels8oSN99YskU8Tk0yW3sofRlvpg==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T61-F52">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>61</TipoDTE>
+        <Folio>52</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>608559</MntNeto>
+        <MntExe>34829</MntExe>
+        <TasaIVA>19</TasaIVA>
+        <IVA>115626</IVA>
+        <MntTotal>759014</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>Pintura B&amp;W AFECTO</NmbItem>
+        <QtyItem>28</QtyItem>
+        <PrcItem>3072</PrcItem>
+        <MontoItem>86016</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>ITEM 2 AFECTO</NmbItem>
+        <QtyItem>167</QtyItem>
+        <PrcItem>3129</PrcItem>
+        <MontoItem>522543</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>3</NroLinDet>
+        <IndExe>1</IndExe>
+        <NmbItem>ITEM 3 SERVICIO EXENTO</NmbItem>
+        <QtyItem>1</QtyItem>
+        <PrcItem>34829</PrcItem>
+        <MontoItem>34829</MontoItem>
+      </Detalle>
+      <Referencia>
+        <NroLinRef>1</NroLinRef>
+        <TpoDocRef>33</TpoDocRef>
+        <FolioRef>53</FolioRef>
+        <FchRef>2026-07-29</FchRef>
+        <CodRef>1</CodRef>
+        <RazonRef>ANULA FACTURA</RazonRef>
+      </Referencia>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>61</TD><F>52</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>759014</MNT><IT1>Pintura B&amp;W AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>61</TD>
+<RNG><D>50</D><H>59</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>3lVGBN4jCmmsOZuwkKpDqEz+/O25cyj764ydFExxQOaBF1WIt1p8AaTX5KrxqJY6mYeN0YYz1WBDJRlCnlLWTw==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">p6aQ5K7VhvF/7LuBNWrVyw9JvYvCVNkJdw37/6Yb8hbjsH9xClqV+EXBEbs7d7GwKWONJEU58xPQqza8ubjuPA==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">SFV7C0wL3oILkjrv6Jg1eMsS55N4EEomtBa223IuGssuvznuy4TGDn9OXR9xpyZxqeAPjG/R+bXjDulWxIio3Q==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T61-F52"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>ZtYJwRXrReCf+eNb7nb47lpxt6o=</DigestValue></Reference></SignedInfo><SignatureValue>ICfUe/WmewbOZZhlTFEckWw8Lrk+NhmHrDnkDbtYmIRd7v6AcI0dqyCSHk618VfpLE4NPbVnJSBuZKjADxy7FhQt9GL6sf7XL3vJtnRMiBISp4H+DqRhNIIOyYNyHDbdsCQm1pkl3hoLxPwsDUFHukQJgQ9dkAnrneAvDHMXkjAYrNe3PCiagI9rToei8HON+QMgWUCcxz9pWQyewVrBLw1E530CX1k1R0oPMjdWQc8FA5swlM02uPD5VdQoZ5uKFvvIqYWzB8asB5jk2tYWPfo0m2dUm6Jo20udQdfx3SuestRidh6UiwGn1bwGuoOKBrBSFlfmgbhX/36cODh7tw==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+  <Documento ID="SIGMI-T56-F50">
+    <Encabezado>
+      <IdDoc>
+        <TipoDTE>56</TipoDTE>
+        <Folio>50</Folio>
+        <FchEmis>2026-07-29</FchEmis>
+      </IdDoc>
+      <Emisor>
+<RUTEmisor>76983840-6</RUTEmisor>
+<RznSoc>SERVICIOS INTEGRALES GENESSIS SPA</RznSoc>
+<GiroEmis>ACTIVIDADES DE CONSULTORIA DE GESTION</GiroEmis>
+        <Acteco>702000</Acteco>
+<DirOrigen>J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION</DirOrigen>
+<CmnaOrigen>DIEGO DE ALMAGRO</CmnaOrigen>
+<CiudadOrigen>DIEGO DE ALMAGRO</CiudadOrigen>
+      </Emisor>
+      <Receptor>
+<RUTRecep>60803000-K</RUTRecep>
+<RznSocRecep>JORGE GONZALEZ LTDA</RznSocRecep>
+<GiroRecep>COMPUTACION</GiroRecep>
+<DirRecep>SAN DIEGO 2222</DirRecep>
+<CmnaRecep>SANTIAGO</CmnaRecep>
+<CiudadRecep>SANTIAGO</CiudadRecep>
+      </Receptor>
+      <Totales>
+        <MntNeto>331265</MntNeto>
+        <TasaIVA>19</TasaIVA>
+        <IVA>62940</IVA>
+        <MntTotal>394205</MntTotal>
+      </Totales>
+    </Encabezado>
+      <Detalle>
+        <NroLinDet>1</NroLinDet>
+        <NmbItem>Cajon AFECTO</NmbItem>
+        <QtyItem>133</QtyItem>
+        <PrcItem>1466</PrcItem>
+        <MontoItem>194978</MontoItem>
+      </Detalle>
+      <Detalle>
+        <NroLinDet>2</NroLinDet>
+        <NmbItem>Relleno AFECTO</NmbItem>
+        <QtyItem>57</QtyItem>
+        <PrcItem>2391</PrcItem>
+        <MontoItem>136287</MontoItem>
+      </Detalle>
+      <Referencia>
+        <NroLinRef>1</NroLinRef>
+        <TpoDocRef>61</TpoDocRef>
+        <FolioRef>50</FolioRef>
+        <FchRef>2026-07-29</FchRef>
+        <CodRef>1</CodRef>
+        <RazonRef>ANULA NOTA DE CREDITO ELECTRONICA</RazonRef>
+      </Referencia>
+    <TED version="1.0"><DD><RE>76983840-6</RE><TD>56</TD><F>50</F><FE>2026-07-29</FE><RR>60803000-K</RR><RSR>JORGE GONZALEZ LTDA</RSR><MNT>394205</MNT><IT1>Cajon AFECTO</IT1><CAF version="1.0">
+<DA>
+<RE>76983840-6</RE>
+<RS>SERVICIOS INTEGRALES GENESSIS SPA</RS>
+<TD>56</TD>
+<RNG><D>50</D><H>60</H></RNG>
+<FA>2026-07-29</FA>
+<RSAPK><M>xnb4cJpttDYcUftIXdO5ohsWTFPG+sdVhErqIdrpPbxmHtyeoQKeEu9f6gGe6RJji/V4bgaooJgkHLV5jVn1Dw==</M><E>Aw==</E></RSAPK>
+<IDK>100</IDK>
+</DA>
+<FRMA algoritmo="SHA1withRSA">MVz3U94BWVqX5XhtuwVd3HdcW64PG4uZplTID0sSz+9kyXwHds/H0zF3derTCgda/C/vZuL12Ou60YKD/wWaEg==</FRMA>
+</CAF><TSTED>2026-07-29T22:09:08</TSTED></DD><FRMT algoritmo="SHA1withRSA">Gdjbywv6sukmzOtYtvRHlKqqWlXuTPR1ErpIfloUgvKZDWdRtEIFYwgiw7mC1zxyZtemS619sSDIZDHoWf4zqQ==</FRMT></TED>
+    <TmstFirma>2026-07-29T22:09:08</TmstFirma>
+  </Documento>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SIGMI-T56-F50"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>QmImzJwAhFFW2I3gUl5GOijPdRU=</DigestValue></Reference></SignedInfo><SignatureValue>BbJ+IjNokBqSOgXKyV3+z9vsB8qtfky7NZXlARNSu9viC2jAUERbsR8+aSbTkEovbjUPpgSB9QiWNartYUtLncNP2P0r0uz7njiGreH+P8Lr7OaUniBMLM+02qQC6nrNq4vwyL4KOxgASHn4aTVgkHrPDv4U7Ep4govQJiOax6T+dSZm2A+j8ZlTwnlNBTUttFd0Lo6vT0ewLI52Z/tnIQqxtEnskWLV6c6yoIluFtNezA11DxVcsf3t6opXUkHO0iqiylkkVg8pJfIaN/1OR/LhPSKJY6duKIWkR1ClyEm+78Y6J4TtEBl1QML23E1UBp4L9gIXExFBwasWqCuUUA==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></DTE>
+  </SetDTE>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/><Reference URI="#SetDoc"><Transforms><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/><DigestValue>H2sfQUJEYw3AFPZTlK3ADC1ho5c=</DigestValue></Reference></SignedInfo><SignatureValue>VAGcnNW9VfJ5x90f7E2CAEy7TADbG2cD/NIQqu35Tl2bI2ao2RuCXFVNMvV8jL9ceHirtmVHVq1A0p1h+zdCD33pp8Sj5YZof26zfGX/7GGm+iFqFu+M1/8Pp0k47Yh09VNRwZ6a75Dr8/0fei++J9IqcfoTKoM/X7ctALfV7gtUUINoFHt3hQsVsco0vF5Sm57v7Nn+MXWHvnK2BwuDtUTKm87MPjbf9+Zrm5byPkEFS+Aexqrhc6APlzaDmZiZfVb7kHUQbewtbyeJX6M2+WNrcwRWstlOiNEzDBR8i0KOmXwWhgXMbPqe/0XNLjeZilIq+xhZMNDVq+fb399y0g==</SignatureValue><KeyInfo><KeyValue>
+<RSAKeyValue>
+<Modulus>t+S1F6W1YqsWEsU1RUbGKmVl+U4yjmhduSSiQalIhk2fqrZa9rKA2mqXwS6Vm7OptFsTHPq+qQtyW7qgm5FcwNltwuj4SAZ1W4gPuwcgJB/UGyL54eFVab3bwA0sUr2FbMWIGfWbkIRrz/A61OEUTP4b1xbxE0/eztSuHTbjP5fPHSKX6SMqsQITGpOH4Zgfd/iW+x/byBGvTX/qyxMAQhv9u7Pgc0dCrLV8pdqkAGFlzABhxxM645jfZc3xUksEs+KkfcvDDPb+b6plPbkyuYNQbUPhZUKizk37cNBEvS1ci4txwDm17hWW3hW5QbvYLjERViVhDbCK+v1/WTX5ew==</Modulus>
+<Exponent>AQAB</Exponent>
+</RSAKeyValue>
+</KeyValue>
+<X509Data>
+<X509Certificate>
+MIIFUTCCBDmgAwIBAgIIcnaDCvBBJFswDQYJKoZIhvcNAQELBQAwgboxHjAcBgkq
+hkiG9w0BCQEWD3NvcG9ydGVAaWRvay5jbDEiMCAGA1UEAwwZSURPSyBGSVJNQSBF
+TEVDVFJPTklDQSBWNDEXMBUGA1UECwwOUlVULTc2NjEwNzE4LTQxIDAeBgNVBAsM
+F0F1dG9yaWRhZCBDZXJ0aWZpY2Fkb3JhMRkwFwYDVQQKDBBCUE8gQWR2aXNvcnMg
+U3BBMREwDwYDVQQHDAhTYW50aWFnbzELMAkGA1UEBhMCQ0wwHhcNMjYwNzA1MTUw
+MjM1WhcNMjgwNTI2MTMwMTMxWjCBiDEoMCYGA1UEAwwfSlVMSU8gR0FMQkFSSU5P
+IEFMRkFSTyBJQkFDQUNIRTEtMCsGCSqGSIb3DQEJARYeY29udGFjdG9Ac2Vydmlj
+aW9zZ2VuZXNzaXMuY29tMRMwEQYDVQQFEwoxMzM1OTE4MS04MQswCQYDVQQGEwJD
+TDELMAkGA1UEBwwCUk0wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3
+5LUXpbViqxYSxTVFRsYqZWX5TjKOaF25JKJBqUiGTZ+qtlr2soDaapfBLpWbs6m0
+WxMc+r6pC3JbuqCbkVzA2W3C6PhIBnVbiA+7ByAkH9QbIvnh4VVpvdvADSxSvYVs
+xYgZ9ZuQhGvP8DrU4RRM/hvXFvETT97O1K4dNuM/l88dIpfpIyqxAhMak4fhmB93
++Jb7H9vIEa9Nf+rLEwBCG/27s+BzR0KstXyl2qQAYWXMAGHHEzrjmN9lzfFSSwSz
+4qR9y8MM9v5vqmU9uTK5g1BtQ+FlQqLOTftw0ES9LVyLi3HAObXuFZbeFblBu9gu
+MRFWJWENsIr6/X9ZNfl7AgMBAAGjggGJMIIBhTAJBgNVHRMEAjAAMB8GA1UdIwQY
+MBaAFLvdStt/EDeIdGdFssq5EoTgxngWMIGYBgNVHSAEgZAwgY0wgYoGCisGAQQB
+g4weAQQwfDAsBggrBgEFBQcCARYgaHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL2Nw
+cy5wZGYwTAYIKwYBBQUHAgIwQB4+AEMAZQByAHQAaQBmAGkAYwBhAGQAbwAgAHAA
+YQByAGEAIAB1AHMAbwAgAFQAcgBpAGIAdQB0AGEAcgBpAG8wRgYDVR0fBD8wPTA7
+oDmgN4Y1aHR0cHM6Ly9wc2MuaWRvay5jbC9vcGVuL0lET0tfRklSTUFfRUxFQ1RS
+T05JQ0FfNC5jcmwwHQYDVR0OBBYEFCXQXLmmuQgQwLXv4Nb8J9/ZZBYvMAsGA1Ud
+DwQEAwIEkDAjBgNVHRIEHDAaoBgGCCsGAQQBwQECoAwWCjc2NjEwNzE4LTQwIwYD
+VR0RBBwwGqAYBggrBgEEAcEBAaAMFgoxMzM1OTE4MS04MA0GCSqGSIb3DQEBCwUA
+A4IBAQCiSSPoDiPnIqZziO9i4rSzTvyN3Xszt37e1oY8yeEyP44tVRis7fnXr23g
+SXGm66SIOvBiHJ/3ow4jI7Xg/NOd6iY8H/gpIbtZBdc4QjfFP/xeb3NVZjDBrJh6
+cgh9e7kaOfGpci81a8ey1GU8zGd4uE+/GD8INCMNutCTS1ODVh2aTkR2vl2wDBmW
+pre21nbfRd68AeHQjpLWGaIBB0HKIIZBeQVSsYKvjJUHuybjLqbBhmjuzjeSJT4w
+3EA+FXZrn71RL0DO6oY7MPUlaC5ddvhjIaYDW3706sBiauotHhOd/TFOwMS+u9pf
+/vgCYhl1RpFldwjUtfPKKeZo1RXp
+</X509Certificate>
+</X509Data></KeyInfo></Signature></EnvioDTE>

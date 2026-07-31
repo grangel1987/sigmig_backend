@@ -665,7 +665,7 @@ export default class SaleService {
     const issuedAt = DateTime.now()
     const cafFile = await SiiCafFile.findOrFail(allocation.cafId)
     const draftArtifacts = SiiXmlBuilderService.buildDraftArtifacts({
-      sale: sale as Sale,
+      sale: sale as unknown as any,
       cafFile,
       dteType: summary.dteType,
       folio: allocation.folio,

@@ -1,26 +1,25 @@
 import Indicator from '#models/settings/indicator'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
-import PermissionService from '#services/permission_service'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import Buget from '#models/bugets/buget'
 import Sale from '#models/sales/sale'
+import Client from '#models/clients/client'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
+import Util from '#utils/Util'
 
 export default class DashboardController {
     public async purchaseOrdersMetrics(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'shopping', 'viewReports')
         const { request } = ctx
         const { startDate, endDate } = await request.validateUsing(vine.compile(searchWithStatusSchema))
-        const businessId = Number(request.header('Business') || request.input('businessId'))
+        const businessId = Util.getBusinessId(request)
         const metrics = await ShoppingRepository.metrics(businessId, startDate, endDate)
         return metrics
     }
 
     public async budgetsMetrics(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
         const { request } = ctx
         const { startDate, endDate, text, budgetStatus, status } = await request.validateUsing(
             vine.compile(
@@ -116,7 +115,6 @@ export default class DashboardController {
     }
 
     public async pendingPurchaseOrders(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'shopping', 'view')
         const { request } = ctx
         const { page, perPage, startDate, endDate } = await request.validateUsing(vine.compile(searchWithStatusSchema))
         const businessId = Number(request.header('Business') || request.input('businessId'))
@@ -129,10 +127,9 @@ export default class DashboardController {
     }
 
     public async pendingBudgets(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
         const { page, perPage, startDate, endDate, text } = await request.validateUsing(vine.compile(searchWithStatusSchema))
-        const businessId = Number(request.header('Business') || request.input('businessId'))
+        const businessId = Util.getBusinessId(request)
         const data = await BugetRepository.report(businessId, startDate, endDate, page, perPage, text, 'pending')
         if ((data as any).getMeta) {
             const paginator = data as any
@@ -141,14 +138,14 @@ export default class DashboardController {
         return { data: (data as any[]).map((d) => d.serialize()) }
     }
 
-    private async _getReceivablesData(businessId: number) {
+    private async _getReceivablesData(businessId: number, clientId?: number) {
         if (!businessId || Number.isNaN(businessId)) {
             console.log("[DEBUG _getReceivablesData] invalid businessId, returning empty array");
             return []
         }
 
         // Fetch pending budgets
-        const budgets = await Buget.query()
+        const budgetsQuery = Buget.query()
             .where('business_id', businessId)
             .where('enabled', true)
             .where('status', 'pending')
@@ -171,13 +168,25 @@ export default class DashboardController {
                     })
             })
 
+        if (clientId) {
+            budgetsQuery.where('client_id', clientId)
+        }
+
+        const budgets = await budgetsQuery
+
 
         // Fetch unpaid/payment_pending sales
-        const sales = await Sale.query()
+        const salesQuery = Sale.query()
             .whereNull('deleted_at')
             .where('business_id', businessId)
             .whereIn('status', ['unpaid', 'payment_pending'])
             .preload('client', (q) => q.select('id', 'name', 'identify'))
+
+        if (clientId) {
+            salesQuery.where('client_id', clientId)
+        }
+
+        const sales = await salesQuery
 
 
         // Group by client
@@ -234,17 +243,15 @@ export default class DashboardController {
     }
 
     public async receivables(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
-        const businessId = Number(request.input('businessId') || request.header('Business'))
+        const businessId = Util.getBusinessId(request)
         const data = await this._getReceivablesData(businessId)
         return { data }
     }
 
     public async receivablesOverview(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
-        const businessId = Number(request.input('businessId') || request.header('Business'))
+        const businessId = Util.getBusinessId(request)
 
         const page = Number(request.input('page', 1))
         const perPage = Number(request.input('perPage', 5))
@@ -276,6 +283,42 @@ export default class DashboardController {
                 firstPage: 1
             },
             data: paginatedData
+        }
+    }
+
+    public async clientReceivables(ctx: HttpContext) {
+        const { request, response } = ctx
+        const businessId = Util.getBusinessId(request)
+        const clientId = Number(request.param('id') || request.qs().clientId || request.input('clientId'))
+
+        if (!clientId || Number.isNaN(clientId)) {
+            return response.badRequest({ message: 'Client ID is required' })
+        }
+
+        const data = await this._getReceivablesData(businessId, clientId)
+
+        if (data.length > 0) {
+            return { data: data[0] }
+        }
+
+        // Fetch client to return base structure if no debt exists
+        const client = await Client.find(clientId)
+
+        if (!client) {
+            return response.notFound({ message: 'Client not found' })
+        }
+
+        return {
+            data: {
+                client: {
+                    id: client.id,
+                    name: client.name,
+                    identify: client.identify
+                },
+                totalDebt: 0,
+                budgets: [],
+                sales: []
+            }
         }
     }
 }

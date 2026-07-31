@@ -1,5 +1,6 @@
 import env from '#start/env'
 import { SignedXml } from 'xml-crypto'
+import forge from 'node-forge'
 
 const XML_C14N = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'
 const XML_RSA_SHA1 = 'http://www.w3.org/2000/09/xmldsig#rsa-sha1'
@@ -10,6 +11,7 @@ interface XmlSignOptions {
     referenceXPath: string
     signatureParentXPath: string
     referenceUri: string
+    getSiiKeyInfo?: boolean
 }
 
 function normalizePem(value: string | undefined) {
@@ -17,7 +19,7 @@ function normalizePem(value: string | undefined) {
         return null
     }
 
-    const normalized = value.replace(/\\n/g, '\n').trim()
+    const normalized = value.replace(/\\n/g, '\n').replace(/\r/g, '').trim()
     return normalized.length ? normalized : null
 }
 
@@ -39,6 +41,38 @@ export default class XmlSignatureService {
         return Boolean(privateKey && certificate)
     }
 
+    private static getSiiKeyInfoContent(certificate: string) {
+        return ({ prefix }: { prefix?: string }) => {
+            prefix = prefix ? prefix + ':' : ''
+            const certBody = certificate
+                .replace(/-----BEGIN CERTIFICATE-----/g, '')
+                .replace(/-----END CERTIFICATE-----/g, '')
+                .replace(/\s+/g, '')
+
+            // Split cert body into 64 char chunks
+            const chunks = certBody.match(/.{1,64}/g)?.join('\n') || certBody
+
+            let modulusBase64 = ''
+            try {
+                const pureBase64 = certificate.replace(/-----BEGIN CERTIFICATE-----/g, '').replace(/-----END CERTIFICATE-----/g, '').replace(/\s+/g, '')
+                const cleanPem = `-----BEGIN CERTIFICATE-----\n${pureBase64}\n-----END CERTIFICATE-----`
+                const certForge = forge.pki.certificateFromPem(cleanPem)
+                const publicKey = certForge.publicKey as forge.pki.rsa.PublicKey
+                let hex = publicKey.n.toString(16)
+                if (hex.length % 2 !== 0) hex = '0' + hex
+                modulusBase64 = Buffer.from(hex, 'hex').toString('base64')
+            } catch (e) {
+                console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                console.error('Error extracting modulus:', e)
+                console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            }
+
+            const rsaKeyValue = modulusBase64 ? `<${prefix}KeyValue>\n<${prefix}RSAKeyValue>\n<${prefix}Modulus>${modulusBase64}</${prefix}Modulus>\n<${prefix}Exponent>AQAB</${prefix}Exponent>\n</${prefix}RSAKeyValue>\n</${prefix}KeyValue>\n` : ''
+
+            return `${rsaKeyValue}<${prefix}X509Data>\n<${prefix}X509Certificate>\n${chunks}\n</${prefix}X509Certificate>\n</${prefix}X509Data>`
+        }
+    }
+
     public static signXml(options: XmlSignOptions) {
         const { privateKey, certificate } = getSigningCredentials()
 
@@ -51,6 +85,7 @@ export default class XmlSignatureService {
             publicCert: certificate,
             signatureAlgorithm: XML_RSA_SHA1,
             canonicalizationAlgorithm: XML_C14N,
+            getKeyInfoContent: this.getSiiKeyInfoContent(certificate) as any,
         })
 
         signer.addReference({

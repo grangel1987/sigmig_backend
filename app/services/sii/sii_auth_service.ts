@@ -31,7 +31,8 @@ export default class SiiAuthService {
     }
 
     const xml = await response.text()
-    const seedMatch = xml.match(/<SEMILLA>(\d+)<\/SEMILLA>/)
+    const decodedXml = xml.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    const seedMatch = decodedXml.match(/<SEMILLA>(\d+)<\/SEMILLA>/)
     if (!seedMatch) {
       throw new Error('Could not parse SEMILLA from SII response')
     }
@@ -70,11 +71,12 @@ export default class SiiAuthService {
     }
 
     const xml = await response.text()
-    const tokenMatch = xml.match(/<TOKEN>([^<]+)<\/TOKEN>/)
+    const decodedXml = xml.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    const tokenMatch = decodedXml.match(/<TOKEN>([^<]+)<\/TOKEN>/)
     
     if (!tokenMatch) {
       // SII returns errors in <GLOSA> e.g. <GLOSA>Firma del Token inválida</GLOSA>
-      const glosaMatch = xml.match(/<GLOSA>([^<]+)<\/GLOSA>/)
+      const glosaMatch = decodedXml.match(/<GLOSA>([^<]+)<\/GLOSA>/)
       throw new Error(`Could not parse TOKEN from SII response. Glosa: ${glosaMatch ? glosaMatch[1] : 'Unknown error'}`)
     }
 

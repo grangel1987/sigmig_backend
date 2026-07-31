@@ -56,14 +56,12 @@ function requireValue(value: unknown, fieldName: string) {
     return normalized
 }
 
-function compactXml(value: string) {
-    return value.replace(/<\?xml[^>]*>/gi, '').replace(/>\s+</g, '><').trim()
-}
+
 
 function extractBlock(source: string, tagName: string) {
     const regex = new RegExp(`<${tagName}(?:\\s+[^>]*)?>[\\s\\S]*?<\\/${tagName}>`, 'i')
     const match = source.match(regex)
-    return match ? compactXml(match[0]) : null
+    return match ? match[0].trim() : null
 }
 
 function extractPrivateKeyPem(...sources: Array<string | null | undefined>) {
@@ -125,7 +123,7 @@ export default class TedService {
         const tedTimestamp = (payload.tedTimestamp ?? DateTime.now()).toFormat("yyyy-LL-dd'T'HH:mm:ss")
         const ddXml = buildDdXml(payload, cafBlock, tedTimestamp)
         const signer = createSign('RSA-SHA1')
-        signer.update(ddXml, 'utf8')
+        signer.update(ddXml, 'latin1')
         signer.end()
 
         const tedSignature = signer.sign(privateKeyPem, 'base64')

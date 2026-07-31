@@ -23,8 +23,8 @@ export default class SiiOrchestratorService {
 
     // 1. Build the <EnvioDTE> envelope
     const { envelopeSigned: envioDteXml } = await SiiEnvelopeBuilderService.buildSignedEnvelope({
-      signedDteXml,
-      dteType,
+      signedDteXmls: [signedDteXml],
+      dteTypes: [{ type: dteType, count: 1 }],
       senderRut,
       issuerRut: companyRut,
       receiverRut: receiverRutOverride,
