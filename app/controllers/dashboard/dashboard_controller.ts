@@ -1,7 +1,6 @@
 import Indicator from '#models/settings/indicator'
 import BugetRepository from '#repositories/bugets/buget_repository'
 import ShoppingRepository from '#repositories/shoppings/shopping_repository'
-import PermissionService from '#services/permission_service'
 import { searchWithStatusSchema } from '#validators/general'
 import { HttpContext } from '@adonisjs/core/http'
 import Buget from '#models/bugets/buget'
@@ -13,7 +12,6 @@ import Util from '#utils/Util'
 
 export default class DashboardController {
     public async purchaseOrdersMetrics(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'shopping', 'viewReports')
         const { request } = ctx
         const { startDate, endDate } = await request.validateUsing(vine.compile(searchWithStatusSchema))
         const businessId = Util.getBusinessId(request)
@@ -22,7 +20,6 @@ export default class DashboardController {
     }
 
     public async budgetsMetrics(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'viewReports')
         const { request } = ctx
         const { startDate, endDate, text, budgetStatus, status } = await request.validateUsing(
             vine.compile(
@@ -118,7 +115,6 @@ export default class DashboardController {
     }
 
     public async pendingPurchaseOrders(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'shopping', 'view')
         const { request } = ctx
         const { page, perPage, startDate, endDate } = await request.validateUsing(vine.compile(searchWithStatusSchema))
         const businessId = Number(request.header('Business') || request.input('businessId'))
@@ -131,7 +127,6 @@ export default class DashboardController {
     }
 
     public async pendingBudgets(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
         const { page, perPage, startDate, endDate, text } = await request.validateUsing(vine.compile(searchWithStatusSchema))
         const businessId = Util.getBusinessId(request)
@@ -248,7 +243,6 @@ export default class DashboardController {
     }
 
     public async receivables(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
         const businessId = Util.getBusinessId(request)
         const data = await this._getReceivablesData(businessId)
@@ -256,7 +250,6 @@ export default class DashboardController {
     }
 
     public async receivablesOverview(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request } = ctx
         const businessId = Util.getBusinessId(request)
 
@@ -294,7 +287,6 @@ export default class DashboardController {
     }
 
     public async clientReceivables(ctx: HttpContext) {
-        await PermissionService.requirePermission(ctx, 'bugets', 'view')
         const { request, response } = ctx
         const businessId = Util.getBusinessId(request)
         const clientId = Number(request.param('id') || request.qs().clientId || request.input('clientId'))
