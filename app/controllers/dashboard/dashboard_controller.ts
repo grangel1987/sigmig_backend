@@ -148,7 +148,7 @@ export default class DashboardController {
         const budgetsQuery = Buget.query()
             .where('business_id', businessId)
             .where('enabled', true)
-            .where('status', 'pending')
+            .whereIn('status', ['pending', 'accept'])
             .preload('client', (q) => q.select('id', 'name', 'identify'))
             .preload('products')
             .preload('items')
