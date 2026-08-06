@@ -1,3 +1,4 @@
+import BudgetEdp from '#models/budget_edp'
 import BudgetPayment from '#models/budget_payment'
 import BudgetObservation from '#models/bugets/budget_observation'
 import BugetAccount from '#models/bugets/buget_account'
@@ -86,6 +87,9 @@ export default class Buget extends BaseModel {
   @column()
   public enabled: boolean
 
+  @column({ columnName: 'has_edp' })
+  public hasEdp: boolean
+
   @column()
   public status: 'pending' | 'revision' | 'reject' | 'accept' | null
 
@@ -162,6 +166,9 @@ export default class Buget extends BaseModel {
 
   @hasMany(() => BudgetPayment, { foreignKey: 'budgetId' })
   public payments: HasMany<typeof BudgetPayment>
+
+  @hasMany(() => BudgetEdp, { foreignKey: 'budgetId' })
+  public edps: HasMany<typeof BudgetEdp>
 
   /**
    * Runs before creating a new record

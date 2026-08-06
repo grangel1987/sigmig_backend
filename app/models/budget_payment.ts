@@ -1,5 +1,6 @@
 import BudgetpaymentDetail from '#models/budget_payment_detail'
 import Buget from '#models/bugets/buget'
+import BudgetEdp from '#models/budget_edp'
 import LedgerMovement from '#models/ledger_movement'
 import { BaseModel, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
@@ -16,6 +17,12 @@ export default class BudgetPayment extends BaseModel {
 
   @belongsTo(() => Buget, { foreignKey: 'budgetId' })
   declare budget: BelongsTo<typeof Buget>
+
+  @column({ columnName: 'budget_edp_id' })
+  declare budgetEdpId: number | null
+
+  @belongsTo(() => BudgetEdp, { foreignKey: 'budgetEdpId' })
+  declare edp: BelongsTo<typeof BudgetEdp>
 
   @column({
     prepare: (value?: number) => (value ?? null),

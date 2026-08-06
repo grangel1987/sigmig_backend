@@ -14,12 +14,14 @@ import handleDate from '#utils/HandleDate'
 import BudgetPaymentValidator from '#validators/budget_payment_validator'
 import Database from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
+import EdpService from '#services/edp_service'
 
 interface CreateBudgetPaymentParams {
   budgetId?: number
   accountId?: number
   costCenterId?: number
   clientId?: number
+  budgetEdpId?: number
   date: DateTime | Date | string
   amount: number
   currencyId: number
@@ -68,6 +70,7 @@ export default class BudgetPaymentService {
       const budgetPayment = await BudgetPayment.create(
         {
           budgetId: params.budgetId,
+          budgetEdpId: params.budgetEdpId,
           amount: params.amount,
           date: DateTime.isDateTime(params.date)
             ? params.date
@@ -348,6 +351,7 @@ export default class BudgetPaymentService {
 
       // Update budget payment fields
       if (params.budgetId !== undefined) budgetPayment.budgetId = params.budgetId
+      if (params.budgetEdpId !== undefined) budgetPayment.budgetEdpId = params.budgetEdpId
       if (params.amount !== undefined) budgetPayment.amount = params.amount
       if (params.date !== undefined) {
         budgetPayment.date = DateTime.isDateTime(params.date)
@@ -460,6 +464,10 @@ export default class BudgetPaymentService {
 
       await trx.commit()
 
+      if (budgetPayment.budgetEdpId) {
+        await EdpService.updateStatus(budgetPayment.budgetEdpId)
+      }
+
       return { success: true }
     } catch (error) {
       await trx.rollback()
@@ -518,6 +526,10 @@ export default class BudgetPaymentService {
 
       await trx.commit()
 
+      if (budgetPayment.budgetEdpId) {
+        await EdpService.updateStatus(budgetPayment.budgetEdpId)
+      }
+
       return {
         budgetPayment,
         ledgerMovement,
@@ -553,6 +565,10 @@ export default class BudgetPaymentService {
       await ledgerMovement.useTransaction(trx).save()
 
       await trx.commit()
+
+      if (budgetPayment.budgetEdpId) {
+        await EdpService.updateStatus(budgetPayment.budgetEdpId)
+      }
 
       return {
         budgetPayment,
