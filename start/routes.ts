@@ -949,6 +949,13 @@ router
           })
           .prefix('bugets')
         router.post('/send-email/:id', '#controllers/bugets/buget_controller.sendEmailToClient')
+
+        // EDPs
+        router.get('/:budgetId/edps', '#controllers/bugets/budget_edps_controller.index')
+        router.post('/:budgetId/edps', '#controllers/bugets/budget_edps_controller.store')
+        router.put('/:budgetId/edps/:edpId', '#controllers/bugets/budget_edps_controller.update')
+        router.delete('/:budgetId/edps/:edpId', '#controllers/bugets/budget_edps_controller.destroy')
+
         router.group(() => {
           router.post('/payments', '#controllers/bugets/buget_controller.storePayment')
           router.get('/payments/:id', '#controllers/bugets/buget_controller.showPayment')
@@ -1227,6 +1234,14 @@ router
         router.post('/receivables/client/:id', '#controllers/dashboard/dashboard_controller.clientReceivables')
       })
       .prefix('dashboard')
+      .middleware(auth)
+
+    // Receivables
+    router
+      .group(() => {
+        router.get('/edps', '#controllers/bugets/budget_edps_controller.receivables')
+      })
+      .prefix('receivables')
       .middleware(auth)
 
     // Cash Audits
