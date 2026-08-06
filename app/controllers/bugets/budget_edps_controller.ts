@@ -3,6 +3,7 @@ import BudgetEdp from '#models/budget_edp'
 import Buget from '#models/bugets/buget'
 import BudgetEdpValidator, { budgetEdpValidator } from '#validators/budget_edp_validator'
 import vine from '@vinejs/vine'
+import { DateTime } from 'luxon'
 
 const updateEdpValidator = vine.compile(
   vine.object({
@@ -45,7 +46,7 @@ export default class BudgetEdpsController {
     edp.name = payload.name ?? null
     edp.percentage = payload.percentage
     edp.amount = totalAmount * payload.percentage
-    edp.dueDate = payload.dueDate ?? null
+    edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
     edp.status = 'pending'
 
     await edp.save()
@@ -68,21 +69,21 @@ export default class BudgetEdpsController {
         edp.id
       )
       BudgetEdpValidator.throwIfInvalidPercentage(validation, params.budgetId)
-      
+
       edp.percentage = payload.percentage
-      
+
       // Recalculate amount
       const budget = await Buget.query()
         .where('id', params.budgetId)
         .preload('products')
         .preload('items')
         .firstOrFail()
-        
+
       edp.amount = budget.getTotalAmount() * payload.percentage
     }
 
     if (payload.dueDate !== undefined) {
-      edp.dueDate = payload.dueDate ?? null
+      edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
     }
 
     if (payload.name !== undefined) {
@@ -117,8 +118,8 @@ export default class BudgetEdpsController {
     const toDate = request.input('to_date')
 
     const query = BudgetEdp.query()
-      .preload('budget', (budgetQuery) => {
-        budgetQuery.preload('client')
+      .preload('budget' as any, (budgetQuery: any) => {
+        budgetQuery.preload('client' as any)
       })
 
     if (status) {
