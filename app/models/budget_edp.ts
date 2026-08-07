@@ -1,5 +1,6 @@
 import Buget from '#models/bugets/buget'
 import BudgetPayment from '#models/budget_payment'
+import BudgetEdpDetail from '#models/budget_edp_detail'
 import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
@@ -44,6 +45,9 @@ export default class BudgetEdp extends BaseModel {
 
   @hasMany(() => BudgetPayment, { foreignKey: 'budgetEdpId' })
   declare payments: HasMany<typeof BudgetPayment>
+
+  @hasMany(() => BudgetEdpDetail, { foreignKey: 'budgetEdpId' })
+  declare details: HasMany<typeof BudgetEdpDetail>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

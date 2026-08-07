@@ -9,50 +9,68 @@ export const budgetEdpValidator = vine.compile(
     budgetId: vine.number(),
     edpNumber: vine.number(),
     name: vine.string().nullable().optional(),
-    percentage: vine.number().min(0).max(1),
+    percentage: vine.number().min(0).max(1).optional(),
     dueDate: vine.date().nullable().optional(),
+    details: vine.array(
+      vine.object({
+        bugetProductId: vine.number(),
+        percentage: vine.number().min(0).max(1)
+      })
+    ).minLength(1)
   })
 )
 
 /**
- * Validates that adding a new EDP or updating an existing one doesn't exceed 100% (1.0)
+ * Validates that adding a new EDP or updating an existing one doesn't exceed 100% (1.0) per product
  */
 export default class BudgetEdpValidator {
   static async validatePercentage(
     budgetId: number,
-    newPercentage: number,
+    details: { bugetProductId: number, percentage: number }[],
     excludeEdpId?: number
-  ): Promise<{ valid: boolean; currentTotal: number; newTotal: number }> {
+  ): Promise<{ valid: boolean; invalidProductIds: number[] }> {
     let query = BudgetEdp.query().where('budget_id', budgetId)
     
     if (excludeEdpId) {
       query = query.whereNot('id', excludeEdpId)
     }
 
-    const existingEdps = await query
+    const existingEdps = await query.preload('details')
     
-    let currentTotal = existingEdps.reduce((sum, edp) => {
-      // Handle the case where percentage might be stored as a string from decimal column
-      return sum + Number(edp.percentage)
-    }, 0)
+    // Calculate current totals per product
+    const currentTotals = new Map<number, number>()
+    
+    for (const edp of existingEdps) {
+      for (const detail of edp.details) {
+        const current = currentTotals.get(detail.bugetProductId) || 0
+        currentTotals.set(detail.bugetProductId, current + Number(detail.percentage))
+      }
+    }
 
-    const newTotal = currentTotal + newPercentage
+    const invalidProductIds: number[] = []
+
+    for (const detail of details) {
+      const current = currentTotals.get(detail.bugetProductId) || 0
+      const newTotal = current + detail.percentage
+      
+      if (newTotal > 1.0001) {
+        invalidProductIds.push(detail.bugetProductId)
+      }
+    }
 
     return {
-      valid: newTotal <= 1.0001, // allow small floating point variance
-      currentTotal,
-      newTotal
+      valid: invalidProductIds.length === 0,
+      invalidProductIds
     }
   }
 
   static throwIfInvalidPercentage(
-    validation: { valid: boolean; currentTotal: number; newTotal: number },
+    validation: { valid: boolean; invalidProductIds: number[] },
     budgetId: number
   ) {
     if (!validation.valid) {
-      const remaining = Math.max(0, 1 - validation.currentTotal)
       throw new Error(
-        `Validation Error: EDP percentage exceeds 100% for Budget ${budgetId}. Remaining allowed: ${(remaining * 100).toFixed(2)}%`
+        `Validation Error: EDP percentage exceeds 100% for Budget ${budgetId} on products: ${validation.invalidProductIds.join(', ')}`
       )
     }
   }

@@ -5,11 +5,19 @@ import BudgetEdpValidator, { budgetEdpValidator } from '#validators/budget_edp_v
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
 
+import db from '@adonisjs/lucid/services/db'
+
 const updateEdpValidator = vine.compile(
   vine.object({
     percentage: vine.number().min(0).max(1).optional(),
     dueDate: vine.date().nullable().optional(),
-    name: vine.string().nullable().optional()
+    name: vine.string().nullable().optional(),
+    details: vine.array(
+      vine.object({
+        bugetProductId: vine.number(),
+        percentage: vine.number().min(0).max(1)
+      })
+    ).optional()
   })
 )
 
@@ -19,6 +27,7 @@ export default class BudgetEdpsController {
 
     const edps = await BudgetEdp.query()
       .where('budget_id', budgetId)
+      .preload('details', (q) => q.preload('bugetProduct'))
       .orderBy('edp_number', 'asc')
 
     return response.ok(edps)
@@ -34,24 +43,55 @@ export default class BudgetEdpsController {
       .preload('items')
       .firstOrFail()
 
-    // Validate percentage total doesn't exceed 100%
-    const validation = await BudgetEdpValidator.validatePercentage(budgetId, payload.percentage)
+    // Validate percentage total doesn't exceed 100% per product
+    const validation = await BudgetEdpValidator.validatePercentage(budgetId, payload.details)
     BudgetEdpValidator.throwIfInvalidPercentage(validation, budgetId)
 
-    const totalAmount = budget.getTotalGrossAmount()
+    let edpTotalAmount = 0
+    const detailsData = payload.details.map(detail => {
+      const product = budget.products.find(p => p.id === detail.bugetProductId)
+      if (!product) throw new Error(`Product ${detail.bugetProductId} not found in budget`)
 
-    const edp = new BudgetEdp()
-    edp.budgetId = budgetId
-    edp.edpNumber = payload.edpNumber
-    edp.name = payload.name ?? null
-    edp.percentage = payload.percentage
-    edp.amount = totalAmount * payload.percentage
-    edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
-    edp.status = 'pending'
+      const productTotal = (product.amount || 0) * (product.count || 1) * (product.countPerson || 1)
+      const adjustedProductTotal = productTotal - (productTotal * (budget.discount / 100)) + (productTotal * (budget.utility / 100))
+      const taxPercentage = product.tax || 0
+      const productGross = adjustedProductTotal + (adjustedProductTotal * (taxPercentage / 100))
 
-    await edp.save()
+      const lineAmount = productGross * detail.percentage
+      edpTotalAmount += lineAmount
 
-    return response.created(edp)
+      return {
+        bugetProductId: detail.bugetProductId,
+        percentage: detail.percentage,
+        amount: lineAmount
+      }
+    })
+
+    const globalGrossAmount = budget.getTotalGrossAmount()
+    const effectivePercentage = globalGrossAmount > 0 ? (edpTotalAmount / globalGrossAmount) : 0
+
+    const trx = await db.transaction()
+    try {
+      const edp = new BudgetEdp()
+      edp.budgetId = budgetId
+      edp.edpNumber = payload.edpNumber
+      edp.name = payload.name ?? null
+      edp.percentage = payload.percentage ?? effectivePercentage
+      edp.amount = edpTotalAmount
+      edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
+      edp.status = 'pending'
+
+      await edp.useTransaction(trx).save()
+      await edp.related('details').createMany(detailsData, { client: trx })
+
+      await trx.commit()
+
+      await edp.load('details', (q) => q.preload('bugetProduct'))
+      return response.created(edp)
+    } catch (err) {
+      await trx.rollback()
+      throw err
+    }
   }
 
   public async update({ params, request, response }: HttpContext) {
@@ -62,37 +102,74 @@ export default class BudgetEdpsController {
 
     const payload = await request.validateUsing(updateEdpValidator)
 
-    if (payload.percentage !== undefined && payload.percentage !== edp.percentage) {
-      const validation = await BudgetEdpValidator.validatePercentage(
-        params.budgetId,
-        payload.percentage,
-        edp.id
-      )
-      BudgetEdpValidator.throwIfInvalidPercentage(validation, params.budgetId)
+    const trx = await db.transaction()
+    try {
+      edp.useTransaction(trx)
 
-      edp.percentage = payload.percentage
+      if (payload.details && payload.details.length > 0) {
+        const validation = await BudgetEdpValidator.validatePercentage(
+          params.budgetId,
+          payload.details,
+          edp.id
+        )
+        BudgetEdpValidator.throwIfInvalidPercentage(validation, params.budgetId)
 
-      // Recalculate amount
-      const budget = await Buget.query()
-        .where('id', params.budgetId)
-        .preload('products')
-        .preload('items')
-        .firstOrFail()
+        const budget = await Buget.query()
+          .where('id', params.budgetId)
+          .preload('products')
+          .preload('items')
+          .firstOrFail()
 
-      edp.amount = budget.getTotalGrossAmount() * payload.percentage
+        let edpTotalAmount = 0
+        const detailsData = payload.details.map(detail => {
+          const product = budget.products.find(p => p.id === detail.bugetProductId)
+          if (!product) throw new Error(`Product ${detail.bugetProductId} not found in budget`)
+
+          const productTotal = (product.amount || 0) * (product.count || 1) * (product.countPerson || 1)
+          const adjustedProductTotal = productTotal - (productTotal * (budget.discount / 100)) + (productTotal * (budget.utility / 100))
+          const taxPercentage = product.tax || 0
+          const productGross = adjustedProductTotal + (adjustedProductTotal * (taxPercentage / 100))
+
+          const lineAmount = productGross * detail.percentage
+          edpTotalAmount += lineAmount
+
+          return {
+            bugetProductId: detail.bugetProductId,
+            percentage: detail.percentage,
+            amount: lineAmount
+          }
+        })
+
+        const globalGrossAmount = budget.getTotalGrossAmount()
+        const effectivePercentage = globalGrossAmount > 0 ? (edpTotalAmount / globalGrossAmount) : 0
+
+        edp.amount = edpTotalAmount
+        edp.percentage = payload.percentage ?? effectivePercentage
+
+        // Delete old details and insert new
+        await edp.related('details').query().useTransaction(trx).delete()
+        await edp.related('details').createMany(detailsData, { client: trx })
+      } else if (payload.percentage !== undefined) {
+        edp.percentage = payload.percentage
+      }
+
+      if (payload.dueDate !== undefined) {
+        edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
+      }
+
+      if (payload.name !== undefined) {
+        edp.name = payload.name ?? null
+      }
+
+      await edp.save()
+      await trx.commit()
+      
+      await edp.load('details', (q) => q.preload('bugetProduct'))
+      return response.ok(edp)
+    } catch (err) {
+      await trx.rollback()
+      throw err
     }
-
-    if (payload.dueDate !== undefined) {
-      edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
-    }
-
-    if (payload.name !== undefined) {
-      edp.name = payload.name ?? null
-    }
-
-    await edp.save()
-
-    return response.ok(edp)
   }
 
   public async destroy({ params, response }: HttpContext) {
@@ -133,7 +210,7 @@ export default class BudgetEdpsController {
 
     query.orderBy('due_date', 'asc')
 
-    const edps = await query
+    const edps = await query.preload('details', (q) => q.preload('bugetProduct'))
 
     return response.ok(edps)
   }
