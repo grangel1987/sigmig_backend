@@ -38,7 +38,7 @@ export default class BudgetEdpsController {
     const validation = await BudgetEdpValidator.validatePercentage(budgetId, payload.percentage)
     BudgetEdpValidator.throwIfInvalidPercentage(validation, budgetId)
 
-    const totalAmount = budget.getTotalAmount()
+    const totalAmount = budget.getTotalGrossAmount()
 
     const edp = new BudgetEdp()
     edp.budgetId = budgetId
@@ -79,7 +79,7 @@ export default class BudgetEdpsController {
         .preload('items')
         .firstOrFail()
 
-      edp.amount = budget.getTotalAmount() * payload.percentage
+      edp.amount = budget.getTotalGrossAmount() * payload.percentage
     }
 
     if (payload.dueDate !== undefined) {

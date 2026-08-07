@@ -215,7 +215,7 @@ export default class BudgetPaymentService {
             if (buget) {
               totalNetAmount = buget.getTotalAmount()
               const productLines = (buget.products ?? []).map((product) => {
-                const quantity = product.countPerson || 1
+                const quantity = (product.count || 1) * (product.countPerson || 1)
                 const unitPrice = product.amount || 0
                 return {
                   serviceCode: null,

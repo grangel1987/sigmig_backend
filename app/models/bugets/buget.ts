@@ -195,7 +195,7 @@ export default class Buget extends BaseModel {
   public getTotalAmount(): number {
     const productsTotal =
       this.products?.reduce((sum, product) => {
-        return sum + (product.amount || 0) * (product.countPerson || 1)
+        return sum + (product.amount || 0) * (product.count || 1) * (product.countPerson || 1)
       }, 0) || 0
 
     const itemsTotal =
@@ -209,6 +209,25 @@ export default class Buget extends BaseModel {
     const utilityAmount = subtotal * (this.utility / 100)
 
     return subtotal - discountAmount + utilityAmount
+  }
+
+  /**
+   * Get total budget amount with taxes included (Gross Amount)
+   * Note: Requires products and items to be preloaded before calling
+   */
+  public getTotalGrossAmount(): number {
+    const netTotal = this.getTotalAmount()
+
+    const taxTotal =
+      this.products?.reduce((sum, product) => {
+        const productTotal = (product.amount || 0) * (product.count || 1) * (product.countPerson || 1)
+        // Adjust product total by budget's discount and utility
+        const adjustedProductTotal = productTotal - (productTotal * (this.discount / 100)) + (productTotal * (this.utility / 100))
+        const taxPercentage = product.tax || 0
+        return sum + (adjustedProductTotal * (taxPercentage / 100))
+      }, 0) || 0
+
+    return netTotal + taxTotal
   }
 
   /**
