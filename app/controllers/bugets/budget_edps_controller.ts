@@ -61,8 +61,8 @@ export default class BudgetEdpsController {
       const taxPercentage = product.tax || 0
       const productGross = adjustedProductTotal + (adjustedProductTotal * (taxPercentage / 100))
 
-      const lineAmount = productGross * detail.percentage
-      edpTotalAmount += lineAmount
+      const lineAmount = Number((productGross * detail.percentage).toFixed(2))
+      edpTotalAmount = Number((edpTotalAmount + lineAmount).toFixed(2))
 
       return {
         bugetProductId: detail.bugetProductId,
@@ -134,8 +134,8 @@ export default class BudgetEdpsController {
           const taxPercentage = product.tax || 0
           const productGross = adjustedProductTotal + (adjustedProductTotal * (taxPercentage / 100))
 
-          const lineAmount = productGross * detail.percentage
-          edpTotalAmount += lineAmount
+          const lineAmount = Number((productGross * detail.percentage).toFixed(2))
+          edpTotalAmount = Number((edpTotalAmount + lineAmount).toFixed(2))
 
           return {
             bugetProductId: detail.bugetProductId,
