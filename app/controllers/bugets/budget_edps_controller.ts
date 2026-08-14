@@ -1,17 +1,15 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import BudgetEdp from '#models/budget_edp'
 import Buget from '#models/bugets/buget'
-import Business from '#models/business/business'
 import BudgetEdpValidator, { budgetEdpValidator } from '#validators/budget_edp_validator'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
-import env from '@adonisjs/core/services/env'
 import mail from '@adonisjs/mail/services/main'
-import { MessageFrontEnd } from '#utils/message_front_end'
-import Util from '#utils/util'
-import PermissionService from '#services/permission_service'
-
+import MessageFrontEnd from '#utils/MessageFrontEnd'
 import db from '@adonisjs/lucid/services/db'
+import PermissionService from '#services/permission_service'
+import Util from '#utils/Util'
+import env from '#start/env'
 
 const updateEdpValidator = vine.compile(
   vine.object({
@@ -169,7 +167,7 @@ export default class BudgetEdpsController {
 
       await edp.save()
       await trx.commit()
-      
+
       await edp.load('details', (q) => q.preload('bugetProduct'))
       return response.ok(edp)
     } catch (err) {
@@ -237,7 +235,7 @@ export default class BudgetEdpsController {
     try {
       const edp = await BudgetEdp.query()
         .where('id', edpId)
-        .preload('budget', (q) => {
+        .preload('budget' as any, (q: any) => {
           q.preload('client')
           q.preload('business')
         })
@@ -274,7 +272,7 @@ export default class BudgetEdpsController {
 
       const subject = i18n.formatMessage('messages.edp_email_subject', {}, 'Detalle de Estado de Pago')
       const body = i18n.formatMessage('messages.edp_email_body', { clientName, budgetNumber }, `Estimado/a ${clientName}, adjunto encontrará el detalle de estado de pago de la cotización #${budgetNumber}.`)
-      
+
       const edpNameLabel = i18n.formatMessage('messages.edp_name', {}, 'Hito / Nombre')
       const amountLabel = i18n.formatMessage('messages.amount', {}, 'Monto')
       const dueDateLabel = i18n.formatMessage('messages.due_date', {}, 'Fecha de Pago')
@@ -333,11 +331,11 @@ export default class BudgetEdpsController {
     try {
       const edp = await BudgetEdp.query()
         .where('token', token)
-        .preload('budget', (q) => {
-          q.preload('client', (clientQuery) => {
+        .preload('budget' as any, (q: any) => {
+          q.preload('client', (clientQuery: any) => {
             clientQuery.select(['id', 'name', 'email', 'identify', 'address'])
           })
-          q.preload('business', (businessQuery) => {
+          q.preload('business', (businessQuery: any) => {
             businessQuery.select([
               'id',
               'name',
