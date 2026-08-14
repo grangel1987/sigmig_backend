@@ -1,9 +1,15 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import BudgetEdp from '#models/budget_edp'
 import Buget from '#models/bugets/buget'
+import Business from '#models/business/business'
 import BudgetEdpValidator, { budgetEdpValidator } from '#validators/budget_edp_validator'
 import vine from '@vinejs/vine'
 import { DateTime } from 'luxon'
+import env from '@adonisjs/core/services/env'
+import mail from '@adonisjs/mail/services/main'
+import { MessageFrontEnd } from '#utils/message_front_end'
+import Util from '#utils/util'
+import PermissionService from '#services/permission_service'
 
 import db from '@adonisjs/lucid/services/db'
 
@@ -213,5 +219,163 @@ export default class BudgetEdpsController {
     const edps = await query.preload('details', (q) => q.preload('bugetProduct'))
 
     return response.ok(edps)
+  }
+
+  public async share(ctx: HttpContext) {
+    await PermissionService.requirePermission(ctx, 'bugets', 'view')
+
+    const { params, response, request, i18n } = ctx
+    const edpId = Number(params.edpId)
+    const { email } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+        })
+      )
+    )
+
+    try {
+      const edp = await BudgetEdp.query()
+        .where('id', edpId)
+        .preload('budget', (q) => {
+          q.preload('client')
+          q.preload('business')
+        })
+        .firstOrFail()
+
+      const clientEmail = edp.budget.client?.email
+      const recipientEmail = email || clientEmail
+
+      if (!recipientEmail) {
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.email_required', {}, 'Correo electrónico requerido'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      const clientName = edp.budget.client?.name || ''
+      const budgetNumber = edp.budget.nro
+      const businessName = edp.budget.business?.name || ''
+      const amount = edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0'
+      const dueDate = edp.dueDate
+        ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false })
+        : '---'
+
+      const host =
+        env.get('NODE_ENV') === 'development'
+          ? 'http://212.38.95.163/sigmig/'
+          : 'https://admin.serviciosgenessis.com/'
+
+      const edpUrl = host + `client/edp/${edp.token}`
+
+      const subject = i18n.formatMessage('messages.edp_email_subject', {}, 'Detalle de Estado de Pago')
+      const body = i18n.formatMessage('messages.edp_email_body', { clientName, budgetNumber }, `Estimado/a ${clientName}, adjunto encontrará el detalle de estado de pago de la cotización #${budgetNumber}.`)
+      
+      const edpNameLabel = i18n.formatMessage('messages.edp_name', {}, 'Hito / Nombre')
+      const amountLabel = i18n.formatMessage('messages.amount', {}, 'Monto')
+      const dueDateLabel = i18n.formatMessage('messages.due_date', {}, 'Fecha de Pago')
+      const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
+      const businessLabel = i18n.formatMessage('messages.business')
+      const viewEdpLabel = i18n.formatMessage('messages.view_edp', {}, 'Ver Estado de Pago')
+
+      await mail.sendLater((message) => {
+        message
+          .to(recipientEmail)
+          .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+          .subject(subject)
+          .htmlView('emails/edp_client', {
+            subject,
+            body,
+            edpName: edp.name || `EDP #${edp.edpNumber}`,
+            amount,
+            dueDate,
+            budgetNumber,
+            edpUrl,
+            businessName,
+            edpNameLabel,
+            amountLabel,
+            dueDateLabel,
+            budgetNumberLabel,
+            businessLabel,
+            viewEdpLabel,
+          })
+      })
+
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.email_send_ok'),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+    } catch (error) {
+      console.log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.email_send_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async showByToken(ctx: HttpContext) {
+    const { params, response, i18n } = ctx
+    const token = params.token as string
+
+    try {
+      const edp = await BudgetEdp.query()
+        .where('token', token)
+        .preload('budget', (q) => {
+          q.preload('client', (clientQuery) => {
+            clientQuery.select(['id', 'name', 'email', 'identify', 'address'])
+          })
+          q.preload('business', (businessQuery) => {
+            businessQuery.select([
+              'id',
+              'name',
+              'url',
+              'url_short',
+              'url_thumb_short',
+              'identify',
+              'address',
+              'phone',
+              'email',
+            ])
+          })
+        })
+        .preload('details', (q) => q.preload('bugetProduct'))
+        .first()
+
+      if (!edp) {
+        return response
+          .status(404)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_exist'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      return response.status(200).json({ edp })
+    } catch (error) {
+      console.log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.get_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
   }
 }

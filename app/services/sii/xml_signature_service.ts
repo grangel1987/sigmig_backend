@@ -11,6 +11,7 @@ interface XmlSignOptions {
     referenceXPath: string
     signatureParentXPath: string
     referenceUri: string
+    isAuth?: boolean
     getSiiKeyInfo?: boolean
 }
 

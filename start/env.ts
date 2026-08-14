@@ -51,6 +51,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   MAIL_FROM: Env.schema.string.optional(),
   DTE_SIGNING_PRIVATE_KEY: Env.schema.string.optional(),
   DTE_SIGNING_CERTIFICATE: Env.schema.string.optional(),
+  SII_AUTH_PRIVATE_KEY: Env.schema.string.optional(),
+  SII_AUTH_CERTIFICATE: Env.schema.string.optional(),
   DTE_ENVIO_RUT_ENVIA: Env.schema.string.optional(),
   DTE_ENVIO_RUT_RECEPTOR: Env.schema.string.optional(),
   DTE_ENVIO_RESOLUTION_DATE: Env.schema.string.optional(),

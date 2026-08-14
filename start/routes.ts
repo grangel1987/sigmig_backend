@@ -955,6 +955,7 @@ router
         router.post('/:budgetId/edps', '#controllers/bugets/budget_edps_controller.store')
         router.put('/:budgetId/edps/:edpId', '#controllers/bugets/budget_edps_controller.update')
         router.delete('/:budgetId/edps/:edpId', '#controllers/bugets/budget_edps_controller.destroy')
+        router.post('/:budgetId/edps/:edpId/share', '#controllers/bugets/budget_edps_controller.share')
 
         router.group(() => {
           router.post('/payments', '#controllers/bugets/buget_controller.storePayment')
@@ -1170,6 +1171,13 @@ router
         router.get('/view/:token', '#controllers/bugets/buget_controller.showPublic')
       })
       .prefix('buget')
+
+    // EDPs (public)
+    router
+      .group(() => {
+        router.get('/view/:token', '#controllers/bugets/budget_edps_controller.showByToken')
+      })
+      .prefix('edps')
 
     // Service Entry Sheets (public)
     router

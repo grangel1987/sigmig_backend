@@ -1,7 +1,8 @@
 import Buget from '#models/bugets/buget'
 import BudgetPayment from '#models/budget_payment'
 import BudgetEdpDetail from '#models/budget_edp_detail'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, hasMany, beforeCreate } from '@adonisjs/lucid/orm'
+import { randomUUID } from 'node:crypto'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -22,6 +23,9 @@ export default class BudgetEdp extends BaseModel {
 
   @column()
   declare name: string | null
+
+  @column()
+  declare token: string | null
 
   @column({
     prepare: (value?: number) => (value ?? null),
@@ -60,4 +64,11 @@ export default class BudgetEdp extends BaseModel {
 
   @column()
   declare deletedBy: number | null
+
+  @beforeCreate()
+  public static assignToken(edp: BudgetEdp) {
+    if (!edp.token) {
+      edp.token = randomUUID()
+    }
+  }
 }
