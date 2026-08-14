@@ -5078,3 +5078,62 @@ paths:
           description: Orden de compra reactivada
 
 
+  /bugets/{budgetId}/edps/{edpId}/share:
+    post:
+      tags:
+        - Estados de Pago (EDPs)
+      summary: Compartir un Estado de Pago por correo
+      description: Envía un correo al cliente con el enlace público para visualizar el estado de pago. Se puede especificar un correo en el payload o utilizar el del cliente.
+      operationId: shareBudgetEdp
+      parameters:
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: edpId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Correo opcional al cual enviar el estado de pago
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Correo enviado exitosamente
+        '400':
+          description: Correo no especificado
+        '404':
+          description: EDP no encontrado
+        '500':
+          description: Error del servidor
+
+  /edps/view/{token}:
+    get:
+      tags:
+        - Estados de Pago (EDPs)
+      summary: Visualizar EDP (Ruta Pública)
+      description: Obtiene los detalles públicos de un estado de pago mediante su token.
+      operationId: viewEdpPublic
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: EDP obtenido exitosamente
+        '404':
+          description: EDP no encontrado
