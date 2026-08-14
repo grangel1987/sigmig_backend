@@ -95,5 +95,11 @@
     "client": "Cliente",
     "created_by": "Creado por",
     "shopping_share_email_subject": "Nueva Orden de Compra disponible",
-    "shopping_share_email_body": "Hola {providerName}, has recibido una nueva Orden de Compra para su revisión."
+    "shopping_share_email_body": "Hola {providerName}, has recibido una nueva Orden de Compra para su revisión.",
+    "edp_email_subject": "Detalle de Estado de Pago",
+    "edp_email_body": "Estimado/a {clientName}, adjunto encontrará el detalle de estado de pago de la cotización #{budgetNumber}.",
+    "edp_name": "Hito / Nombre",
+    "amount": "Monto",
+    "due_date": "Fecha de Pago",
+    "view_edp": "Ver Estado de Pago"
 }

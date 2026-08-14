@@ -93,5 +93,11 @@
     "service_entry_sheet_authorizer_error": "There was an error authorizing the service entry sheet.",
     "service_entry_sheet_no_authorizer_permission": "You do not have permission to authorize this service entry sheet.",
     "client": "Client",
-    "created_by": "Created by"
+    "created_by": "Created by",
+    "edp_email_subject": "Payment Status Details",
+    "edp_email_body": "Dear {clientName}, please find attached the payment status details for budget #{budgetNumber}.",
+    "edp_name": "Milestone / Name",
+    "amount": "Amount",
+    "due_date": "Due Date",
+    "view_edp": "View Payment Status"
 }
