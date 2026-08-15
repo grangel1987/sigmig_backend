@@ -205,7 +205,6 @@ export default class SiiXmlBuilderService {
                 '        <GlosaDR>Descuento Global</GlosaDR>',
                 '        <TpoValor>%</TpoValor>',
                 `        <ValorDR>${payload.globalDiscountPct}</ValorDR>`,
-                '        <IndExeDR>2</IndExeDR>',
                 '      </DscRcgGlobal>'
             ].join('\n') : '',
             buildReferences(payload.sale.references ?? []),

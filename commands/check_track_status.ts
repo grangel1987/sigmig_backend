@@ -18,12 +18,10 @@ export default class CheckTrackStatus extends BaseCommand {
    <soapenv:Header/>
    <soapenv:Body>
       <def:getEstUp>
-         <RutCompania>76983840</RutCompania>
-         <DvCompania>6</DvCompania>
-         <RutUsuario>13359181</RutUsuario>
-         <DvUsuario>8</DvUsuario>
-         <TrackId>${this.trackId}</TrackId>
-         <Token>${token}</Token>
+         <def:RutCompania>76983840</def:RutCompania>
+         <def:DvCompania>6</def:DvCompania>
+         <def:TrackId>${this.trackId}</def:TrackId>
+         <def:Token>${token}</def:Token>
       </def:getEstUp>
    </soapenv:Body>
 </soapenv:Envelope>`

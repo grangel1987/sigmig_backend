@@ -12,6 +12,12 @@ import { middleware } from './kernel.js'
 
 const auth = middleware.auth()
 
+const SiiStatusController = () => import('#controllers/sii/sii_status_controller')
+
+router.group(() => {
+  router.get('/sii/dte-status/:tipo/:folio/:monto', [SiiStatusController, 'getDteStatus'])
+  router.get('/sii/track-status/:trackId', [SiiStatusController, 'getTrackStatus'])
+})
 // API Documentation with Swagger UI (public endpoint)
 router.get('/api-docs', ({ response }) => {
   const html = `
@@ -854,6 +860,14 @@ router
         )
       })
       .prefix('employee')
+
+    // SII API Helper endpoints for status checks
+    router
+      .group(() => {
+        router.get('/status/track/:trackId', '#controllers/sii/sii_status_controller.getTrackStatus')
+        router.get('/status/dte/:tipo/:folio/:monto', '#controllers/sii/sii_status_controller.getDteStatus')
+      })
+      .prefix('sii')
 
     // Clients (protected)
     router

@@ -32,7 +32,7 @@ export default class CheckTrackId extends BaseCommand {
          <DvReceptor>K</DvReceptor>
          <TipoDte>${this.tipo}</TipoDte>
          <FolioDte>${this.folio}</FolioDte>
-         <FechaEmisionDte>2026-07-29</FechaEmisionDte>
+         <FechaEmisionDte>2026-08-14</FechaEmisionDte>
          <MontoDte>${this.amount}</MontoDte>
          <Token>${token}</Token>
       </def:getEstDte>

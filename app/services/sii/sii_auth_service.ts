@@ -40,7 +40,7 @@ export default class SiiAuthService {
     return seedMatch[1]
   }
 
-  public static async getToken(): Promise<string> {
+  public static async getToken(_ignoredRut?: string): Promise<string> {
     const seed = await this.getSeed()
 
     const getTokenXml = `<getToken><item><Semilla>${seed}</Semilla></item></getToken>`

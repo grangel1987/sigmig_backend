@@ -4,8 +4,8 @@ import SiiEnvelopeBuilderService from '#services/sii/sii_envelope_builder_servic
 import SiiTransmissionService from '#services/sii/sii_transmission_service'
 import SiiAuthService from '#services/sii/sii_auth_service'
 import SiiCafFile from '#models/sii/sii_caf_file'
+import SiiEnvio from '#models/sii_envio'
 import fs from 'fs'
-import path from 'path'
 import { DateTime } from 'luxon'
 
 export default class RunSiiTestSet extends BaseCommand {
@@ -16,58 +16,97 @@ export default class RunSiiTestSet extends BaseCommand {
         this.logger.info('Starting SII Test Set Automation...')
 
         // 1. Seed CAFs manually to objects (we don't need to persist them to DB for the test script)
-        const dteDir = 'DTE'
-        const cafFiles = {
-            33: fs.readFileSync(path.join(dteDir, 'FoliosSII7698384033512026729221.xml'), 'utf8'),
-            61: fs.readFileSync(path.join(dteDir, 'FoliosSII7698384061502026729224.xml'), 'utf8'),
-            56: fs.readFileSync(path.join(dteDir, 'FoliosSII7698384056502026729225.xml'), 'utf8'),
-        }
+        const getCafFile = (dteType: number, folio: number) => {
+            let cafXml = ''
+            if (dteType === 33) {
+                cafXml = fs.readFileSync('DTE/FoliosSII76983840331022026815161.xml', 'utf-8')
+            } else if (dteType === 61) {
+                cafXml = fs.readFileSync('DTE/FoliosSII7698384061862026815161.xml', 'utf-8')
+            } else if (dteType === 56) {
+                cafXml = fs.readFileSync('DTE/FoliosSII7698384056632026815161.xml', 'utf-8')
+            }
 
-        const getCafFile = (dteType: number) => {
-            const rawCafXml = cafFiles[dteType as keyof typeof cafFiles]
             const cafFile = new SiiCafFile()
             cafFile.dteType = dteType
-            cafFile.rawCafXml = rawCafXml
-            cafFile.encryptedPrivateKeyRef = null // it will fall back to rawCafXml for the key
+            cafFile.rangeStart = folio
+            cafFile.rangeEnd = folio
+            cafFile.rawCafXml = cafXml
             return cafFile
         }
 
-        // Common data
+        // Sender and issuer RUTs
+        const senderRut = '13359181-8'
         const issuerRut = '76983840-6'
         const receiverRut = '60803000-K'
-        const senderRut = '13359181-8'
 
+        // Build business and client objects needed by the XML builder service
         const business = {
+            rut: '76983840-6',
             name: 'SERVICIOS INTEGRALES GENESSIS SPA',
-            giro: 'ACTIVIDADES DE CONSULTORIA DE GESTION',
-            acteco: 702000,
-            address: 'J MARTINEZ 512 ST 7 MZ 14 CENTRO ESTACION',
-            municipality: 'DIEGO DE ALMAGRO',
-            city: 'DIEGO DE ALMAGRO'
-        }
-        const client = {
-            name: 'JORGE GONZALEZ LTDA',
-            giro: 'COMPUTACION',
-            address: 'SAN DIEGO 2222',
-            municipality: 'SANTIAGO',
-            city: 'SANTIAGO'
+            acteco: '702000',
+            address: 'MIRAFLORES 222',
+            city: 'SANTIAGO',
+            commune: 'SANTIAGO',
+            phone: '',
+            businessActivity: 'SERVICIOS INTEGRALES'
         }
 
-        // DTE 33 (Factura Electrónica) - 4 cases required. CAF range: 51-61
-        const startFolio33 = 51
+        const clients = [
+            {
+                rut: '76123456-0',
+                name: 'CLIENTE DE PRUEBA UNO SPA',
+                giro: 'VENTA AL POR MENOR',
+                address: 'AVENIDA SIEMPRE VIVA 123',
+                city: 'SANTIAGO',
+                commune: 'SANTIAGO'
+            },
+            {
+                rut: '77123456-9',
+                name: 'CLIENTE DE PRUEBA DOS SPA',
+                giro: 'MAYORISTA DE TECNOLOGIA',
+                address: 'ALAMEDA 456',
+                city: 'SANTIAGO',
+                commune: 'SANTIAGO'
+            },
+            {
+                rut: '78123456-7',
+                name: 'CLIENTE DE PRUEBA TRES SPA',
+                giro: 'SERVICIOS EMPRESARIALES',
+                address: 'PROVIDENCIA 789',
+                city: 'PROVIDENCIA',
+                commune: 'PROVIDENCIA'
+            },
+            {
+                rut: '79123456-5',
+                name: 'CLIENTE DE PRUEBA CUATRO SPA',
+                giro: 'IMPORTACIONES Y EXPORTACIONES',
+                address: 'LAS CONDES 1011',
+                city: 'LAS CONDES',
+                commune: 'LAS CONDES'
+            }
+        ]
+
+        // DTE 33 (Factura Electrónica) - 4 cases required
+        let startFolio33 = 102
         let folio33 = startFolio33
-        // DTE 61 (Nota de Crédito) - 3 cases required. CAF range: 50-59
-        const startFolio61 = 50
+        // DTE 61 (Nota de Crédito) - 3 cases required
+        let startFolio61 = 86
         let folio61 = startFolio61
-        // DTE 56 (Nota de Débito) - 1 case required. CAF range: 50-60
-        const startFolio56 = 50
+        // DTE 56 (Nota de Débito) - 1 case required
+        let startFolio56 = 63
         let folio56 = startFolio56
 
-        const signedDtes: string[] = []
-        const dteTypesCount: Record<number, number> = { 33: 0, 61: 0, 56: 0 }
+        let signedDtes: string[] = []
+        let dteTypesCount: Record<number, number> = {}
 
-        const addCase = async (dteType: number, folio: number, details: any[], net: number, exempt: number, tax: number, total: number, globalDiscountPct: number | null, references: any[]) => {
-            const cafFile = getCafFile(dteType)
+        const resetBatch = () => {
+            signedDtes = []
+            dteTypesCount = {}
+        }
+
+        const addCase = async (clientIndex: number, dteType: number, folio: number, details: any[], net: number, exempt: number, tax: number, total: number, globalDiscountPct: number | null, references: any[]) => {
+            const cafFile = getCafFile(dteType, folio)
+            const client = clients[clientIndex]
             const sale = {
                 business,
                 client,
@@ -82,7 +121,7 @@ export default class RunSiiTestSet extends BaseCommand {
                 folio,
                 issuedAt: DateTime.now().setZone('America/Santiago'),
                 issuerRut,
-                receiverRut,
+                receiverRut: client.rut,
                 netAmount: net,
                 exemptAmount: exempt,
                 taxAmount: tax,
@@ -93,122 +132,172 @@ export default class RunSiiTestSet extends BaseCommand {
             const XmlSignatureService = (await import('#services/sii/xml_signature_service')).default
             const signedXml = XmlSignatureService.signDteXml(xmlUnsigned)
             signedDtes.push(signedXml)
-            dteTypesCount[dteType]++
+            dteTypesCount[dteType] = (dteTypesCount[dteType] || 0) + 1
             this.logger.info(`Built Case for DTE ${dteType} Folio ${folio}`)
         }
 
-        // CASE 1: Factura 33
-        // 133 x 1466 = 194978, 57 x 2391 = 136287. Net = 331265. Tax = 62940. Total = 394205
-        await addCase(33, folio33++,
-            [
-                { description: 'Cajon AFECTO', quantity: 133, unitAmount: 1466, amount: 194978 },
-                { description: 'Relleno AFECTO', quantity: 57, unitAmount: 2391, amount: 136287 },
-            ], 331265, 0, 62940, 394205, null, [])
+        const buildEnvelope = (fileName: string) => {
+            const dteTypesArray = Object.entries(dteTypesCount)
+                .filter(([_, count]) => count > 0)
+                .map(([type, count]) => ({ type: Number(type), count }))
 
-        // CASE 2: Factura 33
-        // 346 x 2761 = 955306 (-5% = 907541). 276 x 1822 = 502872 (-9% = 457614). 
-        // Net = 1365155, Tax = 259379, Total = 1624534
-        await addCase(33, folio33++,
-            [
-                { description: 'Panuelo AFECTO', quantity: 346, unitAmount: 2761, amount: 907541, discountPct: 5, discountAmount: 47765 },
-                { description: 'ITEM 2 AFECTO', quantity: 276, unitAmount: 1822, amount: 457614, discountPct: 9, discountAmount: 45258 },
-            ], 1365155, 0, 259379, 1624534, null, [])
+            const { envelopeSigned } = SiiEnvelopeBuilderService.buildSignedEnvelope({
+                signedDteXmls: signedDtes,
+                dteTypes: dteTypesArray,
+                senderRut,
+                issuerRut,
+                receiverRut,
+                resolutionDate: '2026-07-28',
+                resolutionNumber: 0,
+            })
+            fs.writeFileSync(`DTE/${fileName}`, envelopeSigned)
+            this.logger.info(`Saved envelope to DTE/${fileName}`)
+            return envelopeSigned
+        }
 
-        // CASE 3: Factura 33
-        // 28 x 3072 = 86016. 167 x 3129 = 522543. (Net = 608559, Tax = 115626)
-        // 1 x 34829 = 34829 (Exempt = 34829)
-        // Total = 608559 + 115626 + 34829 = 759014
-        await addCase(33, folio33++,
-            [
-                { description: 'Pintura B&W AFECTO', quantity: 28, unitAmount: 3072, amount: 86016 },
-                { description: 'ITEM 2 AFECTO', quantity: 167, unitAmount: 3129, amount: 522543 },
-                { description: 'ITEM 3 SERVICIO EXENTO', quantity: 1, unitAmount: 34829, amount: 34829, indExe: 1 },
-            ], 608559, 34829, 115626, 759014, null, [])
+        const sendEnvelope = async (envelope: string) => {
+            try {
+                const token = await SiiAuthService.getToken()
+                const response = await SiiTransmissionService.sendDte(envelope, token, senderRut, issuerRut)
 
-        // CASE 4: Factura 33
-        // 151 x 2570 = 388070, 65 x 2631 = 171015 (Subnet = 559085). 10% global discount = 55909. Net = 503176, Tax = 95603.
-        // 2 x 6781 = 13562 (Exempt).
-        // Total = 503176 + 95603 + 13562 = 612341
-        await addCase(33, folio33++,
-            [
-                { description: 'ITEM 1 AFECTO', quantity: 151, unitAmount: 2570, amount: 388070 },
-                { description: 'ITEM 2 AFECTO', quantity: 65, unitAmount: 2631, amount: 171015 },
-                { description: 'ITEM 3 SERVICIO EXENTO', quantity: 2, unitAmount: 6781, amount: 13562, indExe: 1 },
-            ], 503176, 13562, 95603, 612341, 10, [])
+                const { trackId, status, rawResponse } = response
 
-        // CASE 5: Nota Credito 61
-        // Refers to Case 1 (Folio startFolio33). Corrects Giro.
-        await addCase(61, folio61++,
-            [
-                { description: 'Cajon AFECTO', quantity: 133, unitAmount: 1466, amount: 194978 },
-                { description: 'Relleno AFECTO', quantity: 57, unitAmount: 2391, amount: 136287 },
-            ], 331265, 0, 62940, 394205, null, [
-            { docType: '33', folio: String(startFolio33), date: DateTime.now().setZone('America/Santiago').toFormat('yyyy-LL-dd'), code: 2, reason: 'CORRIGE GIRO DEL RECEPTOR' }
-        ])
+                if (trackId) {
+                    this.logger.info(`Sent successfully! TrackID: ${trackId}, Status: ${status}`)
 
-        // CASE 6: Nota Credito 61
-        // Refers to Case 2 (Folio startFolio33+1). Returns merchandise.
-        // 127 x 2761 (-5%) = 333068. 187 x 1822 (-9%) = 310037.
-        // Net = 643105, Tax = 122190, Total = 765295
-        await addCase(61, folio61++,
-            [
-                { description: 'Panuelo AFECTO', quantity: 127, unitAmount: 2761, amount: 333068, discountPct: 5, discountAmount: 17532 },
-                { description: 'ITEM 2 AFECTO', quantity: 187, unitAmount: 1822, amount: 310037, discountPct: 9, discountAmount: 30664 },
-            ], 643105, 0, 122190, 765295, null, [
-            { docType: '33', folio: String(startFolio33 + 1), date: DateTime.now().setZone('America/Santiago').toFormat('yyyy-LL-dd'), code: 3, reason: 'DEVOLUCION DE MERCADERIAS' }
-        ])
+                    await SiiEnvio.create({
+                        trackId: trackId,
+                        environment: 'certificacion',
+                        status: status ?? 'PENDING',
+                        rawXmlSent: envelope,
+                        consumedFolios: signedDtes.map(dte => {
+                            const docMatch = dte.match(/<TipoDTE>(\d+)<\/TipoDTE>.*?<Folio>(\d+)<\/Folio>/s)
+                            return docMatch ? { tipo: docMatch[1], folio: docMatch[2] } : null
+                        }).filter(Boolean)
+                    })
+                    this.logger.info('Saved SiiEnvio record to database!')
+                } else {
+                    this.logger.error(`Error sending: Status: ${status}`)
+                    this.logger.info(rawResponse)
+                }
+            } catch (err) {
+                this.logger.error('Failed to transmit envelope to SII:')
+                console.error(err)
+            }
+        }
 
-        // CASE 7: Nota Credito 61
-        // Refers to Case 3 (Folio startFolio33+2). Anula Factura. Total amounts match Case 3.
-        await addCase(61, folio61++,
-            [
-                { description: 'Pintura B&W AFECTO', quantity: 28, unitAmount: 3072, amount: 86016 },
-                { description: 'ITEM 2 AFECTO', quantity: 167, unitAmount: 3129, amount: 522543 },
-                { description: 'ITEM 3 SERVICIO EXENTO', quantity: 1, unitAmount: 34829, amount: 34829, indExe: 1 },
-            ], 608559, 34829, 115626, 759014, null, [
-            { docType: '33', folio: String(startFolio33 + 2), date: DateTime.now().setZone('America/Santiago').toFormat('yyyy-LL-dd'), code: 1, reason: 'ANULA FACTURA' }
-        ])
+        const today = DateTime.now().setZone('America/Santiago').toFormat('yyyy-LL-dd')
 
-        // CASE 8: Nota Debito 56
-        // Refers to Case 5 (NC Folio startFolio61). Anula Nota de Credito. Total amounts match Case 5.
-        await addCase(56, folio56++,
-            [
-                { description: 'Cajon AFECTO', quantity: 133, unitAmount: 1466, amount: 194978 },
-                { description: 'Relleno AFECTO', quantity: 57, unitAmount: 2391, amount: 136287 },
-            ], 331265, 0, 62940, 394205, null, [
-            { docType: '61', folio: String(startFolio61), date: DateTime.now().setZone('America/Santiago').toFormat('yyyy-LL-dd'), code: 1, reason: 'ANULA NOTA DE CREDITO ELECTRONICA' }
-        ])
-
-        // Envelope
-        this.logger.info('Building SetDTE envelope...')
-        const dteTypesArray = Object.entries(dteTypesCount)
-            .filter(([_, count]) => count > 0)
-            .map(([type, count]) => ({ type: Number(type), count }))
-
-        const { envelopeSigned } = SiiEnvelopeBuilderService.buildSignedEnvelope({
-            signedDteXmls: signedDtes,
-            dteTypes: dteTypesArray,
-            senderRut,
-            issuerRut,
-            receiverRut,
-            resolutionDate: '2026-07-28',
-            resolutionNumber: 0,
+        // --- SET Reference helper ---
+        // Per SII manual section I point 6: every DTE in the Set de Pruebas MUST have
+        // a reference with TpoDocRef=SET and RazonRef=CASO 5017006-X as line 1.
+        // Commercial references (NC/ND links to invoices) go on line 2 onward.
+        const setRef = (caseNumber: number) => ({
+            docType: 'SET',
+            folio: '5017006',
+            date: today,
+            code: null,
+            reason: `CASO 5017006-${caseNumber}`
         })
 
-        fs.writeFileSync('DTE/EnvioDTE_TestSet.xml', envelopeSigned)
-        this.logger.info('Saved envelope to DTE/EnvioDTE_TestSet.xml')
+        // --- GENERATE ALL 8 CASES ---
+        resetBatch()
 
-        // Authenticate and Send
-        try {
-            const token = await SiiAuthService.getToken()
-            this.logger.info(`Authenticated with token: ${token}`)
+        // CASE 1: Factura - Cajón AFECTO + Relleno AFECTO
+        await addCase(0, 33, folio33++,
+            [
+                { description: 'Cajón AFECTO', quantity: 169, unitAmount: 3542, amount: 598598 },
+                { description: 'Relleno AFECTO', quantity: 71, unitAmount: 5900, amount: 418900 }
+            ],
+            1017498, 0, 193325, 1210823, null,
+            [setRef(1)]
+        )
 
-            const response = await SiiTransmissionService.sendDte(envelopeSigned, token, senderRut, issuerRut)
-            this.logger.info(`Sent successfully! TrackID: ${response.trackId}, Status: ${response.status}`)
-            console.log(response)
-        } catch (err) {
-            this.logger.error('Failed to transmit envelope to SII:')
-            console.error(err)
-        }
+        // CASE 2: Factura - Pañuelo AFECTO (descuento en línea)
+        await addCase(1, 33, folio33++,
+            [
+                { description: 'Pañuelo AFECTO', quantity: 769, unitAmount: 5954, amount: 4120763, discountPct: 10, discountAmount: 457863 },
+                { description: 'ITEM 2 AFECTO', quantity: 714, unitAmount: 5004, amount: 2751099, discountPct: 23, discountAmount: 821757 }
+            ],
+            6871862, 0, 1305654, 8177516, null,
+            [setRef(2)]
+        )
+
+        // CASE 3: Factura - Pintura B&W AFECTO + exento
+        await addCase(2, 33, folio33++,
+            [
+                { description: 'Pintura B&W AFECTO', quantity: 65, unitAmount: 6956, amount: 452140 },
+                { description: 'ITEM 2 AFECTO', quantity: 238, unitAmount: 4047, amount: 963186 },
+                { description: 'ITEM 3 SERVICIO EXENTO', quantity: 1, unitAmount: 35304, amount: 35304, indExe: 1 }
+            ],
+            1415326, 35304, 268912, 1719542, null,
+            [setRef(3)]
+        )
+
+        // CASE 4: Factura - descuento global 23%
+        await addCase(3, 33, folio33++,
+            [
+                { description: 'ITEM 1 AFECTO', quantity: 421, unitAmount: 6004, amount: 2527684 },
+                { description: 'ITEM 2 AFECTO', quantity: 178, unitAmount: 7320, amount: 1302960 },
+                { description: 'ITEM 3 SERVICIO EXENTO', quantity: 2, unitAmount: 6834, amount: 13668, indExe: 1 }
+            ],
+            2949596, 13668, 560423, 3523687, 23,
+            [setRef(4)]
+        )
+
+        // CASE 5: Nota de Crédito - Corrects Giro (text only, amounts = 0)
+        await addCase(0, 61, folio61++,
+            [
+                { description: 'CORRECCION DE GIRO', quantity: 1, unitAmount: 0, amount: 0 }
+            ],
+            0, 0, 0, 0, null,
+            [
+                setRef(5),
+                { docType: '33', folio: String(startFolio33), date: today, code: 2, reason: 'CORRIGE GIRO DEL RECEPTOR' }
+            ]
+        )
+
+        // CASE 6: Nota de Crédito - Partial return (modifies amounts)
+        await addCase(1, 61, folio61++,
+            [
+                { description: 'Pañuelo AFECTO', quantity: 282, unitAmount: 5954, amount: 1511125, discountPct: 10, discountAmount: 167903 },
+                { description: 'ITEM 2 AFECTO', quantity: 484, unitAmount: 5004, amount: 1864891, discountPct: 23, discountAmount: 557045 }
+            ],
+            3376016, 0, 641443, 4017459, null,
+            [
+                setRef(6),
+                { docType: '33', folio: String(startFolio33 + 1), date: today, code: 3, reason: 'DEVOLUCION DE MERCADERIAS' }
+            ]
+        )
+
+        // CASE 7: Nota de Crédito - Full annulment
+        await addCase(2, 61, folio61++,
+            [
+                { description: 'Pintura B&W AFECTO', quantity: 65, unitAmount: 6956, amount: 452140 },
+                { description: 'ITEM 2 AFECTO', quantity: 238, unitAmount: 4047, amount: 963186 },
+                { description: 'ITEM 3 SERVICIO EXENTO', quantity: 1, unitAmount: 35304, amount: 35304, indExe: 1 }
+            ],
+            1415326, 35304, 268912, 1719542, null,
+            [
+                setRef(7),
+                { docType: '33', folio: String(startFolio33 + 2), date: today, code: 1, reason: 'ANULA FACTURA' }
+            ]
+        )
+
+        // CASE 8: Nota de Débito - Annuls the NC (Case 5)
+        await addCase(0, 56, folio56++,
+            [
+                { description: 'ANULA NOTA DE CREDITO ELECTRONICA', quantity: 1, unitAmount: 0, amount: 0 }
+            ],
+            0, 0, 0, 0, null,
+            [
+                setRef(8),
+                { docType: '61', folio: String(startFolio61), date: today, code: 1, reason: 'ANULA NOTA DE CREDITO ELECTRONICA' }
+            ]
+        )
+
+        let envelope = buildEnvelope('EnvioDTE_TestSet.xml')
+        await sendEnvelope(envelope)
     }
 }
+
