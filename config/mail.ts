@@ -14,8 +14,8 @@ export default defineConfig({
 
             auth: {
                 type: 'login',
-                user: env.get('MAIL_USERNAME') || env.get('SMTP_USERNAME') || '',
-                pass: env.get('MAIL_PASSWORD') || env.get('SMTP_PASSWORD') || ''
+                user: env.get('SMTP_USERNAME') || env.get('MAIL_USERNAME') || '',
+                pass: env.get('SMTP_PASSWORD') || env.get('MAIL_PASSWORD') || ''
             },
 
             pool: true,

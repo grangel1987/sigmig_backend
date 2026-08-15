@@ -288,7 +288,7 @@ export default class BudgetPaymentService {
               }
               const issueDateStr = sheet.issueDate ? sheet.issueDate.toFormat('dd/LL/yyyy') : DateTime.now().toFormat('dd/LL/yyyy')
               const title = `HES creada #${sheet.number}`
-              const shortBody = `${title} • ${issueDateStr}`
+              const shortBody = `${title} - ${issueDateStr}`
 
               await NotificationService.createAndDispatch({
                 typeId: type.id,

@@ -623,7 +623,7 @@ export default class ServiceEntrySheetController {
           ? sheet.issueDate.toFormat('dd/LL/yyyy')
           : DateTime.now().toFormat('dd/LL/yyyy')
         const title = `HES creada #${sheet.number}`
-        const shortBody = `${title} • ${issueDateStr}`
+        const shortBody = `${title} - ${issueDateStr}`
         const recipientBusinessUserIds = await NotificationService.resolveRecipientsForType(
           type.id,
           businessId

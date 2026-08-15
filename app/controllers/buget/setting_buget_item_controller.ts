@@ -52,7 +52,6 @@ export default class SettingBugetItemController {
                     builder.preload('personalData', pdQ => pdQ.select('names', 'last_name_p', 'last_name_m')).select(['id', 'personal_data_id', 'email'])
                 })
 
-
             if (text) query.where((qb) => {
                 const likeVal = `%${text}%`
                 qb.whereRaw('value LIKE ?', [likeVal]).orWhereRaw('title LIKE ?', [likeVal])
@@ -63,6 +62,10 @@ export default class SettingBugetItemController {
             }
 
             const items = await (page ? query.paginate(page, perPage || 10) : query)
+
+            if (status !== undefined) {
+                query.where('enabled', status === 'enabled')
+            }
 
             const catsPerItem: Map<number, number[]> = new Map()
             const catIDs = new Set<number>()
