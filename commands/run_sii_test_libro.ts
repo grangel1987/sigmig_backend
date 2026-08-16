@@ -1,7 +1,6 @@
 import { BaseCommand } from '@adonisjs/core/ace'
 
 import fs from 'node:fs'
-import { DateTime } from 'luxon'
 import SiiLibroXmlBuilderService, { LibroCVPayload } from '#services/sii/sii_libro_xml_builder_service'
 import SiiAuthService from '#services/sii/sii_auth_service'
 import SiiTransmissionService from '#services/sii/sii_transmission_service'
@@ -13,8 +12,8 @@ export default class RunSiiTestLibro extends BaseCommand {
     async run() {
         this.logger.info('Starting Libro de Ventas Automation...')
 
-        const today = DateTime.now().setZone('America/Santiago').toFormat('yyyy-LL-dd')
-        const periodo = DateTime.now().setZone('America/Santiago').toFormat('yyyy-LL') // YYYY-MM
+        const today = '2026-08-15' // Must match exactly the date when EnvioDTE_TestSet.xml was submitted
+        const periodo = '2026-08' // YYYY-MM
 
         const payload: LibroCVPayload = {
             rutEmisor: '76983840-6',
@@ -25,6 +24,7 @@ export default class RunSiiTestLibro extends BaseCommand {
             tipoOperacion: 'VENTA',
             tipoLibro: 'ESPECIAL',
             tipoEnvio: 'TOTAL',
+            folioNotificacion: 1,
             detalles: [
                 {
                     TpoDoc: 33, NroDoc: 102, FchDoc: today, RUTDoc: '76123456-0', RznSoc: 'CLIENTE DE PRUEBA UNO SPA',
@@ -44,18 +44,22 @@ export default class RunSiiTestLibro extends BaseCommand {
                 },
                 {
                     TpoDoc: 61, NroDoc: 86, FchDoc: today, RUTDoc: '76123456-0', RznSoc: 'CLIENTE DE PRUEBA UNO SPA',
+                    TpoDocRef: 33, FolioDocRef: 102,
                     MntExe: 0, MntNeto: 0, MntIVA: 0, MntTotal: 0
                 },
                 {
                     TpoDoc: 61, NroDoc: 87, FchDoc: today, RUTDoc: '77123456-9', RznSoc: 'CLIENTE DE PRUEBA DOS SPA',
-                    MntExe: 0, MntNeto: 3376016, MntIVA: 641443, MntTotal: 4017459
+                    TpoDocRef: 33, FolioDocRef: 103,
+                    MntExe: 0, MntNeto: -3376016, MntIVA: -641443, MntTotal: -4017459
                 },
                 {
                     TpoDoc: 61, NroDoc: 88, FchDoc: today, RUTDoc: '78123456-7', RznSoc: 'CLIENTE DE PRUEBA TRES SPA',
-                    MntExe: 35304, MntNeto: 1415326, MntIVA: 268912, MntTotal: 1719542
+                    TpoDocRef: 33, FolioDocRef: 104,
+                    MntExe: -35304, MntNeto: -1415326, MntIVA: -268912, MntTotal: -1719542
                 },
                 {
                     TpoDoc: 56, NroDoc: 63, FchDoc: today, RUTDoc: '76123456-0', RznSoc: 'CLIENTE DE PRUEBA UNO SPA',
+                    TpoDocRef: 61, FolioDocRef: 86,
                     MntExe: 0, MntNeto: 0, MntIVA: 0, MntTotal: 0
                 }
             ]

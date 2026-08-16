@@ -203,7 +203,7 @@ export default class BudgetEdpsController {
     const toDate = request.input('to_date')
 
     const query = BudgetEdp.query()
-      .preload('budget' as any, (budgetQuery: any) => {
+      .preload('budget' as any as any, (budgetQuery: any) => {
         budgetQuery.preload('client' as any)
       })
 
@@ -239,7 +239,7 @@ export default class BudgetEdpsController {
     try {
       const edp = await BudgetEdp.query()
         .where('id', edpId)
-        .preload('budget' as any, (q: any) => {
+        .preload('budget' as any as any, (q: any) => {
           q.preload('client')
           q.preload('business')
         })
@@ -346,7 +346,7 @@ export default class BudgetEdpsController {
     try {
       const edp = await BudgetEdp.query()
         .where('token', token)
-        .preload('budget' as any, (q: any) => {
+        .preload('budget' as any as any, (q: any) => {
           q.preload('client', (clientQuery: any) => {
             clientQuery.select(['id', 'name', 'email', 'identify', 'address'])
           })
@@ -405,12 +405,12 @@ export default class BudgetEdpsController {
       const edp = await BudgetEdp.query()
         .where('id', edpId)
         .andWhere('budget_id', budgetId)
-        .preload('budget', (q) => q.preload('client').preload('business'))
+        .preload('budget' as any, (q) => q.preload('client').preload('business'))
         .firstOrFail()
 
       const authUser = auth.user!
 
-      if (!authUser.isAuthorizer && !authUser.isSuper) {
+      if (!authUser.isAuthorizer && !authUser.isAdmin) {
         return response
           .status(403)
           .json(

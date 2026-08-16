@@ -8,10 +8,17 @@ export interface LibroCVDetalle {
     FchDoc: string
     RUTDoc: string
     RznSoc?: string
+    TpoDocRef?: number
+    FolioDocRef?: number
     MntExe: number
     MntNeto: number
     MntIVA: number
     MntTotal: number
+    IndSinCosto?: number
+    IVANoRec?: { CodIVANoRec: number, MntIVANoRec: number }
+    IVAUsoComun?: number
+    IVARetTotal?: number
+    IVANoRetenido?: number
 }
 
 export interface LibroCVPayload {
@@ -22,8 +29,9 @@ export interface LibroCVPayload {
     nroResol: number
     tipoOperacion: 'VENTA' | 'COMPRA'
     tipoLibro: 'ESPECIAL' | 'MENSUAL' | 'RECTIFICA'
-    tipoEnvio: 'TOTAL' | 'PARCIAL' | 'FINAL'
+    tipoEnvio: 'TOTAL' | 'PARCIAL' | 'FINAL' | 'AJUSTE'
     folioNotificacion?: number
+    fctProp?: number // Factor proporcionalidad IVA (e.g. 0.60)
     detalles: LibroCVDetalle[]
 }
 
@@ -46,21 +54,48 @@ function integerAmount(value: unknown): string {
 
 export default class SiiLibroXmlBuilderService {
     public static async buildLibro(payload: LibroCVPayload): Promise<string> {
-        const id = `LIBRO_VENTAS_${payload.periodoTributario.replace('-', '')}`
+        const id = `LIBRO_${payload.tipoOperacion}_${payload.periodoTributario.replace('-', '')}`
         const tmstFirmaEnv = DateTime.now().setZone('America/Santiago').toFormat("yyyy-LL-dd'T'HH:mm:ss")
 
         // Group by TpoDoc to build ResumenPeriodo
-        const summary: Record<number, { count: number, exe: number, neto: number, iva: number, total: number }> = {}
+        const summary: Record<number, { 
+            count: number, exeCount: number, exe: number, neto: number, iva: number, total: number,
+            opIvaUsoComun: number, ivaUsoComun: number,
+            opIvaRetTotal: number, ivaRetTotal: number,
+            ivaNoRec: Record<number, { count: number, mnt: number }>
+        }> = {}
 
         for (const det of payload.detalles) {
             if (!summary[det.TpoDoc]) {
-                summary[det.TpoDoc] = { count: 0, exe: 0, neto: 0, iva: 0, total: 0 }
+                summary[det.TpoDoc] = { 
+                    count: 0, exeCount: 0, exe: 0, neto: 0, iva: 0, total: 0,
+                    opIvaUsoComun: 0, ivaUsoComun: 0,
+                    opIvaRetTotal: 0, ivaRetTotal: 0,
+                    ivaNoRec: {}
+                }
             }
             summary[det.TpoDoc].count += 1
+            if (det.MntExe !== 0) summary[det.TpoDoc].exeCount += 1
             summary[det.TpoDoc].exe += det.MntExe
             summary[det.TpoDoc].neto += det.MntNeto
             summary[det.TpoDoc].iva += det.MntIVA
             summary[det.TpoDoc].total += det.MntTotal
+            
+            if (det.IVAUsoComun) {
+                summary[det.TpoDoc].opIvaUsoComun += 1
+                summary[det.TpoDoc].ivaUsoComun += det.IVAUsoComun
+            }
+            if (det.IVARetTotal) {
+                summary[det.TpoDoc].opIvaRetTotal += 1
+                summary[det.TpoDoc].ivaRetTotal += det.IVARetTotal
+            }
+            if (det.IVANoRec) {
+                if (!summary[det.TpoDoc].ivaNoRec[det.IVANoRec.CodIVANoRec]) {
+                    summary[det.TpoDoc].ivaNoRec[det.IVANoRec.CodIVANoRec] = { count: 0, mnt: 0 }
+                }
+                summary[det.TpoDoc].ivaNoRec[det.IVANoRec.CodIVANoRec].count += 1
+                summary[det.TpoDoc].ivaNoRec[det.IVANoRec.CodIVANoRec].mnt += det.IVANoRec.MntIVANoRec
+            }
         }
 
         const resumenXmlLines = []
@@ -69,26 +104,64 @@ export default class SiiLibroXmlBuilderService {
             resumenXmlLines.push('      <TotalesPeriodo>')
             resumenXmlLines.push(`        <TpoDoc>${tpoDoc}</TpoDoc>`)
             resumenXmlLines.push(`        <TotDoc>${sum.count}</TotDoc>`)
-            if (sum.exe > 0) resumenXmlLines.push(`        <TotMntExe>${integerAmount(sum.exe)}</TotMntExe>`)
-            if (sum.neto > 0) resumenXmlLines.push(`        <TotMntNeto>${integerAmount(sum.neto)}</TotMntNeto>`)
-            if (sum.iva > 0) resumenXmlLines.push(`        <TotMntIVA>${integerAmount(sum.iva)}</TotMntIVA>`)
+            if (sum.exeCount > 0) resumenXmlLines.push(`        <TotOpExe>${sum.exeCount}</TotOpExe>`)
+            resumenXmlLines.push(`        <TotMntExe>${integerAmount(sum.exe)}</TotMntExe>`)
+            resumenXmlLines.push(`        <TotMntNeto>${integerAmount(sum.neto)}</TotMntNeto>`)
+            resumenXmlLines.push(`        <TotMntIVA>${integerAmount(sum.iva)}</TotMntIVA>`)
+            
+            if (Object.keys(sum.ivaNoRec).length > 0) {
+                for (const cod of Object.keys(sum.ivaNoRec).map(Number).sort((a,b)=>a-b)) {
+                    resumenXmlLines.push('        <TotIVANoRec>')
+                    resumenXmlLines.push(`          <CodIVANoRec>${cod}</CodIVANoRec>`)
+                    resumenXmlLines.push(`          <TotOpIVANoRec>${sum.ivaNoRec[cod].count}</TotOpIVANoRec>`)
+                    resumenXmlLines.push(`          <TotMntIVANoRec>${integerAmount(sum.ivaNoRec[cod].mnt)}</TotMntIVANoRec>`)
+                    resumenXmlLines.push('        </TotIVANoRec>')
+                }
+            }
+            
+            if (sum.opIvaUsoComun > 0) {
+                resumenXmlLines.push(`        <TotOpIVAUsoComun>${sum.opIvaUsoComun}</TotOpIVAUsoComun>`)
+                resumenXmlLines.push(`        <TotIVAUsoComun>${integerAmount(sum.ivaUsoComun)}</TotIVAUsoComun>`)
+                if (payload.fctProp !== undefined) {
+                    resumenXmlLines.push(`        <FctProp>${payload.fctProp.toFixed(2)}</FctProp>`)
+                    resumenXmlLines.push(`        <TotCredIVAUsoComun>${integerAmount(sum.ivaUsoComun * payload.fctProp)}</TotCredIVAUsoComun>`)
+                }
+            }
+            
+            if (sum.opIvaRetTotal > 0) {
+                resumenXmlLines.push(`        <TotOpIVARetTotal>${sum.opIvaRetTotal}</TotOpIVARetTotal>`)
+                resumenXmlLines.push(`        <TotIVARetTotal>${integerAmount(sum.ivaRetTotal)}</TotIVARetTotal>`)
+            }
+            
             resumenXmlLines.push(`        <TotMntTotal>${integerAmount(sum.total)}</TotMntTotal>`)
             resumenXmlLines.push('      </TotalesPeriodo>')
         }
 
-        const detalleXmlLines = payload.detalles.map(det => {
+        const sortedDetalles = [...payload.detalles].sort((a, b) => {
+            if (a.TpoDoc !== b.TpoDoc) return a.TpoDoc - b.TpoDoc
+            return a.NroDoc - b.NroDoc
+        })
+
+        const detalleXmlLines = sortedDetalles.map(det => {
             const lines = [
                 '      <Detalle>',
                 `        <TpoDoc>${det.TpoDoc}</TpoDoc>`,
                 `        <NroDoc>${det.NroDoc}</NroDoc>`,
-                det.TasaImp ? `        <TasaImp>${det.TasaImp}</TasaImp>` : '',
+                det.IndSinCosto ? `        <IndSinCosto>${det.IndSinCosto}</IndSinCosto>` : '',
+                det.MntIVA > 0 ? `        <TasaImp>${det.TasaImp || 19}</TasaImp>` : '',
                 `        <FchDoc>${det.FchDoc}</FchDoc>`,
                 `        <RUTDoc>${det.RUTDoc}</RUTDoc>`,
                 det.RznSoc ? `        <RznSoc>${escapeXml(truncate(det.RznSoc, 50))}</RznSoc>` : '',
-                det.MntExe > 0 ? `        <MntExe>${integerAmount(det.MntExe)}</MntExe>` : '',
-                det.MntNeto > 0 ? `        <MntNeto>${integerAmount(det.MntNeto)}</MntNeto>` : '',
-                det.MntIVA > 0 ? `        <MntIVA>${integerAmount(det.MntIVA)}</MntIVA>` : '',
+                det.TpoDocRef ? `        <TpoDocRef>${det.TpoDocRef}</TpoDocRef>` : '',
+                det.FolioDocRef ? `        <FolioDocRef>${det.FolioDocRef}</FolioDocRef>` : '',
+                det.MntExe !== 0 ? `        <MntExe>${integerAmount(det.MntExe)}</MntExe>` : '',
+                `        <MntNeto>${integerAmount(det.MntNeto)}</MntNeto>`,
+                `        <MntIVA>${integerAmount(det.MntIVA)}</MntIVA>`,
+                det.IVANoRec ? `        <IVANoRec>\n          <CodIVANoRec>${det.IVANoRec.CodIVANoRec}</CodIVANoRec>\n          <MntIVANoRec>${det.IVANoRec.MntIVANoRec}</MntIVANoRec>\n        </IVANoRec>` : '',
+                det.IVAUsoComun ? `        <IVAUsoComun>${integerAmount(det.IVAUsoComun)}</IVAUsoComun>` : '',
+                det.IVARetTotal ? `        <IVARetTotal>${integerAmount(det.IVARetTotal)}</IVARetTotal>` : '',
                 `        <MntTotal>${integerAmount(det.MntTotal)}</MntTotal>`,
+                det.IVANoRetenido !== undefined ? `        <IVANoRetenido>${integerAmount(det.IVANoRetenido)}</IVANoRetenido>` : '',
                 '      </Detalle>'
             ]
             return lines.filter(Boolean).join('\n')
