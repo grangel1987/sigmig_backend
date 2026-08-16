@@ -1287,7 +1287,7 @@ export default class ServiceEntrySheetController {
       sheetUrl,
     })
 
-    await mail.sendLater((message) => {
+    await mail.send((message) => {
       message
         .to(recipientEmail)
         .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')

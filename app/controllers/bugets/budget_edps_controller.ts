@@ -280,7 +280,7 @@ export default class BudgetEdpsController {
       const businessLabel = i18n.formatMessage('messages.business')
       const viewEdpLabel = i18n.formatMessage('messages.view_edp', {}, 'Ver Estado de Pago')
 
-      await mail.sendLater((message) => {
+      await mail.send((message) => {
         message
           .to(recipientEmail)
           .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')

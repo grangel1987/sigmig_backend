@@ -768,7 +768,7 @@ export default class UserController {
         : 'Usuario'
 
       try {
-        await mail.sendLater((message) => {
+        await mail.send((message) => {
           message
             .to(user.email)
             .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
@@ -2317,7 +2317,7 @@ export default class UserController {
         : 'Usuario'
 
       try {
-        await mail.sendLater((message) => {
+        await mail.send((message) => {
           message
             .to(user.email)
             .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')

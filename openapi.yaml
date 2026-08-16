@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: API Backend SIGMI
   version: '1.0.0'
-  description: API REST completa para SIGMI Backend - Sistema de gestión de presupuestos, gastos y operaciones financieras
+  description: API REST completa para SIGMI Backend - Sistema de gestiÃ³n de presupuestos, gastos y operaciones financieras
   contact:
     name: Equipo de Desarrollo SIGMI
   license:
@@ -12,7 +12,7 @@ servers:
   - url: http://localhost:3334/api/v2
     description: Servidor de Desarrollo Local
   - url: http://93.127.210.103/api/v2
-    description: Servidor de Producción
+    description: Servidor de ProducciÃ³n
 
 components:
   securitySchemes:
@@ -20,7 +20,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Token JWT del endpoint de inicio de sesión
+      description: Token JWT del endpoint de inicio de sesiÃ³n
 
   schemas:
     Error:
@@ -177,19 +177,19 @@ components:
           description: Fecha del pago
         amount:
           type: number
-          description: Monto del pago (opcional si se calcula desde las líneas)
+          description: Monto del pago (opcional si se calcula desde las lÃ­neas)
         currencyId:
           type: integer
           description: ID de la moneda
         paymentMethodId:
           type: integer
-          description: ID del método de pago
+          description: ID del mÃ©todo de pago
         documentTypeId:
           type: integer
           description: ID del tipo de documento
         documentNumber:
           type: string
-          description: Número de documento. Si se proporciona, el pago se marca como 'pagado' y no proyectado
+          description: NÃºmero de documento. Si se proporciona, el pago se marca como 'pagado' y no proyectado
         concept:
           type: string
           description: Concepto del pago (auto-generado si no se proporciona y budgetId existe)
@@ -199,14 +199,14 @@ components:
           description: Estado del pago
         isProjected:
           type: boolean
-          description: Marca el pago como proyectado (ignorado si documentNumber está presente)
+          description: Marca el pago como proyectado (ignorado si documentNumber estÃ¡ presente)
         receivedAt:
           type: string
           format: date-time
-          description: Fecha-hora de recepción
+          description: Fecha-hora de recepciÃ³n
         lines:
           type: array
-          description: Líneas de pago que especifican qué items del presupuesto se están pagando
+          description: LÃ­neas de pago que especifican quÃ© items del presupuesto se estÃ¡n pagando
           items:
             $ref: '#/components/schemas/BudgetpaymentDetail'
 
@@ -228,7 +228,7 @@ components:
       required:
         - bugetProductId
         - bugetItemId
-      description: Una línea de pago que vincula el pago a un item específico del presupuesto
+      description: Una lÃ­nea de pago que vincula el pago a un item especÃ­fico del presupuesto
 
     PaymentMethod:
       type: object
@@ -917,9 +917,9 @@ paths:
   /account/login:
     post:
       tags:
-        - Autenticación
-      summary: Inicio de sesión de usuario
-      description: Autenticar usuario con correo electrónico y contraseña
+        - AutenticaciÃ³n
+      summary: Inicio de sesiÃ³n de usuario
+      description: Autenticar usuario con correo electrÃ³nico y contraseÃ±a
       operationId: accountLogin
       requestBody:
         required: true
@@ -941,13 +941,13 @@ paths:
               password: password123
       responses:
         '200':
-          description: Inicio de sesión exitoso
+          description: Inicio de sesiÃ³n exitoso
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
-          description: Credenciales inválidas
+          description: Credenciales invÃ¡lidas
           content:
             application/json:
               schema:
@@ -959,24 +959,24 @@ paths:
       tags:
         - Balances
       summary: Listar movimientos contables
-      description: Obtener movimientos contables con filtrado y paginación opcionales
+      description: Obtener movimientos contables con filtrado y paginaciÃ³n opcionales
       operationId: getBalancesMovements
       parameters:
         - name: page
           in: query
-          description: Número de página para la paginación
+          description: NÃºmero de pÃ¡gina para la paginaciÃ³n
           schema:
             type: integer
             default: 1
         - name: perPage
           in: query
-          description: Registros por página
+          description: Registros por pÃ¡gina
           schema:
             type: integer
             default: 15
         - name: text
           in: query
-          description: Buscar por cliente, cuenta, concepto o número de documento
+          description: Buscar por cliente, cuenta, concepto o nÃºmero de documento
           schema:
             type: string
         - name: status
@@ -992,7 +992,7 @@ paths:
             type: integer
         - name: paymentMethodId
           in: query
-          description: Filtrar por método de pago
+          description: Filtrar por mÃ©todo de pago
           schema:
             type: integer
         - name: type
@@ -1022,7 +1022,7 @@ paths:
                 data:
                   - id: 1
                     date: '2026-01-17'
-                    concept: Pago cotización #1001
+                    concept: Pago cotizaciÃ³n #1001
                     amount: 150000
                     absoluteAmount: 150000
                     type: income
@@ -1046,7 +1046,7 @@ paths:
       tags:
         - Balances
       summary: Obtener detalle de un movimiento contable
-      description: Obtener detalles completos de un movimiento contable específico, incluyendo justificaciones (cotización, venta, gasto)
+      description: Obtener detalles completos de un movimiento contable especÃ­fico, incluyendo justificaciones (cotizaciÃ³n, venta, gasto)
       operationId: getBalancesMovementDetails
       parameters:
         - name: id
@@ -1104,7 +1104,7 @@ paths:
                   title:
                     type: string
         '422':
-          description: filePath inválido o ausente
+          description: filePath invÃ¡lido o ausente
           content:
             application/json:
               schema:
@@ -1160,7 +1160,7 @@ paths:
                   title:
                     type: string
         '422':
-          description: filePath inválido o ausente
+          description: filePath invÃ¡lido o ausente
           content:
             application/json:
               schema:
@@ -1177,9 +1177,9 @@ paths:
   /config/payment-methods:
     get:
       tags:
-        - Configuración
-      summary: Listar métodos de pago
-      description: Obtener todos los métodos de pago con paginación
+        - ConfiguraciÃ³n
+      summary: Listar mÃ©todos de pago
+      description: Obtener todos los mÃ©todos de pago con paginaciÃ³n
       operationId: listPaymentMethods
       parameters:
         - name: page
@@ -1194,7 +1194,7 @@ paths:
             default: 15
       responses:
         '200':
-          description: Lista de métodos de pago
+          description: Lista de mÃ©todos de pago
           content:
             application/json:
               schema:
@@ -1212,9 +1212,9 @@ paths:
   /config/payment-methods/store:
     post:
       tags:
-        - Configuración
-      summary: Crear método de pago
-      description: Crear un nuevo método de pago
+        - ConfiguraciÃ³n
+      summary: Crear mÃ©todo de pago
+      description: Crear un nuevo mÃ©todo de pago
       operationId: storePaymentMethod
       requestBody:
         required: true
@@ -1234,13 +1234,13 @@ paths:
               description: Pago por transferencia bancaria
       responses:
         '201':
-          description: Método de pago creado
+          description: MÃ©todo de pago creado
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethod'
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
           content:
             application/json:
               schema:
@@ -1251,9 +1251,9 @@ paths:
   /config/payment-methods/show/{id}:
     get:
       tags:
-        - Configuración
-      summary: Obtener método de pago
-      description: Obtener un método de pago específico
+        - ConfiguraciÃ³n
+      summary: Obtener mÃ©todo de pago
+      description: Obtener un mÃ©todo de pago especÃ­fico
       operationId: showPaymentMethod
       parameters:
         - name: id
@@ -1263,7 +1263,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Detalles del método de pago
+          description: Detalles del mÃ©todo de pago
           content:
             application/json:
               schema:
@@ -1280,9 +1280,9 @@ paths:
   /config/payment-methods/update/{id}:
     put:
       tags:
-        - Configuración
-      summary: Actualizar método de pago
-      description: Actualizar un método de pago existente
+        - ConfiguraciÃ³n
+      summary: Actualizar mÃ©todo de pago
+      description: Actualizar un mÃ©todo de pago existente
       operationId: updatePaymentMethod
       parameters:
         - name: id
@@ -1306,13 +1306,13 @@ paths:
               description: Pago por transferencia
       responses:
         '200':
-          description: Método de pago actualizado
+          description: MÃ©todo de pago actualizado
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentMethod'
         '500':
-          description: Error de actualización
+          description: Error de actualizaciÃ³n
           content:
             application/json:
               schema:
@@ -1323,9 +1323,9 @@ paths:
   /config/payment-methods/delete/{id}:
     delete:
       tags:
-        - Configuración
-      summary: Eliminar método de pago
-      description: Eliminar un método de pago
+        - ConfiguraciÃ³n
+      summary: Eliminar mÃ©todo de pago
+      description: Eliminar un mÃ©todo de pago
       operationId: deletePaymentMethod
       parameters:
         - name: id
@@ -1335,7 +1335,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Método de pago eliminado
+          description: MÃ©todo de pago eliminado
           content:
             application/json:
               schema:
@@ -1352,13 +1352,13 @@ paths:
   /config/payment-methods/select:
     get:
       tags:
-        - Configuración
-      summary: Lista de selección de métodos de pago
-      description: Obtener métodos de pago para dropdown/select
+        - ConfiguraciÃ³n
+      summary: Lista de selecciÃ³n de mÃ©todos de pago
+      description: Obtener mÃ©todos de pago para dropdown/select
       operationId: selectPaymentMethods
       responses:
         '200':
-          description: Lista de métodos de pago
+          description: Lista de mÃ©todos de pago
           content:
             application/json:
               schema:
@@ -1371,9 +1371,9 @@ paths:
   /config/payment-document-types:
     get:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Listar tipos de documento de pago
-      description: Obtener todos los tipos de documento de pago con paginación
+      description: Obtener todos los tipos de documento de pago con paginaciÃ³n
       operationId: listPaymentDocumentTypes
       parameters:
         - name: page
@@ -1406,7 +1406,7 @@ paths:
   /config/payment-document-types/store:
     post:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Crear tipo de documento de pago
       description: Crear un nuevo tipo de documento de pago
       operationId: storePaymentDocumentType
@@ -1434,7 +1434,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaymentDocumentType'
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
           content:
             application/json:
               schema:
@@ -1445,9 +1445,9 @@ paths:
   /config/payment-document-types/show/{id}:
     get:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Obtener tipo de documento de pago
-      description: Obtener un tipo de documento de pago específico
+      description: Obtener un tipo de documento de pago especÃ­fico
       operationId: showPaymentDocumentType
       parameters:
         - name: id
@@ -1474,7 +1474,7 @@ paths:
   /config/payment-document-types/update/{id}:
     put:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Actualizar tipo de documento de pago
       description: Actualizar un tipo de documento de pago existente
       operationId: updatePaymentDocumentType
@@ -1496,8 +1496,8 @@ paths:
                 description:
                   type: string
             example:
-              name: Factura Electrónica
-              description: Factura electrónica
+              name: Factura ElectrÃ³nica
+              description: Factura electrÃ³nica
       responses:
         '200':
           description: Tipo de documento actualizado
@@ -1506,7 +1506,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaymentDocumentType'
         '500':
-          description: Error de actualización
+          description: Error de actualizaciÃ³n
           content:
             application/json:
               schema:
@@ -1517,7 +1517,7 @@ paths:
   /config/payment-document-types/delete/{id}:
     delete:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Eliminar tipo de documento de pago
       description: Eliminar un tipo de documento de pago
       operationId: deletePaymentDocumentType
@@ -1546,8 +1546,8 @@ paths:
   /config/payment-document-types/select:
     get:
       tags:
-        - Configuración
-      summary: Lista de selección de tipos de documento de pago
+        - ConfiguraciÃ³n
+      summary: Lista de selecciÃ³n de tipos de documento de pago
       description: Obtener tipos de documento de pago para dropdown/select
       operationId: selectPaymentDocumentTypes
       responses:
@@ -1565,9 +1565,9 @@ paths:
   /config/ledging-accounts:
     get:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Listar cuentas contables
-      description: Obtener todas las cuentas contables con paginación
+      description: Obtener todas las cuentas contables con paginaciÃ³n
       operationId: listLedgingAccounts
       parameters:
         - name: page
@@ -1600,7 +1600,7 @@ paths:
   /config/ledging-accounts/store:
     post:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Crear cuenta contable
       description: Crear una nueva cuenta contable
       operationId: storeLedgingAccount
@@ -1634,7 +1634,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LedgingAccount'
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
           content:
             application/json:
               schema:
@@ -1645,9 +1645,9 @@ paths:
   /config/ledging-accounts/show/{id}:
     get:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Obtener cuenta contable
-      description: Obtener una cuenta contable específica
+      description: Obtener una cuenta contable especÃ­fica
       operationId: showLedgingAccount
       parameters:
         - name: id
@@ -1674,7 +1674,7 @@ paths:
   /config/ledging-accounts/update/{id}:
     put:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Actualizar cuenta contable
       description: Actualizar una cuenta contable existente
       operationId: updateLedgingAccount
@@ -1707,7 +1707,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LedgingAccount'
         '500':
-          description: Error de actualización
+          description: Error de actualizaciÃ³n
           content:
             application/json:
               schema:
@@ -1718,7 +1718,7 @@ paths:
   /config/ledging-accounts/delete/{id}:
     delete:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Eliminar cuenta contable
       description: Eliminar una cuenta contable
       operationId: deleteLedgingAccount
@@ -1747,8 +1747,8 @@ paths:
   /config/ledging-accounts/select:
     get:
       tags:
-        - Configuración
-      summary: Lista de selección de cuentas contables
+        - ConfiguraciÃ³n
+      summary: Lista de selecciÃ³n de cuentas contables
       description: Obtener cuentas contables para dropdown/select
       operationId: selectLedgingAccounts
       responses:
@@ -1766,9 +1766,9 @@ paths:
   /cost-center:
     get:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Listar centros de costo
-      description: Obtener todos los centros de costo con paginación
+      description: Obtener todos los centros de costo con paginaciÃ³n
       operationId: listCostCenters
       parameters:
         - name: page
@@ -1799,7 +1799,7 @@ paths:
   /cost-center/store:
     post:
       tags:
-        - Configuración
+        - ConfiguraciÃ³n
       summary: Crear centro de costo
       description: Crear un nuevo centro de costo
       operationId: storeCostCenter
@@ -1820,15 +1820,15 @@ paths:
         '201':
           description: Centro de costo creado
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
       security:
         - bearerAuth: []
 
   /cost-center/select/{business_id}:
     get:
       tags:
-        - Configuración
-      summary: Lista de selección de centros de costo
+        - ConfiguraciÃ³n
+      summary: Lista de selecciÃ³n de centros de costo
       description: Obtener centros de costo para dropdown/select
       operationId: selectCostCenters
       parameters:
@@ -1848,7 +1848,7 @@ paths:
       tags:
         - Clientes
       summary: Listar clientes
-      description: Obtener todos los clientes con paginación
+      description: Obtener todos los clientes con paginaciÃ³n
       operationId: listClients
       parameters:
         - name: page
@@ -1903,7 +1903,7 @@ paths:
         '201':
           description: Cliente creado
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
       security:
         - bearerAuth: []
 
@@ -1912,7 +1912,7 @@ paths:
       tags:
         - Clientes
       summary: Obtener cliente
-      description: Obtener un cliente específico
+      description: Obtener un cliente especÃ­fico
       operationId: showClient
       parameters:
         - name: id
@@ -1933,7 +1933,7 @@ paths:
       tags:
         - Presupuestos
       summary: Listar presupuestos
-      description: Obtener todos los presupuestos con paginación
+      description: Obtener todos los presupuestos con paginaciÃ³n
       operationId: listBudgets
       parameters:
         - name: page
@@ -1966,7 +1966,7 @@ paths:
       tags:
         - Presupuestos
       summary: Autocompletar presupuesto
-      description: Búsqueda rápida de presupuestos por número o nombre de cliente
+      description: BÃºsqueda rÃ¡pida de presupuestos por nÃºmero o nombre de cliente
       operationId: autocompleteBuget
       requestBody:
         required: true
@@ -1979,7 +1979,7 @@ paths:
                   type: integer
                 val:
                   type: string
-                  description: Texto a buscar (número o cliente)
+                  description: Texto a buscar (nÃºmero o cliente)
               required:
                 - businessId
                 - val
@@ -2031,7 +2031,7 @@ paths:
         '201':
           description: Presupuesto creado
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
       security:
         - bearerAuth: []
 
@@ -2040,7 +2040,7 @@ paths:
       tags:
         - Presupuestos
       summary: Obtener presupuesto
-      description: Obtener un presupuesto específico con todos sus detalles
+      description: Obtener un presupuesto especÃ­fico con todos sus detalles
       operationId: showBudget
       parameters:
         - name: id
@@ -2061,7 +2061,7 @@ paths:
       tags:
         - Presupuestos
       summary: Obtener historial de versiones anteriores
-      description: Obtener los presupuestos anteriores deshabilitados que comparten el mismo número y están ordenados de más nuevo a más antiguo
+      description: Obtener los presupuestos anteriores deshabilitados que comparten el mismo nÃºmero y estÃ¡n ordenados de mÃ¡s nuevo a mÃ¡s antiguo
       operationId: budgetHistory
       parameters:
         - name: id
@@ -2071,7 +2071,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Historial de presupuestos deshabilitados obtenido con éxito
+          description: Historial de presupuestos deshabilitados obtenido con Ã©xito
           content:
             application/json:
               schema:
@@ -2113,7 +2113,7 @@ paths:
         '200':
           description: Estado actualizado
         '500':
-          description: Error de actualización
+          description: Error de actualizaciÃ³n
       security:
         - bearerAuth: []
 
@@ -2144,7 +2144,7 @@ paths:
         '201':
           description: Empleado creado
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
       security:
         - bearerAuth: []
 
@@ -2153,7 +2153,7 @@ paths:
       tags:
         - Empleados
       summary: Obtener empleado
-      description: Obtener un empleado específico por token y empresa
+      description: Obtener un empleado especÃ­fico por token y empresa
       operationId: showEmployee
       parameters:
         - name: token
@@ -2179,7 +2179,7 @@ paths:
       tags:
         - Productos
       summary: Listar productos
-      description: Obtener todos los productos con paginación
+      description: Obtener todos los productos con paginaciÃ³n
       operationId: listProducts
       parameters:
         - name: page
@@ -2231,7 +2231,7 @@ paths:
         '201':
           description: Producto creado
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
       security:
         - bearerAuth: []
 
@@ -2240,7 +2240,7 @@ paths:
       tags:
         - Proveedores
       summary: Listar proveedores
-      description: Obtener todos los proveedores con paginación
+      description: Obtener todos los proveedores con paginaciÃ³n
       operationId: listProviders
       parameters:
         - name: page
@@ -2293,7 +2293,7 @@ paths:
         '201':
           description: Proveedor creado
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
       security:
         - bearerAuth: []
 
@@ -2301,8 +2301,8 @@ paths:
     get:
       tags:
         - Compras
-      summary: Listar órdenes de compra
-      description: Obtener todas las órdenes de compra con paginación
+      summary: Listar Ã³rdenes de compra
+      description: Obtener todas las Ã³rdenes de compra con paginaciÃ³n
       operationId: listShoppingOrders
       parameters:
         - name: page
@@ -2317,7 +2317,7 @@ paths:
             default: 15
       responses:
         '200':
-          description: Lista de órdenes de compra
+          description: Lista de Ã³rdenes de compra
           content:
             application/json:
               schema:
@@ -2364,7 +2364,7 @@ paths:
         '201':
           description: Orden de compra creada
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
       security:
         - bearerAuth: []
 
@@ -2647,8 +2647,8 @@ paths:
     post:
       tags:
         - Dashboard
-      summary: Métricas de presupuestos
-      description: Obtener métricas de presupuestos
+      summary: MÃ©tricas de presupuestos
+      description: Obtener mÃ©tricas de presupuestos
       operationId: getBudgetsMetrics
       requestBody:
         required: true
@@ -2661,7 +2661,7 @@ paths:
                   type: integer
       responses:
         '200':
-          description: Métricas de presupuestos
+          description: MÃ©tricas de presupuestos
       security:
         - bearerAuth: []
 
@@ -2669,8 +2669,8 @@ paths:
     post:
       tags:
         - Dashboard
-      summary: Métricas de compras
-      description: Obtener métricas de órdenes de compra
+      summary: MÃ©tricas de compras
+      description: Obtener mÃ©tricas de Ã³rdenes de compra
       operationId: getShoppingsMetrics
       requestBody:
         required: true
@@ -2683,7 +2683,7 @@ paths:
                   type: integer
       responses:
         '200':
-          description: Métricas de compras
+          description: MÃ©tricas de compras
       security:
         - bearerAuth: []
 
@@ -2714,7 +2714,7 @@ paths:
       tags:
         - Dashboard
       summary: Resumen de Cuentas por cobrar (EDP)
-      description: Obtener un resumen ligero de cuentas por cobrar (solo info del cliente y deuda total), con paginación
+      description: Obtener un resumen ligero de cuentas por cobrar (solo info del cliente y deuda total), con paginaciÃ³n
       operationId: getDashboardReceivablesOverview
       requestBody:
         required: true
@@ -2742,7 +2742,7 @@ paths:
       tags:
         - Dashboard
       summary: Cuentas por cobrar de un cliente
-      description: Obtener las cuentas por cobrar de un cliente específico
+      description: Obtener las cuentas por cobrar de un cliente especÃ­fico
       operationId: getDashboardClientReceivables
       parameters:
         - name: id
@@ -2771,7 +2771,7 @@ paths:
       tags:
         - Gastos
       summary: Listar gastos
-      description: Obtener todos los gastos con filtrado y paginación opcionales
+      description: Obtener todos los gastos con filtrado y paginaciÃ³n opcionales
       operationId: listExpenses
       parameters:
         - name: page
@@ -2786,7 +2786,7 @@ paths:
             default: 15
         - name: text
           in: query
-          description: Buscar por descripción
+          description: Buscar por descripciÃ³n
           schema:
             type: string
         - name: status
@@ -2890,7 +2890,7 @@ paths:
                   message:
                     type: string
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
           content:
             application/json:
               schema:
@@ -2903,7 +2903,7 @@ paths:
       tags:
         - Gastos
       summary: Obtener gasto
-      description: Obtener un gasto específico con sus movimientos contables
+      description: Obtener un gasto especÃ­fico con sus movimientos contables
       operationId: showExpense
       parameters:
         - name: id
@@ -2974,7 +2974,7 @@ paths:
                   message:
                     type: string
         '500':
-          description: Error de actualización
+          description: Error de actualizaciÃ³n
           content:
             application/json:
               schema:
@@ -3943,7 +3943,7 @@ paths:
                   title:
                     type: string
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
           content:
             application/json:
               schema:
@@ -4062,7 +4062,7 @@ paths:
                   title:
                     type: string
         '500':
-          description: Error de actualización
+          description: Error de actualizaciÃ³n
           content:
             application/json:
               schema:
@@ -4074,7 +4074,7 @@ paths:
       tags:
         - Pagos de Venta
       summary: Eliminar pago de venta
-      description: Eliminar lógicamente un pago de venta y su movimiento contable.
+      description: Eliminar lÃ³gicamente un pago de venta y su movimiento contable.
       operationId: deleteSalePayment
       parameters:
         - name: id
@@ -4148,7 +4148,7 @@ paths:
       tags:
         - Pagos de Venta
       summary: Liquidar pago de venta
-      description: Marcar un pago de venta como pagado asignándole número y tipo de documento.
+      description: Marcar un pago de venta como pagado asignÃ¡ndole nÃºmero y tipo de documento.
       operationId: settleSalePayment
       parameters:
         - name: id
@@ -4165,7 +4165,7 @@ paths:
               properties:
                 documentNumber:
                   type: string
-                  description: Número de documento a asignar
+                  description: NÃºmero de documento a asignar
                 documentTypeId:
                   type: integer
               required:
@@ -4313,7 +4313,7 @@ paths:
       tags:
         - Pagos de Presupuesto
       summary: Crear pago de presupuesto
-      description: Crear un nuevo pago de presupuesto, opcionalmente proyectado. Puede especificarse qué items del presupuesto se están pagando mediante el array 'lines'.
+      description: Crear un nuevo pago de presupuesto, opcionalmente proyectado. Puede especificarse quÃ© items del presupuesto se estÃ¡n pagando mediante el array 'lines'.
       operationId: storeBudgetPayment
       requestBody:
         required: true
@@ -4365,7 +4365,7 @@ paths:
                   message:
                     type: string
         '500':
-          description: Error de creación
+          description: Error de creaciÃ³n
           content:
             application/json:
               schema:
@@ -4451,10 +4451,10 @@ paths:
                 receivedAt:
                   type: string
                   format: date-time
-                  description: Fecha-hora de recepción
+                  description: Fecha-hora de recepciÃ³n
                 lines:
                   type: array
-                  description: Líneas de pago que especifican qué items del presupuesto se están pagando
+                  description: LÃ­neas de pago que especifican quÃ© items del presupuesto se estÃ¡n pagando
                   items:
                     $ref: '#/components/schemas/BudgetpaymentDetail'
       responses:
@@ -4468,7 +4468,7 @@ paths:
                   message:
                     type: string
         '500':
-          description: Error de actualización
+          description: Error de actualizaciÃ³n
           content:
             application/json:
               schema:
@@ -4541,7 +4541,7 @@ paths:
       tags:
         - Pagos de Presupuesto
       summary: Hacer efectivo pago proyectado
-      description: Convertir un pago proyectado a efectivo asignándole un número de documento
+      description: Convertir un pago proyectado a efectivo asignÃ¡ndole un nÃºmero de documento
       operationId: settlePayment
       parameters:
         - name: id
@@ -4558,7 +4558,7 @@ paths:
               properties:
                 documentNumber:
                   type: string
-                  description: Número de documento a asignar
+                  description: NÃºmero de documento a asignar
               required:
                 - documentNumber
             example:
@@ -4592,8 +4592,8 @@ paths:
     get:
       tags:
         - Arqueo
-      summary: Listar auditorías de caja
-      description: Obtener listado de auditorías de caja con filtros opcionales
+      summary: Listar auditorÃ­as de caja
+      description: Obtener listado de auditorÃ­as de caja con filtros opcionales
       operationId: getCashAudits
       parameters:
         - name: page
@@ -4625,7 +4625,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Auditorías obtenidas exitosamente
+          description: AuditorÃ­as obtenidas exitosamente
           content:
             application/json:
               schema:
@@ -4640,7 +4640,7 @@ paths:
                   meta:
                     $ref: '#/components/schemas/PaginationMeta'
         '500':
-          description: Error al obtener auditorías
+          description: Error al obtener auditorÃ­as
           content:
             application/json:
               schema:
@@ -4652,8 +4652,8 @@ paths:
     get:
       tags:
         - Arqueo
-      summary: Obtener auditoría de caja por ID
-      description: Obtener una auditoría de caja específica con sus líneas
+      summary: Obtener auditorÃ­a de caja por ID
+      description: Obtener una auditorÃ­a de caja especÃ­fica con sus lÃ­neas
       operationId: getCashAudit
       parameters:
         - name: id
@@ -4663,7 +4663,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Auditoría obtenida exitosamente
+          description: AuditorÃ­a obtenida exitosamente
           content:
             application/json:
               schema:
@@ -4674,7 +4674,7 @@ paths:
                   data:
                     $ref: '#/components/schemas/CashAudit'
         '404':
-          description: Auditoría no encontrada
+          description: AuditorÃ­a no encontrada
           content:
             application/json:
               schema:
@@ -4686,8 +4686,8 @@ paths:
     post:
       tags:
         - Arqueo
-      summary: Crear auditoría de caja
-      description: Crear una nueva auditoría de caja con líneas
+      summary: Crear auditorÃ­a de caja
+      description: Crear una nueva auditorÃ­a de caja con lÃ­neas
       operationId: createCashAudit
       requestBody:
         required: true
@@ -4735,7 +4735,7 @@ paths:
                 - totalExpected
       responses:
         '201':
-          description: Auditoría creada exitosamente
+          description: AuditorÃ­a creada exitosamente
           content:
             application/json:
               schema:
@@ -4746,13 +4746,13 @@ paths:
                   data:
                     $ref: '#/components/schemas/CashAudit'
         '400':
-          description: Datos inválidos
+          description: Datos invÃ¡lidos
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
-          description: Error al crear auditoría
+          description: Error al crear auditorÃ­a
           content:
             application/json:
               schema:
@@ -4764,8 +4764,8 @@ paths:
     put:
       tags:
         - Arqueo
-      summary: Actualizar auditoría de caja
-      description: Actualizar una auditoría de caja existente y sus líneas
+      summary: Actualizar auditorÃ­a de caja
+      description: Actualizar una auditorÃ­a de caja existente y sus lÃ­neas
       operationId: updateCashAudit
       parameters:
         - name: id
@@ -4819,7 +4819,7 @@ paths:
                 - totalExpected
       responses:
         '200':
-          description: Auditoría actualizada exitosamente
+          description: AuditorÃ­a actualizada exitosamente
           content:
             application/json:
               schema:
@@ -4830,13 +4830,13 @@ paths:
                   data:
                     $ref: '#/components/schemas/CashAudit'
         '404':
-          description: Auditoría no encontrada
+          description: AuditorÃ­a no encontrada
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
-          description: Error al actualizar auditoría
+          description: Error al actualizar auditorÃ­a
           content:
             application/json:
               schema:
@@ -4848,8 +4848,8 @@ paths:
     delete:
       tags:
         - Arqueo
-      summary: Eliminar auditoría de caja
-      description: Eliminar una auditoría de caja y sus líneas
+      summary: Eliminar auditorÃ­a de caja
+      description: Eliminar una auditorÃ­a de caja y sus lÃ­neas
       operationId: deleteCashAudit
       parameters:
         - name: id
@@ -4859,7 +4859,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Auditoría eliminada exitosamente
+          description: AuditorÃ­a eliminada exitosamente
           content:
             application/json:
               schema:
@@ -4868,13 +4868,13 @@ paths:
                   message:
                     type: string
         '404':
-          description: Auditoría no encontrada
+          description: AuditorÃ­a no encontrada
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
-          description: Error al eliminar auditoría
+          description: Error al eliminar auditorÃ­a
           content:
             application/json:
               schema:
@@ -4886,8 +4886,8 @@ paths:
     put:
       tags:
         - Arqueo
-      summary: Restaurar auditoría de caja
-      description: Restaurar una auditoría de caja previamente eliminada
+      summary: Restaurar auditorÃ­a de caja
+      description: Restaurar una auditorÃ­a de caja previamente eliminada
       operationId: restoreCashAudit
       parameters:
         - name: id
@@ -4897,7 +4897,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Auditoría restaurada exitosamente
+          description: AuditorÃ­a restaurada exitosamente
           content:
             application/json:
               schema:
@@ -4912,13 +4912,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Auditoría no encontrada
+          description: AuditorÃ­a no encontrada
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
-          description: Error al restaurar auditoría
+          description: Error al restaurar auditorÃ­a
           content:
             application/json:
               schema:
@@ -4930,8 +4930,8 @@ paths:
     get:
       tags:
         - Orden de Compra (Shopping)
-      summary: Detalles públicos de orden de compra
-      description: Obtiene los detalles de una orden de compra usando un token público (no requiere autenticación)
+      summary: Detalles pÃºblicos de orden de compra
+      description: Obtiene los detalles de una orden de compra usando un token pÃºblico (no requiere autenticaciÃ³n)
       operationId: showShoppingByToken
       parameters:
         - name: token
@@ -4959,7 +4959,7 @@ paths:
       tags:
         - Orden de Compra (Shopping)
       summary: Compartir orden de compra por correo
-      description: Envía la orden de compra por correo electrónico al proveedor asociado
+      description: EnvÃ­a la orden de compra por correo electrÃ³nico al proveedor asociado
       operationId: shareShopping
       parameters:
         - name: id
@@ -4970,7 +4970,7 @@ paths:
         - name: email
           in: query
           required: false
-          description: Opcional. Correo electrónico alternativo al que se enviará la orden.
+          description: Opcional. Correo electrÃ³nico alternativo al que se enviarÃ¡ la orden.
           schema:
             type: string
             format: email
@@ -5078,12 +5078,33 @@ paths:
           description: Orden de compra reactivada
 
 
-  /bugets/{budgetId}/edps/{edpId}/share:
+  /buget/{budgetId}/edps:
+    get:
+      tags:
+        - Estados de Pago (EDPs)
+      summary: Listar todos los Estados de Pago (EDPs) de una Cotización
+      description: Obtiene la lista completa de estados de pago asociados a un presupuesto/cotización específico.
+      operationId: getBudgetEdps
+      parameters:
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de EDPs obtenida exitosamente
+        '401':
+          description: No autorizado
+        '404':
+          description: Presupuesto no encontrado
+
+  /buget/{budgetId}/edps/{edpId}/share:
     post:
       tags:
         - Estados de Pago (EDPs)
       summary: Compartir un Estado de Pago por correo
-      description: Env�a un correo al cliente con el enlace p�blico para visualizar el estado de pago. Se puede especificar un correo en el payload o utilizar el del cliente.
+      description: Envía un correo al cliente con el enlace público para visualizar el estado de pago. Se puede especificar un correo en el payload o utilizar el del cliente.
       operationId: shareBudgetEdp
       parameters:
         - name: budgetId
@@ -5123,8 +5144,8 @@ paths:
     get:
       tags:
         - Estados de Pago (EDPs)
-      summary: Visualizar EDP (Ruta P�blica)
-      description: Obtiene los detalles p�blicos de un estado de pago mediante su token.
+      summary: Visualizar EDP (Ruta Pública)
+      description: Obtiene los detalles públicos de un estado de pago mediante su token.
       operationId: viewEdpPublic
       parameters:
         - name: token

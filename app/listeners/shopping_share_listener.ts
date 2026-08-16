@@ -24,7 +24,7 @@ export default function registerShoppingShareListener() {
   emitter.on('new::shoppingShare', async (payload: ShoppingSharePayload) => {
     try {
       if (mail) {
-        await mail.sendLater((message: any) => {
+        await mail.send((message: any) => {
           message.to(payload.email)
           message.from(`"Servicios Integrales Genessis" <${env.get('FROM_EMAIL', 'contacto@serviciosgenessis.com')}>`)
           message.subject(payload.subject)

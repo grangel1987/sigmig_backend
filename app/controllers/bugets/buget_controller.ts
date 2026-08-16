@@ -2347,7 +2347,7 @@ export default class BugetController {
       const businessLabel = i18n.formatMessage('messages.business')
       const viewBudgetLabel = i18n.formatMessage('messages.view_budget')
 
-      await mail.sendLater((message) => {
+      await mail.send((message) => {
         message
           .to(recipientEmail)
           .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')

@@ -504,7 +504,7 @@ export default class ShoppingController {
                 // Send email notification to the creator
                 try {
                     if (shop.createdBy?.email) {
-                        await mail.sendLater((message) => {
+                        await mail.send((message) => {
                             message
                                 .to(shop.createdBy!.email)
                                 .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')

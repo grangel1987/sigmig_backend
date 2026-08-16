@@ -26,12 +26,12 @@ export default class BookingController {
                 const subjectAdmin = 'Nueva reserva registrada'
     
                 if (payload?.email) {
-                    await Mail.sendLater((message: any) => {
+                    await mail.send((message: any) => {
                         message.to(payload.email).subject(subjectClient).html(clientHtml)
                     })
                 }
                 if (payload?.admin_email) {
-                    await Mail.sendLater((message: any) => {
+                    await mail.send((message: any) => {
                         message.to(payload.admin_email).subject(subjectAdmin).html(adminHtml)
                     })
                 }
