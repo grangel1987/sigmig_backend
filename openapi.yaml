@@ -5099,6 +5099,36 @@ paths:
         '404':
           description: Presupuesto no encontrado
 
+  /buget/{budgetId}/edps/{edpId}/authorize:
+    post:
+      tags:
+        - Estados de Pago (EDPs)
+      summary: Autorizar un Estado de Pago
+      description: Autoriza un Estado de Pago y notifica a los usuarios con permisos.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID de la cotización/presupuesto.
+        - name: edpId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID del Estado de Pago.
+      responses:
+        '200':
+          description: EDP autorizado exitosamente.
+        '403':
+          description: El usuario no tiene permisos para autorizar.
+        '404':
+          description: EDP no encontrado.
+        '500':
+          description: Error del servidor.
   /buget/{budgetId}/edps/{edpId}/share:
     post:
       tags:

@@ -526,7 +526,7 @@ export default class BugetController {
     if (budgets instanceof ModelPaginator) {
       const budgetsWithPayments = await Promise.all(
         budgets.all().map(async (budget) => {
-          const total = budget.getTotalAmount()
+          const total = budget.getTotalGrossAmount()
           const remaining = await budget.getRemainingBalance()
           const percentage = await budget.getPaymentPercentage()
           const isFullyPaid = await budget.isFullyPaid()
@@ -594,7 +594,7 @@ export default class BugetController {
     } else {
       const budgetsWithPayments = await Promise.all(
         budgets.map(async (budget) => {
-          const total = budget.getTotalAmount()
+          const total = budget.getTotalGrossAmount()
           const remaining = await budget.getRemainingBalance()
           const percentage = await budget.getPaymentPercentage()
           const isFullyPaid = await budget.isFullyPaid()
@@ -783,7 +783,7 @@ export default class BugetController {
     }
 
     // Add payment summary
-    const total = buget.getTotalAmount()
+    const total = buget.getTotalGrossAmount()
     const paidInBudgetCurrency = await buget.getTotalPaidInBudgetCurrency()
     const remaining = await buget.getRemainingBalance()
     const percentage = await buget.getPaymentPercentage()
@@ -870,7 +870,7 @@ export default class BugetController {
 
     const data = await Promise.all(
       disabledBudgets.map(async (b) => {
-        const total = b.getTotalAmount()
+        const total = b.getTotalGrossAmount()
         const remaining = await b.getRemainingBalance()
         const percentage = await b.getPaymentPercentage()
         const isFullyPaid = await b.isFullyPaid()

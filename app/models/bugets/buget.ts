@@ -341,7 +341,7 @@ export default class Buget extends BaseModel {
    * Note: Requires products, items, and payments to be preloaded before calling
    */
   public async getRemainingBalance(): Promise<number> {
-    const total = this.getTotalAmount()
+    const total = this.getTotalGrossAmount()
     const paid = await this.getTotalPaidInBudgetCurrency()
     return total - paid
   }
@@ -351,7 +351,7 @@ export default class Buget extends BaseModel {
    * Note: Requires products, items, and payments to be preloaded before calling
    */
   public async getPaymentPercentage(): Promise<number> {
-    const total = this.getTotalAmount()
+    const total = this.getTotalGrossAmount()
     if (total === 0) return 0
 
     const paid = await this.getTotalPaidInBudgetCurrency()

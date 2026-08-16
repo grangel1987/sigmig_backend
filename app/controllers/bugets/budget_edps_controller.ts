@@ -32,6 +32,10 @@ export default class BudgetEdpsController {
     const edps = await BudgetEdp.query()
       .where('budget_id', budgetId)
       .preload('details', (q) => q.preload('bugetProduct'))
+      .preload('authorizer', (b) => {
+        b.select(['id', 'personal_data_id', 'email'])
+        b.preload('personalData')
+      })
       .orderBy('edp_number', 'asc')
 
     return response.ok(edps)
@@ -255,6 +259,17 @@ export default class BudgetEdpsController {
           )
       }
 
+      if (!edp.isAuthorized) {
+        return response
+          .status(403)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.unauthorized_edp_share', {}, 'El EDP debe ser autorizado antes de ser compartido.'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
       const clientName = edp.budget.client?.name || ''
       const budgetNumber = edp.budget.nro
       const businessName = edp.budget.business?.name || ''
@@ -350,6 +365,10 @@ export default class BudgetEdpsController {
           })
         })
         .preload('details', (q) => q.preload('bugetProduct'))
+        .preload('authorizer', (b) => {
+          b.select(['id', 'personal_data_id', 'email'])
+          b.preload('personalData')
+        })
         .first()
 
       if (!edp) {
@@ -371,6 +390,99 @@ export default class BudgetEdpsController {
         .json(
           MessageFrontEnd(
             i18n.formatMessage('messages.get_error'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async authorize(ctx: HttpContext) {
+    const { params, response, auth, i18n } = ctx
+    const edpId = Number(params.edpId)
+    const budgetId = Number(params.budgetId)
+
+    try {
+      const edp = await BudgetEdp.query()
+        .where('id', edpId)
+        .andWhere('budget_id', budgetId)
+        .preload('budget', (q) => q.preload('client').preload('business'))
+        .firstOrFail()
+
+      const authUser = auth.user!
+
+      if (!authUser.isAuthorizer && !authUser.isSuper) {
+        return response
+          .status(403)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.no_authorizer_permission', {}, 'No tienes permisos para autorizar.'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      edp.isAuthorized = true
+      edp.authorizerId = authUser.id
+      edp.authorizerAt = DateTime.now()
+
+      await edp.save()
+
+      // Notify the EDP creator or client (we'll notify creator/super for now per user request)
+      const { default: BusinessUser } = await import('#models/business/business_user')
+      const businessUsers = await BusinessUser.query()
+        .where('business_id', edp.budget.businessId)
+        .andWhere('is_super', 1)
+        .preload('user', (userQuery) => {
+          userQuery.select(['personal_data_id', 'id', 'email'])
+        })
+
+      const clientName = edp.budget.client?.name || ''
+      const budgetNumber = edp.budget.nro
+      const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP Autorizado - Cotización #${budgetNumber}`)
+      const body = i18n.formatMessage('messages.edp_authorized_email_body', { clientName, budgetNumber }, `El Estado de Pago de la cotización #${budgetNumber} ha sido autorizado por ${authUser.full_name}.`)
+
+      for (const businessUser of businessUsers) {
+        if (businessUser.user?.email) {
+          await mail.send((message) => {
+            message
+              .to(businessUser.user!.email)
+              .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+              .subject(subject)
+              .htmlView('emails/edp_client', {
+                subject,
+                body,
+                edpName: edp.name || `EDP #${edp.edpNumber}`,
+                amount: edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0',
+                dueDate: edp.dueDate ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false }) : '---',
+                budgetNumber,
+                edpUrl: '', // No URL needed for simple notification
+                businessName: edp.budget.business?.name || '',
+                edpNameLabel: 'Hito / Nombre',
+                amountLabel: 'Monto',
+                dueDateLabel: 'Fecha',
+                budgetNumberLabel: 'Cotización',
+                businessLabel: 'Empresa',
+                viewEdpLabel: 'Ver',
+              })
+          })
+        }
+      }
+
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.authorizer_ok', {}, 'Autorizado correctamente.'),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+    } catch (error) {
+      console.log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.authorizer_error', {}, 'Error al autorizar.'),
             i18n.formatMessage('messages.error_title')
           )
         )

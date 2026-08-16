@@ -1,6 +1,7 @@
 import Buget from '#models/bugets/buget'
 import BudgetPayment from '#models/budget_payment'
 import BudgetEdpDetail from '#models/budget_edp_detail'
+import User from '#models/users/user'
 import { BaseModel, belongsTo, column, hasMany, beforeCreate } from '@adonisjs/lucid/orm'
 import { randomUUID } from 'node:crypto'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
@@ -65,10 +66,23 @@ export default class BudgetEdp extends BaseModel {
   @column()
   declare deletedBy: number | null
 
+  @column({ columnName: 'authorizer_id' })
+  declare authorizerId: number | null
+
+  @belongsTo(() => User, { foreignKey: 'authorizerId' })
+  declare authorizer: BelongsTo<typeof User>
+
+  @column({ columnName: 'is_authorized' })
+  declare isAuthorized: boolean
+
+  @column.dateTime({ columnName: 'authorizer_at', serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
+  declare authorizerAt: DateTime | null
+
   @beforeCreate()
   public static assignToken(edp: BudgetEdp) {
     if (!edp.token) {
       edp.token = randomUUID()
     }
+    edp.isAuthorized = edp.isAuthorized ?? false
   }
 }
