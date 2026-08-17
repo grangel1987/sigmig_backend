@@ -406,44 +406,51 @@ export default class BudgetEdpsController {
 
       await edp.save()
 
-      // Notify the EDP creator or client (we'll notify creator/super for now per user request)
-      const { default: BusinessUser } = await import('#models/business/business_user')
-      const businessUsers = await BusinessUser.query()
-        .where('business_id', edp.budget.businessId)
-        .andWhere('is_super', 1)
-        .preload('user', (userQuery) => {
-          userQuery.select(['personal_data_id', 'id', 'email'])
-        })
+      // Send notification email only if sendEmail/send_email flag is explicitly true
+      const shouldSendEmail = Boolean(request.input('sendEmail', false) || request.input('send_email', false))
+      if (shouldSendEmail) {
+        try {
+          const { default: BusinessUser } = await import('#models/business/business_user')
+          const businessUsers = await BusinessUser.query()
+            .where('business_id', edp.budget.businessId)
+            .andWhere('is_super', 1)
+            .preload('user', (userQuery) => {
+              userQuery.select(['personal_data_id', 'id', 'email'])
+            })
 
-      const clientName = edp.budget.client?.name || ''
-      const budgetNumber = edp.budget.nro
-      const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP Autorizado - Cotización #${budgetNumber}`)
-      const body = i18n.formatMessage('messages.edp_authorized_email_body', { clientName, budgetNumber }, `El Estado de Pago de la cotización #${budgetNumber} ha sido autorizado por ${authUser.full_name}.`)
+          const clientName = edp.budget.client?.name || ''
+          const budgetNumber = edp.budget.nro
+          const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP Autorizado - Cotización #${budgetNumber}`)
+          const body = i18n.formatMessage('messages.edp_authorized_email_body', { clientName, budgetNumber }, `El Estado de Pago de la cotización #${budgetNumber} ha sido autorizado por ${authUser.full_name}.`)
 
-      for (const businessUser of businessUsers) {
-        if (businessUser.user?.email) {
-          await mail.send((message) => {
-            message
-              .to(businessUser.user!.email)
-              .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
-              .subject(subject)
-              .htmlView('emails/edp_client', {
-                subject,
-                body,
-                edpName: edp.name || `EDP #${edp.edpNumber}`,
-                amount: edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0',
-                dueDate: edp.dueDate ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false }) : '---',
-                budgetNumber,
-                edpUrl: '', // No URL needed for simple notification
-                businessName: edp.budget.business?.name || '',
-                edpNameLabel: 'Hito / Nombre',
-                amountLabel: 'Monto',
-                dueDateLabel: 'Fecha',
-                budgetNumberLabel: 'Cotización',
-                businessLabel: 'Empresa',
-                viewEdpLabel: 'Ver',
+          for (const businessUser of businessUsers) {
+            if (businessUser.user?.email) {
+              await mail.send((message) => {
+                message
+                  .to(businessUser.user!.email)
+                  .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+                  .subject(subject)
+                  .htmlView('emails/edp_client', {
+                    subject,
+                    body,
+                    edpName: edp.name || `EDP #${edp.edpNumber}`,
+                    amount: edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0',
+                    dueDate: edp.dueDate ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false }) : '---',
+                    budgetNumber,
+                    edpUrl: '',
+                    businessName: edp.budget.business?.name || '',
+                    edpNameLabel: 'Hito / Nombre',
+                    amountLabel: 'Monto',
+                    dueDateLabel: 'Fecha',
+                    budgetNumberLabel: 'Cotización',
+                    businessLabel: 'Empresa',
+                    viewEdpLabel: 'Ver',
+                  })
               })
-          })
+            }
+          }
+        } catch (emailErr) {
+          console.error('Failed to send authorization email:', emailErr)
         }
       }
 
@@ -461,7 +468,7 @@ export default class BudgetEdpsController {
         .status(500)
         .json(
           MessageFrontEnd(
-            i18n.formatMessage('messages.authorizer_error') + ' | Error details: ' + (error.message || String(error)),
+            i18n.formatMessage('messages.authorizer_error', {}, 'Error al autorizar.'),
             i18n.formatMessage('messages.error_title')
           )
         )
@@ -482,7 +489,9 @@ export default class BudgetEdpsController {
         vine.compile(
           vine.object({
             name: vine.string(),
-            rut: vine.string()
+            rut: vine.string(),
+            sendEmail: vine.boolean().optional(),
+            send_email: vine.boolean().optional()
           })
         )
       )
@@ -496,43 +505,51 @@ export default class BudgetEdpsController {
 
       await edp.save()
 
-      const { default: BusinessUser } = await import('#models/business/business_user')
-      const businessUsers = await BusinessUser.query()
-        .where('business_id', edp.budget.businessId)
-        .andWhere('is_super', 1)
-        .preload('user', (userQuery: any) => {
-          userQuery.select(['personal_data_id', 'id', 'email'])
-        })
+      // Send notification email only if sendEmail/send_email flag is explicitly true
+      const shouldSendEmail = Boolean(payload.sendEmail || payload.send_email || request.input('sendEmail', false) || request.input('send_email', false))
+      if (shouldSendEmail) {
+        try {
+          const { default: BusinessUser } = await import('#models/business/business_user')
+          const businessUsers = await BusinessUser.query()
+            .where('business_id', edp.budget.businessId)
+            .andWhere('is_super', 1)
+            .preload('user', (userQuery: any) => {
+              userQuery.select(['personal_data_id', 'id', 'email'])
+            })
 
-      const clientName = edp.budget.client?.name || ''
-      const budgetNumber = edp.budget.nro
-      const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP Autorizado - Cotización #${budgetNumber}`)
-      const body = i18n.formatMessage('messages.edp_authorized_email_body_client', { clientName, budgetNumber, authorizerName: payload.name }, `El Estado de Pago de la cotización #${budgetNumber} ha sido autorizado por el cliente (${payload.name} - RUT: ${payload.rut}).`)
+          const clientName = edp.budget.client?.name || ''
+          const budgetNumber = edp.budget.nro
+          const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP Autorizado - Cotización #${budgetNumber}`)
+          const body = i18n.formatMessage('messages.edp_authorized_email_body_client', { clientName, budgetNumber, authorizerName: payload.name }, `El Estado de Pago de la cotización #${budgetNumber} ha sido autorizado por el cliente (${payload.name} - RUT: ${payload.rut}).`)
 
-      for (const businessUser of businessUsers) {
-        if (businessUser.user?.email) {
-          await mail.send((message: any) => {
-            message
-              .to(businessUser.user!.email)
-              .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
-              .subject(subject)
-              .htmlView('emails/edp_client', {
-                subject,
-                body,
-                edpName: edp.name || `EDP #${edp.edpNumber}`,
-                amount: edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0',
-                dueDate: edp.dueDate ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false }) : '---',
-                budgetNumber,
-                edpUrl: '', 
-                businessName: edp.budget.business?.name || '',
-                edpNameLabel: 'Hito / Nombre',
-                amountLabel: 'Monto',
-                dueDateLabel: 'Fecha',
-                budgetNumberLabel: 'Cotización',
-                businessLabel: 'Empresa',
-                viewEdpLabel: 'Ver',
+          for (const businessUser of businessUsers) {
+            if (businessUser.user?.email) {
+              await mail.send((message: any) => {
+                message
+                  .to(businessUser.user!.email)
+                  .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+                  .subject(subject)
+                  .htmlView('emails/edp_client', {
+                    subject,
+                    body,
+                    edpName: edp.name || `EDP #${edp.edpNumber}`,
+                    amount: edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0',
+                    dueDate: edp.dueDate ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false }) : '---',
+                    budgetNumber,
+                    edpUrl: '', 
+                    businessName: edp.budget.business?.name || '',
+                    edpNameLabel: 'Hito / Nombre',
+                    amountLabel: 'Monto',
+                    dueDateLabel: 'Fecha',
+                    budgetNumberLabel: 'Cotización',
+                    businessLabel: 'Empresa',
+                    viewEdpLabel: 'Ver',
+                  })
               })
-          })
+            }
+          }
+        } catch (emailErr) {
+          console.error('Failed to send authorization email:', emailErr)
         }
       }
 
@@ -550,7 +567,115 @@ export default class BudgetEdpsController {
         .status(500)
         .json(
           MessageFrontEnd(
-            i18n.formatMessage('messages.authorizer_error') + ' | Error details: ' + (error.message || String(error)),
+            i18n.formatMessage('messages.authorizer_error', {}, 'Error al autorizar.'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
+
+  public async shareByToken(ctx: HttpContext) {
+    const { params, request, response, i18n } = ctx
+    const token = params.token as string
+
+    const { email } = await request.validateUsing(
+      vine.compile(
+        vine.object({
+          email: vine.string().email().optional(),
+        })
+      )
+    )
+
+    try {
+      const edp = await BudgetEdp.query()
+        .where('token', token)
+        .preload('budget' as any, (q: any) => {
+          q.preload('client')
+          q.preload('business')
+        })
+        .firstOrFail()
+
+      const clientEmail = edp.budget.client?.email
+      const recipientEmail = email || clientEmail
+
+      if (!recipientEmail) {
+        return response
+          .status(400)
+          .json(
+            MessageFrontEnd(
+              i18n.formatMessage('messages.email_required', {}, 'Correo electrónico requerido'),
+              i18n.formatMessage('messages.error_title')
+            )
+          )
+      }
+
+      const clientName = edp.budget.client?.name || ''
+      const budgetNumber = edp.budget.nro
+      const businessName = edp.budget.business?.name || ''
+      const amount = edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0'
+      const dueDate = edp.dueDate
+        ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false })
+        : '---'
+
+      const host =
+        env.get('NODE_ENV') === 'development'
+          ? 'http://212.38.95.163/sigmig/'
+          : 'https://admin.serviciosgenessis.com/'
+
+      const edpUrl = host + `client/edp/${edp.token}`
+
+      const subject = i18n.formatMessage('messages.edp_email_subject', {}, 'Detalle de Estado de Pago')
+      const body = i18n.formatMessage('messages.edp_email_body', { clientName, budgetNumber }, `Estimado/a ${clientName}, adjunto encontrará el detalle de estado de pago de la cotización #${budgetNumber}.`)
+
+      const edpNameLabel = i18n.formatMessage('messages.edp_name', {}, 'Hito / Nombre')
+      const amountLabel = i18n.formatMessage('messages.amount', {}, 'Monto')
+      const dueDateLabel = i18n.formatMessage('messages.due_date', {}, 'Fecha de Pago')
+      const budgetNumberLabel = i18n.formatMessage('messages.budget_number')
+      const businessLabel = i18n.formatMessage('messages.business')
+      const viewEdpLabel = i18n.formatMessage('messages.view_edp', {}, 'Ver Estado de Pago')
+
+      try {
+        await mail.send((message) => {
+          message
+            .to(recipientEmail)
+            .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+            .subject(subject)
+            .htmlView('emails/edp_client', {
+              subject,
+              body,
+              edpName: edp.name || `EDP #${edp.edpNumber}`,
+              amount,
+              dueDate,
+              budgetNumber,
+              edpUrl,
+              businessName,
+              edpNameLabel,
+              amountLabel,
+              dueDateLabel,
+              budgetNumberLabel,
+              businessLabel,
+              viewEdpLabel,
+            })
+        })
+      } catch (mailErr) {
+        console.error('Failed to send share email:', mailErr)
+      }
+
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.edp_email_sent', {}, 'Correo enviado correctamente.'),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+    } catch (error) {
+      console.log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.send_email_error', {}, 'Error al enviar correo.'),
             i18n.formatMessage('messages.error_title')
           )
         )
