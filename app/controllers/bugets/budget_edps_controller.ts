@@ -387,7 +387,7 @@ export default class BudgetEdpsController {
   }
 
   public async authorize(ctx: HttpContext) {
-    const { params, response, auth, i18n } = ctx
+    const { params, request, response, auth, i18n } = ctx
     const edpId = Number(params.edpId)
     const budgetId = Number(params.budgetId)
 
