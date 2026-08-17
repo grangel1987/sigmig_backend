@@ -259,16 +259,6 @@ export default class BudgetEdpsController {
           )
       }
 
-      if (!edp.isAuthorized) {
-        return response
-          .status(403)
-          .json(
-            MessageFrontEnd(
-              i18n.formatMessage('messages.unauthorized_edp_share', {}, 'El EDP debe ser autorizado antes de ser compartido.'),
-              i18n.formatMessage('messages.error_title')
-            )
-          )
-      }
 
       const clientName = edp.budget.client?.name || ''
       const budgetNumber = edp.budget.nro
@@ -410,17 +400,6 @@ export default class BudgetEdpsController {
 
       const authUser = auth.user!
 
-      if (!authUser.isAuthorizer && !authUser.isAdmin) {
-        return response
-          .status(403)
-          .json(
-            MessageFrontEnd(
-              i18n.formatMessage('messages.no_authorizer_permission', {}, 'No tienes permisos para autorizar.'),
-              i18n.formatMessage('messages.error_title')
-            )
-          )
-      }
-
       edp.isAuthorized = true
       edp.authorizerId = authUser.id
       edp.authorizerAt = DateTime.now()
@@ -476,13 +455,13 @@ export default class BudgetEdpsController {
             i18n.formatMessage('messages.ok_title')
           )
         )
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
       return response
         .status(500)
         .json(
           MessageFrontEnd(
-            i18n.formatMessage('messages.authorizer_error', {}, 'Error al autorizar.'),
+            i18n.formatMessage('messages.authorizer_error') + ' | Error details: ' + (error.message || String(error)),
             i18n.formatMessage('messages.error_title')
           )
         )
@@ -496,7 +475,7 @@ export default class BudgetEdpsController {
     try {
       const edp = await BudgetEdp.query()
         .where('token', token)
-        .preload('budget' as any, (q) => q.preload('client').preload('business'))
+        .preload('budget' as any, (q: any) => q.preload('client').preload('business'))
         .firstOrFail()
 
       const payload = await request.validateUsing(
@@ -521,7 +500,7 @@ export default class BudgetEdpsController {
       const businessUsers = await BusinessUser.query()
         .where('business_id', edp.budget.businessId)
         .andWhere('is_super', 1)
-        .preload('user', (userQuery) => {
+        .preload('user', (userQuery: any) => {
           userQuery.select(['personal_data_id', 'id', 'email'])
         })
 
@@ -532,7 +511,7 @@ export default class BudgetEdpsController {
 
       for (const businessUser of businessUsers) {
         if (businessUser.user?.email) {
-          await mail.send((message) => {
+          await mail.send((message: any) => {
             message
               .to(businessUser.user!.email)
               .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
@@ -565,13 +544,13 @@ export default class BudgetEdpsController {
             i18n.formatMessage('messages.ok_title')
           )
         )
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
       return response
         .status(500)
         .json(
           MessageFrontEnd(
-            i18n.formatMessage('messages.authorizer_error', {}, 'Error al autorizar.'),
+            i18n.formatMessage('messages.authorizer_error') + ' | Error details: ' + (error.message || String(error)),
             i18n.formatMessage('messages.error_title')
           )
         )

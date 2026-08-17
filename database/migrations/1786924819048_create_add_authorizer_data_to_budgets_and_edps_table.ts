@@ -2,12 +2,19 @@ import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class extends BaseSchema {
   async up() {
-    this.schema.alterTable('budget_edps', (table) => {
-      table.json('authorizer_data').nullable()
-    })
-    this.schema.alterTable('bugets', (table) => {
-      table.json('authorizer_data').nullable()
-    })
+    const hasEdpsData = await this.schema.hasColumn('budget_edps', 'authorizer_data')
+    if (!hasEdpsData) {
+      this.schema.alterTable('budget_edps', (table) => {
+        table.json('authorizer_data').nullable()
+      })
+    }
+
+    const hasBugetsData = await this.schema.hasColumn('bugets', 'authorizer_data')
+    if (!hasBugetsData) {
+      this.schema.alterTable('bugets', (table) => {
+        table.json('authorizer_data').nullable()
+      })
+    }
   }
 
   async down() {
