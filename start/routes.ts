@@ -1191,6 +1191,7 @@ router
     router
       .group(() => {
         router.get('/view/:token', '#controllers/bugets/budget_edps_controller.showByToken')
+        router.post('/view/:token/authorize', '#controllers/bugets/budget_edps_controller.authorizeByToken')
       })
       .prefix('edps')
 

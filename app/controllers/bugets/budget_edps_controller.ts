@@ -488,4 +488,93 @@ export default class BudgetEdpsController {
         )
     }
   }
+
+  public async authorizeByToken(ctx: HttpContext) {
+    const { params, response, request, i18n } = ctx
+    const token = params.token as string
+
+    try {
+      const edp = await BudgetEdp.query()
+        .where('token', token)
+        .preload('budget' as any, (q) => q.preload('client').preload('business'))
+        .firstOrFail()
+
+      const payload = await request.validateUsing(
+        vine.compile(
+          vine.object({
+            name: vine.string(),
+            rut: vine.string()
+          })
+        )
+      )
+
+      edp.isAuthorized = true
+      edp.authorizerData = {
+        name: payload.name,
+        rut: payload.rut,
+        authorizedAt: DateTime.now().toISO() || ''
+      }
+
+      await edp.save()
+
+      const { default: BusinessUser } = await import('#models/business/business_user')
+      const businessUsers = await BusinessUser.query()
+        .where('business_id', edp.budget.businessId)
+        .andWhere('is_super', 1)
+        .preload('user', (userQuery) => {
+          userQuery.select(['personal_data_id', 'id', 'email'])
+        })
+
+      const clientName = edp.budget.client?.name || ''
+      const budgetNumber = edp.budget.nro
+      const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP Autorizado - Cotización #${budgetNumber}`)
+      const body = i18n.formatMessage('messages.edp_authorized_email_body_client', { clientName, budgetNumber, authorizerName: payload.name }, `El Estado de Pago de la cotización #${budgetNumber} ha sido autorizado por el cliente (${payload.name} - RUT: ${payload.rut}).`)
+
+      for (const businessUser of businessUsers) {
+        if (businessUser.user?.email) {
+          await mail.send((message) => {
+            message
+              .to(businessUser.user!.email)
+              .from(env.get('MAIL_FROM') || 'sigmi@accounts.com')
+              .subject(subject)
+              .htmlView('emails/edp_client', {
+                subject,
+                body,
+                edpName: edp.name || `EDP #${edp.edpNumber}`,
+                amount: edp.amount ? `$${Util.truncateToTwoDecimals(edp.amount)}` : '0',
+                dueDate: edp.dueDate ? Util.parseToMoment(edp.dueDate, false, { separator: '/', firstYear: false }) : '---',
+                budgetNumber,
+                edpUrl: '', 
+                businessName: edp.budget.business?.name || '',
+                edpNameLabel: 'Hito / Nombre',
+                amountLabel: 'Monto',
+                dueDateLabel: 'Fecha',
+                budgetNumberLabel: 'Cotización',
+                businessLabel: 'Empresa',
+                viewEdpLabel: 'Ver',
+              })
+          })
+        }
+      }
+
+      return response
+        .status(200)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.authorizer_ok', {}, 'Autorizado correctamente.'),
+            i18n.formatMessage('messages.ok_title')
+          )
+        )
+    } catch (error) {
+      console.log(error)
+      return response
+        .status(500)
+        .json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.authorizer_error', {}, 'Error al autorizar.'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+    }
+  }
 }

@@ -78,6 +78,13 @@ export default class BudgetEdp extends BaseModel {
   @column.dateTime({ columnName: 'authorizer_at', serialize: (value: DateTime | null) => value?.toFormat('yyyy-LL-dd') })
   declare authorizerAt: DateTime | null
 
+  @column({
+    columnName: 'authorizer_data',
+    consume: v => typeof v === 'string' ? JSON.parse(v) : v,
+    prepare: v => typeof v === 'object' ? JSON.stringify(v) : v
+  })
+  declare authorizerData: { name: string, rut: string, authorizedAt: string } | null
+
   @beforeCreate()
   public static assignToken(edp: BudgetEdp) {
     if (!edp.token) {

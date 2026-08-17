@@ -63,6 +63,13 @@ export default class Buget extends BaseModel {
     nroBuget?: string
   } | null
 
+  @column({
+    columnName: 'authorizer_data',
+    consume: v => typeof v === 'string' ? JSON.parse(v) : v,
+    prepare: v => typeof v === 'object' ? JSON.stringify(v) : v
+  })
+  declare authorizerData: { name: string, rut: string, authorizedAt: string } | null
+
   @column()
   declare token: string
 

@@ -1954,11 +1954,14 @@ export default class BugetController {
     }
   }
 
-  /** Update budget status (public by token) */
   public async updateStatusPublic(ctx: HttpContext) {
     const { params, request, response, i18n } = ctx
     const token = params.token as string
+    
+    // We expect status from bugetStatusValidator, but we also want name and rut if status is accept
     const { status } = await request.validateUsing(bugetStatusValidator)
+    const name = request.input('name')
+    const rut = request.input('rut')
 
     const buget = await Buget.query().where('token', token).where('enabled', true).first()
     if (!buget) {
@@ -1974,6 +1977,13 @@ export default class BugetController {
 
     const previousStatus = buget.status ?? null
     buget.status = status
+    if (status === 'accept' && name && rut) {
+      buget.authorizerData = {
+        name,
+        rut,
+        authorizedAt: DateTime.now().toISO() || ''
+      }
+    }
     await buget.save()
 
     const room = roomForToken(buget.token!)
