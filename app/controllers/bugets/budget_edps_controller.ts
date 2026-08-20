@@ -432,6 +432,7 @@ export default class BudgetEdpsController {
       const authUser = auth.user!
 
       edp.isAuthorized = true
+      edp.approvalStatus = 'authorized'
       edp.authorizerId = authUser.id
       edp.authorizerAt = DateTime.now()
 
