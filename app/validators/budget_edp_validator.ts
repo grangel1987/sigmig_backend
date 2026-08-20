@@ -8,6 +8,7 @@ export const budgetEdpValidator = vine.compile(
   vine.object({
     budgetId: vine.number(),
     edpNumber: vine.number().optional(),
+    authorizerId: vine.number().nullable().optional(),
     name: vine.string(),
     percentage: vine.number().min(0).max(1).optional(),
     dueDate: vine.date().nullable().optional(),

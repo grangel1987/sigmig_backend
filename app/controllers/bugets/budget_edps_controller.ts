@@ -15,6 +15,7 @@ const updateEdpValidator = vine.compile(
   vine.object({
     percentage: vine.number().min(0).max(1).optional(),
     dueDate: vine.date().nullable().optional(),
+    authorizerId: vine.number().nullable().optional(),
     name: vine.string().optional(),
     details: vine.array(
       vine.object({
@@ -90,6 +91,9 @@ export default class BudgetEdpsController {
       edp.budgetId = budgetId
       edp.edpNumber = edpNumber
       edp.name = payload.name
+      if (payload.authorizerId !== undefined) {
+        edp.authorizerId = payload.authorizerId
+      }
       edp.percentage = payload.percentage ?? effectivePercentage
       edp.amount = edpTotalAmount
       edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
@@ -169,6 +173,10 @@ export default class BudgetEdpsController {
 
       if (payload.dueDate !== undefined) {
         edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
+      }
+
+      if (payload.authorizerId !== undefined) {
+        edp.authorizerId = payload.authorizerId
       }
 
       if (payload.name !== undefined) {
