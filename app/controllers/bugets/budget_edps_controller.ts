@@ -15,7 +15,7 @@ const updateEdpValidator = vine.compile(
   vine.object({
     percentage: vine.number().min(0).max(1).optional(),
     dueDate: vine.date().nullable().optional(),
-    name: vine.string().nullable().optional(),
+    name: vine.string().optional(),
     details: vine.array(
       vine.object({
         bugetProductId: vine.number(),
@@ -80,10 +80,16 @@ export default class BudgetEdpsController {
 
     const trx = await db.transaction()
     try {
+      const maxEdp = await BudgetEdp.query()
+        .where('budget_id', budgetId)
+        .orderBy('edp_number', 'desc')
+        .first()
+      const edpNumber = maxEdp ? (maxEdp.edpNumber || 0) + 1 : 1
+
       const edp = new BudgetEdp()
       edp.budgetId = budgetId
-      edp.edpNumber = payload.edpNumber
-      edp.name = payload.name ?? null
+      edp.edpNumber = edpNumber
+      edp.name = payload.name
       edp.percentage = payload.percentage ?? effectivePercentage
       edp.amount = edpTotalAmount
       edp.dueDate = payload.dueDate ? DateTime.fromJSDate(payload.dueDate) : null
@@ -166,7 +172,7 @@ export default class BudgetEdpsController {
       }
 
       if (payload.name !== undefined) {
-        edp.name = payload.name ?? null
+        edp.name = payload.name
       }
 
       await edp.save()
@@ -353,6 +359,13 @@ export default class BudgetEdpsController {
               'email',
             ])
           })
+          q.preload('products')
+          q.preload('items')
+          q.preload('payments', (paymentQuery: any) => {
+            paymentQuery.preload('ledgerMovement', (lmQuery: any) => {
+              lmQuery.preload('currency')
+            })
+          })
         })
         .preload('details', (q) => q.preload('bugetProduct'))
         .preload('authorizer', (b) => {
@@ -372,7 +385,16 @@ export default class BudgetEdpsController {
           )
       }
 
-      return response.status(200).json({ edp })
+      const budgetTotalAmount = edp.budget.getTotalGrossAmount()
+      const budgetTotalPaid = await edp.budget.getTotalPaidInBudgetCurrency()
+      const budgetRemainingBalance = await edp.budget.getRemainingBalance()
+
+      const edpJson = edp.serialize()
+      edpJson.budget.totalAmount = budgetTotalAmount
+      edpJson.budget.totalPaid = budgetTotalPaid
+      edpJson.budget.remainingBalance = budgetRemainingBalance
+
+      return response.status(200).json({ edp: edpJson })
     } catch (error) {
       console.log(error)
       return response
@@ -491,16 +513,37 @@ export default class BudgetEdpsController {
             name: vine.string(),
             rut: vine.string(),
             sendEmail: vine.boolean().optional(),
-            send_email: vine.boolean().optional()
+            send_email: vine.boolean().optional(),
+            action: vine.enum(['authorize', 'reject', 'revision']).optional(),
+            observation: vine.string().optional()
           })
         )
       )
 
-      edp.isAuthorized = true
-      edp.authorizerData = {
-        name: payload.name,
-        rut: payload.rut,
-        authorizedAt: DateTime.now().toISO() || ''
+      const action = payload.action || 'authorize'
+
+      if (action === 'revision' && !payload.observation) {
+        return response.status(400).json(
+          MessageFrontEnd(
+            i18n.formatMessage('messages.observation_required', {}, 'La observación es requerida para solicitar revisión.'),
+            i18n.formatMessage('messages.error_title')
+          )
+        )
+      }
+
+      edp.approvalStatus = action === 'authorize' ? 'authorized' : (action === 'reject' ? 'rejected' : action)
+      
+      if (action === 'authorize') {
+        edp.isAuthorized = true
+        edp.authorizerData = {
+          name: payload.name,
+          rut: payload.rut,
+          authorizedAt: DateTime.now().toISO() || ''
+        }
+      }
+
+      if (payload.observation) {
+        edp.clientObservation = payload.observation
       }
 
       await edp.save()
@@ -519,8 +562,13 @@ export default class BudgetEdpsController {
 
           const clientName = edp.budget.client?.name || ''
           const budgetNumber = edp.budget.nro
-          const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP Autorizado - Cotización #${budgetNumber}`)
-          const body = i18n.formatMessage('messages.edp_authorized_email_body_client', { clientName, budgetNumber, authorizerName: payload.name }, `El Estado de Pago de la cotización #${budgetNumber} ha sido autorizado por el cliente (${payload.name} - RUT: ${payload.rut}).`)
+          
+          let actionLabel = 'Autorizado'
+          if (action === 'reject') actionLabel = 'Rechazado'
+          else if (action === 'revision') actionLabel = 'Revisión Solicitada'
+
+          const subject = i18n.formatMessage('messages.edp_authorized_email_subject', { budgetNumber }, `EDP ${actionLabel} - Cotización #${budgetNumber}`)
+          const body = i18n.formatMessage('messages.edp_authorized_email_body_client', { clientName, budgetNumber, authorizerName: payload.name }, `El Estado de Pago de la cotización #${budgetNumber} ha sido ${actionLabel.toLowerCase()} por el cliente (${payload.name} - RUT: ${payload.rut}). ${payload.observation ? '<br><br>Observaciones: ' + payload.observation : ''}`)
 
           for (const businessUser of businessUsers) {
             if (businessUser.user?.email) {
@@ -557,7 +605,7 @@ export default class BudgetEdpsController {
         .status(200)
         .json(
           MessageFrontEnd(
-            i18n.formatMessage('messages.authorizer_ok', {}, 'Autorizado correctamente.'),
+            i18n.formatMessage('messages.authorizer_ok', {}, 'Respuesta procesada correctamente.'),
             i18n.formatMessage('messages.ok_title')
           )
         )

@@ -72,6 +72,12 @@ export default class BudgetEdp extends BaseModel {
   @belongsTo(() => User, { foreignKey: 'authorizerId' })
   declare authorizer: BelongsTo<typeof User>
 
+  @column({ columnName: 'approval_status' })
+  declare approvalStatus: 'pending' | 'authorized' | 'rejected' | 'revision'
+
+  @column({ columnName: 'client_observation' })
+  declare clientObservation: string | null
+
   @column({ columnName: 'is_authorized' })
   declare isAuthorized: boolean
 

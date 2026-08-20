@@ -7,8 +7,8 @@ import vine from '@vinejs/vine'
 export const budgetEdpValidator = vine.compile(
   vine.object({
     budgetId: vine.number(),
-    edpNumber: vine.number(),
-    name: vine.string().nullable().optional(),
+    edpNumber: vine.number().optional(),
+    name: vine.string(),
     percentage: vine.number().min(0).max(1).optional(),
     dueDate: vine.date().nullable().optional(),
     details: vine.array(
