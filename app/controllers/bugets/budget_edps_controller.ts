@@ -361,6 +361,7 @@ export default class BudgetEdpsController {
           })
           q.preload('products')
           q.preload('items')
+          q.preload('work')
           q.preload('payments', (paymentQuery: any) => {
             paymentQuery.preload('ledgerMovement', (lmQuery: any) => {
               lmQuery.preload('currency')
