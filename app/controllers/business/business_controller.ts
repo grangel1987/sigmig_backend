@@ -75,17 +75,18 @@ export default class BusinessController {
         emailConfirmInactiveEmployee: Boolean(emailConfirmInactiveEmployee),
       }
 
-      const delegatePayload = {
-        name: delegateName,
-        type_identify_id: delegateTypeIdentifyId,
-        identify: delegateIdentify,
-        phone: delegatePhone,
-        email: delegateEmail,
-      }
-
       const business = await Business.create(payload, { client: trx })
 
-      await business.related('delegate').create(delegatePayload, { client: trx })
+      if (delegateName || delegateEmail) {
+        const delegatePayload = {
+          name: delegateName,
+          type_identify_id: delegateTypeIdentifyId,
+          identify: delegateIdentify,
+          phone: delegatePhone,
+          email: delegateEmail,
+        }
+        await business.related('delegate').create(delegatePayload, { client: trx })
+      }
 
       if (photo) {
         const res = await Google.uploadFile(photo, 'business', 'image')
