@@ -26,7 +26,6 @@ interface BusinessPayload {
   updatedAt: DateTime
   updatedById: number
   emailConfirmInactiveEmployee: boolean
-  image: string
 }
 
 export default class BusinessController {
@@ -74,7 +73,6 @@ export default class BusinessController {
         updatedAt: dateTime,
         updatedById: auth.user!.id,
         emailConfirmInactiveEmployee: Boolean(emailConfirmInactiveEmployee),
-        image: '',
       }
 
       const business = await Business.create(payload, { client: trx })
@@ -82,10 +80,14 @@ export default class BusinessController {
       if (delegateName || delegateEmail) {
         const delegatePayload = {
           name: delegateName,
-          type_identify_id: delegateTypeIdentifyId,
+          typeIdentifyId: delegateTypeIdentifyId,
           identify: delegateIdentify,
           phone: delegatePhone,
           email: delegateEmail,
+          createdAt: dateTime,
+          createdBy: auth.user!.id,
+          updatedAt: dateTime,
+          updatedBy: auth.user!.id,
         }
         await business.related('delegate').create(delegatePayload, { client: trx })
       }

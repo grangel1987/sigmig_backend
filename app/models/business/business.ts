@@ -79,9 +79,6 @@ export default class Business extends BaseModel {
   public discount: number
 
   @column()
-  public image: string
-
-  @column()
   public footer: string | null
 
   @column()
