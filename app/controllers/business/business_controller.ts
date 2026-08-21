@@ -56,83 +56,80 @@ export default class BusinessController {
 
     const photo = request.file('photo', { size: '2mb', extnames: ['jpg', 'png', 'jpeg', 'webp',] })
 
-    if (!photo) {
-      const trx = await db.transaction()
-      try {
-        const payload: BusinessPayload = {
-          countryId,
-          typeIdentifyId,
-          identify,
-          name,
-          address,
-          phone,
-          email,
-          authorizationMinor: Boolean(authorizationMinor),
-          daysExpireBuget: daysExpireBuget,
-          createdAt: dateTime,
-          createdById: auth.user!.id,
-          updatedAt: dateTime,
-          updatedById: auth.user!.id,
-          emailConfirmInactiveEmployee: Boolean(emailConfirmInactiveEmployee),
-        }
-
-        const delegatePayload = {
-          name: delegateName,
-          type_identify_id: delegateTypeIdentifyId,
-          identify: delegateIdentify,
-          phone: delegatePhone,
-          email: delegateEmail,
-        }
-
-        const business = await Business.create(payload, { client: trx })
-
-        await business.related('delegate').create(delegatePayload, { client: trx })
-
-        if (photo) {
-          const res = await Google.uploadFile(photo, 'business', 'image')
-
-          await business.merge(res).useTransaction(trx).save()
-
-          if (coins) {
-
-            await trx.from('business_coins').where('business_id', business.id).delete()
-
-            const coinsData = coins.map((coinId: number, index: number) => ({
-              businessId: business.id,
-              coinId: coinId,
-              isDefault: index === 0 ? 1 : 0,
-            }))
-
-            await business.related('coins').createMany(coinsData, { client: trx })
-          }
-
-          await trx.commit()
-
-          await business.load('country')
-          await business.load('typeIdentify')
-          await business.load('delegate')
-          await business.load('coins', (builder) => {
-            builder.preload('coins')
-          })
-
-          return response.status(201).json({
-            business,
-            ...MessageFrontEnd(
-              i18n.formatMessage('messages.update_ok'),
-              i18n.formatMessage('messages.ok_title')
-            ),
-          })
-        }
-      } catch (error) {
-        await trx.rollback()
-        logger.error('store: Error', { error: error.message })
-        return response.status(500).json({
-          ...MessageFrontEnd(
-            i18n.formatMessage('messages.update_error'),
-            i18n.formatMessage('messages.error_title')
-          ),
-        })
+    const trx = await db.transaction()
+    try {
+      const payload: BusinessPayload = {
+        countryId,
+        typeIdentifyId,
+        identify,
+        name,
+        address,
+        phone,
+        email,
+        authorizationMinor: Boolean(authorizationMinor),
+        daysExpireBuget: daysExpireBuget,
+        createdAt: dateTime,
+        createdById: auth.user!.id,
+        updatedAt: dateTime,
+        updatedById: auth.user!.id,
+        emailConfirmInactiveEmployee: Boolean(emailConfirmInactiveEmployee),
       }
+
+      const delegatePayload = {
+        name: delegateName,
+        type_identify_id: delegateTypeIdentifyId,
+        identify: delegateIdentify,
+        phone: delegatePhone,
+        email: delegateEmail,
+      }
+
+      const business = await Business.create(payload, { client: trx })
+
+      await business.related('delegate').create(delegatePayload, { client: trx })
+
+      if (photo) {
+        const res = await Google.uploadFile(photo, 'business', 'image')
+        await business.merge(res).useTransaction(trx).save()
+      }
+
+      if (coins) {
+        await trx.from('business_coins').where('business_id', business.id).delete()
+
+        const coinsData = coins.map((coinId: number, index: number) => ({
+          businessId: business.id,
+          coinId: coinId,
+          isDefault: index === 0 ? 1 : 0,
+        }))
+
+        await business.related('coins').createMany(coinsData, { client: trx })
+      }
+
+      await trx.commit()
+
+      await business.load('country')
+      await business.load('typeIdentify')
+      await business.load('delegate')
+      await business.load('coins', (builder) => {
+        builder.preload('coins')
+      })
+
+      return response.status(201).json({
+        business,
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_ok'),
+          i18n.formatMessage('messages.ok_title')
+        ),
+      })
+    } catch (error: any) {
+      await trx.rollback()
+      console.error('Error in BusinessController.store:', error)
+      logger.error(error, 'store: Error')
+      return response.status(500).json({
+        ...MessageFrontEnd(
+          i18n.formatMessage('messages.update_error'),
+          i18n.formatMessage('messages.error_title')
+        ),
+      })
     }
   }
 
