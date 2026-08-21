@@ -26,6 +26,7 @@ interface BusinessPayload {
   updatedAt: DateTime
   updatedById: number
   emailConfirmInactiveEmployee: boolean
+  image: string
 }
 
 export default class BusinessController {
@@ -73,6 +74,7 @@ export default class BusinessController {
         updatedAt: dateTime,
         updatedById: auth.user!.id,
         emailConfirmInactiveEmployee: Boolean(emailConfirmInactiveEmployee),
+        image: '',
       }
 
       const business = await Business.create(payload, { client: trx })
