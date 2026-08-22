@@ -77,6 +77,13 @@ export default class BusinessController {
 
       const business = await Business.create(payload, { client: trx })
 
+      await business.related('users').create({
+        userId: auth.user!.id,
+        isSuper: true,
+        isAuthorizer: 1,
+        selected: false,
+      }, { client: trx })
+
       if (delegateName || delegateEmail) {
         const delegatePayload = {
           name: delegateName,
