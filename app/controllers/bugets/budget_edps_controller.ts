@@ -34,7 +34,7 @@ export default class BudgetEdpsController {
       .where('budget_id', budgetId)
       .preload('details', (q) => q.preload('bugetProduct'))
       .preload('authorizer', (b) => {
-        b.select(['id', 'personal_data_id', 'email'])
+        b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
         b.preload('personalData')
       })
       .orderBy('edp_number', 'asc')
@@ -378,7 +378,7 @@ export default class BudgetEdpsController {
         })
         .preload('details', (q) => q.preload('bugetProduct'))
         .preload('authorizer', (b) => {
-          b.select(['id', 'personal_data_id', 'email'])
+          b.select(['id', 'personal_data_id', 'email', 'signature', 'signature_short', 'signature_thumb', 'signature_thumb_short'])
           b.preload('personalData')
         })
         .first()
